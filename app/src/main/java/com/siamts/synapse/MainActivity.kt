@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,13 +18,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2Screen
+import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2ViewModel
+import com.siamts.synapse.ui.algorithms.AlgorithmsLessonScreen
+import com.siamts.synapse.ui.algorithms.AlgorithmsLessonViewModel
 import com.siamts.synapse.ui.auth.LoginScreen
 import com.siamts.synapse.ui.auth.LoginViewModel
 import com.siamts.synapse.ui.brainmap.BrainMapScreen
 import com.siamts.synapse.ui.brainmap.BrainMapViewModel
+import com.siamts.synapse.ui.chemistry.ChemicalBondingLessonPart2Screen
+import com.siamts.synapse.ui.chemistry.ChemicalBondingLessonPart2ViewModel
+import com.siamts.synapse.ui.chemistry.ChemicalBondingLessonScreen
+import com.siamts.synapse.ui.chemistry.ChemicalBondingLessonViewModel
 import com.siamts.synapse.ui.dashboard.DashboardScreen
 import com.siamts.synapse.ui.dashboard.DashboardViewModel
+import com.siamts.synapse.ui.datavis.DataVisualizationLessonPart2Screen
+import com.siamts.synapse.ui.datavis.DataVisualizationLessonPart2ViewModel
+import com.siamts.synapse.ui.datavis.DataVisualizationLessonScreen
+import com.siamts.synapse.ui.datavis.DataVisualizationLessonViewModel
 import com.siamts.synapse.ui.flashcards.FlashcardsScreen
 import com.siamts.synapse.ui.flashcards.FlashcardsViewModel
 import com.siamts.synapse.ui.home.HomeScreen
@@ -32,6 +46,7 @@ import com.siamts.synapse.ui.lesson.LessonPart2Screen
 import com.siamts.synapse.ui.lesson.LessonPart2ViewModel
 import com.siamts.synapse.ui.lesson.LessonScreen
 import com.siamts.synapse.ui.lesson.LessonViewModel
+import com.siamts.synapse.ui.notes.MixedSavedDownloadedNotesPreviewScreen
 import com.siamts.synapse.ui.notes.NoteDownloadedSuccessScreen
 import com.siamts.synapse.ui.notes.NoteSavedSuccessScreen
 import com.siamts.synapse.ui.notes.NoteSuccessViewModel
@@ -39,12 +54,32 @@ import com.siamts.synapse.ui.notes.NotesGeneratorScreen
 import com.siamts.synapse.ui.notes.NotesGeneratorViewModel
 import com.siamts.synapse.ui.notes.SavedNotesScreen
 import com.siamts.synapse.ui.notes.SavedNotesViewModel
+import com.siamts.synapse.ui.profile.AboutSynapseScreen
+import com.siamts.synapse.ui.profile.AchievementsScreen
+import com.siamts.synapse.ui.profile.HelpSupportScreen
+import com.siamts.synapse.ui.profile.LanguageSelectionScreen
+import com.siamts.synapse.ui.profile.NotificationsSettingsScreen
+import com.siamts.synapse.ui.profile.PersonalInfoScreen
+import com.siamts.synapse.ui.profile.ProfileScreen
+import com.siamts.synapse.ui.profile.ProfileViewModel
+import com.siamts.synapse.ui.profile.ProgressAnalyticsScreen
+import com.siamts.synapse.ui.profile.StudyGoalsScreen
+import com.siamts.synapse.ui.quadratic.MathChapterQuizViewModel
+import com.siamts.synapse.ui.quadratic.MathNotesViewModel
+import com.siamts.synapse.ui.quadratic.MathPracticeViewModel
+import com.siamts.synapse.ui.quadratic.MathematicsChapterQuizScreen
+import com.siamts.synapse.ui.quadratic.MathematicsNotesScreen
+import com.siamts.synapse.ui.quadratic.MathematicsPracticeScreen
+import com.siamts.synapse.ui.quadratic.QuadraticLessonPart2Screen
+import com.siamts.synapse.ui.quadratic.QuadraticLessonPart2ViewModel
 import com.siamts.synapse.ui.quadratic.QuadraticLessonScreen
 import com.siamts.synapse.ui.quadratic.QuadraticLessonViewModel
+import com.siamts.synapse.ui.quiz.MixedQuizPreviewScreen
 import com.siamts.synapse.ui.quiz.QuizScreen
 import com.siamts.synapse.ui.quiz.QuizViewModel
 import com.siamts.synapse.ui.results.QuizResultsScreen
 import com.siamts.synapse.ui.results.QuizResultsViewModel
+import com.siamts.synapse.ui.results.QuizReviewAnswersPreviewScreen
 import com.siamts.synapse.ui.roadmap.RoadmapScreen
 import com.siamts.synapse.ui.roadmap.RoadmapViewModel
 import com.siamts.synapse.ui.setup.ProfileSetupScreen
@@ -56,6 +91,10 @@ import com.siamts.synapse.ui.subjects.SubjectSelectionViewModel
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.tutor.AiTutorScreen
 import com.siamts.synapse.ui.tutor.AiTutorViewModel
+import com.siamts.synapse.ui.waves.WavesLessonPart2Screen
+import com.siamts.synapse.ui.waves.WavesLessonPart2ViewModel
+import com.siamts.synapse.ui.waves.WavesLessonScreen
+import com.siamts.synapse.ui.waves.WavesLessonViewModel
 import com.siamts.synapse.ui.welcome.WelcomeContent
 import com.siamts.synapse.ui.welcome.WelcomeScreen
 import com.siamts.synapse.ui.welcome.WelcomeUiState
@@ -71,14 +110,38 @@ sealed class AppScreen {
     data object SubjectSelection : AppScreen()
     data object Roadmap : AppScreen()
     data object QuadraticLesson : AppScreen()
+    data object QuadraticLessonPart2 : AppScreen()
+    data object MathematicsPractice : AppScreen()
+    data object MathematicsNotes : AppScreen()
+    data object MathematicsChapterQuiz : AppScreen()
+    data object AlgorithmsLesson : AppScreen()
+    data object AlgorithmsLessonPart2 : AppScreen()
+    data object DataVisualizationLesson : AppScreen()
+    data object DataVisualizationLessonPart2 : AppScreen()
+    data object WavesLesson : AppScreen()
+    data object WavesLessonPart2 : AppScreen()
+    data object ChemicalBondingLesson : AppScreen()
+    data object ChemicalBondingLessonPart2 : AppScreen()
     data object Lesson : AppScreen()
     data object LessonPart2 : AppScreen()
     data object Quiz : AppScreen()
+    data object MixedQuiz : AppScreen()
     data object QuizResults : AppScreen()
+    data object QuizReviewAnswers : AppScreen()
     data object NotesGenerator : AppScreen()
     data object NoteSavedSuccess : AppScreen()
     data object NoteDownloadedSuccess : AppScreen()
     data object SavedNotes : AppScreen()
+    data object MixedSavedNotes : AppScreen()
+    data object Profile : AppScreen()
+    data object PersonalInfo : AppScreen()
+    data object Achievements : AppScreen()
+    data object StudyGoals : AppScreen()
+    data object LanguageSelection : AppScreen()
+    data object NotificationsSettings : AppScreen()
+    data object HelpSupport : AppScreen()
+    data object AboutSynapse : AppScreen()
+    data object ProgressAnalytics : AppScreen()
     data object Flashcards : AppScreen()
     data object AiTutor : AppScreen()
     data object Home : AppScreen()
@@ -172,6 +235,18 @@ class MainActivity : ComponentActivity() {
                                     onFlashcardsClick = {
                                         currentScreen = AppScreen.Flashcards
                                     },
+                                    onQuizTabClick = {
+                                        currentScreen = AppScreen.MixedQuiz
+                                    },
+                                    onNotesTabClick = {
+                                        currentScreen = AppScreen.MixedSavedNotes
+                                    },
+                                    onProfileTabClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    onNotificationClick = {
+                                        currentScreen = AppScreen.NotificationsSettings
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),
@@ -190,10 +265,12 @@ class MainActivity : ComponentActivity() {
                                             currentScreen = AppScreen.Dashboard
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.NotesGenerator
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.AiTutor
+                                            currentScreen = AppScreen.MixedQuiz
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        } else if (tabIndex == 4) {
+                                            currentScreen = AppScreen.Profile
                                         }
                                     },
                                     modifier = Modifier
@@ -204,18 +281,34 @@ class MainActivity : ComponentActivity() {
 
                             AppScreen.SubjectSelection -> {
                                 val subjectSelectionViewModel: SubjectSelectionViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
                                 SubjectSelectionScreen(
                                     viewModel = subjectSelectionViewModel,
-                                    onSubjectClick = {
+                                    onSubjectClick = { subjectId ->
+                                        if (subjectId == "4" || subjectId == "Artificial Intelligence") {
+                                            roadmapViewModel.loadArtificialIntelligenceRoadmap()
+                                        } else if (subjectId == "5" || subjectId == "Physics") {
+                                            roadmapViewModel.loadPhysicsRoadmap()
+                                        } else if (subjectId == "6" || subjectId == "Chemistry") {
+                                            roadmapViewModel.loadChemistryRoadmap()
+                                        } else if (subjectId == "3" || subjectId == "Data Science") {
+                                            roadmapViewModel.loadDataScienceRoadmap()
+                                        } else if (subjectId == "2" || subjectId == "Computer Science") {
+                                            roadmapViewModel.loadComputerScienceRoadmap()
+                                        } else if (subjectId == "1" || subjectId == "Mathematics") {
+                                            roadmapViewModel.loadMathematicsRoadmap()
+                                        }
                                         currentScreen = AppScreen.Roadmap
                                     },
                                     onTabSelect = { tabIndex ->
                                         if (tabIndex == 0) {
                                             currentScreen = AppScreen.Dashboard
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.NotesGenerator
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.AiTutor
+                                            currentScreen = AppScreen.MixedQuiz
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        } else if (tabIndex == 4) {
+                                            currentScreen = AppScreen.Profile
                                         }
                                     },
                                     modifier = Modifier
@@ -229,7 +322,15 @@ class MainActivity : ComponentActivity() {
                                 RoadmapScreen(
                                     viewModel = roadmapViewModel,
                                     onContinueClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        val currentActiveLesson = roadmapViewModel.uiState.value.activeLessonTitle
+                                        when (currentActiveLesson) {
+                                            "Quadratic Equations" -> currentScreen = AppScreen.QuadraticLesson
+                                            "Algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
+                                            "Data Visualization" -> currentScreen = AppScreen.DataVisualizationLesson
+                                            "Waves" -> currentScreen = AppScreen.WavesLesson
+                                            "Chemical Bonding" -> currentScreen = AppScreen.ChemicalBondingLesson
+                                            else -> currentScreen = AppScreen.Lesson
+                                        }
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.SubjectSelection
@@ -245,19 +346,340 @@ class MainActivity : ComponentActivity() {
                                 QuadraticLessonScreen(
                                     viewModel = quadraticLessonViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesGenerator
+                                        currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.Quiz
+                                        currentScreen = AppScreen.MathematicsPractice
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.Lesson
+                                        currentScreen = AppScreen.QuadraticLessonPart2
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.Roadmap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.QuadraticLessonPart2 -> {
+                                val quadraticLessonPart2ViewModel: QuadraticLessonPart2ViewModel = viewModel()
+                                QuadraticLessonPart2Screen(
+                                    viewModel = quadraticLessonPart2ViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.MathematicsPractice -> {
+                                val mathPracticeViewModel: MathPracticeViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                val currentSubject by roadmapViewModel.uiState.collectAsStateWithLifecycle()
+
+                                LaunchedEffect(currentSubject.subjectName) {
+                                    mathPracticeViewModel.loadSubjectPractice(currentSubject.subjectName)
+                                }
+
+                                MathematicsPracticeScreen(
+                                    viewModel = mathPracticeViewModel,
+                                    onViewSolutionsClick = {
+                                        currentScreen = AppScreen.MathematicsChapterQuiz
+                                    },
+                                    onLearnTabClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    onNotesTabClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuadraticLessonPart2
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.MathematicsNotes -> {
+                                val mathNotesViewModel: MathNotesViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                val currentSubject by roadmapViewModel.uiState.collectAsStateWithLifecycle()
+
+                                LaunchedEffect(currentSubject.subjectName) {
+                                    mathNotesViewModel.loadSubjectNotes(currentSubject.subjectName)
+                                }
+
+                                MathematicsNotesScreen(
+                                    viewModel = mathNotesViewModel,
+                                    onDownloadNotesClick = {
+                                        currentScreen = AppScreen.NoteDownloadedSuccess
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.QuadraticLessonPart2
+                                    },
+                                    onLearnTabClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    onQuizTabClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.MathematicsChapterQuiz -> {
+                                val mathChapterQuizViewModel: MathChapterQuizViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                val currentSubject by roadmapViewModel.uiState.collectAsStateWithLifecycle()
+
+                                LaunchedEffect(currentSubject.subjectName) {
+                                    mathChapterQuizViewModel.loadSubjectQuiz(currentSubject.subjectName)
+                                }
+
+                                MathematicsChapterQuizScreen(
+                                    viewModel = mathChapterQuizViewModel,
+                                    onStartQuizClick = {
+                                        currentScreen = AppScreen.Quiz
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onLearnTabClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    onNotesTabClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuadraticLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.AlgorithmsLesson -> {
+                                val algorithmsLessonViewModel: AlgorithmsLessonViewModel = viewModel()
+                                AlgorithmsLessonScreen(
+                                    viewModel = algorithmsLessonViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onQuizClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.AlgorithmsLessonPart2
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Roadmap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.AlgorithmsLessonPart2 -> {
+                                val algorithmsLessonPart2ViewModel: AlgorithmsLessonPart2ViewModel = viewModel()
+                                AlgorithmsLessonPart2Screen(
+                                    viewModel = algorithmsLessonPart2ViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.AlgorithmsLesson
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.AlgorithmsLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.DataVisualizationLesson -> {
+                                val dataVisViewModel: DataVisualizationLessonViewModel = viewModel()
+                                DataVisualizationLessonScreen(
+                                    viewModel = dataVisViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onQuizClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.DataVisualizationLessonPart2
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Roadmap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.DataVisualizationLessonPart2 -> {
+                                val dataVisPart2ViewModel: DataVisualizationLessonPart2ViewModel = viewModel()
+                                DataVisualizationLessonPart2Screen(
+                                    viewModel = dataVisPart2ViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.DataVisualizationLesson
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.DataVisualizationLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.WavesLesson -> {
+                                val wavesViewModel: WavesLessonViewModel = viewModel()
+                                WavesLessonScreen(
+                                    viewModel = wavesViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onQuizClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.WavesLessonPart2
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Roadmap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.WavesLessonPart2 -> {
+                                val wavesPart2ViewModel: WavesLessonPart2ViewModel = viewModel()
+                                WavesLessonPart2Screen(
+                                    viewModel = wavesPart2ViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.WavesLesson
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.WavesLesson
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.ChemicalBondingLesson -> {
+                                val chemistryViewModel: ChemicalBondingLessonViewModel = viewModel()
+                                ChemicalBondingLessonScreen(
+                                    viewModel = chemistryViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onQuizClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.ChemicalBondingLessonPart2
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Roadmap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.ChemicalBondingLessonPart2 -> {
+                                val chemistryPart2ViewModel: ChemicalBondingLessonPart2ViewModel = viewModel()
+                                ChemicalBondingLessonPart2Screen(
+                                    viewModel = chemistryPart2ViewModel,
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MathematicsNotes
+                                    },
+                                    onAskAiClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onNextClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onPreviousClick = {
+                                        currentScreen = AppScreen.ChemicalBondingLesson
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.ChemicalBondingLesson
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -276,13 +698,13 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.Quiz
+                                        currentScreen = AppScreen.MathematicsPractice
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesGenerator
+                                        currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        currentScreen = AppScreen.Roadmap
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -295,7 +717,7 @@ class MainActivity : ComponentActivity() {
                                 LessonPart2Screen(
                                     viewModel = lessonPart2ViewModel,
                                     onNextClick = {
-                                        currentScreen = AppScreen.Quiz
+                                        currentScreen = AppScreen.MathematicsPractice
                                     },
                                     onPreviousClick = {
                                         currentScreen = AppScreen.Lesson
@@ -304,7 +726,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesGenerator
+                                        currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.Lesson
@@ -317,13 +739,34 @@ class MainActivity : ComponentActivity() {
 
                             AppScreen.Quiz -> {
                                 val quizViewModel: QuizViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                val currentSubject by roadmapViewModel.uiState.collectAsStateWithLifecycle()
+
+                                LaunchedEffect(currentSubject.subjectName) {
+                                    quizViewModel.loadSubjectQuiz(currentSubject.subjectName)
+                                }
+
                                 QuizScreen(
                                     viewModel = quizViewModel,
                                     onQuizComplete = {
                                         currentScreen = AppScreen.QuizResults
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.LessonPart2
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.MixedQuiz -> {
+                                MixedQuizPreviewScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Dashboard
+                                    },
+                                    onSubmitQuizClick = {
+                                        currentScreen = AppScreen.QuizResults
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -338,8 +781,28 @@ class MainActivity : ComponentActivity() {
                                     onHomeClick = {
                                         currentScreen = AppScreen.Dashboard
                                     },
+                                    onReviewAnswersClick = {
+                                        currentScreen = AppScreen.QuizReviewAnswers
+                                    },
                                     onBackClick = {
+                                        currentScreen = AppScreen.MixedQuiz
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.QuizReviewAnswers -> {
+                                QuizReviewAnswersPreviewScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuizResults
+                                    },
+                                    onRetryQuizClick = {
                                         currentScreen = AppScreen.Quiz
+                                    },
+                                    onDashboardClick = {
+                                        currentScreen = AppScreen.Dashboard
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -362,6 +825,12 @@ class MainActivity : ComponentActivity() {
                                             currentScreen = AppScreen.Dashboard
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
+                                        } else if (tabIndex == 2) {
+                                            currentScreen = AppScreen.MixedQuiz
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        } else if (tabIndex == 4) {
+                                            currentScreen = AppScreen.Profile
                                         }
                                     },
                                     onBackClick = {
@@ -378,7 +847,7 @@ class MainActivity : ComponentActivity() {
                                 NoteSavedSuccessScreen(
                                     viewModel = noteSuccessViewModel,
                                     onViewSavedNotesClick = {
-                                        currentScreen = AppScreen.SavedNotes
+                                        currentScreen = AppScreen.MixedSavedNotes
                                     },
                                     onBackToLearningClick = {
                                         currentScreen = AppScreen.Dashboard
@@ -394,7 +863,7 @@ class MainActivity : ComponentActivity() {
                                 NoteDownloadedSuccessScreen(
                                     viewModel = noteSuccessViewModel,
                                     onOpenDownloadedNotesClick = {
-                                        currentScreen = AppScreen.SavedNotes
+                                        currentScreen = AppScreen.MixedSavedNotes
                                     },
                                     onBackToLearningClick = {
                                         currentScreen = AppScreen.Dashboard
@@ -417,7 +886,195 @@ class MainActivity : ComponentActivity() {
                                             currentScreen = AppScreen.Dashboard
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
+                                        } else if (tabIndex == 2) {
+                                            currentScreen = AppScreen.MixedQuiz
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        } else if (tabIndex == 4) {
+                                            currentScreen = AppScreen.Profile
                                         }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.MixedSavedNotes -> {
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                MixedSavedDownloadedNotesPreviewScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Dashboard
+                                    },
+                                    onReadNoteClick = { subjectName ->
+                                        when (subjectName) {
+                                            "Mathematics" -> {
+                                                roadmapViewModel.loadMathematicsRoadmap()
+                                                currentScreen = AppScreen.MathematicsNotes
+                                            }
+                                            "Computer Science" -> {
+                                                roadmapViewModel.loadComputerScienceRoadmap()
+                                                currentScreen = AppScreen.AlgorithmsLesson
+                                            }
+                                            "Data Science" -> {
+                                                roadmapViewModel.loadDataScienceRoadmap()
+                                                currentScreen = AppScreen.DataVisualizationLesson
+                                            }
+                                            "Physics" -> {
+                                                roadmapViewModel.loadPhysicsRoadmap()
+                                                currentScreen = AppScreen.WavesLesson
+                                            }
+                                            "Chemistry" -> {
+                                                roadmapViewModel.loadChemistryRoadmap()
+                                                currentScreen = AppScreen.ChemicalBondingLesson
+                                            }
+                                            else -> {
+                                                roadmapViewModel.loadArtificialIntelligenceRoadmap()
+                                                currentScreen = AppScreen.Lesson
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.Profile -> {
+                                val profileViewModel: ProfileViewModel = viewModel()
+                                ProfileScreen(
+                                    viewModel = profileViewModel,
+                                    onOpenSavedNotesClick = {
+                                        currentScreen = AppScreen.MixedSavedNotes
+                                    },
+                                    onLogoutClick = {
+                                        currentScreen = AppScreen.Login
+                                    },
+                                    onMyProfileClick = {
+                                        currentScreen = AppScreen.PersonalInfo
+                                    },
+                                    onAchievementsClick = {
+                                        currentScreen = AppScreen.Achievements
+                                    },
+                                    onStudyGoalsClick = {
+                                        currentScreen = AppScreen.StudyGoals
+                                    },
+                                    onLanguageClick = {
+                                        currentScreen = AppScreen.LanguageSelection
+                                    },
+                                    onNotificationsClick = {
+                                        currentScreen = AppScreen.NotificationsSettings
+                                    },
+                                    onHelpSupportClick = {
+                                        currentScreen = AppScreen.HelpSupport
+                                    },
+                                    onAboutSynapseClick = {
+                                        currentScreen = AppScreen.AboutSynapse
+                                    },
+                                    onProgressAnalyticsClick = {
+                                        currentScreen = AppScreen.ProgressAnalytics
+                                    },
+                                    onTabSelect = { tabIndex ->
+                                        if (tabIndex == 0) {
+                                            currentScreen = AppScreen.Dashboard
+                                        } else if (tabIndex == 1) {
+                                            currentScreen = AppScreen.SubjectSelection
+                                        } else if (tabIndex == 2) {
+                                            currentScreen = AppScreen.MixedQuiz
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.PersonalInfo -> {
+                                PersonalInfoScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    onSaveChangesClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.Achievements -> {
+                                AchievementsScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.StudyGoals -> {
+                                StudyGoalsScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.LanguageSelection -> {
+                                LanguageSelectionScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.NotificationsSettings -> {
+                                NotificationsSettingsScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.HelpSupport -> {
+                                HelpSupportScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.AboutSynapse -> {
+                                AboutSynapseScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.ProgressAnalytics -> {
+                                ProgressAnalyticsScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Profile
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

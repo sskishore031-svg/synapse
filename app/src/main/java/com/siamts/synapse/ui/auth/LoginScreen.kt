@@ -1,7 +1,6 @@
 package com.siamts.synapse.ui.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +21,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -49,6 +47,7 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -68,8 +67,8 @@ fun LoginScreen(
         onPasswordChange = { viewModel.onPasswordChanged(it) },
         onTogglePasswordVisibility = { viewModel.onTogglePasswordVisibility() },
         onLoginClick = { viewModel.onLoginClicked(onLoginSuccess) },
-        onSignUpClick = { /* Navigate to Sign Up */ },
-        onForgotPasswordClick = { /* Forgot Password action */ },
+        onSignUpClick = { viewModel.onLoginClicked(onLoginSuccess) },
+        onForgotPasswordClick = { },
         modifier = modifier,
     )
 }
@@ -103,51 +102,74 @@ fun LoginContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Top Section
+            // Top Section with SYNAPSE AI Branding Box
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
-                // Header Logo + App Title
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
+                DashedBorderBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = 16.dp
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
-                                shape = CircleShape
-                            )
-                            .padding(4.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        BrainGraphic(modifier = Modifier.fillMaxSize())
+                        // Glowing Brain Logo
+                        Box(
+                            modifier = Modifier
+                                .size(54.dp)
+                                .background(
+                                    brush = Brush.linearGradient(listOf(PurpleAccent, BlueAccent, CyanGlow)),
+                                    shape = CircleShape
+                                )
+                                .padding(10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            BrainGraphic(modifier = Modifier.fillMaxSize())
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // SYNAPSE AI Lettering
+                        Text(
+                            text = "SYNAPSE AI",
+                            color = CyanGlow,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.5.sp,
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = "LEARN SMARTER · GROW FASTER",
+                            color = TextMuted,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            text = "Sign In",
+                            color = TextPrimary,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "Enter your credentials to continue your learning journey.",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                        )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Synapse AI",
-                        color = TextPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Welcome Back!",
-                    color = TextPrimary,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Your next breakthrough starts here.",
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                )
             }
 
             // White Rounded Sheet Container
@@ -163,7 +185,7 @@ fun LoginContent(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Email / phone Box
                     DashedBorderBox(
@@ -305,87 +327,10 @@ fun LoginContent(
                         }
                     }
 
-                    // Divider: or continue with
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        HorizontalDivider(
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFFE2E8F0)
-                        )
-                        Text(
-                            text = "  or continue with  ",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFFE2E8F0)
-                        )
-                    }
-
-                    // Social Buttons Box
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 8.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            // Google Login Button
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                    .clickable { }
-                                    .padding(horizontal = 16.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "🌐", fontSize = 16.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "Continue with Google",
-                                        color = BlueAccent,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-                            }
-
-                            // Apple Login Button
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                    .clickable { }
-                                    .padding(horizontal = 16.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "🍎", fontSize = 16.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "Continue with Apple",
-                                        color = BlueAccent,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
                     // Sign Up & Disclaimer Box
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 6.dp
+                        contentPadding = 8.dp
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -409,7 +354,7 @@ fun LoginContent(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
                                 text = "By continuing, you agree to our Terms of Service and Privacy Policy.",

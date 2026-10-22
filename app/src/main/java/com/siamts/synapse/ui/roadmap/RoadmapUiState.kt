@@ -19,17 +19,17 @@ data class Milestone(
 data class RoadmapUiState(
     val headerTag: String = "A PATH THAT EVOLVES WITH YOU",
     val title: String = "Your Learning Roadmap",
-    val subjectIcon: String = "🧪",
-    val subjectName: String = "Chemistry",
-    val progressPercentage: Int = 64,
-    val milestoneSummary: String = "3 of 5 lessons completed · Beginner path",
+    val subjectIcon: String = "🧠",
+    val subjectName: String = "Artificial Intelligence",
+    val progressPercentage: Int = 60,
+    val milestoneSummary: String = "3 of 5 milestones unlocked · Beginner path",
     val milestones: List<Milestone> = listOf(
-        Milestone("1", "Atomic Structure", "Completed · 12 min", MilestoneStatus.COMPLETED),
-        Milestone("2", "Periodic Table", "Completed · 15 min", MilestoneStatus.COMPLETED),
-        Milestone("3", "Chemical Bonding", "Continue learning · 18 min", MilestoneStatus.ACTIVE),
-        Milestone("4", "Acids and Bases", "Unlock after this lesson", MilestoneStatus.LOCKED),
-        Milestone("5", "Chemical Reactions", "Unlock after this lesson", MilestoneStatus.LOCKED),
+        Milestone("1", "Introduction to AI", "Completed · 10 min", MilestoneStatus.COMPLETED),
+        Milestone("2", "Neural network basics", "Completed · 15 min", MilestoneStatus.COMPLETED),
+        Milestone("3", "Gradient descent", "Continue learning · 12 min", MilestoneStatus.ACTIVE),
+        Milestone("4", "Backpropagation", "Unlock after this lesson", MilestoneStatus.LOCKED),
+        Milestone("5", "Model evaluation", "Coming up next · 18 min", MilestoneStatus.LOCKED),
     ),
-    val aiRecommendation: String = "Study chemical bonding types and practice naming compounds for better clarity.",
-    val activeLessonTitle: String = "Chemical Bonding"
+    val aiRecommendation: String = "Review derivatives before backpropagation. A 5-minute refresher will help.",
+    val activeLessonTitle: String = "Gradient descent"
 )

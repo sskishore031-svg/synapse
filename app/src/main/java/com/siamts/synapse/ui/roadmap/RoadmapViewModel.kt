@@ -14,6 +14,46 @@ class RoadmapViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(RoadmapUiState())
     val uiState: StateFlow<RoadmapUiState> = _uiState.asStateFlow()
 
+    fun loadArtificialIntelligenceRoadmap() {
+        _uiState.update {
+            it.copy(
+                subjectIcon = "🧠",
+                subjectName = "Artificial Intelligence",
+                progressPercentage = 60,
+                milestoneSummary = "3 of 5 milestones unlocked · Beginner path",
+                milestones = listOf(
+                    Milestone("1", "Introduction to AI", "Completed · 10 min", MilestoneStatus.COMPLETED),
+                    Milestone("2", "Neural network basics", "Completed · 15 min", MilestoneStatus.COMPLETED),
+                    Milestone("3", "Gradient descent", "Continue learning · 12 min", MilestoneStatus.ACTIVE),
+                    Milestone("4", "Backpropagation", "Unlock after this lesson", MilestoneStatus.LOCKED),
+                    Milestone("5", "Model evaluation", "Coming up next · 18 min", MilestoneStatus.LOCKED),
+                ),
+                aiRecommendation = "Review derivatives before backpropagation. A 5-minute refresher will help.",
+                activeLessonTitle = "Gradient descent"
+            )
+        }
+    }
+
+    fun loadPhysicsRoadmap() {
+        _uiState.update {
+            it.copy(
+                subjectIcon = "⚛",
+                subjectName = "Physics",
+                progressPercentage = 68,
+                milestoneSummary = "3 of 5 lessons completed · Beginner path",
+                milestones = listOf(
+                    Milestone("1", "Motion and Forces", "Completed · 14 min", MilestoneStatus.COMPLETED),
+                    Milestone("2", "Work and Energy", "Completed · 16 min", MilestoneStatus.COMPLETED),
+                    Milestone("3", "Waves", "Continue learning · 18 min", MilestoneStatus.ACTIVE),
+                    Milestone("4", "Electricity", "Unlock after this lesson", MilestoneStatus.LOCKED),
+                    Milestone("5", "Magnetism", "Unlock after this lesson", MilestoneStatus.LOCKED),
+                ),
+                aiRecommendation = "Review wave properties and solve practice problems for better understanding.",
+                activeLessonTitle = "Waves"
+            )
+        }
+    }
+
     fun loadChemistryRoadmap() {
         _uiState.update {
             it.copy(
@@ -30,26 +70,6 @@ class RoadmapViewModel : ViewModel() {
                 ),
                 aiRecommendation = "Study chemical bonding types and practice naming compounds for better clarity.",
                 activeLessonTitle = "Chemical Bonding"
-            )
-        }
-    }
-
-    fun loadPhysicsRoadmap() {
-        _uiState.update {
-            it.copy(
-                subjectIcon = "⚛",
-                subjectName = "Physics",
-                progressPercentage = 60,
-                milestoneSummary = "3 of 5 lessons completed · Beginner path",
-                milestones = listOf(
-                    Milestone("1", "Motion and Forces", "Completed · 14 min", MilestoneStatus.COMPLETED),
-                    Milestone("2", "Work and Energy", "Completed · 16 min", MilestoneStatus.COMPLETED),
-                    Milestone("3", "Waves", "Continue learning · 15 min", MilestoneStatus.ACTIVE),
-                    Milestone("4", "Electricity", "Unlock after this lesson", MilestoneStatus.LOCKED),
-                    Milestone("5", "Magnetism", "Unlock after this lesson", MilestoneStatus.LOCKED),
-                ),
-                aiRecommendation = "Review wave properties and solve practice problems for better understanding.",
-                activeLessonTitle = "Waves"
             )
         }
     }

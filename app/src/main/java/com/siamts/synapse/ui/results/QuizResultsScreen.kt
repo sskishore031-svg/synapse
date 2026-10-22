@@ -58,12 +58,16 @@ fun QuizResultsScreen(
     onHomeClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onReviewAnswersClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     QuizResultsContent(
         uiState = uiState,
-        onReviewAnswersClick = { viewModel.onReviewAnswersClicked() },
+        onReviewAnswersClick = {
+            viewModel.onReviewAnswersClicked()
+            onReviewAnswersClick?.invoke()
+        },
         onShareClick = { viewModel.onShareClicked() },
         onHomeClick = onHomeClick,
         onBackClick = onBackClick,

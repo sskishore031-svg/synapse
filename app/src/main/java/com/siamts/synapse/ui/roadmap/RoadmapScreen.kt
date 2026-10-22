@@ -62,7 +62,10 @@ fun RoadmapScreen(
 
     RoadmapContent(
         uiState = uiState,
-        onMilestoneClick = { viewModel.onMilestoneClicked(it) },
+        onMilestoneClick = { milestoneId ->
+            viewModel.onMilestoneClicked(milestoneId)
+            onContinueClick?.invoke()
+        },
         onContinueClick = {
             viewModel.onContinueLessonClicked()
             onContinueClick?.invoke()
@@ -94,11 +97,12 @@ fun RoadmapContent(
             )
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top Dark Header Section
-            Column(
+            // Top Dark Header Box (DashedBorderBox)
+            DashedBorderBox(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentPadding = 8.dp
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

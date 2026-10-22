@@ -51,6 +51,10 @@ fun DashboardScreen(
     onLearnTabClick: (() -> Unit)? = null,
     onBrainMapClick: (() -> Unit)? = null,
     onFlashcardsClick: (() -> Unit)? = null,
+    onQuizTabClick: (() -> Unit)? = null,
+    onNotesTabClick: (() -> Unit)? = null,
+    onProfileTabClick: (() -> Unit)? = null,
+    onNotificationClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -60,8 +64,12 @@ fun DashboardScreen(
             viewModel.onTabSelected(tabIndex)
             if (tabIndex == 1) { // Learn Tab
                 onLearnTabClick?.invoke()
-            } else if (tabIndex == 2 || tabIndex == 3) { // AI Chat
-                onAskAiClick?.invoke()
+            } else if (tabIndex == 2) { // Quiz Tab
+                onQuizTabClick?.invoke()
+            } else if (tabIndex == 3) { // Notes Tab
+                onNotesTabClick?.invoke()
+            } else if (tabIndex == 4) { // Profile Tab
+                onProfileTabClick?.invoke()
             }
         },
         onPlanItemClick = { itemId ->
@@ -77,6 +85,9 @@ fun DashboardScreen(
         onBrainMapClick = {
             onBrainMapClick?.invoke()
         },
+        onNotificationClick = {
+            onNotificationClick?.invoke()
+        },
         modifier = modifier,
     )
 }
@@ -89,6 +100,7 @@ fun DashboardContent(
     onAskAiClick: () -> Unit,
     modifier: Modifier = Modifier,
     onBrainMapClick: (() -> Unit)? = null,
+    onNotificationClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -137,7 +149,8 @@ fun DashboardContent(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFF161F42), CircleShape),
+                                .background(Color(0xFF161F42), CircleShape)
+                                .clickable { onNotificationClick?.invoke() },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(text = "🔔", fontSize = 16.sp)
