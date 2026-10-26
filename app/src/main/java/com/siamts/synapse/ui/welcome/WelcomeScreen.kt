@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,12 +42,12 @@ import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
-import com.siamts.synapse.ui.theme.PurpleGlow
+import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 
 /**
  * Main Welcome Screen implementing MVVM pattern.
@@ -118,61 +119,18 @@ fun WelcomeContent(
                 )
             }
 
-            // 2. Center Graphic Frame: Brain & Synapse Nodes
+            // 2. Center Graphic Frame: Original AI Brain Graphic
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth(0.82f)
                     .aspectRatio(1f)
                     .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                DashedBorderBox(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = 12.dp,
-                ) {
-                    BrainGraphic(modifier = Modifier.fillMaxSize())
-                }
-
-                // Decorative floating dots matching image
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        color = CyanGlow,
-                        radius = 4f,
-                        center = Offset(size.width * 0.05f, size.height * 0.55f),
-                    )
-                    drawCircle(
-                        color = PurpleGlow,
-                        radius = 5f,
-                        center = Offset(size.width * 0.95f, size.height * 0.82f),
-                    )
-                }
+                BrainGraphic(modifier = Modifier.fillMaxSize())
             }
 
-            // 3. Main Title Section Box: Synapse AI & Subtitle
-            DashedBorderBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                contentPadding = 14.dp,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = uiState.title,
-                        color = TextPrimary,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = uiState.subtitle,
-                        color = TextSecondary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                    )
-                }
-            }
-
-            // 4. Secondary Tagline Box: Learn Smarter. Grow Faster.
+            // 3. Secondary Tagline Box: Learn Smarter. Grow Faster.
             DashedBorderBox(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,17 +143,21 @@ fun WelcomeContent(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            // 5. Pagination Dots & Footer Subtitle Box
+            // 4. Pagination Dots & Footer Subtitle Box
             DashedBorderBox(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 contentPadding = 12.dp,
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     // Page Indicator Dots
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -228,7 +190,7 @@ fun WelcomeContent(
                 }
             }
 
-            // 6. Action Button Section: Let's Start
+            // 5. Action Button Section: Let's Start
             DashedBorderBox(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -241,9 +203,7 @@ fun WelcomeContent(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent,
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(0.dp),
                 ) {
                     Box(
@@ -294,39 +254,43 @@ fun WelcomeContent(
 @Composable
 private fun BackgroundConstellationGrid() {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
+        val w = size.width
+        val h = size.height
 
-        val gridPoints = listOf(
-            Offset(width * 0.1f, height * 0.15f),
-            Offset(width * 0.85f, height * 0.12f),
-            Offset(width * 0.2f, height * 0.45f),
-            Offset(width * 0.9f, height * 0.5f),
-            Offset(width * 0.15f, height * 0.75f),
-            Offset(width * 0.8f, height * 0.85f),
-        )
+        val gridColor = Color(0xFF1E293B).copy(alpha = 0.35f)
 
-        // Draw faint connecting network lines
-        for (i in gridPoints.indices) {
-            for (j in (i + 1) until gridPoints.size) {
-                if ((gridPoints[i] - gridPoints[j]).getDistance() < width * 0.9f) {
-                    drawLine(
-                        color = Color(0xFF1E293B).copy(alpha = 0.35f),
-                        start = gridPoints[i],
-                        end = gridPoints[j],
-                        strokeWidth = 1f,
-                    )
-                }
-            }
-        }
-
-        // Draw faint star dots
-        gridPoints.forEach { point ->
-            drawCircle(
-                color = CyanGlow.copy(alpha = 0.3f),
-                radius = 3f,
-                center = point,
+        // Draw faint horizontal grid lines
+        for (i in 1..8) {
+            val y = h * (i / 9f)
+            drawLine(
+                color = gridColor,
+                start = Offset(0f, y),
+                end = Offset(w, y),
+                strokeWidth = 1f,
             )
         }
+
+        // Draw faint vertical grid lines
+        for (j in 1..5) {
+            val x = w * (j / 6f)
+            drawLine(
+                color = gridColor,
+                start = Offset(x, 0f),
+                end = Offset(x, h),
+                strokeWidth = 1f,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun WelcomeScreenPreview() {
+    SYNAPSETheme {
+        WelcomeContent(
+            uiState = WelcomeUiState(),
+            onStartClick = {},
+            onPageClick = {},
+        )
     }
 }

@@ -52,6 +52,7 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 
 @Composable
 fun LoginScreen(
@@ -116,10 +117,10 @@ fun LoginContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        // Glowing Brain Logo
+                        // Original AI Brain Logo
                         Box(
                             modifier = Modifier
-                                .size(54.dp)
+                                .size(64.dp)
                                 .background(
                                     brush = Brush.linearGradient(listOf(PurpleAccent, BlueAccent, CyanGlow)),
                                     shape = CircleShape
@@ -130,33 +131,12 @@ fun LoginContent(
                             BrainGraphic(modifier = Modifier.fillMaxSize())
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // SYNAPSE AI Lettering
-                        Text(
-                            text = "SYNAPSE AI",
-                            color = CyanGlow,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.5.sp,
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = "LEARN SMARTER · GROW FASTER",
-                            color = TextMuted,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp,
-                        )
-
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
                             text = "Sign In",
                             color = TextPrimary,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                         )
 

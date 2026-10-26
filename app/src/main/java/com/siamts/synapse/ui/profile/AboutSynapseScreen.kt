@@ -41,6 +41,7 @@ import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 
 @Composable
 fun AboutSynapseScreen(
@@ -111,21 +112,14 @@ fun AboutSynapseScreen(
                                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .background(Brush.linearGradient(listOf(PurpleAccent, BlueAccent)), CircleShape)
-                                        .padding(8.dp)
-                                ) {
-                                    BrainGraphic(modifier = Modifier.fillMaxSize())
-                                }
+                                SynapseBrandLogo(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isDarkTheme = false
+                                )
 
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                Text(text = "Synapse AI", color = Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "Version 1.0.0", color = Color(0xFF64748B), fontSize = 11.sp)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(text = "Learn Smarter, Grow Faster", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Version 1.0.0", color = Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
 

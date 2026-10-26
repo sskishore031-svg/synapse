@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ui.theme.BlueAccent
+import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -172,6 +173,54 @@ fun DashboardContent(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                             )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Direct FRIDAY AI Chat Query Input Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .background(Color(0xFF161F42), RoundedCornerShape(16.dp))
+                        .clickable { onAskAiClick() }
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "✨", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Ask FRIDAY AI anything...",
+                                color = TextMuted,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🎙️", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(BlueAccent, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "↑",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
                         }
                     }
                 }
@@ -518,6 +567,30 @@ fun DashboardContent(
                                 )
                             }
                         }
+                    }
+                }
+
+                // Floating FRIDAY AI Chat Button overlay
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 12.dp, end = 16.dp)
+                        .background(
+                            brush = Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        .clickable { onAskAiClick() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "🤖 ", fontSize = 14.sp)
+                        Text(
+                            text = "Chat with FRIDAY",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
             }

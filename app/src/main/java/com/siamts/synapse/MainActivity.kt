@@ -75,6 +75,7 @@ import com.siamts.synapse.ui.quadratic.QuadraticLessonPart2ViewModel
 import com.siamts.synapse.ui.quadratic.QuadraticLessonScreen
 import com.siamts.synapse.ui.quadratic.QuadraticLessonViewModel
 import com.siamts.synapse.ui.quiz.MixedQuizPreviewScreen
+import com.siamts.synapse.ui.quiz.QuizIntroPreviewScreen
 import com.siamts.synapse.ui.quiz.QuizScreen
 import com.siamts.synapse.ui.quiz.QuizViewModel
 import com.siamts.synapse.ui.results.QuizResultsScreen
@@ -124,6 +125,7 @@ sealed class AppScreen {
     data object ChemicalBondingLessonPart2 : AppScreen()
     data object Lesson : AppScreen()
     data object LessonPart2 : AppScreen()
+    data object QuizIntro : AppScreen()
     data object Quiz : AppScreen()
     data object MixedQuiz : AppScreen()
     data object QuizResults : AppScreen()
@@ -467,7 +469,7 @@ class MainActivity : ComponentActivity() {
                                 MathematicsChapterQuizScreen(
                                     viewModel = mathChapterQuizViewModel,
                                     onStartQuizClick = {
-                                        currentScreen = AppScreen.Quiz
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onPreviousClick = {
                                         currentScreen = AppScreen.MathematicsPractice
@@ -737,6 +739,20 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            AppScreen.QuizIntro -> {
+                                QuizIntroPreviewScreen(
+                                    onBackClick = {
+                                        currentScreen = AppScreen.MathematicsPractice
+                                    },
+                                    onStartQuizClick = {
+                                        currentScreen = AppScreen.Quiz
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
                             AppScreen.Quiz -> {
                                 val quizViewModel: QuizViewModel = viewModel()
                                 val roadmapViewModel: RoadmapViewModel = viewModel()
@@ -752,7 +768,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.QuizResults
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
