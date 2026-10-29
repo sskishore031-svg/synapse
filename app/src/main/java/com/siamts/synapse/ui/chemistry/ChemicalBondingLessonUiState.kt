@@ -1,9 +1,12 @@
 package com.siamts.synapse.ui.chemistry
 
 /**
- * UI State for the Chemical Bonding Lesson Screen.
+ * UI State for the Chemical Bonding Lesson Screen following MVVM architecture.
  */
 data class ChemicalBondingLessonUiState(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isSuccess: Boolean = false,
     val headerTag: String = "A PATH THAT EVOLVES WITH YOU",
     val title: String = "Chemical Bonding",
     val progressPercent: Int = 64,
@@ -18,5 +21,7 @@ data class ChemicalBondingLessonUiState(
     ),
     val exampleTitle: String = "Quick Example",
     val exampleProblem: String = "Sodium chloride (NaCl) forms by transfer of one electron from Na to Cl.",
-    val exampleSolution: String = "Na⁺ + Cl⁻ → NaCl"
+    val exampleSolution: String = "Na⁺ + Cl⁻ → NaCl",
+    val chapterId: Int = 28,
+    val isCompleted: Boolean = false
 )

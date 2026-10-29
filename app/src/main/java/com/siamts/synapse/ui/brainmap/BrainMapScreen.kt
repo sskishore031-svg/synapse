@@ -1,5 +1,6 @@
 package com.siamts.synapse.ui.brainmap
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -42,7 +44,6 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
@@ -63,6 +64,7 @@ fun BrainMapScreen(
             onTabSelect(index)
         },
         onBackClick = onBackClick,
+        onRetryClick = { viewModel.retry() },
         modifier = modifier,
     )
 }
@@ -73,8 +75,17 @@ fun BrainMapContent(
     onNodeClick: (String) -> Unit,
     onTabSelect: (Int) -> Unit,
     onBackClick: () -> Unit,
+    onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val fallbackNodes = defaultNodes()
+    val node1 = uiState.nodes.getOrNull(0) ?: fallbackNodes[0]
+    val node2 = uiState.nodes.getOrNull(1) ?: fallbackNodes[1]
+    val node3 = uiState.nodes.getOrNull(2) ?: fallbackNodes[2]
+    val node4 = uiState.nodes.getOrNull(3) ?: fallbackNodes[3]
+    val node5 = uiState.nodes.getOrNull(4) ?: fallbackNodes[4]
+    val node6 = uiState.nodes.getOrNull(5) ?: fallbackNodes[5]
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -130,13 +141,21 @@ fun BrainMapContent(
                         modifier = Modifier
                             .size(36.dp)
                             .background(Color(0xFF161F42), CircleShape)
-                            .clickable { },
+                            .clickable { onRetryClick() },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = "🗺️",
-                            fontSize = 14.sp,
-                        )
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = CyanGlow
+                            )
+                        } else {
+                            Text(
+                                text = "🗺️",
+                                fontSize = 14.sp,
+                            )
+                        }
                     }
                 }
             }
@@ -164,6 +183,35 @@ fun BrainMapContent(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // Error Notice Banner if failure occurs
+                        AnimatedVisibility(visible = uiState.errorMessage != null) {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = uiState.errorMessage ?: "",
+                                        color = Color(0xFFEF4444),
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Retry",
+                                        color = BlueAccent,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.clickable { onRetryClick() }
+                                    )
+                                }
+                            }
+                        }
+
                         // 1. Overall Knowledge Progress Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
@@ -233,12 +281,12 @@ fun BrainMapContent(
                                         val center = Offset(w / 2f, h / 2f)
 
                                         val nodeOffsets = listOf(
-                                            Offset(w * 0.22f, h * 0.22f), // Math
-                                            Offset(w * 0.78f, h * 0.22f), // CS
-                                            Offset(w * 0.22f, h * 0.50f), // Data Science
-                                            Offset(w * 0.78f, h * 0.50f), // AI
-                                            Offset(w * 0.22f, h * 0.78f), // Physics
-                                            Offset(w * 0.78f, h * 0.78f)  // Chemistry
+                                            Offset(w * 0.22f, h * 0.22f), // Node 1 (Math)
+                                            Offset(w * 0.78f, h * 0.22f), // Node 2 (CS)
+                                            Offset(w * 0.22f, h * 0.50f), // Node 3 (Data Science)
+                                            Offset(w * 0.78f, h * 0.50f), // Node 4 (AI)
+                                            Offset(w * 0.22f, h * 0.78f), // Node 5 (Physics)
+                                            Offset(w * 0.78f, h * 0.78f)  // Node 6 (Chemistry)
                                         )
 
                                         nodeOffsets.forEach { nodePos ->
@@ -273,7 +321,7 @@ fun BrainMapContent(
                                         }
                                     }
 
-                                    // 6 Subject Node Cards
+                                    // 6 Subject Node Cards dynamically mapped from real backend analytics
                                     Column(
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -285,8 +333,8 @@ fun BrainMapContent(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            NodeBox("Mathematics", "Strong · 72%", Color(0xFF3B82F6)) { onNodeClick("1") }
-                                            NodeBox("Computer Science", "Strong · 84%", Color(0xFF10B981)) { onNodeClick("2") }
+                                            NodeBox(node1.title, node1.statusText, node1.color) { onNodeClick(node1.id) }
+                                            NodeBox(node2.title, node2.statusText, node2.color) { onNodeClick(node2.id) }
                                         }
 
                                         // Row 2 (Middle)
@@ -294,8 +342,8 @@ fun BrainMapContent(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            NodeBox("Data Science", "Learning · 58%", Color(0xFF8B5CF6)) { onNodeClick("3") }
-                                            NodeBox("Artificial Intelligence", "Learning · 60%", Color(0xFF38BDF8)) { onNodeClick("4") }
+                                            NodeBox(node3.title, node3.statusText, node3.color) { onNodeClick(node3.id) }
+                                            NodeBox(node4.title, node4.statusText, node4.color) { onNodeClick(node4.id) }
                                         }
 
                                         // Row 3 (Bottom)
@@ -303,8 +351,8 @@ fun BrainMapContent(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            NodeBox("Physics", "Need Revision · 42%", Color(0xFFD97706)) { onNodeClick("5") }
-                                            NodeBox("Chemistry", "Weak · 35%", Color(0xFFEF4444)) { onNodeClick("6") }
+                                            NodeBox(node5.title, node5.statusText, node5.color) { onNodeClick(node5.id) }
+                                            NodeBox(node6.title, node6.statusText, node6.color) { onNodeClick(node6.id) }
                                         }
                                     }
                                 }

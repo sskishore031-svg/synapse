@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -47,36 +48,73 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
-import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
-import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit,
+    onSignUpClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LoginContent(
-        uiState = uiState,
+        emailOrPhone = uiState.emailOrPhone,
+        password = uiState.password,
+        isPasswordVisible = uiState.isPasswordVisible,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
         onEmailChange = { viewModel.onEmailOrPhoneChanged(it) },
         onPasswordChange = { viewModel.onPasswordChanged(it) },
         onTogglePasswordVisibility = { viewModel.onTogglePasswordVisibility() },
         onLoginClick = { viewModel.onLoginClicked(onLoginSuccess) },
-        onSignUpClick = { viewModel.onLoginClicked(onLoginSuccess) },
-        onForgotPasswordClick = { },
+        onSignUpClick = onSignUpClick,
+        onForgotPasswordClick = onForgotPasswordClick,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Overload for unified [AuthViewModel].
+ */
+@Composable
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    modifier: Modifier = Modifier,
+    onLoginSuccess: () -> Unit,
+    onSignUpClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LoginContent(
+        emailOrPhone = uiState.email,
+        password = uiState.password,
+        isPasswordVisible = uiState.isPasswordVisible,
+        isLoading = uiState.isLoading,
+        errorMessage = uiState.errorMessage,
+        onEmailChange = { viewModel.onEmailChanged(it) },
+        onPasswordChange = { viewModel.onPasswordChanged(it) },
+        onTogglePasswordVisibility = { viewModel.onTogglePasswordVisibility() },
+        onLoginClick = { viewModel.onLogin(onSuccess = onLoginSuccess) },
+        onSignUpClick = onSignUpClick,
+        onForgotPasswordClick = onForgotPasswordClick,
         modifier = modifier,
     )
 }
 
 @Composable
 fun LoginContent(
-    uiState: LoginUiState,
+    emailOrPhone: String,
+    password: String,
+    isPasswordVisible: Boolean,
+    isLoading: Boolean,
+    errorMessage: String?,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onTogglePasswordVisibility: () -> Unit,
@@ -99,9 +137,7 @@ fun LoginContent(
             )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize()
         ) {
             // Top Section with SYNAPSE AI Branding Box
             Column(
@@ -152,36 +188,38 @@ fun LoginContent(
                 }
             }
 
-            // White Rounded Sheet Container
+            // White Rounded Sheet Container extending to the bottom of the screen
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false)
+                    .weight(1f)
                     .background(
                         color = Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
-                    .padding(20.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Email / phone Box
+                    // Email / phone / user_id Box
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 8.dp
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "Email / phone",
+                                text = "Email / User ID",
                                 color = Color(0xFF1E293B),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
-                                value = uiState.emailOrPhone,
+                                value = emailOrPhone,
                                 onValueChange = onEmailChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
@@ -219,11 +257,11 @@ fun LoginContent(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
-                                value = uiState.password,
+                                value = password,
                                 onValueChange = onPasswordChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = BlueAccent,
@@ -237,7 +275,7 @@ fun LoginContent(
                                 trailingIcon = {
                                     IconButton(onClick = onTogglePasswordVisibility) {
                                         Text(
-                                            text = if (uiState.isPasswordVisible) "👁" else "🙈",
+                                            text = if (isPasswordVisible) "👁" else "🙈",
                                             fontSize = 18.sp,
                                             color = Color(0xFF64748B)
                                         )
@@ -259,6 +297,25 @@ fun LoginContent(
                         }
                     }
 
+                    // Error Alert Banner
+                    if (!errorMessage.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFFEE2E2), RoundedCornerShape(12.dp))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = errorMessage,
+                                color = Color(0xFFDC2626),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
                     // Action Button Box: Continue / Login Button
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
@@ -266,6 +323,7 @@ fun LoginContent(
                     ) {
                         Button(
                             onClick = onLoginClick,
+                            enabled = !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),
@@ -288,20 +346,28 @@ fun LoginContent(
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "→",
+                                if (isLoading) {
+                                    CircularProgressIndicator(
                                         color = Color.White,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.size(22.dp),
+                                        strokeWidth = 2.5.dp
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Continue",
-                                        color = Color.White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                                } else {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "→",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Continue",
+                                            color = Color.White,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -356,7 +422,11 @@ fun LoginContent(
 fun LoginScreenPreview() {
     SYNAPSETheme {
         LoginContent(
-            uiState = LoginUiState(),
+            emailOrPhone = "",
+            password = "",
+            isPasswordVisible = false,
+            isLoading = false,
+            errorMessage = null,
             onEmailChange = {},
             onPasswordChange = {},
             onTogglePasswordVisibility = {},

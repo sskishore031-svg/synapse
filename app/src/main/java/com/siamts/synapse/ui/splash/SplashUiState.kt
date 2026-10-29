@@ -12,4 +12,6 @@ data class SplashUiState(
     val buttonText: String = "Let's Start",
     val isReady: Boolean = false,
     val isNavigatingToWelcome: Boolean = false,
+    val isNavigating: Boolean = false,
+    val isAuthenticated: Boolean = false,
 )

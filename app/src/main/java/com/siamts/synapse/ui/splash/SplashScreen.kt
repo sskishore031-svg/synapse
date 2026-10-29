@@ -61,20 +61,33 @@ import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 @Composable
 fun SplashScreen(
     viewModel: SplashViewModel,
-    onSplashFinished: () -> Unit,
+    onSplashFinished: (isAuthenticated: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isNavigatingToWelcome) {
-        if (uiState.isNavigatingToWelcome) {
-            onSplashFinished()
+    LaunchedEffect(uiState.isNavigating) {
+        if (uiState.isNavigating) {
+            onSplashFinished(uiState.isAuthenticated)
         }
     }
 
     SplashContent(
         uiState = uiState,
-        onStartClick = onSplashFinished,
+        onStartClick = { onSplashFinished(uiState.isAuthenticated) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SplashScreen(
+    viewModel: SplashViewModel,
+    onSplashFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SplashScreen(
+        viewModel = viewModel,
+        onSplashFinished = { _ -> onSplashFinished() },
         modifier = modifier,
     )
 }

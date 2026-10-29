@@ -176,7 +176,7 @@ fun HomeContent(
                                             .padding(12.dp)
                                     ) {
                                         Text(
-                                            text = "AM",
+                                            text = "K",
                                             color = Color(0xFF0284C7),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,

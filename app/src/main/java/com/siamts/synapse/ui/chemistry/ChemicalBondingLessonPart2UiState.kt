@@ -1,9 +1,12 @@
 package com.siamts.synapse.ui.chemistry
 
 /**
- * UI State for Chemical Bonding Lesson Part 2 (Ionic vs Covalent Bonding).
+ * UI State for Chemical Bonding Lesson Part 2 (Ionic vs Covalent Bonding) following MVVM architecture.
  */
 data class ChemicalBondingLessonPart2UiState(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isSuccess: Boolean = false,
     val headerTag: String = "A PATH THAT EVOLVES WITH YOU",
     val title: String = "Chemistry",
     val subtitleTag: String = "Part 2: Going Deeper",
@@ -19,5 +22,7 @@ data class ChemicalBondingLessonPart2UiState(
         "Covalent bonds form molecules."
     ),
     val quickExampleText: String = "What type of bond is in H₂O?\nAnswer: Covalent (electron sharing).",
-    val aiRecommendation: String = "Practice drawing Lewis structures for common compounds."
+    val aiRecommendation: String = "Practice drawing Lewis structures for common compounds.",
+    val chapterId: Int = 28,
+    val isCompleted: Boolean = false
 )

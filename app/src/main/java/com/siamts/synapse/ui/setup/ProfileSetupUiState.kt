@@ -4,8 +4,9 @@ package com.siamts.synapse.ui.setup
  * UI State for the Profile Setup / Personalization Screen ("Make it yours").
  */
 data class ProfileSetupUiState(
-    val initials: String = "AM",
-    val name: String = "Arjun Mehta",
+    val userId: Int = 0,
+    val initials: String = "K",
+    val name: String = "Kishore",
     val selectedCourse: String = "B.Tech Computer Science · Year 3",
     val preferredLanguage: String = "English",
     val availableInterests: List<String> = listOf(
@@ -22,5 +23,8 @@ data class ProfileSetupUiState(
         "Mathematics"
     ),
     val currentStep: Int = 2,
-    val totalSteps: Int = 3
+    val totalSteps: Int = 3,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isSuccess: Boolean = false
 )

@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -78,6 +79,7 @@ fun ChemicalBondingLessonScreen(
         onPreviousClick = { viewModel.onPreviousClicked() },
         onAskAiClick = onAskAiClick,
         onBackClick = onBackClick,
+        onRetryClick = { viewModel.retry() },
         modifier = modifier,
     )
 }
@@ -90,6 +92,7 @@ fun ChemicalBondingLessonContent(
     onPreviousClick: () -> Unit,
     onAskAiClick: () -> Unit,
     onBackClick: () -> Unit,
+    onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -183,6 +186,33 @@ fun ChemicalBondingLessonContent(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        if (uiState.errorMessage != null) {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = uiState.errorMessage ?: "",
+                                        color = Color(0xFFEF4444),
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Retry",
+                                        color = BlueAccent,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.clickable { onRetryClick() }
+                                    )
+                                }
+                            }
+                        }
                         // 1. Progress Bar Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),

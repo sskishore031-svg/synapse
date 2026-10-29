@@ -2,6 +2,7 @@ package com.siamts.synapse
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
@@ -101,10 +102,17 @@ import com.siamts.synapse.ui.welcome.WelcomeScreen
 import com.siamts.synapse.ui.welcome.WelcomeUiState
 import com.siamts.synapse.ui.welcome.WelcomeViewModel
 
+import com.siamts.synapse.ui.auth.ForgotPasswordScreen
+import com.siamts.synapse.ui.auth.ForgotPasswordViewModel
+import com.siamts.synapse.ui.auth.SignUpScreen
+import com.siamts.synapse.ui.auth.SignUpViewModel
+
 sealed class AppScreen {
     data object Splash : AppScreen()
     data object Welcome : AppScreen()
     data object Login : AppScreen()
+    data object SignUp : AppScreen()
+    data object ForgotPassword : AppScreen()
     data object ProfileSetup : AppScreen()
     data object Dashboard : AppScreen()
     data object BrainMap : AppScreen()
@@ -158,7 +166,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             SYNAPSETheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val profileViewModel: ProfileViewModel = viewModel()
                     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
+
+                    BackHandler(enabled = currentScreen == AppScreen.Login || currentScreen == AppScreen.Dashboard || currentScreen == AppScreen.Welcome) {
+                        finish()
+                    }
 
                     Crossfade(
                         targetState = currentScreen,
@@ -170,8 +183,8 @@ class MainActivity : ComponentActivity() {
                                 val splashViewModel: SplashViewModel = viewModel()
                                 SplashScreen(
                                     viewModel = splashViewModel,
-                                    onSplashFinished = {
-                                        currentScreen = AppScreen.Welcome
+                                    onSplashFinished = { isAuthenticated ->
+                                        currentScreen = if (isAuthenticated) AppScreen.Dashboard else AppScreen.Welcome
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -197,7 +210,42 @@ class MainActivity : ComponentActivity() {
                                 LoginScreen(
                                     viewModel = loginViewModel,
                                     onLoginSuccess = {
-                                        currentScreen = AppScreen.ProfileSetup
+                                        currentScreen = AppScreen.Dashboard
+                                    },
+                                    onSignUpClick = {
+                                        currentScreen = AppScreen.SignUp
+                                    },
+                                    onForgotPasswordClick = {
+                                        currentScreen = AppScreen.ForgotPassword
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.SignUp -> {
+                                val signUpViewModel: SignUpViewModel = viewModel()
+                                SignUpScreen(
+                                    viewModel = signUpViewModel,
+                                    onSignUpSuccess = {
+                                        currentScreen = AppScreen.Login
+                                    },
+                                    onSignInClick = {
+                                        currentScreen = AppScreen.Login
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.ForgotPassword -> {
+                                val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
+                                ForgotPasswordScreen(
+                                    viewModel = forgotPasswordViewModel,
+                                    onBackToLoginClick = {
+                                        currentScreen = AppScreen.Login
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -210,7 +258,11 @@ class MainActivity : ComponentActivity() {
                                 ProfileSetupScreen(
                                     viewModel = profileSetupViewModel,
                                     onContinueClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        profileSetupViewModel.completeSetup(
+                                            onSuccess = {
+                                                currentScreen = AppScreen.Dashboard
+                                            }
+                                        )
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.Login
@@ -957,14 +1009,18 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AppScreen.Profile -> {
-                                val profileViewModel: ProfileViewModel = viewModel()
                                 ProfileScreen(
                                     viewModel = profileViewModel,
                                     onOpenSavedNotesClick = {
                                         currentScreen = AppScreen.MixedSavedNotes
                                     },
                                     onLogoutClick = {
-                                        currentScreen = AppScreen.Login
+                                        profileViewModel.logout {
+                                            currentScreen = AppScreen.Login
+                                        }
+                                    },
+                                    onRemoveProfilePictureClick = {
+                                        profileViewModel.removeProfilePicture()
                                     },
                                     onMyProfileClick = {
                                         currentScreen = AppScreen.PersonalInfo
@@ -1008,12 +1064,35 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AppScreen.PersonalInfo -> {
+                                val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
+
                                 PersonalInfoScreen(
+                                    initialName = profileUiState.userName,
+                                    initialEmail = profileUiState.userEmail,
+                                    initialPhone = profileUiState.userPhone,
+                                    initialBio = profileUiState.userBio,
+                                    initialPhotoUri = profileUiState.profilePhotoUri,
+                                    isSaving = profileUiState.isUpdating,
+                                    errorMessage = profileUiState.errorMessage,
                                     onBackClick = {
                                         currentScreen = AppScreen.Profile
                                     },
-                                    onSaveChangesClick = {
-                                        currentScreen = AppScreen.Profile
+                                    onSaveChangesClick = { newName, newEmail, newPhone, newBio, newPhotoUri ->
+                                        profileViewModel.updateProfile(
+                                            name = newName,
+                                            email = newEmail,
+                                            phone = newPhone,
+                                            bio = newBio,
+                                            photoUri = newPhotoUri,
+                                            onComplete = { success ->
+                                                if (success) {
+                                                    currentScreen = AppScreen.Profile
+                                                }
+                                            }
+                                        )
+                                    },
+                                    onRemoveProfilePictureClick = {
+                                        profileViewModel.removeProfilePicture()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

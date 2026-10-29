@@ -13,9 +13,9 @@ data class PlanItem(
  */
 data class DashboardUiState(
     val dateText: String = "MONDAY, 19 OCTOBER",
-    val userName: String = "Student",
+    val userName: String = "Kishore",
     val overallProgress: Int = 68,
-    val progressMessage: String = "Great work, Arjun. You're ahead of last week.",
+    val progressMessage: String = "Great work, Kishore. You're ahead of last week.",
     val topicsDone: Int = 24,
     val quizScore: Int = 86,
     val studyStreakDays: Int = 7,

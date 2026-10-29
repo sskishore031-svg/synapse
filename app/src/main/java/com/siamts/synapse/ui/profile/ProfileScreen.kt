@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -27,14 +28,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -58,14 +62,19 @@ fun ProfileScreen(
     onHelpSupportClick: (() -> Unit)? = null,
     onAboutSynapseClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ProfileContent(
         uiState = uiState,
         onToggleNotifications = { viewModel.onToggleNotifications(it) },
+        onRetryClick = { viewModel.loadSessionAndFetchRemote() },
         onOpenSavedNotesClick = onOpenSavedNotesClick,
         onLogoutClick = onLogoutClick,
+        onRemoveProfilePictureClick = {
+            onRemoveProfilePictureClick?.invoke() ?: viewModel.removeProfilePicture()
+        },
         onMyProfileClick = { onMyProfileClick?.invoke() },
         onAchievementsClick = { onAchievementsClick?.invoke() },
         onStudyGoalsClick = { onStudyGoalsClick?.invoke() },
@@ -90,6 +99,8 @@ fun ProfileContent(
     onLogoutClick: () -> Unit,
     onTabSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
+    onRetryClick: (() -> Unit)? = null,
     onMyProfileClick: (() -> Unit)? = null,
     onAchievementsClick: (() -> Unit)? = null,
     onStudyGoalsClick: (() -> Unit)? = null,
@@ -172,6 +183,46 @@ fun ProfileContent(
                         .fillMaxSize()
                         .padding(horizontal = 16.dp, vertical = 16.dp)
                 ) {
+                    if (uiState.isLoading) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp),
+                            color = BlueAccent
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    if (!uiState.errorMessage.isNullOrBlank()) {
+                        DashedBorderBox(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = 8.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = uiState.errorMessage,
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "Retry",
+                                    color = BlueAccent,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable { onRetryClick?.invoke() }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
                     // Scrollable Area
                     Column(
                         modifier = Modifier
@@ -197,19 +248,34 @@ fun ProfileContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.clickable { onMyProfileClick?.invoke() }
+                                    ) {
                                         Box(
                                             modifier = Modifier
                                                 .size(50.dp)
+                                                .clip(CircleShape)
                                                 .background(Color(0xFFE0E7FF), CircleShape),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Text(
-                                                text = uiState.userInitials,
-                                                color = Color(0xFF3730A3),
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            )
+                                            if (!uiState.profilePhotoUri.isNullOrEmpty()) {
+                                                AsyncImage(
+                                                    model = uiState.profilePhotoUri,
+                                                    contentDescription = "Profile Photo",
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .clip(CircleShape),
+                                                    contentScale = ContentScale.Crop,
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = uiState.userInitials,
+                                                    color = Color(0xFF3730A3),
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
                                         }
 
                                         Spacer(modifier = Modifier.width(12.dp))
@@ -240,7 +306,7 @@ fun ProfileContent(
                                         modifier = Modifier
                                             .size(32.dp)
                                             .background(Color(0xFFF1F5F9), CircleShape)
-                                            .clickable { },
+                                            .clickable { onMyProfileClick?.invoke() },
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(text = "✏️", fontSize = 12.sp)
@@ -398,7 +464,35 @@ fun ProfileContent(
                             }
                         }
 
-                        // 5. Version Footer Box
+                        // 5. Remove Profile Picture Button Box
+                        if (!uiState.profilePhotoUri.isNullOrEmpty()) {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 4.dp
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(46.dp)
+                                        .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+                                        .clickable { onRemoveProfilePictureClick?.invoke() },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "🗑 ", fontSize = 14.sp)
+                                        Text(
+                                            text = "Remove Profile Picture",
+                                            color = Color(0xFFDC2626),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 6. Version Footer Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 6.dp

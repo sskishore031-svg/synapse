@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -71,10 +72,15 @@ fun ChemicalBondingLessonPart2Screen(
                 onNextClick()
             }
         },
-        onNextClick = onNextClick,
+        onNextClick = {
+            viewModel.completeChapter {
+                onNextClick()
+            }
+        },
         onPreviousClick = onPreviousClick,
         onAskAiClick = onAskAiClick,
         onBackClick = onBackClick,
+        onRetryClick = { viewModel.retry() },
         modifier = modifier,
     )
 }
@@ -87,6 +93,7 @@ fun ChemicalBondingLessonPart2Content(
     onPreviousClick: () -> Unit,
     onAskAiClick: () -> Unit,
     onBackClick: () -> Unit,
+    onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(

@@ -89,6 +89,9 @@ fun DashboardScreen(
         onNotificationClick = {
             onNotificationClick?.invoke()
         },
+        onProfileClick = {
+            onProfileTabClick?.invoke()
+        },
         modifier = modifier,
     )
 }
@@ -102,6 +105,7 @@ fun DashboardContent(
     modifier: Modifier = Modifier,
     onBrainMapClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
+    onProfileClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -159,16 +163,16 @@ fun DashboardContent(
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        // Avatar AM Circle
+                        // Top Right Corner Profile Icon (K Avatar)
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .background(Color(0xFFE0F2FE), CircleShape)
-                                .clickable { onBrainMapClick?.invoke() },
+                                .clickable { onProfileClick?.invoke() },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                text = "AM",
+                                text = "K",
                                 color = Color(0xFF0284C7),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,

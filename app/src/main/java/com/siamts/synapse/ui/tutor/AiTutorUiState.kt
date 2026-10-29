@@ -12,7 +12,7 @@ data class ChatMessage(
  * UI State for FRIDAY AI Tutor Chat Screen following MVVM architecture.
  */
 data class AiTutorUiState(
-    val headerTag: String = "PERSONALIZED FOR ARJUN",
+    val headerTag: String = "PERSONALIZED FOR KISHORE",
     val tutorTitle: String = "FRIDAY AI Tutor",
     val tutorName: String = "FRIDAY · Your personal AI companion",
     val isOnline: Boolean = true,

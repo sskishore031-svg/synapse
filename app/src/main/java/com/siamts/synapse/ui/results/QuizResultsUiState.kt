@@ -7,7 +7,7 @@ data class QuizResultsUiState(
     val headerTag: String = "GRADIENT DESCENT · RESULTS",
     val title: String = "Learning, leveled up",
     val headline: String = "Quiz Completed!",
-    val subHeadline: String = "You're building real momentum, Arjun.",
+    val subHeadline: String = "You're building real momentum, Kishore.",
     val scorePercentage: Int = 80,
     val resultTitle: String = "Nicely done!",
     val resultMessage: String = "A strong step toward mastering AI.",
