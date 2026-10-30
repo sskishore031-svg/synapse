@@ -3,9 +3,10 @@ package com.siamts.synapse.data.repository
 import com.siamts.synapse.data.model.ProfileSetupRequest
 import com.siamts.synapse.data.model.ProfileUpdateRequest
 import com.siamts.synapse.data.model.UserProfileDto
+import java.io.File
 
 /**
- * Repository interface defining operations for student profile management and onboarding setup.
+ * Repository interface defining operations for student profile management, photo upload, and onboarding setup.
  */
 interface ProfileRepository {
 
@@ -27,6 +28,28 @@ interface ProfileRepository {
     suspend fun updateProfile(request: ProfileUpdateRequest): Result<UserProfileDto>
 
     /**
+     * Uploads student profile photo with multipart/form-data and updates profile details via upload_profile.php.
+     *
+     * @param userId Optional student user ID.
+     * @param email Optional student registered email.
+     * @param photoFile The image [File] to upload, or null if only updating text or removing photo.
+     * @param name Optional student name.
+     * @param phone Optional student phone number.
+     * @param bio Optional student bio text.
+     * @param removePhoto When true, instructs backend to remove existing profile photo.
+     * @return [Result] containing updated [UserProfileDto] on success, or an Exception on failure.
+     */
+    suspend fun uploadProfilePhoto(
+        userId: Int? = null,
+        email: String? = null,
+        photoFile: File? = null,
+        name: String? = null,
+        phone: String? = null,
+        bio: String? = null,
+        removePhoto: Boolean = false
+    ): Result<UserProfileDto>
+
+    /**
      * Submits student personalization preferences (course, preferred language, interests) via profile_setup.php.
      *
      * @param request The [ProfileSetupRequest] containing onboarding preferences.
@@ -34,4 +57,3 @@ interface ProfileRepository {
      */
     suspend fun completeProfileSetup(request: ProfileSetupRequest): Result<UserProfileDto>
 }
-

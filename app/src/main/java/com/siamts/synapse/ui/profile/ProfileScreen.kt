@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -261,7 +262,7 @@ fun ProfileContent(
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
                                                 AsyncImage(
-                                                    model = uiState.profilePhotoUri,
+                                                    model = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri) ?: uiState.profilePhotoUri,
                                                     contentDescription = "Profile Photo",
                                                     modifier = Modifier
                                                         .fillMaxSize()

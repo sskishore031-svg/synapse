@@ -13,7 +13,7 @@ data class QuizOption(
 data class QuizUiState(
     val topicTag: String = "GRADIENT DESCENT",
     val title: String = "Test your understanding",
-    val currentQuestionIndex: Int = 4,
+    val currentQuestionIndex: Int = 1,
     val totalQuestions: Int = 10,
     val timerText: String = "00:42",
     val difficulty: String = "Medium difficulty",
@@ -25,6 +25,6 @@ data class QuizUiState(
         QuizOption("C", "C", "Remove all training data"),
         QuizOption("D", "D", "Make every weight equal"),
     ),
-    val selectedOptionId: String? = "B",
+    val selectedOptionId: String? = null,
     val aiNoteText: String = "✨ AI-generated quiz · Adapted to your level",
 )

@@ -24,6 +24,7 @@ data class ProfileUiState(
     val profilePhotoUri: String? = null,
     val isLoading: Boolean = false,
     val isUpdating: Boolean = false,
+    val isUploadingPhoto: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
 )

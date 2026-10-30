@@ -6,10 +6,16 @@
     "**/CVS": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
+    "**/.vscode": true,
+    ".vscode": true,
     "**/.gradle": true,
+    ".gradle": true,
     "**/.kotlin": true,
+    ".kotlin": true,
     "**/.idea": true,
+    ".idea": true,
     "**/build": true,
+    "build": true,
     "**/*.iml": true,
     "**/*.log": true,
     "**/*.tmp": true
@@ -18,7 +24,7 @@
     "**/build": true,
     "**/.gradle": true,
     "**/.kotlin": true,
-    "**/.idea": true
+    "**/.idea": true,
+    "**/.vscode": true
   }
 }
-

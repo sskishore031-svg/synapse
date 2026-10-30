@@ -1,10 +1,13 @@
 package com.siamts.synapse.ui.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.SynapseApplication
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.model.ProfileUpdateRequest
 import com.siamts.synapse.data.model.UserProfileDto
+import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.data.repository.ProfileRepository
 import com.siamts.synapse.data.repository.ProfileRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,10 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
- * Clean MVVM ViewModel managing Profile & Settings state, remote sync via profile.php,
- * and user logout lifecycle.
+ * Clean MVVM ViewModel managing Profile & Settings state, profile photo upload via upload_profile.php,
+ * remote sync via profile.php, and user logout lifecycle.
  */
 class ProfileViewModel(
     private val repository: ProfileRepository = ProfileRepositoryImpl(),
@@ -83,7 +87,8 @@ class ProfileViewModel(
     }
 
     /**
-     * Updates profile details (name, phone, bio, email, photo) on the backend via profile.php.
+     * Updates profile details (name, phone, bio, email) and uploads new profile photo
+     * to upload_profile.php if a local photo was selected or removed.
      */
     fun updateProfile(
         name: String,
@@ -91,29 +96,62 @@ class ProfileViewModel(
         phone: String? = null,
         bio: String? = null,
         photoUri: String? = null,
+        removePhoto: Boolean = false,
         onComplete: ((Boolean) -> Unit)? = null
     ) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isUpdating = true, errorMessage = null, successMessage = null) }
+            val isLocalPhoto = !photoUri.isNullOrBlank() &&
+                    (photoUri.startsWith("content://", ignoreCase = true) ||
+                     photoUri.startsWith("file://", ignoreCase = true) ||
+                     !photoUri.startsWith("http", ignoreCase = true))
+
+            val shouldUploadMultipart = isLocalPhoto || removePhoto
+
+            _uiState.update {
+                it.copy(
+                    isUpdating = true,
+                    isUploadingPhoto = shouldUploadMultipart,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
 
             val currentId = _uiState.value.userId.takeIf { it > 0 }
-            val request = ProfileUpdateRequest(
-                userId = currentId,
-                email = email.trim(),
-                name = name.trim(),
-                phone = phone?.trim(),
-                bio = bio?.trim()
-            )
+            val photoFile: File? = if (isLocalPhoto) {
+                resolveFileFromUri(photoUri!!)
+            } else {
+                null
+            }
 
-            val result = repository.updateProfile(request)
+            val result = if (photoFile != null || removePhoto) {
+                // Upload via multipart/form-data to upload_profile.php
+                repository.uploadProfilePhoto(
+                    userId = currentId,
+                    email = email.trim(),
+                    photoFile = photoFile,
+                    name = name.trim(),
+                    phone = phone?.trim(),
+                    bio = bio?.trim(),
+                    removePhoto = removePhoto
+                )
+            } else {
+                // Standard JSON update to profile.php
+                val request = ProfileUpdateRequest(
+                    userId = currentId,
+                    email = email.trim(),
+                    name = name.trim(),
+                    phone = phone?.trim(),
+                    bio = bio?.trim()
+                )
+                repository.updateProfile(request)
+            }
+
             result.onSuccess { updated ->
                 applyRemoteProfile(updated)
-                if (!photoUri.isNullOrBlank()) {
-                    _uiState.update { it.copy(profilePhotoUri = photoUri) }
-                }
                 _uiState.update {
                     it.copy(
                         isUpdating = false,
+                        isUploadingPhoto = false,
                         successMessage = "Profile updated successfully.",
                         errorMessage = null
                     )
@@ -123,10 +161,73 @@ class ProfileViewModel(
                 _uiState.update {
                     it.copy(
                         isUpdating = false,
+                        isUploadingPhoto = false,
                         errorMessage = error.localizedMessage ?: "Failed to save profile changes."
                     )
                 }
                 onComplete?.invoke(false)
+            }
+        }
+    }
+
+    /**
+     * Backward compatibility overload for updateProfile without removePhoto flag.
+     */
+    fun updateProfile(
+        name: String,
+        email: String,
+        phone: String? = null,
+        bio: String? = null,
+        photoUri: String? = null,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        updateProfile(
+            name = name,
+            email = email,
+            phone = phone,
+            bio = bio,
+            photoUri = photoUri,
+            removePhoto = false,
+            onComplete = onComplete
+        )
+    }
+
+    /**
+     * Removes the user's profile photo via upload_profile.php and clears state.
+     */
+    fun removeProfilePicture(onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdating = true, isUploadingPhoto = true, errorMessage = null) }
+            val currentId = _uiState.value.userId.takeIf { it > 0 }
+            val result = repository.uploadProfilePhoto(
+                userId = currentId,
+                email = _uiState.value.userEmail.takeIf { it.isNotBlank() },
+                photoFile = null,
+                name = _uiState.value.userName,
+                phone = _uiState.value.userPhone,
+                bio = _uiState.value.userBio,
+                removePhoto = true
+            )
+            result.onSuccess { updated ->
+                applyRemoteProfile(updated)
+                _uiState.update {
+                    it.copy(
+                        profilePhotoUri = null,
+                        isUpdating = false,
+                        isUploadingPhoto = false,
+                        successMessage = "Profile picture removed successfully.",
+                        errorMessage = null
+                    )
+                }
+                onComplete?.invoke()
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isUpdating = false,
+                        isUploadingPhoto = false,
+                        errorMessage = error.localizedMessage ?: "Failed to remove profile photo."
+                    )
+                }
             }
         }
     }
@@ -167,8 +268,43 @@ class ProfileViewModel(
         }
     }
 
+    private fun resolveFileFromUri(uriString: String): File? {
+        return try {
+            if (uriString.startsWith("file://", ignoreCase = true)) {
+                val path = java.net.URI(uriString).path
+                val file = File(path)
+                if (file.exists() && file.isFile) return file
+            }
+            val rawFile = File(uriString)
+            if (rawFile.exists() && rawFile.isFile) {
+                return rawFile
+            }
+            if (uriString.startsWith("content://", ignoreCase = true)) {
+                val context = SynapseApplication.getAppContext()
+                val uri = Uri.parse(uriString)
+                val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+                val ext = when {
+                    mime.contains("png", true) -> ".png"
+                    mime.contains("webp", true) -> ".webp"
+                    else -> ".jpg"
+                }
+                val tempFile = File(context.cacheDir, "avatar_upload_${System.currentTimeMillis()}$ext")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (tempFile.exists() && tempFile.length() > 0) return tempFile
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun applyRemoteProfile(profile: UserProfileDto) {
         val initials = computeInitials(profile.name)
+        val formattedPhoto = RetrofitClient.formatPhotoUrl(profile.photoUrl ?: profile.profilePhoto)
         _uiState.update { current ->
             current.copy(
                 userId = profile.id,
@@ -184,7 +320,7 @@ class ProfileViewModel(
                 languageText = profile.preferredLanguage ?: current.languageText,
                 interests = profile.interests,
                 notificationsEnabled = profile.notificationsEnabled,
-                profilePhotoUri = profile.photoUrl ?: profile.profilePhoto ?: current.profilePhotoUri
+                profilePhotoUri = formattedPhoto
             )
         }
     }
@@ -201,6 +337,7 @@ class ProfileViewModel(
         photoUrl: String?
     ) {
         val initials = computeInitials(name)
+        val formattedPhoto = RetrofitClient.formatPhotoUrl(photoUrl)
         _uiState.update { current ->
             current.copy(
                 userId = id,
@@ -212,7 +349,7 @@ class ProfileViewModel(
                 userDegree = course,
                 languageText = preferredLanguage,
                 studyGoalText = studyGoal,
-                profilePhotoUri = photoUrl ?: current.profilePhotoUri
+                profilePhotoUri = formattedPhoto ?: current.profilePhotoUri
             )
         }
     }

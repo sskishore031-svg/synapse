@@ -32,6 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -56,6 +61,7 @@ fun DashboardScreen(
     onNotesTabClick: (() -> Unit)? = null,
     onProfileTabClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
+    onContinueLessonClick: ((subjectSlug: String, chapterId: Int) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -75,8 +81,20 @@ fun DashboardScreen(
         },
         onPlanItemClick = { itemId ->
             viewModel.onPlanItemClicked(itemId)
-            if (itemId == "3") { // Flashcards item
-                onFlashcardsClick?.invoke()
+            val item = uiState.todayPlanItems.find { it.id == itemId }
+            if (item != null) {
+                when (item.actionType) {
+                    "LESSON" -> onContinueLessonClick?.invoke(item.subjectSlug ?: "mathematics", item.chapterId)
+                    "QUIZ" -> onQuizTabClick?.invoke()
+                    "FLASHCARDS" -> onFlashcardsClick?.invoke()
+                    else -> {
+                        if (itemId == "3") onFlashcardsClick?.invoke()
+                        else if (itemId == "2") onQuizTabClick?.invoke()
+                        else onContinueLessonClick?.invoke("mathematics", 1)
+                    }
+                }
+            } else {
+                if (itemId == "3") onFlashcardsClick?.invoke()
             }
         },
         onAskAiClick = {
@@ -163,20 +181,34 @@ fun DashboardContent(
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        // Top Right Corner Profile Icon (K Avatar)
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFE0F2FE), CircleShape)
-                                .clickable { onProfileClick?.invoke() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "K",
-                                color = Color(0xFF0284C7),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                        // Top Right Corner Profile Icon (Photo or K Avatar)
+                        val formattedPhoto = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri)
+                        if (!formattedPhoto.isNullOrBlank()) {
+                            AsyncImage(
+                                model = formattedPhoto,
+                                contentDescription = "Profile Photo",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .border(1.5.dp, Color(0xFFBAE6FD), CircleShape)
+                                    .clickable { onProfileClick?.invoke() },
+                                contentScale = ContentScale.Crop
                             )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color(0xFFE0F2FE), CircleShape)
+                                    .clickable { onProfileClick?.invoke() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = uiState.userName.firstOrNull()?.uppercase() ?: "K",
+                                    color = Color(0xFF0284C7),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
                         }
                     }
                 }

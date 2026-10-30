@@ -15,6 +15,7 @@ class QuizViewModel : ViewModel() {
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
     fun loadSubjectQuiz(subjectName: String) {
+        _uiState.update { it.copy(currentQuestionIndex = 1, selectedOptionId = null) }
         when (subjectName) {
             "Mathematics" -> {
                 _uiState.update {

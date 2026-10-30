@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -62,6 +63,7 @@ fun ProfileScreen(
     onHelpSupportClick: (() -> Unit)? = null,
     onAboutSynapseClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -71,6 +73,9 @@ fun ProfileScreen(
         onRetryClick = { viewModel.loadSessionAndFetchRemote() },
         onOpenSavedNotesClick = onOpenSavedNotesClick,
         onLogoutClick = onLogoutClick,
+        onRemoveProfilePictureClick = {
+            onRemoveProfilePictureClick?.invoke() ?: viewModel.removeProfilePicture()
+        },
         onMyProfileClick = { onMyProfileClick?.invoke() },
         onAchievementsClick = { onAchievementsClick?.invoke() },
         onStudyGoalsClick = { onStudyGoalsClick?.invoke() },
@@ -95,6 +100,7 @@ fun ProfileContent(
     onLogoutClick: () -> Unit,
     onTabSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
     onRetryClick: (() -> Unit)? = null,
     onMyProfileClick: (() -> Unit)? = null,
     onAchievementsClick: (() -> Unit)? = null,
@@ -256,7 +262,7 @@ fun ProfileContent(
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
                                                 AsyncImage(
-                                                    model = uiState.profilePhotoUri,
+                                                    model = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri) ?: uiState.profilePhotoUri,
                                                     contentDescription = "Profile Photo",
                                                     modifier = Modifier
                                                         .fillMaxSize()
@@ -459,7 +465,35 @@ fun ProfileContent(
                             }
                         }
 
-                        // 5. Version Footer Box
+                        // 5. Remove Profile Picture Button Box
+                        if (!uiState.profilePhotoUri.isNullOrEmpty()) {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 4.dp
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(46.dp)
+                                        .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+                                        .clickable { onRemoveProfilePictureClick?.invoke() },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "🗑 ", fontSize = 14.sp)
+                                        Text(
+                                            text = "Remove Profile Picture",
+                                            color = Color(0xFFDC2626),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 6. Version Footer Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 6.dp

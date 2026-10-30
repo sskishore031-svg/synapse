@@ -290,7 +290,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.Flashcards
                                     },
                                     onQuizTabClick = {
-                                        currentScreen = AppScreen.MixedQuiz
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onNotesTabClick = {
                                         currentScreen = AppScreen.MixedSavedNotes
@@ -300,6 +300,16 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onNotificationClick = {
                                         currentScreen = AppScreen.NotificationsSettings
+                                    },
+                                    onContinueLessonClick = { subjectSlug, _ ->
+                                        when (subjectSlug.lowercase()) {
+                                            "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
+                                            "physics" -> currentScreen = AppScreen.WavesLesson
+                                            "data-science" -> currentScreen = AppScreen.DataVisualizationLesson
+                                            "computer-science", "algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
+                                            "mathematics" -> currentScreen = AppScreen.QuadraticLesson
+                                            else -> currentScreen = AppScreen.Lesson
+                                        }
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -320,7 +330,7 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.MixedQuiz
+                                            currentScreen = AppScreen.QuizIntro
                                         } else if (tabIndex == 3) {
                                             currentScreen = AppScreen.MixedSavedNotes
                                         } else if (tabIndex == 4) {
@@ -358,7 +368,7 @@ class MainActivity : ComponentActivity() {
                                         if (tabIndex == 0) {
                                             currentScreen = AppScreen.Dashboard
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.MixedQuiz
+                                            currentScreen = AppScreen.QuizIntro
                                         } else if (tabIndex == 3) {
                                             currentScreen = AppScreen.MixedSavedNotes
                                         } else if (tabIndex == 4) {
@@ -403,7 +413,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
@@ -498,7 +508,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.QuadraticLesson
                                     },
                                     onQuizTabClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.QuadraticLesson
@@ -549,7 +559,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
@@ -599,7 +609,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
@@ -649,7 +659,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
@@ -699,7 +709,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.MathematicsNotes
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onAskAiClick = {
                                         currentScreen = AppScreen.AiTutor
@@ -752,7 +762,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.QuizIntro
                                     },
                                     onNotesClick = {
                                         currentScreen = AppScreen.MathematicsNotes
@@ -794,10 +804,23 @@ class MainActivity : ComponentActivity() {
                             AppScreen.QuizIntro -> {
                                 QuizIntroPreviewScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.Dashboard
                                     },
                                     onStartQuizClick = {
                                         currentScreen = AppScreen.Quiz
+                                    },
+                                    onTabSelect = { tabIndex ->
+                                        if (tabIndex == 0) {
+                                            currentScreen = AppScreen.Dashboard
+                                        } else if (tabIndex == 1) {
+                                            currentScreen = AppScreen.SubjectSelection
+                                        } else if (tabIndex == 2) {
+                                            currentScreen = AppScreen.QuizIntro
+                                        } else if (tabIndex == 3) {
+                                            currentScreen = AppScreen.MixedSavedNotes
+                                        } else if (tabIndex == 4) {
+                                            currentScreen = AppScreen.Profile
+                                        }
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -894,7 +917,7 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.MixedQuiz
+                                            currentScreen = AppScreen.QuizIntro
                                         } else if (tabIndex == 3) {
                                             currentScreen = AppScreen.MixedSavedNotes
                                         } else if (tabIndex == 4) {
@@ -955,7 +978,7 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.MixedQuiz
+                                            currentScreen = AppScreen.QuizIntro
                                         } else if (tabIndex == 3) {
                                             currentScreen = AppScreen.MixedSavedNotes
                                         } else if (tabIndex == 4) {
@@ -973,6 +996,12 @@ class MainActivity : ComponentActivity() {
                                 MixedSavedDownloadedNotesPreviewScreen(
                                     onBackClick = {
                                         currentScreen = AppScreen.Dashboard
+                                    },
+                                    onGenerateNewNotesClick = {
+                                        currentScreen = AppScreen.NotesGenerator
+                                    },
+                                    onSettingsClick = {
+                                        currentScreen = AppScreen.NotificationsSettings
                                     },
                                     onReadNoteClick = { subjectName ->
                                         when (subjectName) {
@@ -1052,7 +1081,7 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.MixedQuiz
+                                            currentScreen = AppScreen.QuizIntro
                                         } else if (tabIndex == 3) {
                                             currentScreen = AppScreen.MixedSavedNotes
                                         }
@@ -1077,13 +1106,14 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = {
                                         currentScreen = AppScreen.Profile
                                     },
-                                    onSaveChangesClick = { newName, newEmail, newPhone, newBio, newPhotoUri ->
+                                    onSaveChangesClick = { newName, newEmail, newPhone, newBio, newPhotoUri, removePhoto ->
                                         profileViewModel.updateProfile(
                                             name = newName,
                                             email = newEmail,
                                             phone = newPhone,
                                             bio = newBio,
                                             photoUri = newPhotoUri,
+                                            removePhoto = removePhoto,
                                             onComplete = { success ->
                                                 if (success) {
                                                     currentScreen = AppScreen.Profile
@@ -1207,6 +1237,44 @@ class MainActivity : ComponentActivity() {
                                 val homeViewModel: HomeViewModel = viewModel()
                                 HomeScreen(
                                     viewModel = homeViewModel,
+                                    onSubjectClick = { slug ->
+                                        when (slug.lowercase()) {
+                                            "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
+                                            "physics" -> currentScreen = AppScreen.WavesLesson
+                                            "data-science" -> currentScreen = AppScreen.DataVisualizationLesson
+                                            "computer-science", "algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
+                                            "mathematics" -> currentScreen = AppScreen.QuadraticLesson
+                                            else -> currentScreen = AppScreen.SubjectSelection
+                                        }
+                                    },
+                                    onContinueLessonClick = { subjectSlug, _ ->
+                                        when (subjectSlug.lowercase()) {
+                                            "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
+                                            "physics" -> currentScreen = AppScreen.WavesLesson
+                                            "data-science" -> currentScreen = AppScreen.DataVisualizationLesson
+                                            "computer-science", "algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
+                                            "mathematics" -> currentScreen = AppScreen.QuadraticLesson
+                                            else -> currentScreen = AppScreen.Lesson
+                                        }
+                                    },
+                                    onAiChatClick = {
+                                        currentScreen = AppScreen.AiTutor
+                                    },
+                                    onFlashcardsClick = {
+                                        currentScreen = AppScreen.Flashcards
+                                    },
+                                    onQuizClick = {
+                                        currentScreen = AppScreen.QuizIntro
+                                    },
+                                    onNotesClick = {
+                                        currentScreen = AppScreen.MixedSavedNotes
+                                    },
+                                    onProfileClick = {
+                                        currentScreen = AppScreen.Profile
+                                    },
+                                    onBrainMapClick = {
+                                        currentScreen = AppScreen.BrainMap
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),

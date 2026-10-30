@@ -53,6 +53,9 @@ object RetrofitClient {
     @Volatile
     private var profileApiInstance: ProfileApi? = null
 
+    @Volatile
+    private var homeApiInstance: HomeApi? = null
+
     private val loggingInterceptor: HttpLoggingInterceptor by lazy {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -83,6 +86,9 @@ object RetrofitClient {
 
     val profileApi: ProfileApi
         get() = getOrCreateProfileApi()
+
+    val homeApi: HomeApi
+        get() = getOrCreateHomeApi()
 
     private fun getOrCreateApi(): AuthApi {
         return apiInstance ?: synchronized(this) {
@@ -116,6 +122,14 @@ object RetrofitClient {
         }
     }
 
+    private fun getOrCreateHomeApi(): HomeApi {
+        return homeApiInstance ?: synchronized(this) {
+            homeApiInstance ?: buildRetrofit(currentBaseUrl).create(HomeApi::class.java).also {
+                homeApiInstance = it
+            }
+        }
+    }
+
     private fun buildRetrofit(url: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(url)
@@ -136,6 +150,7 @@ object RetrofitClient {
                 brainMapApiInstance = buildRetrofit(formatted).create(BrainMapApi::class.java)
                 chemistryApiInstance = buildRetrofit(formatted).create(ChemistryApi::class.java)
                 profileApiInstance = buildRetrofit(formatted).create(ProfileApi::class.java)
+                homeApiInstance = buildRetrofit(formatted).create(HomeApi::class.java)
             }
         }
     }
@@ -143,4 +158,32 @@ object RetrofitClient {
     fun setBaseUrl(newUrl: String) = updateBaseUrl(newUrl)
 
     fun getBaseUrl(): String = currentBaseUrl
+
+    /**
+     * Resolves and formats profile photo URLs so they load reliably across Emulator (10.0.2.2),
+     * physical mobile devices (LAN IP), and local storage URIs.
+     */
+    fun formatPhotoUrl(rawUrl: String?): String? {
+        if (rawUrl.isNullOrBlank()) return null
+        if (rawUrl.startsWith("content://") || rawUrl.startsWith("file://")) return rawUrl
+        val baseUrl = getBaseUrl()
+        return if (rawUrl.startsWith("http://", ignoreCase = true) || rawUrl.startsWith("https://", ignoreCase = true)) {
+            try {
+                val currentHost = java.net.URI(baseUrl).host
+                val parsedUri = java.net.URI(rawUrl)
+                if (parsedUri.host.equals("localhost", ignoreCase = true) || parsedUri.host.equals("127.0.0.1")) {
+                    val portStr = if (parsedUri.port > 0 && parsedUri.port != 80 && parsedUri.port != 443) ":${parsedUri.port}" else ""
+                    "${parsedUri.scheme}://$currentHost$portStr${parsedUri.rawPath}"
+                } else {
+                    rawUrl
+                }
+            } catch (_: Exception) {
+                rawUrl
+            }
+        } else {
+            val cleanBase = baseUrl.trimEnd('/')
+            val cleanPath = rawUrl.trimStart('/')
+            "$cleanBase/$cleanPath"
+        }
+    }
 }

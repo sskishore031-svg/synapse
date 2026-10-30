@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -71,7 +72,8 @@ fun PersonalInfoScreen(
     isSaving: Boolean = false,
     errorMessage: String? = null,
     onBackClick: () -> Unit,
-    onSaveChangesClick: (name: String, email: String, phone: String, bio: String, photoUri: String?) -> Unit,
+    onSaveChangesClick: (name: String, email: String, phone: String, bio: String, photoUri: String?, removePhoto: Boolean) -> Unit,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -80,6 +82,7 @@ fun PersonalInfoScreen(
     var photoUri by remember(initialPhotoUri) { mutableStateOf(initialPhotoUri) }
     var phone by remember(initialPhone) { mutableStateOf(initialPhone) }
     var bio by remember(initialBio) { mutableStateOf(initialBio) }
+    var isPhotoRemoved by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -94,6 +97,7 @@ fun PersonalInfoScreen(
 
             val savedUri = copyUriToInternalStorage(context, uri)
             photoUri = savedUri ?: uri.toString()
+            isPhotoRemoved = false
         }
     }
 
@@ -220,9 +224,10 @@ fun PersonalInfoScreen(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (!photoUri.isNullOrEmpty()) {
+                                    val resolvedPhoto = RetrofitClient.formatPhotoUrl(photoUri) ?: photoUri
+                                    if (!resolvedPhoto.isNullOrEmpty()) {
                                         AsyncImage(
-                                            model = photoUri,
+                                            model = resolvedPhoto,
                                             contentDescription = "Profile Picture",
                                             modifier = Modifier.fillMaxSize().clip(CircleShape),
                                             contentScale = ContentScale.Crop
@@ -350,7 +355,7 @@ fun PersonalInfoScreen(
                     // Save Changes Button Box
                     DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                         Button(
-                            onClick = { onSaveChangesClick(name, email, phone, bio, photoUri) },
+                            onClick = { onSaveChangesClick(name, email, phone, bio, photoUri, isPhotoRemoved) },
                             enabled = !isSaving,
                             modifier = Modifier.fillMaxWidth().height(48.dp),
                             shape = RoundedCornerShape(14.dp),
@@ -371,10 +376,42 @@ fun PersonalInfoScreen(
                                             strokeWidth = 2.dp
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = "Saving...", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Saving & Uploading...", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                                     }
                                 } else {
                                     Text(text = "Save Changes", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    // Remove Profile Picture Button Box (Shown if photo exists)
+                    if (!photoUri.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .background(Color.White, RoundedCornerShape(14.dp))
+                                    .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(14.dp))
+                                    .clickable {
+                                        photoUri = null
+                                        isPhotoRemoved = true
+                                        onRemoveProfilePictureClick?.invoke()
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🗑️", fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Remove Profile Picture",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                             }
                         }
@@ -383,6 +420,38 @@ fun PersonalInfoScreen(
             }
         }
     }
+}
+
+/**
+ * Backward compatibility overload for 5-argument signature.
+ */
+@Composable
+fun PersonalInfoScreen(
+    initialName: String = "Kishore",
+    initialEmail: String = "kishore@gmail.com",
+    initialPhone: String = "+91 98765-43210",
+    initialBio: String = "Learning, exploring and building a better version of myself.",
+    initialPhotoUri: String? = null,
+    isSaving: Boolean = false,
+    errorMessage: String? = null,
+    onBackClick: () -> Unit,
+    onSaveChangesClick: (name: String, email: String, phone: String, bio: String, photoUri: String?) -> Unit,
+    onRemoveProfilePictureClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    PersonalInfoScreen(
+        initialName = initialName,
+        initialEmail = initialEmail,
+        initialPhone = initialPhone,
+        initialBio = initialBio,
+        initialPhotoUri = initialPhotoUri,
+        isSaving = isSaving,
+        errorMessage = errorMessage,
+        onBackClick = onBackClick,
+        onSaveChangesClick = { n, e, p, b, u, _ -> onSaveChangesClick(n, e, p, b, u) },
+        onRemoveProfilePictureClick = onRemoveProfilePictureClick,
+        modifier = modifier
+    )
 }
 
 /**

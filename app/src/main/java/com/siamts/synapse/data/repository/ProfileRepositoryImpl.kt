@@ -11,13 +11,19 @@ import com.siamts.synapse.data.remote.ProfileApi
 import com.siamts.synapse.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
+import java.io.File
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
 /**
- * Clean MVVM implementation of [ProfileRepository] connecting to profile.php and profile_setup.php.
+ * Clean MVVM implementation of [ProfileRepository] connecting to profile.php, profile_setup.php,
+ * and upload_profile.php.
  */
 class ProfileRepositoryImpl(
     private val api: ProfileApi = RetrofitClient.profileApi,
@@ -60,6 +66,54 @@ class ProfileRepositoryImpl(
                 Result.failure(mapException(e))
             }
         }
+
+    override suspend fun uploadProfilePhoto(
+        userId: Int?,
+        email: String?,
+        photoFile: File?,
+        name: String?,
+        phone: String?,
+        bio: String?,
+        removePhoto: Boolean
+    ): Result<UserProfileDto> = withContext(Dispatchers.IO) {
+        try {
+            val resolvedUser = sessionManager?.getSessionUser()
+            val targetId = userId ?: resolvedUser?.id?.takeIf { it > 0 }
+            val targetEmail = email?.ifBlank { null } ?: resolvedUser?.email?.ifBlank { null }
+
+            val textPlain = "text/plain".toMediaTypeOrNull()
+            val userIdPart = targetId?.let { "$it".toRequestBody(textPlain) }
+            val emailPart = targetEmail?.let { it.toRequestBody(textPlain) }
+            val namePart = name?.takeIf { it.isNotBlank() }?.let { it.toRequestBody(textPlain) }
+            val phonePart = phone?.takeIf { it.isNotBlank() }?.let { it.toRequestBody(textPlain) }
+            val bioPart = bio?.takeIf { it.isNotBlank() }?.let { it.toRequestBody(textPlain) }
+            val removePhotoPart = if (removePhoto) "1".toRequestBody(textPlain) else null
+
+            val photoPart = photoFile?.let { file ->
+                val mimeType = when {
+                    file.name.endsWith(".png", true) -> "image/png"
+                    file.name.endsWith(".webp", true) -> "image/webp"
+                    else -> "image/jpeg"
+                }
+                val requestBody = file.asRequestBody(mimeType.toMediaTypeOrNull())
+                MultipartBody.Part.createFormData("photo", file.name, requestBody)
+            }
+
+            val response = api.uploadProfilePhoto(
+                userId = userIdPart,
+                email = emailPart,
+                photo = photoPart,
+                name = namePart,
+                phone = phonePart,
+                bio = bioPart,
+                removePhoto = removePhotoPart
+            )
+
+            handleProfileResponse(response)
+        } catch (e: Exception) {
+            Result.failure(mapException(e))
+        }
+    }
 
     override suspend fun completeProfileSetup(request: ProfileSetupRequest): Result<UserProfileDto> =
         withContext(Dispatchers.IO) {
@@ -148,4 +202,3 @@ class ProfileRepositoryImpl(
         }
     }
 }
-
