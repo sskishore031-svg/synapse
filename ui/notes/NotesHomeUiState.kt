@@ -9,3 +9,4 @@ data class NotesHomeUiState(
     val summary: NotesCountsDto = NotesCountsDto(),
     val subjects: List<NotesSubjectItemDto> = emptyList()
 )
+

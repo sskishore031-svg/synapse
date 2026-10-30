@@ -8,6 +8,7 @@ data class NotesListUiState(
     val type: String = "all",
     val title: String = "Notes",
     val subjectId: Int? = null,
+    val searchQuery: String = "",
     val notes: List<NoteItemDto> = emptyList()
 )
 

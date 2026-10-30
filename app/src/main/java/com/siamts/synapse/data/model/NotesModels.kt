@@ -104,6 +104,15 @@ data class CreateNoteRequest(
     val chapterId: Int? = null
 )
 
+data class UpdateNoteRequest(
+    @SerializedName("note_id")
+    val noteId: Int,
+    @SerializedName("title")
+    val title: String,
+    @SerializedName("content")
+    val content: String
+)
+
 data class GenericNoteActionResponse(
     @SerializedName("status")
     val status: String,

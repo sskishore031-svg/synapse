@@ -30,11 +30,12 @@ class NotesRepositoryImpl(
     override suspend fun getNotesList(
         type: String?,
         subjectId: Int?,
+        search: String?,
         userId: Int?,
         email: String?
     ): Result<NotesListResponse> {
         return try {
-            val response = api.getNotesList(type, subjectId, userId, email)
+            val response = api.getNotesList(type, subjectId, search, userId, email)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
@@ -65,6 +66,30 @@ class NotesRepositoryImpl(
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Failed to create note: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateNote(
+        noteId: Int,
+        title: String,
+        content: String,
+        userId: Int?,
+        email: String?
+    ): Result<GenericNoteActionResponse> {
+        return try {
+            val request = com.siamts.synapse.data.model.UpdateNoteRequest(
+                noteId = noteId,
+                title = title,
+                content = content
+            )
+            val response = api.updateNote(userId = userId, email = email, request = request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to update note: ${response.code()} ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

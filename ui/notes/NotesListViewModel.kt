@@ -38,6 +38,7 @@ class NotesListViewModel(
             val result = notesRepository.getNotesList(
                 type = type,
                 subjectId = subjectId,
+                search = _uiState.value.searchQuery.takeIf { it.isNotBlank() },
                 userId = userId,
                 email = userEmail
             )
@@ -107,4 +108,51 @@ class NotesListViewModel(
             }
         }
     }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+
+            val result = notesRepository.getNotesList(
+                type = _uiState.value.type,
+                subjectId = _uiState.value.subjectId,
+                search = query.takeIf { it.isNotBlank() },
+                userId = userId,
+                email = userEmail
+            )
+            result.onSuccess { response ->
+                _uiState.update {
+                    it.copy(notes = response.data?.notes.orEmpty())
+                }
+            }
+        }
+    }
+
+    fun updateNote(noteId: Int, title: String, content: String) {
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+
+            val res = notesRepository.updateNote(
+                noteId = noteId,
+                title = title,
+                content = content,
+                userId = userId,
+                email = userEmail
+            )
+            if (res.isSuccess) {
+                _uiState.update { state ->
+                    val updated = state.notes.map { n ->
+                        if (n.id == noteId) n.copy(title = title, content = content) else n
+                    }
+                    state.copy(notes = updated)
+                }
+            }
+        }
+    }
 }
+

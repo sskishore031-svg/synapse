@@ -13,6 +13,7 @@ interface NotesRepository {
     suspend fun getNotesList(
         type: String? = null,
         subjectId: Int? = null,
+        search: String? = null,
         userId: Int? = null,
         email: String? = null
     ): Result<NotesListResponse>
@@ -22,6 +23,14 @@ interface NotesRepository {
         content: String,
         subjectId: Int? = null,
         chapterId: Int? = null,
+        userId: Int? = null,
+        email: String? = null
+    ): Result<GenericNoteActionResponse>
+
+    suspend fun updateNote(
+        noteId: Int,
+        title: String,
+        content: String,
         userId: Int? = null,
         email: String? = null
     ): Result<GenericNoteActionResponse>

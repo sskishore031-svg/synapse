@@ -1,7 +1,6 @@
 package com.siamts.synapse.ui.notes
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,19 +12,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -34,13 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
-import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -53,6 +57,12 @@ fun NotesListScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var noteToEdit by remember { mutableStateOf<NoteItemDto?>(null) }
+    var editTitle by remember { mutableStateOf("") }
+    var editContent by remember { mutableStateOf("") }
+
+    var noteToDelete by remember { mutableStateOf<NoteItemDto?>(null) }
 
     LaunchedEffect(type, subjectId) {
         viewModel.loadNotes(type, subjectId, title)
@@ -124,122 +134,149 @@ fun NotesListScreen(
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BlueAccent)
-                    }
-                } else if (uiState.notes.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "📝", fontSize = 42.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No notes found in this category",
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF475569),
-                                fontSize = 16.sp
-                            )
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    // Search Bar
+                    OutlinedTextField(
+                        value = uiState.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
+                        placeholder = { Text("Search notes by title or keyword...", color = Color(0xFF94A3B8), fontSize = 13.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (uiState.isLoading) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = BlueAccent)
                         }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.notes) { note ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
+                    } else if (uiState.notes.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "📝", fontSize = 42.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = if (uiState.searchQuery.isNotBlank()) "No notes match your search" else "No notes found in this category",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF475569),
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.notes) { note ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "${note.subjectIcon} ${note.subjectName}",
+                                                    color = BlueAccent,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                // Toggle Save/Bookmark
+                                                IconButton(
+                                                    onClick = { viewModel.toggleSave(note.id) },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (note.isSaved) "⭐" else "☆",
+                                                        fontSize = 16.sp
+                                                    )
+                                                }
+
+                                                // Toggle Download
+                                                IconButton(
+                                                    onClick = { viewModel.toggleDownload(note.id) },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (note.isDownloaded) "💾" else "📥",
+                                                        fontSize = 16.sp
+                                                    )
+                                                }
+
+                                                // Edit Note
+                                                IconButton(
+                                                    onClick = {
+                                                        noteToEdit = note
+                                                        editTitle = note.title
+                                                        editContent = note.content
+                                                    },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "✏️",
+                                                        fontSize = 14.sp
+                                                    )
+                                                }
+
+                                                // Delete Note
+                                                IconButton(
+                                                    onClick = { noteToDelete = note },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "🗑️",
+                                                        fontSize = 14.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Text(
+                                            text = note.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = Color(0xFF0F172A)
+                                        )
+
+                                        if (!note.chapterTitle.isNullOrBlank()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = "${note.subjectIcon} ${note.subjectName}",
-                                                color = BlueAccent,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
+                                                text = "Chapter: ${note.chapterTitle}",
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF64748B)
                                             )
                                         }
 
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            // Toggle Save/Bookmark
-                                            IconButton(
-                                                onClick = { viewModel.toggleSave(note.id) },
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Text(
-                                                    text = if (note.isSaved) "⭐" else "☆",
-                                                    fontSize = 16.sp
-                                                )
-                                            }
+                                        Spacer(modifier = Modifier.height(8.dp))
 
-                                            // Toggle Download
-                                            IconButton(
-                                                onClick = { viewModel.toggleDownload(note.id) },
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Text(
-                                                    text = if (note.isDownloaded) "💾" else "📥",
-                                                    fontSize = 16.sp
-                                                )
-                                            }
-
-                                            // Delete Note
-                                            IconButton(
-                                                onClick = { viewModel.deleteNote(note.id) },
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Text(
-                                                    text = "🗑️",
-                                                    fontSize = 14.sp
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Text(
-                                        text = note.title,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = Color(0xFF0F172A)
-                                    )
-
-                                    if (!note.chapterTitle.isNullOrBlank()) {
-                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Chapter: ${note.chapterTitle}",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
+                                            text = note.content,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFF334155),
+                                            lineHeight = 18.sp
                                         )
                                     }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Text(
-                                        text = note.content,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF334155),
-                                        lineHeight = 18.sp
-                                    )
                                 }
                             }
                         }
@@ -248,5 +285,73 @@ fun NotesListScreen(
             }
         }
     }
-}
 
+    // Edit Note Dialog
+    if (noteToEdit != null) {
+        AlertDialog(
+            onDismissRequest = { noteToEdit = null },
+            title = { Text("Edit Note", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text("Title") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editContent,
+                        onValueChange = { editContent = it },
+                        label = { Text("Content") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val target = noteToEdit
+                        if (target != null && editTitle.isNotBlank()) {
+                            viewModel.updateNote(target.id, editTitle, editContent)
+                        }
+                        noteToEdit = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                ) {
+                    Text("Save Changes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noteToEdit = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Delete Note Confirmation Dialog
+    if (noteToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { noteToDelete = null },
+            title = { Text("Delete Note", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete '${noteToDelete?.title}'? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        noteToDelete?.let { viewModel.deleteNote(it.id) }
+                        noteToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noteToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}

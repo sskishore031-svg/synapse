@@ -24,6 +24,7 @@ interface NotesApi {
     suspend fun getNotesList(
         @Query("type") type: String? = null, // "all", "subject", "common", "saved", "downloaded"
         @Query("subject_id") subjectId: Int? = null,
+        @Query("search") search: String? = null,
         @Query("user_id") userId: Int? = null,
         @Query("email") email: String? = null
     ): Response<NotesListResponse>
@@ -33,6 +34,13 @@ interface NotesApi {
         @Query("user_id") userId: Int? = null,
         @Query("email") email: String? = null,
         @Body request: CreateNoteRequest
+    ): Response<GenericNoteActionResponse>
+
+    @POST("auth/notes.php?action=update")
+    suspend fun updateNote(
+        @Query("user_id") userId: Int? = null,
+        @Query("email") email: String? = null,
+        @Body request: com.siamts.synapse.data.model.UpdateNoteRequest
     ): Response<GenericNoteActionResponse>
 
     @FormUrlEncoded

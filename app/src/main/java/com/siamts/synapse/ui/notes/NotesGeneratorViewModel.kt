@@ -2,6 +2,9 @@ package com.siamts.synapse.ui.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.repository.NotesRepository
+import com.siamts.synapse.data.repository.NotesRepositoryImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +22,10 @@ private data class GeneratedNoteData(
 /**
  * ViewModel managing AI Notes Generator input, dynamic note generation, and save state.
  */
-class NotesGeneratorViewModel : ViewModel() {
+class NotesGeneratorViewModel(
+    private val notesRepository: NotesRepository = NotesRepositoryImpl(),
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotesGeneratorUiState())
     val uiState: StateFlow<NotesGeneratorUiState> = _uiState.asStateFlow()
@@ -53,11 +59,45 @@ class NotesGeneratorViewModel : ViewModel() {
     }
 
     fun onSaveClicked() {
-        _uiState.update {
-            it.copy(
-                isSaved = true,
-                saveStatusText = "Saved to My Notes · Just now"
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+
+            val title = _uiState.value.noteTitle
+            val content = buildString {
+                appendLine(_uiState.value.noteSummary)
+                appendLine()
+                appendLine("Key Points:")
+                _uiState.value.keyPoints.forEach { appendLine("• $it") }
+                appendLine()
+                appendLine("Important Terms: " + _uiState.value.importantTerms.joinToString(", "))
+            }
+
+            val res = notesRepository.createNote(
+                title = title,
+                content = content,
+                subjectId = null,
+                chapterId = null,
+                userId = userId,
+                email = userEmail
             )
+
+            if (res.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isSaved = true,
+                        saveStatusText = "Saved to My Notes · Synced to Cloud"
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isSaved = false,
+                        saveStatusText = "Failed to save: ${res.exceptionOrNull()?.localizedMessage}"
+                    )
+                }
+            }
         }
     }
 
