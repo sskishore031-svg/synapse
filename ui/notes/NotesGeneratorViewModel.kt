@@ -1,4 +1,4 @@
-package com.siamts/synapse.ui.notes
+package com.siamts.synapse.ui.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

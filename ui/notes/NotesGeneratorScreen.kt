@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -99,6 +101,7 @@ fun NotesGeneratorContent(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -180,7 +183,7 @@ fun NotesGeneratorContent(
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = "Enter topic",
+                                    text = "Enter topic or subject",
                                     color = Color(0xFF0F172A),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
@@ -194,6 +197,13 @@ fun NotesGeneratorContent(
                                     OutlinedTextField(
                                         value = uiState.topicInput,
                                         onValueChange = onTopicChange,
+                                        placeholder = {
+                                            Text(
+                                                text = "e.g. Python, Photosynthesis, Calculus",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 11.sp
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
@@ -209,6 +219,7 @@ fun NotesGeneratorContent(
 
                                     Button(
                                         onClick = onGenerateNotes,
+                                        enabled = !uiState.isGenerating,
                                         modifier = Modifier.height(48.dp),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
@@ -223,15 +234,23 @@ fun NotesGeneratorContent(
                                                     ),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
-                                                .padding(horizontal = 14.dp),
+                                                .padding(horizontal = 12.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Text(
-                                                text = "Generate Notes",
-                                                color = Color.White,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            )
+                                            if (uiState.isGenerating) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(18.dp),
+                                                    color = Color.White,
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = "Generate Notes",
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
                                         }
                                     }
                                 }

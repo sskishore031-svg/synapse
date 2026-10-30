@@ -65,7 +65,7 @@ fun MixedQuizPreviewScreen(
     modifier: Modifier = Modifier,
     onSubmitQuizClick: (() -> Unit)? = null,
 ) {
-    val selectedAnswers = remember { mutableStateMapOf<String, String>("1" to "B", "2" to "B", "3" to "B") }
+    val selectedAnswers = remember { mutableStateMapOf<String, String>() }
 
     val mixedQuestions = listOf(
         MixedQuizItem(

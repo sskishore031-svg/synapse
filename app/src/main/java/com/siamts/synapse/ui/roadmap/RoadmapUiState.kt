@@ -11,25 +11,24 @@ data class Milestone(
     val title: String,
     val subtitle: String,
     val status: MilestoneStatus,
+    val chapterId: Int = 0
 )
 
 /**
- * UI State for the Your Learning Roadmap Screen following MVVM architecture.
+ * UI State for the Your Learning Roadmap Screen following Clean MVVM architecture.
  */
 data class RoadmapUiState(
     val headerTag: String = "A PATH THAT EVOLVES WITH YOU",
     val title: String = "Your Learning Roadmap",
+    val subjectId: Int = 4, // Default AI
     val subjectIcon: String = "🧠",
     val subjectName: String = "Artificial Intelligence",
-    val progressPercentage: Int = 60,
-    val milestoneSummary: String = "3 of 5 milestones unlocked · Beginner path",
-    val milestones: List<Milestone> = listOf(
-        Milestone("1", "Introduction to AI", "Completed · 10 min", MilestoneStatus.COMPLETED),
-        Milestone("2", "Neural network basics", "Completed · 15 min", MilestoneStatus.COMPLETED),
-        Milestone("3", "Gradient descent", "Continue learning · 12 min", MilestoneStatus.ACTIVE),
-        Milestone("4", "Backpropagation", "Unlock after this lesson", MilestoneStatus.LOCKED),
-        Milestone("5", "Model evaluation", "Coming up next · 18 min", MilestoneStatus.LOCKED),
-    ),
-    val aiRecommendation: String = "Review derivatives before backpropagation. A 5-minute refresher will help.",
-    val activeLessonTitle: String = "Gradient descent"
+    val progressPercentage: Int = 0,
+    val milestoneSummary: String = "Loading roadmap...",
+    val milestones: List<Milestone> = emptyList(),
+    val aiRecommendation: String = "Complete chapters in sequence to build deep comprehension.",
+    val activeLessonTitle: String = "",
+    val activeChapterId: Int = 0,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )

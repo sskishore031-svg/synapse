@@ -57,6 +57,7 @@ fun RoadmapScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     onContinueClick: (() -> Unit)? = null,
+    onChapterClick: ((Int) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -64,11 +65,24 @@ fun RoadmapScreen(
         uiState = uiState,
         onMilestoneClick = { milestoneId ->
             viewModel.onMilestoneClicked(milestoneId)
-            onContinueClick?.invoke()
+            val milestone = uiState.milestones.find { it.id == milestoneId }
+            if (milestone != null && milestone.status != MilestoneStatus.LOCKED) {
+                if (onChapterClick != null && milestone.chapterId > 0) {
+                    onChapterClick(milestone.chapterId)
+                } else {
+                    onContinueClick?.invoke()
+                }
+            } else if (milestone == null) {
+                onContinueClick?.invoke()
+            }
         },
         onContinueClick = {
             viewModel.onContinueLessonClicked()
-            onContinueClick?.invoke()
+            if (onChapterClick != null && uiState.activeChapterId > 0) {
+                onChapterClick(uiState.activeChapterId)
+            } else {
+                onContinueClick?.invoke()
+            }
         },
         onBackClick = onBackClick,
         modifier = modifier,

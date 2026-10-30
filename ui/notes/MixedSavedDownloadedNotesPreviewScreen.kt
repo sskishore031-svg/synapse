@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -63,6 +65,8 @@ fun MixedSavedDownloadedNotesPreviewScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     onReadNoteClick: ((String) -> Unit)? = null,
+    onGenerateNewNotesClick: (() -> Unit)? = null,
+    onSettingsClick: (() -> Unit)? = null,
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Saved Notes, 1: Downloaded Notes
     var searchQuery by remember { mutableStateOf("") }
@@ -172,15 +176,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                         Text(text = "Saved & Downloaded Notes", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
-                            .clickable { onBackClick() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "•••", color = TextSecondary, fontSize = 14.sp)
-                    }
+                    Spacer(modifier = Modifier.size(36.dp))
                 }
             }
 

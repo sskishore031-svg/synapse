@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.data.model.QuizResultDataDto
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -52,16 +53,23 @@ fun QuizScreen(
     viewModel: QuizViewModel,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onQuizComplete: (() -> Unit)? = null,
+    onQuizComplete: ((QuizResultDataDto?) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val isLastQuestion = uiState.currentQuestionIndex >= uiState.totalQuestions
 
     QuizContent(
         uiState = uiState,
         onOptionSelect = { viewModel.onOptionSelected(it) },
         onNextClick = {
-            viewModel.onNextQuestionClicked()
-            onQuizComplete?.invoke()
+            if (isLastQuestion) {
+                viewModel.submitQuiz { result ->
+                    onQuizComplete?.invoke(result)
+                }
+            } else {
+                viewModel.nextQuestion()
+            }
         },
         onBackClick = onBackClick,
         modifier = modifier,
@@ -376,15 +384,21 @@ fun QuizContent(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val isLast = uiState.currentQuestionIndex >= uiState.totalQuestions
+                                    val btnText = when {
+                                        uiState.isSubmitting -> "Submitting..."
+                                        isLast -> "Submit Quiz ✓"
+                                        else -> "Next question"
+                                    }
                                     Text(
-                                        text = "→",
+                                        text = if (isLast) "✓" else "→",
                                         color = Color.White,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Next question",
+                                        text = btnText,
                                         color = Color.White,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,

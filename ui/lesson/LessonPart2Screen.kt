@@ -62,17 +62,19 @@ fun LessonPart2Screen(
 
     LessonPart2Content(
         uiState = uiState,
+        onBookmarkClick = { viewModel.toggleBookmark() },
         onSubTabSelect = { tabIndex ->
             viewModel.onSubTabSelected(tabIndex)
             if (tabIndex == 1) { // Notes Tab
                 onNotesClick?.invoke()
             } else if (tabIndex == 2) { // Quiz Tab
-                onNextClick()
+                viewModel.markCompleted { onNextClick() }
             }
         },
         onNextClick = {
-            viewModel.onNextClicked()
-            onNextClick()
+            viewModel.markCompleted {
+                onNextClick()
+            }
         },
         onPreviousClick = {
             viewModel.onPreviousClicked()
@@ -93,6 +95,7 @@ fun LessonPart2Content(
     onAskAiClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onBookmarkClick: () -> Unit = {},
 ) {
     Box(
         modifier = modifier
@@ -148,12 +151,15 @@ fun LessonPart2Content(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
-                            .clickable { },
+                            .background(
+                                if (uiState.isBookmarked) Color(0xFFFEF3C7) else Color(0xFF161F42),
+                                CircleShape
+                            )
+                            .clickable { onBookmarkClick() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "🔔",
+                            text = if (uiState.isBookmarked) "⭐" else "🔖",
                             fontSize = 14.sp,
                         )
                     }

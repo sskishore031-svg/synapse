@@ -108,9 +108,21 @@ class SessionManager private constructor(context: Context) {
             if (!user.course.isNullOrBlank()) preferences[KEY_USER_COURSE] = user.course
             if (!user.preferredLanguage.isNullOrBlank()) preferences[KEY_USER_PREFERRED_LANG] = user.preferredLanguage
             if (!user.studyGoal.isNullOrBlank()) preferences[KEY_USER_STUDY_GOAL] = user.studyGoal
-            if (!user.photoUrl.isNullOrBlank()) preferences[KEY_USER_PHOTO_URL] = user.photoUrl
+            if (!user.photoUrl.isNullOrBlank()) {
+                preferences[KEY_USER_PHOTO_URL] = user.photoUrl
+            }
             if (!token.isNullOrBlank()) preferences[KEY_AUTH_TOKEN] = token
             preferences[KEY_LAST_LOGIN_TIMESTAMP] = System.currentTimeMillis()
+        }
+    }
+
+    suspend fun updateUserPhoto(photoUrl: String?) {
+        dataStore.edit { preferences ->
+            if (photoUrl.isNullOrBlank()) {
+                preferences.remove(KEY_USER_PHOTO_URL)
+            } else {
+                preferences[KEY_USER_PHOTO_URL] = photoUrl
+            }
         }
     }
 

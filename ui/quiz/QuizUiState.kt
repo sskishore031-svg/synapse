@@ -1,5 +1,8 @@
 package com.siamts.synapse.ui.quiz
 
+import com.siamts.synapse.data.model.QuizQuestionDto
+import com.siamts.synapse.data.model.QuizResultDataDto
+
 data class QuizOption(
     val id: String,
     val optionLabel: String, // A, B, C, D
@@ -11,20 +14,22 @@ data class QuizOption(
  * UI State for the Quiz Screen ("Test your understanding").
  */
 data class QuizUiState(
-    val topicTag: String = "GRADIENT DESCENT",
+    val chapterId: Int = 0,
+    val topicTag: String = "SYNAPSE QUIZ",
     val title: String = "Test your understanding",
     val currentQuestionIndex: Int = 1,
-    val totalQuestions: Int = 10,
-    val timerText: String = "00:42",
-    val difficulty: String = "Medium difficulty",
-    val questionText: String = "What is the main goal of gradient descent?",
+    val totalQuestions: Int = 3,
+    val timerText: String = "10:00",
+    val difficulty: String = "Standard difficulty",
+    val questionText: String = "",
     val instructionText: String = "Choose one answer.",
-    val options: List<QuizOption> = listOf(
-        QuizOption("A", "A", "Increase model complexity"),
-        QuizOption("B", "B", "Reduce prediction error", true),
-        QuizOption("C", "C", "Remove all training data"),
-        QuizOption("D", "D", "Make every weight equal"),
-    ),
+    val options: List<QuizOption> = emptyList(),
     val selectedOptionId: String? = null,
-    val aiNoteText: String = "✨ AI-generated quiz · Adapted to your level",
+    val aiNoteText: String = "✨ Curriculum-aligned questions from Synapse AI",
+    val questions: List<QuizQuestionDto> = emptyList(),
+    val answersMap: Map<Int, String> = emptyMap(),
+    val isLoading: Boolean = false,
+    val isSubmitting: Boolean = false,
+    val submissionResult: QuizResultDataDto? = null,
+    val errorMessage: String? = null
 )

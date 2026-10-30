@@ -28,4 +28,12 @@ data class LessonPart2UiState(
     val formulaFooter: String = "Gradient = w - 2; each update lowers loss.",
     val takeawayTitle: String = "Key takeaway",
     val takeawayContent: String = "Recompute the gradient each step. If loss oscillates, try a smaller rate.",
+    val chapterId: Int = 18,
+    val subjectId: Int = 4,
+    val isLoading: Boolean = false,
+    val isBookmarked: Boolean = false,
+    val isCompleted: Boolean = false,
+    val previousChapterId: Int? = null,
+    val nextChapterId: Int? = null,
+    val errorMessage: String? = null
 )

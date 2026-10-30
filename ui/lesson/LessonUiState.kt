@@ -17,4 +17,12 @@ data class LessonUiState(
     ),
     val exampleTitle: String = "A quick example",
     val exampleContent: String = "If w = 4, gradient = 2 and rate = 0.1,\nthen w_new = 4 - 0.1 × 2 = 3.8.",
+    val chapterId: Int = 18,
+    val subjectId: Int = 4,
+    val isLoading: Boolean = false,
+    val isBookmarked: Boolean = false,
+    val isCompleted: Boolean = false,
+    val previousChapterId: Int? = null,
+    val nextChapterId: Int? = null,
+    val errorMessage: String? = null
 )

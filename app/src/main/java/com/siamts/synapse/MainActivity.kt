@@ -106,6 +106,17 @@ import com.siamts.synapse.ui.auth.ForgotPasswordScreen
 import com.siamts.synapse.ui.auth.ForgotPasswordViewModel
 import com.siamts.synapse.ui.auth.SignUpScreen
 import com.siamts.synapse.ui.auth.SignUpViewModel
+import com.siamts.synapse.data.model.QuizResultDataDto
+import com.siamts.synapse.ui.lesson.ChapterLessonScreen
+import com.siamts.synapse.ui.lesson.ChapterLessonViewModel
+import com.siamts.synapse.ui.quiz.QuizHomeSelectionScreen
+import com.siamts.synapse.ui.quiz.QuizHomeViewModel
+import com.siamts.synapse.ui.quiz.SubjectQuizSelectionScreen
+import com.siamts.synapse.ui.quiz.SubjectQuizViewModel
+import com.siamts.synapse.ui.notes.NotesHomeScreen
+import com.siamts.synapse.ui.notes.NotesHomeViewModel
+import com.siamts.synapse.ui.notes.NotesListScreen
+import com.siamts.synapse.ui.notes.NotesListViewModel
 
 sealed class AppScreen {
     data object Splash : AppScreen()
@@ -155,6 +166,13 @@ sealed class AppScreen {
     data object Flashcards : AppScreen()
     data object AiTutor : AppScreen()
     data object Home : AppScreen()
+    data class DynamicChapterLesson(val chapterId: Int) : AppScreen()
+    data object QuizHomeSelection : AppScreen()
+    data class SubjectQuizSelection(val subjectId: Int, val subjectName: String) : AppScreen()
+    data class DynamicQuizAttempt(val chapterId: Int) : AppScreen()
+    data class DynamicQuizResults(val resultData: QuizResultDataDto) : AppScreen()
+    data object NotesHome : AppScreen()
+    data class NotesList(val type: String, val subjectId: Int? = null, val title: String = "Notes") : AppScreen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -290,10 +308,10 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.Flashcards
                                     },
                                     onQuizTabClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        currentScreen = AppScreen.QuizHomeSelection
                                     },
                                     onNotesTabClick = {
-                                        currentScreen = AppScreen.MixedSavedNotes
+                                        currentScreen = AppScreen.NotesHome
                                     },
                                     onProfileTabClick = {
                                         currentScreen = AppScreen.Profile
@@ -330,9 +348,9 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
+                                            currentScreen = AppScreen.QuizHomeSelection
                                         } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
+                                            currentScreen = AppScreen.NotesHome
                                         } else if (tabIndex == 4) {
                                             currentScreen = AppScreen.Profile
                                         }
@@ -349,28 +367,25 @@ class MainActivity : ComponentActivity() {
                                 SubjectSelectionScreen(
                                     viewModel = subjectSelectionViewModel,
                                     onSubjectClick = { subjectId ->
-                                        if (subjectId == "4" || subjectId == "Artificial Intelligence") {
-                                            roadmapViewModel.loadArtificialIntelligenceRoadmap()
-                                        } else if (subjectId == "5" || subjectId == "Physics") {
-                                            roadmapViewModel.loadPhysicsRoadmap()
-                                        } else if (subjectId == "6" || subjectId == "Chemistry") {
-                                            roadmapViewModel.loadChemistryRoadmap()
-                                        } else if (subjectId == "3" || subjectId == "Data Science") {
-                                            roadmapViewModel.loadDataScienceRoadmap()
-                                        } else if (subjectId == "2" || subjectId == "Computer Science") {
-                                            roadmapViewModel.loadComputerScienceRoadmap()
-                                        } else if (subjectId == "1" || subjectId == "Mathematics") {
-                                            roadmapViewModel.loadMathematicsRoadmap()
+                                        val idInt = subjectId.toIntOrNull() ?: when (subjectId.lowercase()) {
+                                            "mathematics", "math" -> 1
+                                            "computer science", "algorithms" -> 2
+                                            "data science" -> 3
+                                            "artificial intelligence", "ai" -> 4
+                                            "physics" -> 5
+                                            "chemistry" -> 6
+                                            else -> 4
                                         }
+                                        roadmapViewModel.loadSubjectRoadmap(subjectId = idInt)
                                         currentScreen = AppScreen.Roadmap
                                     },
                                     onTabSelect = { tabIndex ->
                                         if (tabIndex == 0) {
                                             currentScreen = AppScreen.Dashboard
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
+                                            currentScreen = AppScreen.QuizHomeSelection
                                         } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
+                                            currentScreen = AppScreen.NotesHome
                                         } else if (tabIndex == 4) {
                                             currentScreen = AppScreen.Profile
                                         }
@@ -385,19 +400,47 @@ class MainActivity : ComponentActivity() {
                                 val roadmapViewModel: RoadmapViewModel = viewModel()
                                 RoadmapScreen(
                                     viewModel = roadmapViewModel,
+                                    onChapterClick = { chapterId ->
+                                        currentScreen = AppScreen.DynamicChapterLesson(chapterId)
+                                    },
                                     onContinueClick = {
-                                        val currentActiveLesson = roadmapViewModel.uiState.value.activeLessonTitle
-                                        when (currentActiveLesson) {
-                                            "Quadratic Equations" -> currentScreen = AppScreen.QuadraticLesson
-                                            "Algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
-                                            "Data Visualization" -> currentScreen = AppScreen.DataVisualizationLesson
-                                            "Waves" -> currentScreen = AppScreen.WavesLesson
-                                            "Chemical Bonding" -> currentScreen = AppScreen.ChemicalBondingLesson
-                                            else -> currentScreen = AppScreen.Lesson
+                                        val activeId = roadmapViewModel.uiState.value.activeChapterId
+                                        if (activeId > 0) {
+                                            currentScreen = AppScreen.DynamicChapterLesson(activeId)
+                                        } else {
+                                            val currentActiveLesson = roadmapViewModel.uiState.value.activeLessonTitle
+                                            when (currentActiveLesson) {
+                                                "Quadratic Equations" -> currentScreen = AppScreen.QuadraticLesson
+                                                "Algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
+                                                "Data Visualization" -> currentScreen = AppScreen.DataVisualizationLesson
+                                                "Waves" -> currentScreen = AppScreen.WavesLesson
+                                                "Chemical Bonding" -> currentScreen = AppScreen.ChemicalBondingLesson
+                                                else -> currentScreen = AppScreen.Lesson
+                                            }
                                         }
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.SubjectSelection
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.DynamicChapterLesson -> {
+                                val chapterLessonViewModel: ChapterLessonViewModel = viewModel()
+                                ChapterLessonScreen(
+                                    chapterId = screen.chapterId,
+                                    viewModel = chapterLessonViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Roadmap
+                                    },
+                                    onNavigateToChapter = { targetId ->
+                                        currentScreen = AppScreen.DynamicChapterLesson(targetId)
+                                    },
+                                    onTakeQuiz = { targetId ->
+                                        currentScreen = AppScreen.DynamicQuizAttempt(targetId)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -762,10 +805,14 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        currentScreen = AppScreen.DynamicQuizAttempt(lessonViewModel.uiState.value.chapterId)
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        currentScreen = AppScreen.NotesList(
+                                            type = "subject",
+                                            subjectId = lessonViewModel.uiState.value.subjectId,
+                                            title = "${lessonViewModel.uiState.value.subjectTag} Notes"
+                                        )
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.Roadmap
@@ -781,7 +828,7 @@ class MainActivity : ComponentActivity() {
                                 LessonPart2Screen(
                                     viewModel = lessonPart2ViewModel,
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        currentScreen = AppScreen.DynamicQuizAttempt(lessonPart2ViewModel.uiState.value.chapterId)
                                     },
                                     onPreviousClick = {
                                         currentScreen = AppScreen.Lesson
@@ -790,7 +837,11 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.AiTutor
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        currentScreen = AppScreen.NotesList(
+                                            type = "subject",
+                                            subjectId = lessonPart2ViewModel.uiState.value.subjectId,
+                                            title = "${lessonPart2ViewModel.uiState.value.subjectTag} Notes"
+                                        )
                                     },
                                     onBackClick = {
                                         currentScreen = AppScreen.Lesson
@@ -1264,16 +1315,124 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.Flashcards
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        currentScreen = AppScreen.QuizHomeSelection
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MixedSavedNotes
+                                        currentScreen = AppScreen.NotesHome
                                     },
                                     onProfileClick = {
                                         currentScreen = AppScreen.Profile
                                     },
                                     onBrainMapClick = {
                                         currentScreen = AppScreen.BrainMap
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.QuizHomeSelection -> {
+                                val quizHomeViewModel: QuizHomeViewModel = viewModel()
+                                QuizHomeSelectionScreen(
+                                    viewModel = quizHomeViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Dashboard
+                                    },
+                                    onSelectSubject = { subId, subName ->
+                                        currentScreen = AppScreen.SubjectQuizSelection(subId, subName)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.SubjectQuizSelection -> {
+                                val subjectQuizViewModel: SubjectQuizViewModel = viewModel()
+                                SubjectQuizSelectionScreen(
+                                    subjectId = screen.subjectId,
+                                    subjectName = screen.subjectName,
+                                    viewModel = subjectQuizViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuizHomeSelection
+                                    },
+                                    onStartQuiz = { chapterId ->
+                                        currentScreen = AppScreen.DynamicQuizAttempt(chapterId)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.DynamicQuizAttempt -> {
+                                val quizViewModel: QuizViewModel = viewModel()
+                                LaunchedEffect(screen.chapterId) {
+                                    quizViewModel.loadChapterQuiz(screen.chapterId)
+                                }
+                                QuizScreen(
+                                    viewModel = quizViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuizHomeSelection
+                                    },
+                                    onQuizComplete = { result ->
+                                        if (result != null) {
+                                            currentScreen = AppScreen.DynamicQuizResults(result)
+                                        } else {
+                                            currentScreen = AppScreen.QuizHomeSelection
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.DynamicQuizResults -> {
+                                val quizResultsViewModel: QuizResultsViewModel = viewModel()
+                                LaunchedEffect(screen.resultData) {
+                                    quizResultsViewModel.setQuizResult(screen.resultData)
+                                }
+                                QuizResultsScreen(
+                                    viewModel = quizResultsViewModel,
+                                    onHomeClick = {
+                                        currentScreen = AppScreen.QuizHomeSelection
+                                    },
+                                    onBackClick = {
+                                        currentScreen = AppScreen.QuizHomeSelection
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.NotesHome -> {
+                                val notesHomeViewModel: NotesHomeViewModel = viewModel()
+                                NotesHomeScreen(
+                                    viewModel = notesHomeViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.Dashboard
+                                    },
+                                    onOpenNotesList = { type, subjectId, title ->
+                                        currentScreen = AppScreen.NotesList(type, subjectId, title)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.NotesList -> {
+                                val notesListViewModel: NotesListViewModel = viewModel()
+                                NotesListScreen(
+                                    type = screen.type,
+                                    subjectId = screen.subjectId,
+                                    title = screen.title,
+                                    viewModel = notesListViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.NotesHome
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
