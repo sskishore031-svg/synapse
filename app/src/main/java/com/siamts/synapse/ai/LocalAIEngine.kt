@@ -37,16 +37,30 @@ data class LocalAiResponse(
     val matchedChapter: String? = null,
     val matchedTopic: String? = null,
     val confidenceScore: Double = 0.0,
-    val isGreeting: Boolean = false
+    val isGreeting: Boolean = false,
+    val isFollowUp: Boolean = false
 )
 
 /**
- * 100% on-device AI Tutor Engine that loads educational knowledge from assets
- * and generates immediate responses via keyword scoring and token retrieval.
+ * Represents a single turn in the multi-turn conversation memory.
+ */
+data class ConversationTurn(
+    val userQuery: String,
+    val matchedSubject: String? = null,
+    val matchedChapter: String? = null,
+    val matchedTopic: String? = null,
+    val chunkId: String? = null,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+/**
+ * 100% on-device AI Tutor Engine with multi-turn rolling context memory.
+ * Grounded on local educational datasets without external cloud API calls.
  */
 class LocalAIEngine private constructor(context: Context?) {
 
     private val chunks = mutableListOf<KnowledgeChunk>()
+    private val contextHistory = mutableListOf<ConversationTurn>()
     private val gson = Gson()
 
     private val stopWords = setOf(
@@ -60,6 +74,22 @@ class LocalAIEngine private constructor(context: Context?) {
     private val greetings = setOf(
         "gm", "good morning", "good afternoon", "good evening",
         "hi", "hello", "hey", "vanakkam", "namaste", "hola", "greetings"
+    )
+
+    private val examplePrompts = setOf(
+        "give an example", "give me an example", "show an example", "can you give an example",
+        "example please", "another example", "practical example", "real life example"
+    )
+
+    private val elaboratePrompts = setOf(
+        "explain more", "tell me more", "more details", "elaborate", "can you explain more",
+        "explain further", "details please", "deep dive"
+    )
+
+    private val solvePrompts = setOf(
+        "what about its roots", "what about its roots?", "how to solve it", "how to solve it?",
+        "how does it work", "how does it work?", "how to calculate it", "how to calculate it?",
+        "what is the formula", "what is the formula?", "why does it happen", "why does it happen?"
     )
 
     init {
@@ -112,32 +142,24 @@ class LocalAIEngine private constructor(context: Context?) {
         }
     }
 
-    private fun logD(tag: String, message: String) {
-        try {
-            Log.d(tag, message)
-        } catch (_: Throwable) {
-            println("[$tag] $message")
-        }
-    }
-
-    private fun logW(tag: String, message: String) {
-        try {
-            Log.w(tag, message)
-        } catch (_: Throwable) {
-            System.err.println("[$tag] $message")
-        }
-    }
-
-    private fun logE(tag: String, message: String, throwable: Throwable? = null) {
-        try {
-            Log.e(tag, message, throwable)
-        } catch (_: Throwable) {
-            System.err.println("[$tag] $message ${throwable?.message.orEmpty()}")
+    /**
+     * Resets conversation context memory (e.g. when starting a new chat session).
+     */
+    fun resetContext() {
+        synchronized(contextHistory) {
+            contextHistory.clear()
         }
     }
 
     /**
-     * Generates a 100% on-device response for the given user query.
+     * Returns current rolling context turns.
+     */
+    fun getContextHistory(): List<ConversationTurn> = synchronized(contextHistory) {
+        contextHistory.toList()
+    }
+
+    /**
+     * Generates a context-aware 100% on-device response.
      */
     fun generateResponse(userQuery: String): LocalAiResponse {
         val query = userQuery.trim()
@@ -152,13 +174,31 @@ class LocalAIEngine private constructor(context: Context?) {
             return buildGreetingResponse()
         }
 
-        // 2. Tokenize and clean query
+        // 2. Check for Context-Aware Follow-up Queries
+        val lastTopicTurn = synchronized(contextHistory) {
+            contextHistory.lastOrNull { it.matchedTopic != null || it.chunkId != null }
+        }
+
+        if (lastTopicTurn != null && isFollowUpQuery(lowerQuery)) {
+            val activeChunk = synchronized(chunks) {
+                chunks.find { it.chunkId == lastTopicTurn.chunkId }
+                    ?: chunks.find { it.topic.equals(lastTopicTurn.matchedTopic, ignoreCase = true) }
+            }
+
+            if (activeChunk != null) {
+                val followUpResponse = buildContextAwareFollowUpResponse(lowerQuery, activeChunk)
+                recordTurn(userQuery, activeChunk)
+                return followUpResponse
+            }
+        }
+
+        // 3. Tokenize query
         val tokens = tokenize(lowerQuery)
         if (tokens.isEmpty()) {
             return buildFallbackResponse(query)
         }
 
-        // 3. Score against knowledge chunks
+        // 4. Token/Keyword scoring
         val scoredChunks = synchronized(chunks) {
             chunks.map { chunk ->
                 val score = computeRelevanceScore(lowerQuery, tokens, chunk)
@@ -169,16 +209,50 @@ class LocalAIEngine private constructor(context: Context?) {
         val bestMatch = scoredChunks.maxByOrNull { it.first }
         val bestScore = bestMatch?.first ?: 0.0
 
-        // 4. Return structured educational explanation if threshold met (>= 5.0)
+        // 5. Educational response or fallback
         return if (bestMatch != null && bestScore >= 5.0) {
-            buildEducationalResponse(bestMatch.second, bestScore)
+            val response = buildEducationalResponse(bestMatch.second, bestScore)
+            recordTurn(userQuery, bestMatch.second)
+            response
         } else {
+            // Attempt context-assisted fallback if prior topic exists
+            if (lastTopicTurn != null) {
+                val contextQuery = "$lowerQuery ${lastTopicTurn.matchedTopic.orEmpty()} ${lastTopicTurn.matchedChapter.orEmpty()}"
+                val contextTokens = tokenize(contextQuery)
+                val contextScored = synchronized(chunks) {
+                    chunks.map { chunk ->
+                        Pair(computeRelevanceScore(contextQuery, contextTokens, chunk), chunk)
+                    }
+                }
+                val contextBest = contextScored.maxByOrNull { it.first }
+                if (contextBest != null && contextBest.first >= 5.0) {
+                    val resp = buildEducationalResponse(contextBest.second, contextBest.first)
+                    recordTurn(userQuery, contextBest.second)
+                    return resp
+                }
+            }
             buildFallbackResponse(query)
         }
     }
 
+    private fun recordTurn(query: String, chunk: KnowledgeChunk) {
+        synchronized(contextHistory) {
+            if (contextHistory.size >= MAX_CONTEXT_TURNS) {
+                contextHistory.removeAt(0)
+            }
+            contextHistory.add(
+                ConversationTurn(
+                    userQuery = query,
+                    matchedSubject = chunk.subject,
+                    matchedChapter = chunk.chapter,
+                    matchedTopic = chunk.topic,
+                    chunkId = chunk.chunkId
+                )
+            )
+        }
+    }
+
     private fun isGreetingQuery(lowerQuery: String): Boolean {
-        // Strip trailing punctuation
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
         if (greetings.contains(cleaned)) return true
 
@@ -188,6 +262,108 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
         return false
+    }
+
+    private fun isFollowUpQuery(lowerQuery: String): Boolean {
+        val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+        if (examplePrompts.any { cleaned.contains(it) }) return true
+        if (elaboratePrompts.any { cleaned.contains(it) }) return true
+        if (solvePrompts.any { cleaned.contains(it) }) return true
+
+        // Short queries with referential pronouns ("it", "its", "this", "that")
+        val words = cleaned.split("\\s+".toRegex())
+        if (words.size <= 5 && words.any { it in setOf("it", "its", "this", "that", "these", "those", "roots", "solve") }) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun buildContextAwareFollowUpResponse(
+        lowerQuery: String,
+        chunk: KnowledgeChunk
+    ): LocalAiResponse {
+        val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+
+        // 1. Example request
+        if (examplePrompts.any { cleaned.contains(it) } || cleaned.contains("example")) {
+            val exampleText = generateTopicExample(chunk)
+            return LocalAiResponse(
+                paragraph1 = "📘 **Practical Example** (${chunk.subject} · ${chunk.topic})\n\nHere is a real-world scenario illustrating **${chunk.topic}**:",
+                paragraph2 = "$exampleText\n\n💡 *Context Grounded:* Derived from ${chunk.chapter} (${chunk.subject}).",
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = 95.0,
+                isFollowUp = true
+            )
+        }
+
+        // 2. Solve / Roots request
+        if (solvePrompts.any { cleaned.contains(it) } || cleaned.contains("root") || cleaned.contains("solve")) {
+            val stepGuide = generateSolveGuide(chunk)
+            return LocalAiResponse(
+                paragraph1 = "📘 **Method & Solving Steps** (${chunk.subject} · ${chunk.topic})\n\nHere is how to solve and evaluate problems for **${chunk.topic}**:",
+                paragraph2 = "$stepGuide\n\n💡 *Formula/Insight:* ${chunk.content.substringBefore(".")}.",
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = 90.0,
+                isFollowUp = true
+            )
+        }
+
+        // 3. Elaborate / Deep dive request
+        return LocalAiResponse(
+            paragraph1 = "📘 **In-Depth Breakdown** (${chunk.subject} · ${chunk.topic})\n\nExpanding further on **${chunk.topic}**:",
+            paragraph2 = "${chunk.content}\n\n💡 *Takeaway:* Mastering ${chunk.topic} connects directly to advanced applications in ${chunk.chapter}.",
+            matchedSubject = chunk.subject,
+            matchedChapter = chunk.chapter,
+            matchedTopic = chunk.topic,
+            confidenceScore = 90.0,
+            isFollowUp = true
+        )
+    }
+
+    private fun generateTopicExample(chunk: KnowledgeChunk): String {
+        return when (chunk.subject.lowercase(Locale.ROOT)) {
+            "mathematics" -> {
+                if (chunk.chapter.contains("Quadratic", ignoreCase = true)) {
+                    "Consider a projectile trajectory: h(t) = -5t² + 20t. Setting height to ground (h(t) = 0) yields -5t(t - 4) = 0. Roots are t = 0 (launch) and t = 4s (impact). The quadratic formula allows calculating the exact flight duration and apex height."
+                } else {
+                    "In calculus, if a car's displacement is s(t) = 3t² + 4t meters, the instantaneous velocity is the derivative v(t) = s'(t) = 6t + 4 m/s. At t = 2s, velocity equals 16 m/s."
+                }
+            }
+            "computer science" -> {
+                if (chunk.chapter.contains("Algorithms", ignoreCase = true)) {
+                    "Searching for target 42 in sorted array [10, 20, 30, 42, 50, 70]: Binary search inspects midpoint 30 < 42, narrows to right half [42, 50, 70], checks 42 = 42! Located in 2 comparisons instead of scanning 4 elements linearly."
+                } else {
+                    "A browser's 'Back' and 'Forward' buttons use two Stacks (LIFO). When you click Back, the current URL pushes onto the Forward stack and pops from the Back stack in O(1) constant time."
+                }
+            }
+            "data science" -> {
+                "When predicting house prices, if a linear regression model predicts \$300,000 for a house actually selling at \$320,000, residual error is \$20,000. Evaluating over test sets using RMSE or R² validates real-world generalization."
+            }
+            "artificial intelligence" -> {
+                "In computer vision, an image of handwritten digit '8' is fed into neural layers. Gradient descent computes cross-entropy loss against true label and updates weights backwards via backpropagation so the network learns edge and loop detectors."
+            }
+            "physics" -> {
+                "Applying Newton's second law F = ma: Accelerating a 1,200 kg car at 2.5 m/s² requires net horizontal engine force F = 1,200 × 2.5 = 3,000 Newtons."
+            }
+            "chemistry" -> {
+                "Neutralizing stomach acid (HCl) with antacid magnesium hydroxide Mg(OH)₂: 2 HCl + Mg(OH)₂ → MgCl₂ + 2 H₂O. The hydronium and hydroxide ions combine into water, raising pH towards neutrality."
+            }
+            else -> {
+                "In practice, ${chunk.topic} is applied in ${chunk.subject} systems to model real-world phenomena accurately."
+            }
+        }
+    }
+
+    private fun generateSolveGuide(chunk: KnowledgeChunk): String {
+        return "1. Identify the given variables and establish standard algebraic or scientific representations.\n" +
+                "2. Apply the fundamental formula or mechanism for ${chunk.topic}.\n" +
+                "3. Compute the target parameters and verify units and boundary conditions.\n" +
+                "4. Interpret the physical or algorithmic meaning of the calculated result."
     }
 
     private fun tokenize(text: String): List<String> {
@@ -208,12 +384,10 @@ class LocalAIEngine private constructor(context: Context?) {
         val normChapter = chunk.chapter.lowercase(Locale.ROOT)
         val normSubject = chunk.subject.lowercase(Locale.ROOT)
 
-        // Exact phrase in topic, chapter, or subject
         if (cleanQuery.contains(normTopic)) score += 30.0
         if (cleanQuery.contains(normChapter)) score += 20.0
         if (cleanQuery.contains(normSubject)) score += 15.0
 
-        // Keywords matching
         for (kw in chunk.keywords) {
             val normKw = kw.lowercase(Locale.ROOT)
             if (cleanQuery.contains(normKw)) {
@@ -228,7 +402,6 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // Topic token matches
         val topicTokens = tokenize(normTopic)
         for (token in tokens) {
             if (topicTokens.contains(token)) {
@@ -236,7 +409,6 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // Content token matches
         val normContent = chunk.content.lowercase(Locale.ROOT)
         for (token in tokens) {
             if (normContent.contains(token)) {
@@ -257,7 +429,6 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun buildEducationalResponse(chunk: KnowledgeChunk, score: Double): LocalAiResponse {
-        // Split content into concept/definition and formula/takeaway
         val sentences = chunk.content.split(Regex("(?<=\\.)\\s+"))
         val conceptSentences = if (sentences.size > 2) sentences.take(2) else sentences.take(1)
         val remainingSentences = if (sentences.size > 2) sentences.drop(2) else sentences.drop(1)
@@ -305,8 +476,33 @@ class LocalAIEngine private constructor(context: Context?) {
 
     fun getAllChunks(): List<KnowledgeChunk> = synchronized(chunks) { chunks.toList() }
 
+    private fun logD(tag: String, message: String) {
+        try {
+            Log.d(tag, message)
+        } catch (_: Throwable) {
+            println("[$tag] $message")
+        }
+    }
+
+    private fun logW(tag: String, message: String) {
+        try {
+            Log.w(tag, message)
+        } catch (_: Throwable) {
+            System.err.println("[$tag] $message")
+        }
+    }
+
+    private fun logE(tag: String, message: String, throwable: Throwable? = null) {
+        try {
+            Log.e(tag, message, throwable)
+        } catch (_: Throwable) {
+            System.err.println("[$tag] $message ${throwable?.message.orEmpty()}")
+        }
+    }
+
     companion object {
         private const val TAG = "LocalAIEngine"
+        private const val MAX_CONTEXT_TURNS = 5
 
         @Volatile
         private var INSTANCE: LocalAIEngine? = null

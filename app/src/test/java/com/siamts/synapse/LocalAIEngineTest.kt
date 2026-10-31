@@ -11,7 +11,8 @@ import java.io.File
 
 /**
  * Unit tests verifying on-device [LocalAIEngine] behavior, greetings detection,
- * educational dataset retrieval across all 6 subjects, and fallback handling.
+ * educational dataset retrieval across all 6 subjects, multi-turn conversation memory,
+ * and context-aware follow-up resolution.
  */
 class LocalAIEngineTest {
 
@@ -31,6 +32,7 @@ class LocalAIEngineTest {
 
         assertNotNull("Knowledge dataset json file must exist for tests", jsonContent)
         engine.loadFromJson(jsonContent!!)
+        engine.resetContext()
     }
 
     @Test
@@ -118,6 +120,49 @@ class LocalAIEngineTest {
         assertEquals("Chemistry", response.matchedSubject)
         assertEquals("Acids and Bases", response.matchedChapter)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
+    }
+
+    @Test
+    fun testMultiTurnFollowUp_resolvesTopicFromPreviousTurn() {
+        // Turn 1: Primary educational question
+        val turn1 = engine.generateResponse("How do I solve quadratic equations?")
+        assertEquals("Mathematics", turn1.matchedSubject)
+        assertEquals("Quadratic Equations", turn1.matchedChapter)
+
+        // Turn 2: Follow-up requesting an example
+        val turn2 = engine.generateResponse("give an example")
+        assertTrue("Follow-up flag should be set", turn2.isFollowUp)
+        assertEquals("Mathematics", turn2.matchedSubject)
+        assertTrue("Response should contain practical example", turn2.paragraph1.contains("Practical Example"))
+        assertTrue("Response should contain projectile trajectory example", turn2.paragraph2.contains("projectile"))
+
+        // Turn 3: Follow-up requesting method / roots
+        val turn3 = engine.generateResponse("what about its roots?")
+        assertTrue("Follow-up flag should be set", turn3.isFollowUp)
+        assertEquals("Mathematics", turn3.matchedSubject)
+        assertTrue(turn3.paragraph1.contains("Method & Solving Steps"))
+
+        // Turn 4: Follow-up requesting more details
+        val turn4 = engine.generateResponse("explain more")
+        assertTrue("Follow-up flag should be set", turn4.isFollowUp)
+        assertEquals("Mathematics", turn4.matchedSubject)
+        assertTrue(turn4.paragraph1.contains("In-Depth Breakdown"))
+    }
+
+    @Test
+    fun testResetContext_clearsRollingMemory() {
+        // Prime context
+        engine.generateResponse("Explain Newton's second law of motion")
+        assertTrue(engine.getContextHistory().isNotEmpty())
+
+        // Reset
+        engine.resetContext()
+        assertEquals(0, engine.getContextHistory().size)
+
+        // Unrelated query should now hit fallback instead of previous context
+        val response = engine.generateResponse("what is the recipe for baking a chocolate cake?")
+        assertEquals(0.0, response.confidenceScore, 0.001)
+        assertTrue(response.paragraph1.contains("I couldn't find a direct match"))
     }
 
     @Test

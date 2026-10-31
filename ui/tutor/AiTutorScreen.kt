@@ -14,15 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +43,6 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
-import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -59,6 +60,7 @@ fun AiTutorScreen(
         uiState = uiState,
         onQueryChange = { viewModel.onInputQueryChanged(it) },
         onSendMessage = { viewModel.onSendMessage() },
+        onClearChat = { viewModel.onClearChat() },
         onPromptClick = { viewModel.onPromptClicked(it) },
         onBackClick = onBackClick,
         modifier = modifier,
@@ -70,10 +72,20 @@ fun AiTutorContent(
     uiState: AiTutorUiState,
     onQueryChange: (String) -> Unit,
     onSendMessage: () -> Unit,
+    onClearChat: () -> Unit = {},
     onPromptClick: (String) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+
+    // Smoothly scroll down whenever new messages arrive
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
+            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount.coerceAtLeast(1) - 1)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -120,24 +132,30 @@ fun AiTutorContent(
                         Text(
                             text = uiState.tutorTitle,
                             color = TextPrimary,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
 
+                    // Clear Chat / New Chat action button in TopAppBar
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
-                            .clickable { },
+                            .background(Color(0xFF161F42), RoundedCornerShape(16.dp))
+                            .border(1.dp, Color(0xFF2A3660), RoundedCornerShape(16.dp))
+                            .clickable { onClearChat() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = "•••",
-                            color = TextSecondary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "✨", fontSize = 11.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "New",
+                                color = CyanGlow,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
             }
@@ -157,190 +175,50 @@ fun AiTutorContent(
                         .fillMaxSize()
                         .padding(horizontal = 16.dp, vertical = 16.dp)
                 ) {
-                    // Scrollable Chat Area
-                    Column(
+                    // Continuous Multi-Turn Chat List (LazyColumn with auto-scroll)
+                    LazyColumn(
+                        state = listState,
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                            .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // 1. AI Assistant Status Bar
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
+                        item(key = "status_bar") {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(
-                                            brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
-                                            shape = CircleShape
-                                        )
-                                        .padding(4.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    BrainGraphic(modifier = Modifier.fillMaxSize())
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = uiState.tutorName,
-                                        color = Color(0xFF0F172A),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "🟢 ", fontSize = 10.sp)
-                                        Text(
-                                            text = "Online · Artificial Intelligence",
-                                            color = Color(0xFF0284C7),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Medium,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // 2. Time Header Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 6.dp
-                        ) {
-                            Text(
-                                text = uiState.timeHeader,
-                                color = Color(0xFF64748B),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-
-                        // 3. User Chat Message Bubble Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.88f)
-                                    .align(Alignment.CenterEnd)
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                BlueAccent,
-                                                PurpleAccent,
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(14.dp)
-                            ) {
-                                Text(
-                                    text = uiState.userQuestion,
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            }
-                        }
-
-                        // 4. AI Tutor Response Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.92f)
-                                    .align(Alignment.CenterStart)
-                                    .background(
-                                        color = Color.White,
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
-                                    .padding(14.dp)
-                            ) {
-                                Column {
-                                    Text(
-                                        text = uiState.aiAnswerParagraph1,
-                                        color = Color(0xFF1E293B),
-                                        fontSize = 13.sp,
-                                        lineHeight = 18.sp,
-                                    )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text(
-                                        text = uiState.aiAnswerParagraph2,
-                                        color = Color(0xFF1E293B),
-                                        fontSize = 13.sp,
-                                        lineHeight = 18.sp,
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "Synapse AI · Just now",
-                                        color = Color(0xFF94A3B8),
-                                        fontSize = 11.sp,
-                                    )
-                                }
-                            }
-                        }
-
-                        // 5. AI Thought Status Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 6.dp
-                        ) {
-                            Text(
-                                text = uiState.aiThoughtStatus,
-                                color = Color(0xFF0284C7),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
-
-                        // 6. Quick Follow-up Action Chips Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                uiState.suggestedPrompts.forEach { prompt ->
                                     Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(Color.White, RoundedCornerShape(12.dp))
-                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                            .clickable { onPromptClick(prompt) }
-                                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                                            .size(36.dp)
+                                            .background(
+                                                brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
+                                                shape = CircleShape
+                                            )
+                                            .padding(4.dp)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(text = "🧩", fontSize = 14.sp)
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(
-                                                    text = prompt,
-                                                    color = BlueAccent,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                )
-                                            }
+                                        BrainGraphic(modifier = Modifier.fillMaxSize())
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = uiState.tutorName,
+                                            color = Color(0xFF0F172A),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(text = "🟢 ", fontSize = 10.sp)
                                             Text(
-                                                text = "↗",
-                                                color = BlueAccent,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
+                                                text = "Online · Multi-Turn Conversation Memory",
+                                                color = Color(0xFF0284C7),
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
                                             )
                                         }
                                     }
@@ -348,18 +226,170 @@ fun AiTutorContent(
                             }
                         }
 
-                        // 7. Spacer Wireframe Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Spacer(modifier = Modifier.height(10.dp))
+                        // 2. Time Header Box
+                        item(key = "time_header") {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 6.dp
+                            ) {
+                                Text(
+                                    text = uiState.timeHeader,
+                                    color = Color(0xFF64748B),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+
+                        // 3. Multi-Turn Conversation Messages
+                        items(items = uiState.messages, key = { it.id }) { message ->
+                            if (message.isUser) {
+                                // User Chat Message Bubble Box
+                                DashedBorderBox(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = 8.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.88f)
+                                            .align(Alignment.CenterEnd)
+                                            .background(
+                                                brush = Brush.horizontalGradient(
+                                                    colors = listOf(
+                                                        BlueAccent,
+                                                        PurpleAccent,
+                                                    )
+                                                ),
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .padding(14.dp)
+                                    ) {
+                                        Text(
+                                            text = message.text,
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
+                            } else {
+                                // AI Tutor Response Bubble Box
+                                DashedBorderBox(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = 8.dp
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.92f)
+                                            .align(Alignment.CenterStart)
+                                            .background(
+                                                color = Color.White,
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                                            .padding(14.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = message.text,
+                                                color = Color(0xFF1E293B),
+                                                fontSize = 13.sp,
+                                                lineHeight = 18.sp,
+                                            )
+                                            if (!message.paragraph2.isNullOrBlank()) {
+                                                Spacer(modifier = Modifier.height(10.dp))
+                                                Text(
+                                                    text = message.paragraph2,
+                                                    color = Color(0xFF1E293B),
+                                                    fontSize = 13.sp,
+                                                    lineHeight = 18.sp,
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "Synapse AI · ${message.timeAgo}",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 11.sp,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. AI Thought Status Box
+                        item(key = "thought_status") {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 6.dp
+                            ) {
+                                Text(
+                                    text = uiState.aiThoughtStatus,
+                                    color = Color(0xFF0284C7),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        }
+
+                        // 5. Quick Follow-up Action Chips Box
+                        item(key = "prompt_chips") {
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    uiState.suggestedPrompts.forEach { prompt ->
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color.White, RoundedCornerShape(12.dp))
+                                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                                .clickable { onPromptClick(prompt) }
+                                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(text = "🧩", fontSize = 14.sp)
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = prompt,
+                                                        color = BlueAccent,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                    )
+                                                }
+                                                Text(
+                                                    text = "↗",
+                                                    color = BlueAccent,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 6. Bottom Spacer Box
+                        item(key = "bottom_spacer") {
+                            Spacer(modifier = Modifier.height(6.dp))
                         }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 8. Chat Input Bar Box
+                    // Chat Input Bar Box
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 6.dp
@@ -373,7 +403,7 @@ fun AiTutorContent(
                                 onValueChange = onQueryChange,
                                 placeholder = {
                                     Text(
-                                        text = "Ask anything...",
+                                        text = "Ask a question or follow up...",
                                         color = Color(0xFF94A3B8),
                                         fontSize = 14.sp,
                                     )
@@ -440,6 +470,7 @@ fun AiTutorScreenPreview() {
             uiState = AiTutorUiState(),
             onQueryChange = {},
             onSendMessage = {},
+            onClearChat = {},
             onPromptClick = {},
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
