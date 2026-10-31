@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,6 +65,7 @@ import com.siamts.synapse.ui.profile.PersonalInfoScreen
 import com.siamts.synapse.ui.profile.ProfileScreen
 import com.siamts.synapse.ui.profile.ProfileViewModel
 import com.siamts.synapse.ui.profile.ProgressAnalyticsScreen
+import com.siamts.synapse.ui.profile.SettingsScreen
 import com.siamts.synapse.ui.profile.StudyGoalsScreen
 import com.siamts.synapse.ui.quadratic.MathChapterQuizViewModel
 import com.siamts.synapse.ui.quadratic.MathNotesViewModel
@@ -171,8 +173,19 @@ sealed class AppScreen {
     data class SubjectQuizSelection(val subjectId: Int, val subjectName: String) : AppScreen()
     data class DynamicQuizAttempt(val chapterId: Int) : AppScreen()
     data class DynamicQuizResults(val resultData: QuizResultDataDto) : AppScreen()
-    data object NotesHome : AppScreen()
+    open class NotesHome(val initialFilter: String = "ALL") : AppScreen() {
+        companion object : NotesHome("ALL")
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is NotesHome) return false
+            return initialFilter == other.initialFilter
+        }
+
+        override fun hashCode(): Int = initialFilter.hashCode()
+    }
     data class NotesList(val type: String, val subjectId: Int? = null, val title: String = "Notes") : AppScreen()
+    data object Settings : AppScreen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -186,6 +199,73 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val profileViewModel: ProfileViewModel = viewModel()
                     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
+                    val screenBackStack = remember { mutableStateListOf<AppScreen>() }
+
+                    fun navigateTo(newScreen: AppScreen) {
+                        if (newScreen != currentScreen) {
+                            screenBackStack.add(currentScreen)
+                            currentScreen = newScreen
+                        }
+                    }
+
+                    fun navigateBack() {
+                        if (screenBackStack.isNotEmpty()) {
+                            currentScreen = screenBackStack.removeAt(screenBackStack.size - 1)
+                        } else {
+                            currentScreen = when (currentScreen) {
+                                is AppScreen.NotesList -> AppScreen.NotesHome
+                                is AppScreen.NotesHome -> AppScreen.Dashboard
+                                is AppScreen.MixedSavedNotes -> AppScreen.NotesHome
+                                is AppScreen.SavedNotes -> AppScreen.NotesHome
+                                is AppScreen.NotesGenerator -> AppScreen.NotesHome
+                                is AppScreen.Profile -> AppScreen.Dashboard
+                                is AppScreen.Settings -> AppScreen.Profile
+                                is AppScreen.PersonalInfo -> AppScreen.Profile
+                                is AppScreen.Achievements -> AppScreen.Profile
+                                is AppScreen.StudyGoals -> AppScreen.Profile
+                                is AppScreen.LanguageSelection -> AppScreen.Profile
+                                is AppScreen.NotificationsSettings -> AppScreen.Profile
+                                is AppScreen.HelpSupport -> AppScreen.Profile
+                                is AppScreen.AboutSynapse -> AppScreen.Profile
+                                is AppScreen.ProgressAnalytics -> AppScreen.Profile
+                                is AppScreen.AiTutor -> AppScreen.Dashboard
+                                is AppScreen.QuizHomeSelection -> AppScreen.Dashboard
+                                is AppScreen.SubjectQuizSelection -> AppScreen.QuizHomeSelection
+                                is AppScreen.DynamicQuizAttempt -> AppScreen.QuizHomeSelection
+                                is AppScreen.DynamicQuizResults -> AppScreen.QuizHomeSelection
+                                is AppScreen.Quiz -> AppScreen.Dashboard
+                                is AppScreen.MixedQuiz -> AppScreen.Dashboard
+                                is AppScreen.QuizResults -> AppScreen.Dashboard
+                                is AppScreen.QuizReviewAnswers -> AppScreen.Dashboard
+                                is AppScreen.Roadmap -> AppScreen.SubjectSelection
+                                is AppScreen.SubjectSelection -> AppScreen.Dashboard
+                                is AppScreen.BrainMap -> AppScreen.Dashboard
+                                is AppScreen.Flashcards -> AppScreen.Dashboard
+                                is AppScreen.QuadraticLessonPart2 -> AppScreen.QuadraticLesson
+                                is AppScreen.QuadraticLesson -> AppScreen.Roadmap
+                                is AppScreen.MathematicsPractice -> AppScreen.QuadraticLessonPart2
+                                is AppScreen.MathematicsNotes -> AppScreen.QuadraticLesson
+                                is AppScreen.MathematicsChapterQuiz -> AppScreen.QuadraticLesson
+                                is AppScreen.AlgorithmsLessonPart2 -> AppScreen.AlgorithmsLesson
+                                is AppScreen.AlgorithmsLesson -> AppScreen.Roadmap
+                                is AppScreen.DataVisualizationLessonPart2 -> AppScreen.DataVisualizationLesson
+                                is AppScreen.DataVisualizationLesson -> AppScreen.Roadmap
+                                is AppScreen.WavesLessonPart2 -> AppScreen.WavesLesson
+                                is AppScreen.WavesLesson -> AppScreen.Roadmap
+                                is AppScreen.ChemicalBondingLessonPart2 -> AppScreen.ChemicalBondingLesson
+                                is AppScreen.ChemicalBondingLesson -> AppScreen.Roadmap
+                                is AppScreen.LessonPart2 -> AppScreen.Lesson
+                                is AppScreen.Lesson -> AppScreen.Roadmap
+                                is AppScreen.DynamicChapterLesson -> AppScreen.Roadmap
+                                is AppScreen.Home -> AppScreen.Dashboard
+                                else -> AppScreen.Dashboard
+                            }
+                        }
+                    }
+
+                    BackHandler(enabled = currentScreen != AppScreen.Dashboard && currentScreen != AppScreen.Login && currentScreen != AppScreen.Welcome && currentScreen != AppScreen.Splash) {
+                        navigateBack()
+                    }
 
                     BackHandler(enabled = currentScreen == AppScreen.Login || currentScreen == AppScreen.Dashboard || currentScreen == AppScreen.Welcome) {
                         finish()
@@ -1092,7 +1172,16 @@ class MainActivity : ComponentActivity() {
                                 ProfileScreen(
                                     viewModel = profileViewModel,
                                     onOpenSavedNotesClick = {
-                                        currentScreen = AppScreen.MixedSavedNotes
+                                        navigateTo(AppScreen.NotesHome("SAVED"))
+                                    },
+                                    onOpenDownloadedNotesClick = {
+                                        navigateTo(AppScreen.NotesHome("DOWNLOADED"))
+                                    },
+                                    onSettingsClick = {
+                                        navigateTo(AppScreen.Settings)
+                                    },
+                                    onBackClick = {
+                                        navigateBack()
                                     },
                                     onLogoutClick = {
                                         profileViewModel.logout {
@@ -1103,38 +1192,38 @@ class MainActivity : ComponentActivity() {
                                         profileViewModel.removeProfilePicture()
                                     },
                                     onMyProfileClick = {
-                                        currentScreen = AppScreen.PersonalInfo
+                                        navigateTo(AppScreen.PersonalInfo)
                                     },
                                     onAchievementsClick = {
-                                        currentScreen = AppScreen.Achievements
+                                        navigateTo(AppScreen.Achievements)
                                     },
                                     onStudyGoalsClick = {
-                                        currentScreen = AppScreen.StudyGoals
+                                        navigateTo(AppScreen.StudyGoals)
                                     },
                                     onLanguageClick = {
-                                        currentScreen = AppScreen.LanguageSelection
+                                        navigateTo(AppScreen.LanguageSelection)
                                     },
                                     onNotificationsClick = {
-                                        currentScreen = AppScreen.NotificationsSettings
+                                        navigateTo(AppScreen.NotificationsSettings)
                                     },
                                     onHelpSupportClick = {
-                                        currentScreen = AppScreen.HelpSupport
+                                        navigateTo(AppScreen.HelpSupport)
                                     },
                                     onAboutSynapseClick = {
-                                        currentScreen = AppScreen.AboutSynapse
+                                        navigateTo(AppScreen.AboutSynapse)
                                     },
                                     onProgressAnalyticsClick = {
-                                        currentScreen = AppScreen.ProgressAnalytics
+                                        navigateTo(AppScreen.ProgressAnalytics)
                                     },
                                     onTabSelect = { tabIndex ->
                                         if (tabIndex == 0) {
-                                            currentScreen = AppScreen.Dashboard
+                                            navigateTo(AppScreen.Dashboard)
                                         } else if (tabIndex == 1) {
-                                            currentScreen = AppScreen.SubjectSelection
+                                            navigateTo(AppScreen.SubjectSelection)
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
+                                            navigateTo(AppScreen.QuizHomeSelection)
                                         } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
+                                            navigateTo(AppScreen.NotesHome)
                                         }
                                     },
                                     modifier = Modifier
@@ -1423,15 +1512,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            AppScreen.NotesHome -> {
+                            is AppScreen.NotesHome -> {
                                 val notesHomeViewModel: NotesHomeViewModel = viewModel()
                                 NotesHomeScreen(
                                     viewModel = notesHomeViewModel,
+                                    initialFilter = screen.initialFilter,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        navigateBack()
                                     },
                                     onOpenNotesList = { type, subjectId, title ->
-                                        currentScreen = AppScreen.NotesList(type, subjectId, title)
+                                        navigateTo(AppScreen.NotesList(type, subjectId, title))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1447,7 +1537,21 @@ class MainActivity : ComponentActivity() {
                                     title = screen.title,
                                     viewModel = notesListViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.NotesHome
+                                        navigateBack()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.Settings -> {
+                                SettingsScreen(
+                                    onBackClick = { navigateBack() },
+                                    onLogoutClick = {
+                                        profileViewModel.logout {
+                                            currentScreen = AppScreen.Login
+                                        }
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

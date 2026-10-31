@@ -64,6 +64,9 @@ fun ProfileScreen(
     onAboutSynapseClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onRemoveProfilePictureClick: (() -> Unit)? = null,
+    onOpenDownloadedNotesClick: (() -> Unit)? = null,
+    onSettingsClick: (() -> Unit)? = null,
+    onBackClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -72,6 +75,9 @@ fun ProfileScreen(
         onToggleNotifications = { viewModel.onToggleNotifications(it) },
         onRetryClick = { viewModel.loadSessionAndFetchRemote() },
         onOpenSavedNotesClick = onOpenSavedNotesClick,
+        onOpenDownloadedNotesClick = onOpenDownloadedNotesClick,
+        onSettingsClick = onSettingsClick,
+        onBackClick = onBackClick,
         onLogoutClick = onLogoutClick,
         onRemoveProfilePictureClick = {
             onRemoveProfilePictureClick?.invoke() ?: viewModel.removeProfilePicture()
@@ -110,6 +116,9 @@ fun ProfileContent(
     onHelpSupportClick: (() -> Unit)? = null,
     onAboutSynapseClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onOpenDownloadedNotesClick: (() -> Unit)? = null,
+    onSettingsClick: (() -> Unit)? = null,
+    onBackClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -158,7 +167,7 @@ fun ProfileContent(
                         modifier = Modifier
                             .size(38.dp)
                             .background(Color(0xFF161F42), CircleShape)
-                            .clickable { },
+                            .clickable { onSettingsClick?.invoke() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -362,11 +371,18 @@ fun ProfileContent(
                                         onClick = { onLanguageClick?.invoke() },
                                     )
 
-                                    // Item 5: Saved & Downloaded Notes
+                                    // Item 5: Saved Notes
                                     ProfileOptionRow(
-                                        icon = "📝",
-                                        title = "Saved & Downloaded Notes",
+                                        icon = "🔖",
+                                        title = "Saved Notes",
                                         onClick = onOpenSavedNotesClick,
+                                    )
+
+                                    // Item 5b: Downloaded Notes
+                                    ProfileOptionRow(
+                                        icon = "💾",
+                                        title = "Downloaded Notes",
+                                        onClick = { onOpenDownloadedNotesClick?.invoke() ?: onOpenSavedNotesClick() },
                                     )
 
                                     // Item 6: Notifications Switch

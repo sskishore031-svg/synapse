@@ -23,6 +23,7 @@ interface NotesRepository {
         content: String,
         subjectId: Int? = null,
         chapterId: Int? = null,
+        category: String? = null,
         userId: Int? = null,
         email: String? = null
     ): Result<GenericNoteActionResponse>

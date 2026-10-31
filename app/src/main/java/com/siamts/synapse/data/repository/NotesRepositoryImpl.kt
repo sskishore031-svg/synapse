@@ -51,6 +51,7 @@ class NotesRepositoryImpl(
         content: String,
         subjectId: Int?,
         chapterId: Int?,
+        category: String?,
         userId: Int?,
         email: String?
     ): Result<GenericNoteActionResponse> {
@@ -59,7 +60,8 @@ class NotesRepositoryImpl(
                 title = title,
                 content = content,
                 subjectId = subjectId,
-                chapterId = chapterId
+                chapterId = chapterId,
+                category = category
             )
             val response = api.createNote(userId = userId, email = email, request = request)
             if (response.isSuccessful && response.body() != null) {

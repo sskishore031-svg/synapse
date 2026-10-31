@@ -101,7 +101,13 @@ data class CreateNoteRequest(
     @SerializedName("subject_id")
     val subjectId: Int? = null,
     @SerializedName("chapter_id")
-    val chapterId: Int? = null
+    val chapterId: Int? = null,
+    @SerializedName("category")
+    val category: String? = null,
+    @SerializedName("is_saved")
+    val isSaved: Boolean? = null,
+    @SerializedName("is_downloaded")
+    val isDownloaded: Boolean? = null
 )
 
 data class UpdateNoteRequest(
