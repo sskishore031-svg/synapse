@@ -2,6 +2,7 @@ package com.siamts.synapse.ui.tutor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
@@ -12,11 +13,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel managing FRIDAY AI Tutor chat state, real-time backend Q&A, and persistent messages.
+ * ViewModel managing FRIDAY AI Tutor chat state, real-time on-device LocalAIEngine Q&A, and persistent messages.
  */
 class AiTutorViewModel(
     private val repository: AiTutorRepository = AiTutorRepositoryImpl(),
-    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
+    private val localAiEngine: LocalAIEngine = LocalAIEngine.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AiTutorUiState())
@@ -66,35 +68,34 @@ class AiTutorViewModel(
         val query = _uiState.value.inputQuery.trim()
         if (query.isBlank()) return
 
+        // 1. Instantly generate on-device response from local dataset
+        val localResponse = localAiEngine.generateResponse(query)
+
+        val statusText = when {
+            localResponse.isGreeting -> "✨ FRIDAY AI · Ready to explore subjects with you"
+            localResponse.matchedTopic != null -> "✨ FRIDAY AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
+            else -> "✨ FRIDAY AI · Knowledge Companion"
+        }
+
         _uiState.update {
             it.copy(
                 userQuestion = query,
                 inputQuery = "",
-                aiThoughtStatus = "✨ FRIDAY is analyzing your question..."
+                aiAnswerParagraph1 = localResponse.paragraph1,
+                aiAnswerParagraph2 = localResponse.paragraph2,
+                aiThoughtStatus = statusText
             )
         }
 
+        // 2. Asynchronously sync to backend repository without disrupting on-device response
         viewModelScope.launch {
-            val user = sessionManager?.getSessionUser()
-            val userId = user?.id ?: 1
-            val email = user?.email ?: "student@synapse.ai"
-
-            val result = repository.askQuestion(question = query, userId = userId, email = email)
-            result.onSuccess { res ->
-                val data = res.data
-                _uiState.update {
-                    it.copy(
-                        aiAnswerParagraph1 = data?.paragraph1 ?: "Here is what I found about that topic.",
-                        aiAnswerParagraph2 = data?.paragraph2 ?: "",
-                        aiThoughtStatus = "✨ FRIDAY AI · Ready for next question"
-                    )
-                }
-            }.onFailure { err ->
-                _uiState.update {
-                    it.copy(
-                        aiThoughtStatus = "⚠️ Failed to get answer: ${err.localizedMessage}"
-                    )
-                }
+            try {
+                val user = sessionManager?.getSessionUser()
+                val userId = user?.id ?: 1
+                val email = user?.email ?: "student@synapse.ai"
+                repository.askQuestion(question = query, userId = userId, email = email)
+            } catch (_: Exception) {
+                // Backend offline or unreachable; on-device engine has already successfully answered
             }
         }
     }

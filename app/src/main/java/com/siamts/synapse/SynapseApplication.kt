@@ -2,10 +2,11 @@ package com.siamts.synapse
 
 import android.app.Application
 import android.content.Context
+import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.data.local.SessionManager
 
 /**
- * Main application class initializing application-level singletons such as [SessionManager].
+ * Main application class initializing application-level singletons such as [SessionManager] and [LocalAIEngine].
  */
 class SynapseApplication : Application() {
 
@@ -13,6 +14,7 @@ class SynapseApplication : Application() {
         super.onCreate()
         instance = this
         SessionManager.init(this)
+        LocalAIEngine.init(this)
     }
 
     companion object {

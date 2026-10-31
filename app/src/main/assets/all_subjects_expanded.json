@@ -1,0 +1,646 @@
+[
+  {
+    "chunk_id": "MATH_QE_001",
+    "subject": "Mathematics",
+    "chapter": "Quadratic Equations",
+    "topic": "Standard Form and Quadratic Formula",
+    "keywords": [
+      "quadratic equation",
+      "quadratic formula",
+      "standard form",
+      "ax2 + bx + c = 0",
+      "roots",
+      "solutions",
+      "coefficients",
+      "parabola",
+      "algebra",
+      "quadratic"
+    ],
+    "content": "A quadratic equation is a second-order polynomial equation in a single variable x, written in standard form as ax² + bx + c = 0, where a, b, and c are real numbers and a ≠ 0. The universal solution is given by the Quadratic Formula: x = (-b ± √(b² - 4ac)) / (2a). This formula yields up to two real or complex roots that correspond geometrically to the x-intercepts of the parabolic graph y = ax² + bx + c. When solving real-world trajectories, projectile motions, or area optimization problems, the quadratic formula provides exact analytical solutions."
+  },
+  {
+    "chunk_id": "MATH_QE_002",
+    "subject": "Mathematics",
+    "chapter": "Quadratic Equations",
+    "topic": "Discriminant and Nature of Roots",
+    "keywords": [
+      "discriminant",
+      "delta",
+      "b2 - 4ac",
+      "nature of roots",
+      "real roots",
+      "distinct roots",
+      "equal roots",
+      "imaginary roots",
+      "complex conjugate"
+    ],
+    "content": "The discriminant of a quadratic equation ax² + bx + c = 0 is defined by the expression Δ = b² - 4ac. The value of the discriminant classifies the nature of the roots without explicitly computing them. If Δ > 0, the equation has two distinct real roots, meaning the parabola crosses the x-axis at two points. If Δ = 0, the equation has exactly one repeated real root (a double root), where the vertex touches the x-axis tangentially. If Δ < 0, there are no real roots; instead, the equation has two complex conjugate roots, and the parabola never intersects the horizontal axis."
+  },
+  {
+    "chunk_id": "MATH_QE_003",
+    "subject": "Mathematics",
+    "chapter": "Quadratic Equations",
+    "topic": "Factoring and Completing the Square",
+    "keywords": [
+      "factoring",
+      "completing the square",
+      "vertex form",
+      "perfect square trinomial",
+      "algebraic factorization",
+      "zero product property"
+    ],
+    "content": "Solving quadratic equations can often be achieved through algebraic factorization or completing the square. In factorization, if ax² + bx + c can be rewritten as (px + q)(rx + s) = 0, the zero product property states that either px + q = 0 or rx + s = 0, giving the roots directly. When factoring is difficult, completing the square systematically transforms ax² + bx + c = 0 into the vertex form a(x - h)² + k = 0, where h = -b / (2a) and k = c - (b² / 4a). Completing the square is the foundational algebraic derivation from which the general quadratic formula is derived."
+  },
+  {
+    "chunk_id": "MATH_CALC_001",
+    "subject": "Mathematics",
+    "chapter": "Calculus",
+    "topic": "Limits and Continuity",
+    "keywords": [
+      "limit",
+      "continuity",
+      "calculus",
+      "approaching zero",
+      "epsilon delta",
+      "indeterminate form",
+      "l'hopital's rule",
+      "continuous function"
+    ],
+    "content": "The concept of a limit is the foundational cornerstone of calculus. A limit lim(x→c) f(x) = L describes the value that function f(x) approaches as the input x gets arbitrarily close to c. A function is said to be continuous at x = c if three conditions hold: f(c) is defined, the limit of f(x) as x approaches c exists, and lim(x→c) f(x) = f(c). Limits resolve indeterminate expressions like 0/0 and ∞/∞ using algebraic factoring, rationalization, or L'Hôpital's Rule, establishing the rigorous basis for defining instantaneous rates of change."
+  },
+  {
+    "chunk_id": "MATH_CALC_002",
+    "subject": "Mathematics",
+    "chapter": "Calculus",
+    "topic": "Differential Calculus and Differentiation Rules",
+    "keywords": [
+      "derivative",
+      "differential calculus",
+      "differentiation",
+      "power rule",
+      "product rule",
+      "quotient rule",
+      "chain rule",
+      "rate of change",
+      "tangent slope"
+    ],
+    "content": "The derivative of a function f(x), denoted f'(x) or dy/dx, measures the instantaneous rate of change and equals the slope of the tangent line to the curve at any given point: f'(x) = lim(h→0) [f(x + h) - f(x)] / h. Core differentiation rules include the Power Rule (d/dx [xⁿ] = n·xⁿ⁻¹), Product Rule (d/dx [u·v] = u'v + uv'), Quotient Rule (d/dx [u/v] = (u'v - uv') / v²), and Chain Rule for composite functions (d/dx [f(g(x))] = f'(g(x))·g'(x)). Derivatives are widely applied in optimization to locate local maxima and minima where f'(x) = 0."
+  },
+  {
+    "chunk_id": "MATH_CALC_003",
+    "subject": "Mathematics",
+    "chapter": "Calculus",
+    "topic": "Integral Calculus and the Fundamental Theorem",
+    "keywords": [
+      "integral",
+      "integration",
+      "antiderivative",
+      "definite integral",
+      "indefinite integral",
+      "area under curve",
+      "fundamental theorem of calculus",
+      "riemann sum"
+    ],
+    "content": "Integral calculus is the inverse operation of differentiation, focusing on continuous accumulation and determining the area under a curve. An indefinite integral ∫ f(x) dx = F(x) + C represents the general antiderivative family where F'(x) = f(x). A definite integral ∫[a to b] f(x) dx represents the net signed area bounded between x = a and x = b. The Fundamental Theorem of Calculus bridges differentiation and integration: Part 1 asserts that the derivative of an accumulation function is the integrand itself, while Part 2 enables analytical evaluation via F(b) - F(a)."
+  },
+  {
+    "chunk_id": "CS_ALGO_001",
+    "subject": "Computer Science",
+    "chapter": "Algorithms",
+    "topic": "Sorting Algorithms (MergeSort & QuickSort)",
+    "keywords": [
+      "sorting",
+      "algorithm",
+      "quicksort",
+      "mergesort",
+      "divide and conquer",
+      "pivot",
+      "recursion",
+      "time complexity",
+      "stable sort",
+      "in-place sort"
+    ],
+    "content": "Sorting algorithms arrange unordered elements into monotonic sequences. Divide-and-conquer strategies offer optimal O(n log n) average performance. MergeSort splits the dataset into equal halves recursively, sorts them, and then merges the sorted halves, guaranteeing O(n log n) time complexity in worst, average, and best cases with O(n) auxiliary space stability. QuickSort selects a pivot element, partitions the array such that smaller elements precede the pivot and larger ones follow it, and recurses on both partitions. QuickSort achieves O(n log n) average time with O(log n) space, making it a ubiquitous high-speed in-place sorting choice."
+  },
+  {
+    "chunk_id": "CS_ALGO_002",
+    "subject": "Computer Science",
+    "chapter": "Algorithms",
+    "topic": "Search Algorithms and Graph Traversals (Binary Search, BFS & DFS)",
+    "keywords": [
+      "binary search",
+      "search algorithm",
+      "breadth first search",
+      "bfs",
+      "depth first search",
+      "dfs",
+      "graph traversal",
+      "queue",
+      "stack",
+      "logarithmic"
+    ],
+    "content": "Search algorithms retrieve target elements or traverse interconnected network topologies. Binary Search operates on sorted arrays by repeatedly halving the search window: comparing target with midpoint yields ultra-fast O(log n) time complexity. For graphs and trees, Breadth-First Search (BFS) explores all neighboring vertices level-by-level using a First-In-First-Out (FIFO) queue, finding the shortest unweighted path with O(V + E) complexity. Depth-First Search (DFS) dives deeply down branches using recursion or a Last-In-First-Out (LIFO) stack, commonly utilized for topological sorting, cycle detection, and maze solving."
+  },
+  {
+    "chunk_id": "CS_ALGO_003",
+    "subject": "Computer Science",
+    "chapter": "Algorithms",
+    "topic": "Asymptotic Analysis and Big-O Notation",
+    "keywords": [
+      "big-o notation",
+      "asymptotic analysis",
+      "time complexity",
+      "space complexity",
+      "theta",
+      "omega",
+      "worst case",
+      "scalability",
+      "efficiency"
+    ],
+    "content": "Asymptotic analysis mathematically quantifies algorithmic runtime and memory usage as input size n approaches infinity, independent of specific hardware. Big-O notation O(g(n)) defines the asymptotic upper bound (worst-case scenario), Big-Omega Ω(g(n)) represents the lower bound (best-case), and Big-Theta Θ(g(n)) represents tight bounds. Common time complexity hierarchies from fastest to slowest are: O(1) Constant, O(log n) Logarithmic, O(n) Linear, O(n log n) Linearithmic, O(n²) Quadratic, and O(2ⁿ) Exponential. Selecting optimal asymptotic complexity ensures software scales gracefully across millions of records."
+  },
+  {
+    "chunk_id": "CS_DS_001",
+    "subject": "Computer Science",
+    "chapter": "Data Structures",
+    "topic": "Arrays and Linked Lists",
+    "keywords": [
+      "arrays",
+      "linked lists",
+      "singly linked list",
+      "doubly linked list",
+      "contiguous memory",
+      "nodes",
+      "pointers",
+      "dynamic allocation",
+      "data structures"
+    ],
+    "content": "Arrays and linked lists are foundational linear data structures. An array stores elements in contiguous memory locations, enabling instantaneous O(1) random access via index calculation, but resizing and insertions/deletions within the middle require costly O(n) element shifts. Conversely, a linked list consists of disjoint nodes where each node stores a payload and pointers to successive (and optionally predecessor) nodes. Linked lists support O(1) head/tail insertions and dynamic memory scalability without contiguous allocation, at the expense of sequential O(n) element search."
+  },
+  {
+    "chunk_id": "CS_DS_002",
+    "subject": "Computer Science",
+    "chapter": "Data Structures",
+    "topic": "Stacks, Queues, and Deques",
+    "keywords": [
+      "stack",
+      "queue",
+      "lifo",
+      "fifo",
+      "push",
+      "pop",
+      "enqueue",
+      "dequeue",
+      "deque",
+      "call stack",
+      "buffer"
+    ],
+    "content": "Stacks and Queues provide disciplined data access patterns. A Stack follows the Last-In-First-Out (LIFO) principle: elements are inserted (pushed) and removed (popped) exclusively from the top in O(1) time. Stacks govern function call stacks, undo mechanisms, and syntax parsing. A Queue adheres to the First-In-First-Out (FIFO) principle: elements enqueue at the rear and dequeue from the front in O(1) time, powering asynchronous task scheduling, printer queues, and breadth-first search. A Double-Ended Queue (Deque) permits insertion and deletion at both ends with O(1) time complexity."
+  },
+  {
+    "chunk_id": "CS_DS_003",
+    "subject": "Computer Science",
+    "chapter": "Data Structures",
+    "topic": "Hash Tables and Binary Search Trees",
+    "keywords": [
+      "hash table",
+      "hash map",
+      "hashing",
+      "hash collision",
+      "binary search tree",
+      "bst",
+      "balanced tree",
+      "avl tree",
+      "red black tree",
+      "lookup"
+    ],
+    "content": "Hash Tables and Trees optimize associative retrieval and ordered data hierarchy. A Hash Table maps keys to values by running an arithmetic hash function over keys to index bucket arrays, yielding average O(1) insertions, deletions, and lookups. Collisions are resolved through chaining or open addressing. A Binary Search Tree (BST) organizes hierarchical nodes such that for any node, all left subtree values are smaller and right subtree values are larger. In balanced BSTs (like AVL and Red-Black trees), search, insertion, and deletion operations maintain strict O(log n) performance."
+  },
+  {
+    "chunk_id": "DS_VIZ_001",
+    "subject": "Data Science",
+    "chapter": "Data Visualization",
+    "topic": "Core Principles of Data Visualization",
+    "keywords": [
+      "data visualization",
+      "visual encoding",
+      "chart design",
+      "tufte",
+      "data-ink ratio",
+      "color theory",
+      "perception",
+      "storytelling",
+      "dashboards"
+    ],
+    "content": "Data visualization translates raw quantitative datasets into graphical representations that leverage human visual cognition to detect patterns, trends, and anomalies. Edward Tufte's foundational principle emphasizes maximizing the 'Data-Ink Ratio', stripping away non-essential gridlines, decorative textures, and 'chartjunk'. Key visualization attributes include choosing intuitive visual encodings (position, length, color hue, and saturation), maintaining truthful axis baselines to prevent misleading perceptions, and structuring visual hierarchy to guide analytical storytelling."
+  },
+  {
+    "chunk_id": "DS_VIZ_002",
+    "subject": "Data Science",
+    "chapter": "Data Visualization",
+    "topic": "Chart Types: Histograms, Scatter Plots, and Box Plots",
+    "keywords": [
+      "histogram",
+      "scatter plot",
+      "box plot",
+      "bar chart",
+      "correlation",
+      "distribution",
+      "outliers",
+      "interquartile range",
+      "skewness"
+    ],
+    "content": "Selecting the appropriate chart depends on data dimensionality and analytical purpose. A Histogram divides continuous numerical data into discrete bins, displaying probability distributions, skewness, and multimodal peaks. A Scatter Plot places paired continuous variables along Cartesian axes to reveal correlations, clusters, and linear/non-linear dependencies. A Box Plot (box-and-whisker) depicts five-number summaries: minimum, lower quartile (Q1), median (Q2), upper quartile (Q3), and maximum, highlighting dispersion and isolating outliers beyond 1.5 times the Interquartile Range (IQR)."
+  },
+  {
+    "chunk_id": "DS_VIZ_003",
+    "subject": "Data Science",
+    "chapter": "Data Visualization",
+    "topic": "Exploratory Data Analysis (EDA) and Heatmaps",
+    "keywords": [
+      "exploratory data analysis",
+      "eda",
+      "heatmap",
+      "correlation matrix",
+      "missing values",
+      "feature engineering",
+      "data cleaning",
+      "seaborn",
+      "matplotlib"
+    ],
+    "content": "Exploratory Data Analysis (EDA) is the preliminary phase where data scientists inspect distributions, identify missing data, detect anomalies, and uncover relationships prior to statistical modeling. Heatmaps are matrices where cell values are color-coded, routinely deployed alongside Pearson correlation coefficients to spot multicollinearity across hundreds of features simultaneously. EDA guides feature engineering, data imputation, and categorical transformation, ensuring robust downstream machine learning models."
+  },
+  {
+    "chunk_id": "DS_ML_001",
+    "subject": "Data Science",
+    "chapter": "Machine Learning Fundamentals",
+    "topic": "Supervised vs Unsupervised Learning",
+    "keywords": [
+      "machine learning",
+      "supervised learning",
+      "unsupervised learning",
+      "classification",
+      "regression",
+      "clustering",
+      "k-means",
+      "labels"
+    ],
+    "content": "Machine Learning algorithms learn predictive models from empirical training data. Supervised Learning trains on labeled datasets (x, y) to learn a mapping function f(x) ≈ y. Its primary tasks are Regression (predicting continuous outputs like home prices) and Classification (predicting discrete class categories like spam vs non-spam). Unsupervised Learning operates on unlabeled data (x) to discover latent structures, clusters, or lower-dimensional representations without target supervision, exemplified by K-Means clustering, Hierarchical clustering, and Principal Component Analysis (PCA)."
+  },
+  {
+    "chunk_id": "DS_ML_002",
+    "subject": "Data Science",
+    "chapter": "Machine Learning Fundamentals",
+    "topic": "Overfitting, Underfitting, and Regularization",
+    "keywords": [
+      "overfitting",
+      "underfitting",
+      "bias-variance tradeoff",
+      "regularization",
+      "l1 lasso",
+      "l2 ridge",
+      "generalization",
+      "cross-validation",
+      "dropout"
+    ],
+    "content": "The bias-variance tradeoff governs generalization. Underfitting (high bias) occurs when a model is overly simplistic, failing to capture underlying patterns in training and test data alike. Overfitting (high variance) happens when a complex model memorizes noise and sample idiosyncrasies, achieving near-perfect training accuracy but degrading sharply on unseen test data. Regularization counters overfitting by penalizing parameter magnitudes in the loss function: L1 Regularization (Lasso) adds absolute weight penalties inducing sparsity, while L2 Regularization (Ridge) adds squared weight penalties shrinking weights toward zero."
+  },
+  {
+    "chunk_id": "DS_ML_003",
+    "subject": "Data Science",
+    "chapter": "Machine Learning Fundamentals",
+    "topic": "Model Evaluation Metrics: Precision, Recall, and ROC-AUC",
+    "keywords": [
+      "evaluation metrics",
+      "confusion matrix",
+      "precision",
+      "recall",
+      "f1-score",
+      "roc curve",
+      "auc",
+      "true positive",
+      "false positive",
+      "accuracy"
+    ],
+    "content": "Accuracy alone is misleading on imbalanced datasets, requiring confusion matrix metrics. Precision = TP / (TP + FP) measures the fraction of positive predictions that were correct, crucial in fraud detection where false alarms are costly. Recall (Sensitivity) = TP / (TP + FN) measures the proportion of actual positive cases retrieved, critical in medical diagnostics where missing a diseased patient is catastrophic. The F1-Score provides the harmonic mean of precision and recall. The Receiver Operating Characteristic (ROC) curve plots True Positive Rate vs False Positive Rate across all thresholds, with Area Under Curve (AUC) measuring aggregate classification discrimination."
+  },
+  {
+    "chunk_id": "AI_NN_001",
+    "subject": "Artificial Intelligence",
+    "chapter": "Neural Networks",
+    "topic": "Perceptrons and Multi-Layer Perceptrons (MLP)",
+    "keywords": [
+      "neural network",
+      "perceptron",
+      "multi-layer perceptron",
+      "mlp",
+      "weights",
+      "bias",
+      "feedforward",
+      "layers",
+      "deep learning"
+    ],
+    "content": "An artificial neural network simulates biological neural processing using interconnected mathematical nodes called perceptrons. A single perceptron computes a weighted sum of inputs plus a bias: z = Σ(wᵢ·xᵢ) + b, followed by an activation function to introduce non-linearity. A Multi-Layer Perceptron (MLP) stacks an input layer, one or more hidden layers, and an output layer. According to the Universal Approximation Theorem, a feedforward network with a single hidden layer and non-linear activations can approximate any continuous function given sufficient hidden neurons."
+  },
+  {
+    "chunk_id": "AI_NN_002",
+    "subject": "Artificial Intelligence",
+    "chapter": "Neural Networks",
+    "topic": "Activation Functions: ReLU, Sigmoid, and Softmax",
+    "keywords": [
+      "activation function",
+      "relu",
+      "sigmoid",
+      "softmax",
+      "tanh",
+      "non-linearity",
+      "vanishing gradient",
+      "probability distribution"
+    ],
+    "content": "Activation functions introduce non-linearity into neural networks, enabling them to solve complex non-linear classification and regression boundaries. Sigmoid σ(z) = 1 / (1 + e⁻ᶻ) compresses real values into (0, 1), widely used in binary classification outputs, but suffers from the vanishing gradient problem during deep backpropagation. Rectified Linear Unit (ReLU), defined as f(z) = max(0, z), accelerates training convergence by providing constant gradient 1 for positive inputs without saturation. Softmax converts output logit vectors into normalized probability distributions across multiple mutually exclusive classes where Σ pᵢ = 1."
+  },
+  {
+    "chunk_id": "AI_NN_003",
+    "subject": "Artificial Intelligence",
+    "chapter": "Neural Networks",
+    "topic": "Backpropagation and Gradient Descent Optimization",
+    "keywords": [
+      "backpropagation",
+      "gradient descent",
+      "loss function",
+      "optimizer",
+      "chain rule",
+      "learning rate",
+      "adam",
+      "stochastic gradient descent",
+      "sgd"
+    ],
+    "content": "Neural networks learn by iteratively minimizing an empirical loss function (such as Mean Squared Error or Cross-Entropy). Gradient Descent calculates the loss surface gradient with respect to model parameters: W := W - η·∇W(Loss), where η is the learning rate. Backpropagation efficiently calculates these gradients using the calculus Chain Rule, propagating error derivatives backwards from the output layer through hidden layers to update every weight. Advanced adaptive optimizers like Adam (Adaptive Moment Estimation) dynamically adjust individual learning rates per weight using running averages of first and second gradient moments."
+  },
+  {
+    "chunk_id": "AI_TRANS_001",
+    "subject": "Artificial Intelligence",
+    "chapter": "Transformers & RAG",
+    "topic": "Transformer Architecture and Self-Attention Mechanism",
+    "keywords": [
+      "transformer",
+      "self-attention",
+      "attention mechanism",
+      "query key value",
+      "qkv",
+      "multi-head attention",
+      "vaswani",
+      "encoder decoder",
+      "parallel processing"
+    ],
+    "content": "Introduced in the seminal paper 'Attention Is All You Need' (Vaswani et al., 2017), the Transformer architecture replaced recurrent architectures by computing interactions between all token pairs simultaneously in parallel. The core Self-Attention mechanism maps input token embeddings into Query (Q), Key (K), and Value (V) matrices, calculating attention weights as Attention(Q, K, V) = softmax(Q·Kᵀ / √dₖ)·V. Multi-Head Attention enables the network to attend to information from distinct representation subspaces at multiple positions simultaneously, capturing both syntax and long-range semantic dependencies."
+  },
+  {
+    "chunk_id": "AI_TRANS_002",
+    "subject": "Artificial Intelligence",
+    "chapter": "Transformers & RAG",
+    "topic": "Large Language Models (LLMs) and Pre-training",
+    "keywords": [
+      "llm",
+      "large language model",
+      "gpt",
+      "bert",
+      "pre-training",
+      "fine-tuning",
+      "next token prediction",
+      "masked language model",
+      "rlhf"
+    ],
+    "content": "Large Language Models (LLMs) are scaled Transformer models trained on colossal text corpora. Autoregressive decoder models (e.g., GPT series) are pre-trained via self-supervised next-token prediction, maximizing the likelihood of predicting word t given context words 1 through t-1. Encoder-only models (e.g., BERT) employ Masked Language Modeling to learn bidirectional context representations. Following massive unsupervised pre-training, LLMs undergo Supervised Fine-Tuning (SFT) and Reinforcement Learning from Human Feedback (RLHF) to align models with human intent, safety guidelines, and task instruction following."
+  },
+  {
+    "chunk_id": "AI_TRANS_003",
+    "subject": "Artificial Intelligence",
+    "chapter": "Transformers & RAG",
+    "topic": "Retrieval-Augmented Generation (RAG) and Vector Embeddings",
+    "keywords": [
+      "rag",
+      "retrieval augmented generation",
+      "vector embedding",
+      "vector database",
+      "similarity search",
+      "cosine similarity",
+      "hallucination",
+      "context injection"
+    ],
+    "content": "Retrieval-Augmented Generation (RAG) is an architectural framework that pairs parametric knowledge of LLMs with dynamic external knowledge bases. Documents are split into semantic chunks and encoded into high-dimensional vector embeddings using neural embedding models. When a user submits a query, it is embedded and compared against chunk vectors using Cosine Similarity or dense k-Nearest Neighbors (k-NN) search. The top matching chunks are injected into the LLM prompt as verifiable context, drastically mitigating factual hallucinations, overcoming static knowledge cutoffs, and allowing private enterprise data querying."
+  },
+  {
+    "chunk_id": "PHYS_WAVE_001",
+    "subject": "Physics",
+    "chapter": "Waves",
+    "topic": "Wave Parameters: Frequency, Wavelength, and Velocity",
+    "keywords": [
+      "waves",
+      "wavelength",
+      "frequency",
+      "wave speed",
+      "amplitude",
+      "period",
+      "v = f lambda",
+      "hertz",
+      "crest",
+      "trough"
+    ],
+    "content": "A wave is a propagating disturbance that transports energy and momentum through space without permanent transport of matter. Key wave parameters include Amplitude (maximum displacement from equilibrium), Wavelength λ (spatial length of one complete wave cycle between consecutive crests), Period T (time for one complete cycle), and Frequency f (cycles per second, measured in Hertz, where f = 1/T). The fundamental wave equation connects wave speed v, frequency f, and wavelength λ: v = f·λ. In non-dispersive media, wave speed depends solely on the mechanical or electrical properties of the transmission medium."
+  },
+  {
+    "chunk_id": "PHYS_WAVE_002",
+    "subject": "Physics",
+    "chapter": "Waves",
+    "topic": "Mechanical Waves vs Electromagnetic Waves",
+    "keywords": [
+      "mechanical waves",
+      "electromagnetic waves",
+      "transverse waves",
+      "longitudinal waves",
+      "sound waves",
+      "light waves",
+      "vacuum",
+      "medium",
+      "polarization"
+    ],
+    "content": "Waves are broadly categorized by physical mechanism and propagation direction. Mechanical waves (like sound, water ripples, and seismic waves) require a material medium (solid, liquid, or gas) to propagate through elastic deformation of particles. In Longitudinal waves, particles oscillate parallel to wave motion (compressions and rarefactions). In Transverse waves, particles oscillate perpendicular to wave direction. Electromagnetic waves (radio, infrared, visible light, ultraviolet, X-rays) consist of oscillating coupled electric and magnetic fields that propagate through a vacuum at the speed of light c ≈ 3 × 10⁸ m/s."
+  },
+  {
+    "chunk_id": "PHYS_WAVE_003",
+    "subject": "Physics",
+    "chapter": "Waves",
+    "topic": "Wave Phenomena: Superposition, Interference, and Doppler Effect",
+    "keywords": [
+      "superposition",
+      "interference",
+      "constructive interference",
+      "destructive interference",
+      "diffraction",
+      "doppler effect",
+      "standing waves",
+      "resonance",
+      "frequency shift"
+    ],
+    "content": "When waves interact, they obey the Principle of Superposition: the net displacement is the algebraic sum of individual wave displacements. When waves meet in phase, Constructive Interference amplifies amplitude; when out of phase by 180°, Destructive Interference cancels amplitude. Diffraction is the bending of waves around obstacles whose size is comparable to wavelength. The Doppler Effect is the observed shift in wave frequency caused by relative motion between source and observer: approaching sources shift toward higher observed frequencies (blue shift), while receding sources shift lower (red shift)."
+  },
+  {
+    "chunk_id": "PHYS_NEWTON_001",
+    "subject": "Physics",
+    "chapter": "Newton's Laws of Motion",
+    "topic": "Newton's First Law of Motion (Law of Inertia)",
+    "keywords": [
+      "newton's first law",
+      "inertia",
+      "balanced forces",
+      "equilibrium",
+      "net force",
+      "rest",
+      "constant velocity",
+      "reference frame"
+    ],
+    "content": "Newton's First Law of Motion states that an object at rest remains at rest, and an object in uniform motion continues moving at constant velocity in a straight line, unless acted upon by a non-zero external net force (ΣF = 0 ⟹ dv/dt = 0). This tendency of matter to resist any change in its velocity state is termed Inertia, quantitatively measured by the object's mass. The first law implicitly defines Inertial Reference Frames: non-accelerating frames of reference in which Newton's mechanics hold true without introducing fictitious forces."
+  },
+  {
+    "chunk_id": "PHYS_NEWTON_002",
+    "subject": "Physics",
+    "chapter": "Newton's Laws of Motion",
+    "topic": "Newton's Second Law of Motion (Force and Acceleration)",
+    "keywords": [
+      "newton's second law",
+      "f = ma",
+      "force",
+      "mass",
+      "acceleration",
+      "momentum",
+      "dp/dt",
+      "newtons",
+      "net force"
+    ],
+    "content": "Newton's Second Law of Motion quantifies how forces govern the dynamics of physical bodies. It states that the time rate of change of linear momentum p is directly proportional to the applied net external force: F_net = dp/dt. For an object of constant invariant mass m, momentum is p = mv, yielding the renowned equation: F_net = m·a, where a is the resulting acceleration vector in the direction of the net force. One Newton (1 N) is defined as the force required to accelerate a 1-kilogram mass at 1 meter per second squared (1 kg·m/s²)."
+  },
+  {
+    "chunk_id": "PHYS_NEWTON_003",
+    "subject": "Physics",
+    "chapter": "Newton's Laws of Motion",
+    "topic": "Newton's Third Law and Conservation of Momentum",
+    "keywords": [
+      "newton's third law",
+      "action and reaction",
+      "equal and opposite",
+      "conservation of momentum",
+      "force pairs",
+      "rocket propulsion",
+      "impulse"
+    ],
+    "content": "Newton's Third Law states that whenever one body exerts a force on a second body, the second body simultaneously exerts an equal and opposite force on the first body (F_A = -F_B). Action and reaction forces always occur in matched pairs, act on two distinct objects, and never cancel each other out within the same body. A direct corollary of Newton's third law is the Law of Conservation of Linear Momentum: in any closed, isolated system subjected to zero net external force, total momentum before collision equals total momentum after collision, powering rocket propulsion and ballistic dynamics."
+  },
+  {
+    "chunk_id": "CHEM_BOND_001",
+    "subject": "Chemistry",
+    "chapter": "Chemical Bonds",
+    "topic": "Ionic Bonding and Lattice Energy",
+    "keywords": [
+      "ionic bonding",
+      "ionic bond",
+      "electronegativity",
+      "cations",
+      "anions",
+      "lattice energy",
+      "electrostatic force",
+      "salts",
+      "nacl",
+      "octet rule"
+    ],
+    "content": "Ionic bonding is the electrostatic attraction between oppositely charged ions formed by the complete transfer of one or more valence electrons from an electropositive metal to an electronegative non-metal. Atoms transfer electrons to satisfy the stable Octet Rule (resembling noble gas valence configurations). The resulting cations (e.g., Na⁺) and anions (e.g., Cl⁻) organize into a repeating three-dimensional crystalline lattice. The stability of ionic solids is measured by Lattice Energy, the energy released when gaseous ions coalesce into crystal lattices, leading to high melting points and electrical conductivity when molten or aqueous."
+  },
+  {
+    "chunk_id": "CHEM_BOND_002",
+    "subject": "Chemistry",
+    "chapter": "Chemical Bonds",
+    "topic": "Covalent Bonding and VSEPR Molecular Geometry",
+    "keywords": [
+      "covalent bonding",
+      "covalent bond",
+      "electron sharing",
+      "lewis structure",
+      "vsepr theory",
+      "molecular geometry",
+      "electronegativity difference",
+      "polar covalent"
+    ],
+    "content": "Covalent bonding involves the mutual sharing of valence electron pairs between non-metallic atoms with comparable electronegativities. Non-polar covalent bonds share electrons symmetrically, while polar covalent bonds feature unequal sharing due to electronegativity discrepancies (0.5 to 1.7 on Pauling scale), generating permanent dipole moments. Valence Shell Electron Pair Repulsion (VSEPR) theory dictates molecular geometries: electron pairs surrounding a central atom repel each other, arranging themselves in space to minimize electrostatic repulsion (e.g., Linear 180°, Trigonal Planar 120°, Tetrahedral 109.5°, and Bent H₂O 104.5°)."
+  },
+  {
+    "chunk_id": "CHEM_BOND_003",
+    "subject": "Chemistry",
+    "chapter": "Chemical Bonds",
+    "topic": "Metallic Bonding and Intermolecular Forces",
+    "keywords": [
+      "metallic bonding",
+      "sea of electrons",
+      "intermolecular forces",
+      "van der waals",
+      "hydrogen bonding",
+      "dipole-dipole",
+      "london dispersion",
+      "malleability"
+    ],
+    "content": "Metallic bonding occurs in metals and alloys, characterized by an array of positive metal cations submerged in a delocalized 'sea of electrons'. Free valence mobility explains metallic electrical and thermal conductivity, ductility, and malleability. In contrast, Intermolecular Forces (IMFs) act between separate molecules. Dispersion forces (London forces) are temporary induced dipoles present in all molecules. Dipole-dipole interactions occur between polar molecules. Hydrogen bonding is an exceptionally strong IMF occurring when hydrogen covalently bonds to highly electronegative nitrogen, oxygen, or fluorine (N, O, F), conferring water's anomalously high boiling point and DNA double-helix stability."
+  },
+  {
+    "chunk_id": "CHEM_AB_001",
+    "subject": "Chemistry",
+    "chapter": "Acids and Bases",
+    "topic": "Acid-Base Theories: Arrhenius, Brønsted-Lowry, and Lewis",
+    "keywords": [
+      "acid",
+      "base",
+      "arrhenius",
+      "bronsted-lowry",
+      "lewis acid",
+      "proton donor",
+      "proton acceptor",
+      "electron pair",
+      "conjugate pairs"
+    ],
+    "content": "Acid-base chemistry is classified under three theoretical models of increasing generality. Arrhenius Theory defines an acid as a substance that dissociates in water to produce hydronium ions (H⁺/H₃O⁺) and a base as producing hydroxide ions (OH⁻). Brønsted-Lowry Theory broadens this by defining an acid as a Proton (H⁺) Donor and a base as a Proton Acceptor, creating conjugate acid-base pairs (e.g., NH₃ + H₂O ⇌ NH₄⁺ + OH⁻). Lewis Theory is the most comprehensive, defining an acid as an Electron Pair Acceptor (e.g., BF₃, metal cations) and a base as an Electron Pair Donor (e.g., :NH₃), explaining reactions in non-aqueous and non-proton systems."
+  },
+  {
+    "chunk_id": "CHEM_AB_002",
+    "subject": "Chemistry",
+    "chapter": "Acids and Bases",
+    "topic": "The pH Scale, pOH, and Ion Product of Water",
+    "keywords": [
+      "ph scale",
+      "poh",
+      "hydrogen ion concentration",
+      "kw",
+      "autoionization of water",
+      "acidic",
+      "alkaline",
+      "neutral",
+      "logarithmic scale"
+    ],
+    "content": "The pH scale quantitatively expresses the acidity or basicity of aqueous solutions on a negative logarithmic scale: pH = -log₁₀[H⁺], and pOH = -log₁₀[OH⁻]. Pure water undergoes slight autoionization: 2 H₂O ⇌ H₃O⁺ + OH⁻, with ion product constant Kw = [H⁺][OH⁻] = 1.0 × 10⁻¹⁴ at 25°C. Taking negative logarithms yields the fundamental relation: pH + pOH = 14. At 25°C, solutions with pH < 7 are acidic ([H⁺] > 10⁻⁷ M), pH = 7 is neutral ([H⁺] = 10⁻⁷ M), and pH > 7 are basic/alkaline ([H⁺] < 10⁻⁷ M). Because the scale is logarithmic, each single-unit drop represents a tenfold surge in hydronium concentration."
+  },
+  {
+    "chunk_id": "CHEM_AB_003",
+    "subject": "Chemistry",
+    "chapter": "Acids and Bases",
+    "topic": "Neutralization Reactions, Titrations, and Buffer Solutions",
+    "keywords": [
+      "neutralization",
+      "titration",
+      "buffer solution",
+      "henderson-hasselbalch",
+      "equivalence point",
+      "indicator",
+      "weak acid",
+      "conjugate base",
+      "equilibrium"
+    ],
+    "content": "A neutralization reaction occurs when an acid reacts with a base to produce water and a salt: Acid + Base → Salt + H₂O (e.g., HCl + NaOH → NaCl + H₂O). Acid-base Titration quantitatively determines the unknown concentration of an analyte by progressively dispensing a titrant of known concentration until the equivalence point is reached, often monitored via indicator color shifts or pH meters. A Buffer Solution resists dramatic changes in pH upon addition of small amounts of strong acid or base, composed of a weak acid and its conjugate base (or weak base and conjugate acid). Buffer pH is modeled using the Henderson-Hasselbalch equation: pH = pKa + log([A⁻] / [HA]), maintaining physiological stability in human blood."
+  }
+]
