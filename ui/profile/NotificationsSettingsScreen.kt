@@ -45,13 +45,13 @@ import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 fun NotificationsSettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    initialEnabled: Boolean = true,
+    onToggleNotifications: (Boolean) -> Unit = {},
 ) {
-    var enableAll by remember { mutableStateOf(true) }
+    var enableAll by remember { mutableStateOf(initialEnabled) }
     var studyReminders by remember { mutableStateOf(true) }
     var newContent by remember { mutableStateOf(true) }
     var achievements by remember { mutableStateOf(true) }
-    var appUpdates by remember { mutableStateOf(false) }
-    var tips by remember { mutableStateOf(true) }
 
     Box(
         modifier = modifier
@@ -111,45 +111,57 @@ fun NotificationsSettingsScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Main Enable Toggle Box
+                        // Master Toggle
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "🔔", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text(text = "Enable Notifications", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Column {
+                                        Text(text = "Enable Notifications", color = Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Receive learning updates and reminders", color = Color(0xFF64748B), fontSize = 12.sp)
                                     }
                                     Switch(
                                         checked = enableAll,
-                                        onCheckedChange = { enableAll = it },
+                                        onCheckedChange = {
+                                            enableAll = it
+                                            onToggleNotifications(it)
+                                        },
                                         colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = BlueAccent)
                                     )
                                 }
                             }
                         }
 
-                        // Notification Types List Box
+                        // Specific Notifications
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                    Text(
-                                        text = "Notification Types",
-                                        color = Color(0xFF64748B),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    NotificationToggleRow(
+                                        title = "Daily Study Reminders",
+                                        subtitle = "Gentle prompts to keep your learning streak",
+                                        checked = studyReminders && enableAll,
+                                        enabled = enableAll,
+                                        onCheckedChange = { studyReminders = it }
                                     )
 
-                                    NotificationTypeRow("Study Reminders", "⏰", studyReminders) { studyReminders = it }
-                                    NotificationTypeRow("New Content", "📰", newContent) { newContent = it }
-                                    NotificationTypeRow("Achievements", "🏆", achievements) { achievements = it }
-                                    NotificationTypeRow("App Updates", "📲", appUpdates) { appUpdates = it }
-                                    NotificationTypeRow("Tips & Suggestions", "💡", tips) { tips = it }
+                                    NotificationToggleRow(
+                                        title = "New Chapters & Quizzes",
+                                        subtitle = "Notifications when fresh content is unlocked",
+                                        checked = newContent && enableAll,
+                                        enabled = enableAll,
+                                        onCheckedChange = { newContent = it }
+                                    )
+
+                                    NotificationToggleRow(
+                                        title = "Milestone Achievements",
+                                        subtitle = "Alerts when you earn badges or level up",
+                                        checked = achievements && enableAll,
+                                        enabled = enableAll,
+                                        onCheckedChange = { achievements = it }
+                                    )
                                 }
                             }
                         }
@@ -161,25 +173,25 @@ fun NotificationsSettingsScreen(
 }
 
 @Composable
-private fun NotificationTypeRow(
+private fun NotificationToggleRow(
     title: String,
-    icon: String,
+    subtitle: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = icon, fontSize = 16.sp)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(text = title, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, color = if (enabled) Color(0xFF0F172A) else Color(0xFF94A3B8), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = subtitle, color = Color(0xFF94A3B8), fontSize = 11.sp)
         }
-
         Switch(
             checked = checked,
+            enabled = enabled,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = BlueAccent)
         )

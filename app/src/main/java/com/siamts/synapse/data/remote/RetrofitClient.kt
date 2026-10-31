@@ -68,6 +68,18 @@ object RetrofitClient {
     @Volatile
     private var lessonApiInstance: LessonApi? = null
 
+    @Volatile
+    private var flashcardsApiInstance: FlashcardsApi? = null
+
+    @Volatile
+    private var aiTutorApiInstance: AiTutorApi? = null
+
+    @Volatile
+    private var achievementsApiInstance: AchievementsApi? = null
+
+    @Volatile
+    private var notificationsApiInstance: NotificationsApi? = null
+
     private val loggingInterceptor: HttpLoggingInterceptor by lazy {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -113,6 +125,18 @@ object RetrofitClient {
 
     val lessonApi: LessonApi
         get() = getOrCreateLessonApi()
+
+    val flashcardsApi: FlashcardsApi
+        get() = getOrCreateFlashcardsApi()
+
+    val aiTutorApi: AiTutorApi
+        get() = getOrCreateAiTutorApi()
+
+    val achievementsApi: AchievementsApi
+        get() = getOrCreateAchievementsApi()
+
+    val notificationsApi: NotificationsApi
+        get() = getOrCreateNotificationsApi()
 
     private fun getOrCreateApi(): AuthApi {
         return apiInstance ?: synchronized(this) {
@@ -186,6 +210,38 @@ object RetrofitClient {
         }
     }
 
+    private fun getOrCreateFlashcardsApi(): FlashcardsApi {
+        return flashcardsApiInstance ?: synchronized(this) {
+            flashcardsApiInstance ?: buildRetrofit(currentBaseUrl).create(FlashcardsApi::class.java).also {
+                flashcardsApiInstance = it
+            }
+        }
+    }
+
+    private fun getOrCreateAiTutorApi(): AiTutorApi {
+        return aiTutorApiInstance ?: synchronized(this) {
+            aiTutorApiInstance ?: buildRetrofit(currentBaseUrl).create(AiTutorApi::class.java).also {
+                aiTutorApiInstance = it
+            }
+        }
+    }
+
+    private fun getOrCreateAchievementsApi(): AchievementsApi {
+        return achievementsApiInstance ?: synchronized(this) {
+            achievementsApiInstance ?: buildRetrofit(currentBaseUrl).create(AchievementsApi::class.java).also {
+                achievementsApiInstance = it
+            }
+        }
+    }
+
+    private fun getOrCreateNotificationsApi(): NotificationsApi {
+        return notificationsApiInstance ?: synchronized(this) {
+            notificationsApiInstance ?: buildRetrofit(currentBaseUrl).create(NotificationsApi::class.java).also {
+                notificationsApiInstance = it
+            }
+        }
+    }
+
     private fun buildRetrofit(url: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(url)
@@ -211,6 +267,10 @@ object RetrofitClient {
                 quizApiInstance = buildRetrofit(formatted).create(QuizApi::class.java)
                 notesApiInstance = buildRetrofit(formatted).create(NotesApi::class.java)
                 lessonApiInstance = buildRetrofit(formatted).create(LessonApi::class.java)
+                flashcardsApiInstance = buildRetrofit(formatted).create(FlashcardsApi::class.java)
+                aiTutorApiInstance = buildRetrofit(formatted).create(AiTutorApi::class.java)
+                achievementsApiInstance = buildRetrofit(formatted).create(AchievementsApi::class.java)
+                notificationsApiInstance = buildRetrofit(formatted).create(NotificationsApi::class.java)
             }
         }
     }

@@ -1193,7 +1193,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AppScreen.StudyGoals -> {
+                                val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
                                 StudyGoalsScreen(
+                                    initialGoal = profileUiState.studyGoalText,
+                                    onGoalSelected = { newGoal ->
+                                        profileViewModel.updateStudyGoal(newGoal)
+                                    },
                                     onBackClick = {
                                         currentScreen = AppScreen.Profile
                                     },
@@ -1204,7 +1209,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AppScreen.LanguageSelection -> {
+                                val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
                                 LanguageSelectionScreen(
+                                    initialLanguage = profileUiState.languageText,
+                                    onLanguageSelected = { newLang ->
+                                        profileViewModel.updatePreferredLanguage(newLang)
+                                    },
                                     onBackClick = {
                                         currentScreen = AppScreen.Profile
                                     },
@@ -1215,7 +1225,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AppScreen.NotificationsSettings -> {
+                                val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
                                 NotificationsSettingsScreen(
+                                    initialEnabled = profileUiState.notificationsEnabled,
+                                    onToggleNotifications = { enabled ->
+                                        profileViewModel.onToggleNotifications(enabled)
+                                    },
                                     onBackClick = {
                                         currentScreen = AppScreen.Profile
                                     },

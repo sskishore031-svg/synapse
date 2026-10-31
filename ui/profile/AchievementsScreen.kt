@@ -1,7 +1,6 @@
 package com.siamts.synapse.ui.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,9 +18,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -31,6 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
@@ -42,7 +46,10 @@ import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 fun AchievementsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: AchievementsViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -89,71 +96,70 @@ fun AchievementsScreen(
                     .weight(1f)
                     .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 20.dp)
-                ) {
+                if (uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BlueAccent)
+                    }
+                } else {
                     Column(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 20.dp)
                     ) {
-                        // Badges Count Banner
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Box(modifier = Modifier.size(40.dp).background(Color(0xFFFEF3C7), CircleShape), contentAlignment = Alignment.Center) {
-                                    Text(text = "🏆", fontSize = 20.sp)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(text = "6 Badges Earned", color = Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = "Your milestones in Synapse AI", color = Color(0xFF64748B), fontSize = 11.sp)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Badges Count Banner
+                            DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFFEF3C7), CircleShape), contentAlignment = Alignment.Center) {
+                                        Text(text = "🏆", fontSize = 20.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(text = uiState.totalBadgesText, color = Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Your milestones in Synapse AI", color = Color(0xFF64748B), fontSize = 11.sp)
+                                    }
                                 }
                             }
-                        }
 
-                        // Badges Grid List Box
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text(text = "Your Badges", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            // Badges Grid List Box
+                            DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
+                                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text(text = "Your Badges", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
 
-                                val badges = listOf(
-                                    Triple("First Steps", "Completed 1 lesson", "🏅"),
-                                    Triple("Quiz Master", "Scored 100% in a quiz", "🎯"),
-                                    Triple("Consistent Learner", "7 days in a row", "📅"),
-                                    Triple("Note Taker", "Saved 10 notes", "📝"),
-                                    Triple("Goal Achiever", "Completed 3 study goals", "🔒"),
-                                    Triple("Knowledge Seeker", "Explored 5 subjects", "🔒"),
-                                )
+                                    val badges = uiState.badges
 
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    for (i in badges.indices step 2) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            for (j in i..i + 1) {
-                                                if (j < badges.size) {
-                                                    val (bTitle, bDesc, bIcon) = badges[j]
-                                                    Card(
-                                                        modifier = Modifier.weight(1f),
-                                                        shape = RoundedCornerShape(14.dp),
-                                                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                    ) {
-                                                        Column(
-                                                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        for (i in badges.indices step 2) {
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                for (j in i..i + 1) {
+                                                    if (j < badges.size) {
+                                                        val badge = badges[j]
+                                                        Card(
+                                                            modifier = Modifier.weight(1f),
+                                                            shape = RoundedCornerShape(14.dp),
+                                                            colors = CardDefaults.cardColors(containerColor = Color.White),
                                                         ) {
-                                                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
-                                                                Text(text = bIcon, fontSize = 16.sp)
+                                                            Column(
+                                                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                            ) {
+                                                                Box(modifier = Modifier.size(36.dp).background(Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+                                                                    Text(text = badge.icon.ifBlank { "🏆" }, fontSize = 16.sp)
+                                                                }
+                                                                Spacer(modifier = Modifier.height(6.dp))
+                                                                Text(text = badge.title, color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                                                Spacer(modifier = Modifier.height(2.dp))
+                                                                Text(text = badge.description, color = Color(0xFF64748B), fontSize = 10.sp, textAlign = TextAlign.Center)
                                                             }
-                                                            Spacer(modifier = Modifier.height(6.dp))
-                                                            Text(text = bTitle, color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                                                            Spacer(modifier = Modifier.height(2.dp))
-                                                            Text(text = bDesc, color = Color(0xFF64748B), fontSize = 10.sp, textAlign = TextAlign.Center)
                                                         }
                                                     }
                                                 }

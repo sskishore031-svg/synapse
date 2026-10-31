@@ -249,6 +249,32 @@ class ProfileViewModel(
         }
     }
 
+    fun updateStudyGoal(goal: String) {
+        _uiState.update { it.copy(studyGoalText = goal) }
+        viewModelScope.launch {
+            val currentId = _uiState.value.userId.takeIf { it > 0 }
+            val request = ProfileUpdateRequest(
+                userId = currentId,
+                email = _uiState.value.userEmail.takeIf { it.isNotBlank() },
+                studyGoal = goal
+            )
+            repository.updateProfile(request)
+        }
+    }
+
+    fun updatePreferredLanguage(language: String) {
+        _uiState.update { it.copy(languageText = language) }
+        viewModelScope.launch {
+            val currentId = _uiState.value.userId.takeIf { it > 0 }
+            val request = ProfileUpdateRequest(
+                userId = currentId,
+                email = _uiState.value.userEmail.takeIf { it.isNotBlank() },
+                preferredLanguage = language
+            )
+            repository.updateProfile(request)
+        }
+    }
+
     fun onTabSelected(index: Int) {
         _uiState.update { it.copy(selectedTab = index) }
     }

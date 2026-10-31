@@ -21,8 +21,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -43,7 +49,18 @@ import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 fun StudyGoalsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    initialGoal: String = "25 min / day",
+    onGoalSelected: (String) -> Unit = {},
 ) {
+    var selectedGoal by remember { mutableStateOf(initialGoal) }
+
+    val goalOptions = listOf(
+        Pair("15 min / day", "Casual · Great for quick revision"),
+        Pair("25 min / day", "Regular · Recommended for steady progress"),
+        Pair("45 min / day", "Serious · Focused exam preparation"),
+        Pair("60 min / day", "Intensive · Deep mastery and mastery challenges")
+    )
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -121,16 +138,16 @@ fun StudyGoalsScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            Text(text = "Daily Goal", color = Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                            Text(text = "42%", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "Target Study Goal", color = Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = selectedGoal, color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
 
-                                        Text(text = "25 / 60 minutes", color = Color(0xFF64748B), fontSize = 12.sp)
+                                        Text(text = "Synced automatically to your profile", color = Color(0xFF64748B), fontSize = 12.sp)
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
                                         LinearProgressIndicator(
-                                            progress = { 25f / 60f },
+                                            progress = { 0.75f },
                                             modifier = Modifier.fillMaxWidth().height(6.dp),
                                             color = BlueAccent,
                                             trackColor = Color(0xFFE2E8F0),
@@ -140,34 +157,39 @@ fun StudyGoalsScreen(
                             }
                         }
 
-                        // Goal Settings Options Box
+                        // Goal Options
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                    GoalOptionRow("Daily Study Time", "60 minutes", "⏱")
-                                    GoalOptionRow("Subjects to Focus", "3 selected", "📚")
-                                    GoalOptionRow("Study Reminders", "2 reminders", "🔔")
-                                }
-                            }
-                        }
+                                    goalOptions.forEach { (goalStr, desc) ->
+                                        val isSel = selectedGoal.equals(goalStr, ignoreCase = true)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    selectedGoal = goalStr
+                                                    onGoalSelected(goalStr)
+                                                }
+                                                .background(if (isSel) Color(0xFFEFF6FF) else Color.Transparent)
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(text = goalStr, color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold)
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(text = desc, color = Color(0xFF64748B), fontSize = 11.sp)
+                                            }
 
-                        // Current Streak Card Box
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(14.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Box(modifier = Modifier.size(44.dp).background(Color(0xFFFFF7ED), CircleShape), contentAlignment = Alignment.Center) {
-                                        Text(text = "🔥", fontSize = 22.sp)
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column {
-                                        Text(text = "Current Streak", color = Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "5 days", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Keep going!", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                                            RadioButton(
+                                                selected = isSel,
+                                                onClick = {
+                                                    selectedGoal = goalStr
+                                                    onGoalSelected(goalStr)
+                                                },
+                                                colors = RadioButtonDefaults.colors(selectedColor = BlueAccent)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -175,27 +197,6 @@ fun StudyGoalsScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun GoalOptionRow(title: String, valueText: String, icon: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = icon, fontSize = 16.sp)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = title, color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = valueText, color = Color(0xFF94A3B8), fontSize = 12.sp)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "›", color = Color(0xFF94A3B8), fontSize = 18.sp)
         }
     }
 }
