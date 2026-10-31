@@ -93,6 +93,11 @@ import com.siamts.synapse.ui.splash.SplashViewModel
 import com.siamts.synapse.ui.subjects.SubjectSelectionScreen
 import com.siamts.synapse.ui.subjects.SubjectSelectionViewModel
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.ThemeViewModel
+import com.siamts.synapse.data.local.ThemeMode
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.collectAsState
 import com.siamts.synapse.ui.tutor.AiTutorScreen
 import com.siamts.synapse.ui.tutor.AiTutorViewModel
 import com.siamts.synapse.ui.waves.WavesLessonPart2Screen
@@ -195,8 +200,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            SYNAPSETheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            val themeViewModel: ThemeViewModel = viewModel()
+            val themeMode by themeViewModel.themeMode.collectAsState()
+            val isDark = when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+
+            SYNAPSETheme(darkTheme = isDark) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = MaterialTheme.colorScheme.background
+                ) { innerPadding ->
                     val profileViewModel: ProfileViewModel = viewModel()
                     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
                     val screenBackStack = remember { mutableStateListOf<AppScreen>() }
@@ -1556,6 +1572,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),
+                                    themeViewModel = themeViewModel
                                 )
                             }
                         }
