@@ -3,25 +3,23 @@ package com.siamts.synapse.ui.tutor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.ai.LocalAIEngine
+import com.siamts.synapse.ai.LocalAiStreamToken
 import com.siamts.synapse.data.local.AiChatStorage
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
  * ViewModel managing SYNAPSE AI Tutor chat state, multi-turn conversation memory,
  * local session persistence, real-time on-device LocalAIEngine reasoning, and
- * ChatGPT-style progressive streaming typing effect.
+ * progressive Kotlin Flow token streaming.
  */
 class AiTutorViewModel(
     private val repository: AiTutorRepository = AiTutorRepositoryImpl(),
@@ -79,8 +77,8 @@ class AiTutorViewModel(
                 ChatMessage(
                     id = UUID.randomUUID().toString(),
                     senderName = "SYNAPSE AI",
-                    text = "📘 **Concept & Definition** (Artificial Intelligence · Neural Networks)\n\nThink of it like walking downhill in the fog: you take small steps in the direction that slopes downward the most.",
-                    paragraph2 = "⚡ **Key Formula & Takeaway**\n\nA neural network adjusts its weights using W := W - η·∇W(Loss) to minimize prediction error. The learning rate controls how big each step is.",
+                    text = "📘 **Concept & Definition** (Artificial Intelligence · Optimization)\n\nThink of it like walking downhill in the fog: you take small steps in the direction that slopes downward the most.",
+                    paragraph2 = "⚡ **Formula / Core Principle**\n\nA neural network adjusts its weights using W := W - η·∇W(Loss) to minimize prediction error. The learning rate controls how big each step is.",
                     timeAgo = "Just now",
                     isUser = false,
                     matchedSubject = "Artificial Intelligence",
@@ -159,113 +157,80 @@ class AiTutorViewModel(
 
         streamingJob?.cancel()
         streamingJob = viewModelScope.launch {
-            // 1. Generate on-device response in Default background dispatcher
-            val localResponse = withContext(Dispatchers.Default) {
-                localAiEngine.generateResponse(query)
-            }
-
-            // 2. Realistic neural processing pause before streaming starts
-            delay(180L)
-
-            // 3. Progressive streaming for paragraph 1 word-by-word
-            val p1Words = localResponse.paragraph1.split(Regex("\\s+")).filter { it.isNotEmpty() }
-            val p1Builder = StringBuilder()
-
-            for (i in p1Words.indices) {
-                if (i > 0) p1Builder.append(" ")
-                p1Builder.append(p1Words[i])
-                val currentP1 = p1Builder.toString()
-
-                _uiState.update { state ->
-                    val updatedMessages = state.messages.map { msg ->
-                        if (msg.id == aiMessageId) {
-                            msg.copy(
-                                text = currentP1,
-                                matchedSubject = localResponse.matchedSubject,
-                                matchedChapter = localResponse.matchedChapter,
-                                matchedTopic = localResponse.matchedTopic
-                            )
-                        } else msg
+            localAiEngine.streamResponse(query, delayPerWordMs = 24L).collect { streamEvent ->
+                when (streamEvent) {
+                    is LocalAiStreamToken.Thinking -> {
+                        _uiState.update { it.copy(aiThoughtStatus = streamEvent.status) }
                     }
-                    state.copy(
-                        messages = updatedMessages,
-                        aiAnswerParagraph1 = currentP1
-                    )
-                }
-                delay(24L)
-            }
-
-            // 4. Progressive streaming for paragraph 2 word-by-word (if non-blank)
-            val p2Text = localResponse.paragraph2.trim()
-            if (p2Text.isNotEmpty()) {
-                delay(40L)
-                val p2Words = p2Text.split(Regex("\\s+")).filter { it.isNotEmpty() }
-                val p2Builder = StringBuilder()
-
-                for (i in p2Words.indices) {
-                    if (i > 0) p2Builder.append(" ")
-                    p2Builder.append(p2Words[i])
-                    val currentP2 = p2Builder.toString()
-
-                    _uiState.update { state ->
-                        val updatedMessages = state.messages.map { msg ->
+                    is LocalAiStreamToken.Token -> {
+                        val updatedMessages = _uiState.value.messages.map { msg ->
                             if (msg.id == aiMessageId) {
-                                msg.copy(paragraph2 = currentP2)
+                                msg.copy(
+                                    text = streamEvent.paragraph1,
+                                    paragraph2 = streamEvent.paragraph2.ifBlank { null },
+                                    matchedSubject = streamEvent.response.matchedSubject,
+                                    matchedChapter = streamEvent.response.matchedChapter,
+                                    matchedTopic = streamEvent.response.matchedTopic
+                                )
                             } else msg
                         }
-                        state.copy(
-                            messages = updatedMessages,
-                            aiAnswerParagraph2 = currentP2
-                        )
+                        _uiState.update {
+                            it.copy(
+                                messages = updatedMessages,
+                                aiAnswerParagraph1 = streamEvent.paragraph1,
+                                aiAnswerParagraph2 = streamEvent.paragraph2
+                            )
+                        }
                     }
-                    delay(24L)
+                    is LocalAiStreamToken.Completed -> {
+                        val localResponse = streamEvent.response
+                        val statusText = when {
+                            localResponse.isGreeting -> "✨ SYNAPSE AI · Ready to explore subjects with you"
+                            localResponse.isTopicSuggestion -> "✨ SYNAPSE AI · Curriculum Guide (${localResponse.matchedSubject ?: "Catalog"})"
+                            localResponse.isFollowUp -> "✨ SYNAPSE AI · Context Follow-up (${localResponse.matchedTopic})"
+                            localResponse.matchedTopic != null -> "✨ SYNAPSE AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
+                            else -> "✨ SYNAPSE AI · Knowledge Companion"
+                        }
+
+                        val completedAiMessage = ChatMessage(
+                            id = aiMessageId,
+                            senderName = "SYNAPSE AI",
+                            text = localResponse.paragraph1,
+                            paragraph2 = localResponse.paragraph2.ifBlank { null },
+                            timeAgo = "Just now",
+                            isUser = false,
+                            matchedSubject = localResponse.matchedSubject,
+                            matchedChapter = localResponse.matchedChapter,
+                            matchedTopic = localResponse.matchedTopic
+                        )
+
+                        val finalizedMessages = _uiState.value.messages.map {
+                            if (it.id == aiMessageId) completedAiMessage else it
+                        }
+
+                        _uiState.update {
+                            it.copy(
+                                messages = finalizedMessages,
+                                aiAnswerParagraph1 = localResponse.paragraph1,
+                                aiAnswerParagraph2 = localResponse.paragraph2,
+                                aiThoughtStatus = statusText,
+                                isGenerating = false
+                            )
+                        }
+
+                        // Persist conversation history locally
+                        chatStorage?.saveMessages(currentUserId, finalizedMessages)
+
+                        // Asynchronously sync to backend repository
+                        try {
+                            val user = sessionManager?.getSessionUser()
+                            val email = user?.email ?: "student@synapse.ai"
+                            repository.askQuestion(question = query, userId = currentUserId, email = email)
+                        } catch (_: Exception) {
+                            // Offline fallback - on-device engine already handled response completely
+                        }
+                    }
                 }
-            }
-
-            // 5. Finalize status and message state
-            val statusText = when {
-                localResponse.isGreeting -> "✨ SYNAPSE AI · Ready to explore subjects with you"
-                localResponse.isFollowUp -> "✨ SYNAPSE AI · Context Follow-up (${localResponse.matchedTopic})"
-                localResponse.matchedTopic != null -> "✨ SYNAPSE AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
-                else -> "✨ SYNAPSE AI · Knowledge Companion"
-            }
-
-            val completedAiMessage = ChatMessage(
-                id = aiMessageId,
-                senderName = "SYNAPSE AI",
-                text = localResponse.paragraph1,
-                paragraph2 = localResponse.paragraph2.ifBlank { null },
-                timeAgo = "Just now",
-                isUser = false,
-                matchedSubject = localResponse.matchedSubject,
-                matchedChapter = localResponse.matchedChapter,
-                matchedTopic = localResponse.matchedTopic
-            )
-
-            val finalizedMessages = _uiState.value.messages.map {
-                if (it.id == aiMessageId) completedAiMessage else it
-            }
-
-            _uiState.update {
-                it.copy(
-                    messages = finalizedMessages,
-                    aiAnswerParagraph1 = localResponse.paragraph1,
-                    aiAnswerParagraph2 = localResponse.paragraph2,
-                    aiThoughtStatus = statusText,
-                    isGenerating = false
-                )
-            }
-
-            // 6. Persist conversation history locally
-            chatStorage?.saveMessages(currentUserId, finalizedMessages)
-
-            // 7. Asynchronously sync to backend repository
-            try {
-                val user = sessionManager?.getSessionUser()
-                val email = user?.email ?: "student@synapse.ai"
-                repository.askQuestion(question = query, userId = currentUserId, email = email)
-            } catch (_: Exception) {
-                // Offline fallback - on-device engine already handled response completely
             }
         }
     }
@@ -278,7 +243,7 @@ class AiTutorViewModel(
         val welcomeMessage = ChatMessage(
             id = UUID.randomUUID().toString(),
             senderName = "SYNAPSE AI",
-            text = "Good morning! I am your SYNAPSE AI tutor. Which subject or chapter would you like to explore today? (Mathematics, Computer Science, Data Science, AI, Physics, Chemistry, Biology, History, Geography)",
+            text = "Good morning! I am your SYNAPSE AI tutor. Which subject or chapter would you like to explore today? (Mathematics, Computer Science, Data Science, AI, Physics, Chemistry, Biology, History)",
             paragraph2 = "Feel free to ask any question across our academic subjects, or tap a quick prompt below to get started!",
             timeAgo = "Just now",
             isUser = false
