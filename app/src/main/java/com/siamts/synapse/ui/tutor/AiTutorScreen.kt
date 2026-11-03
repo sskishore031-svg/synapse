@@ -1,5 +1,11 @@
 package com.siamts.synapse.ui.tutor
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,15 +51,11 @@ import com.siamts.synapse.ui.theme.DarkBackground
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.LightBackground
-import com.siamts.synapse.ui.theme.LightBorder
 import com.siamts.synapse.ui.theme.LightTextPrimary
-import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
-import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
@@ -101,10 +103,14 @@ fun AiTutorContent(
     val inputCardBgColor = if (isDark) Color(0xFF131C38) else Color.White
     val inputTextColor = if (isDark) TextPrimary else LightTextPrimary
 
-    // Smoothly scroll down whenever new messages arrive
-    LaunchedEffect(uiState.messages.size) {
+    // Smoothly scroll down whenever new messages arrive or streaming tokens update
+    val lastMessageTextLength = uiState.messages.lastOrNull()?.let {
+        it.text.length + (it.paragraph2?.length ?: 0)
+    } ?: 0
+
+    LaunchedEffect(uiState.messages.size, lastMessageTextLength, uiState.isGenerating) {
         if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount.coerceAtLeast(1) - 1)
+            listState.scrollToItem(listState.layoutInfo.totalItemsCount.coerceAtLeast(1) - 1)
         }
     }
 
@@ -236,7 +242,7 @@ fun AiTutorContent(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(text = "🟢 ", fontSize = 10.sp)
                                             Text(
-                                                text = "Online · Multi-Turn Conversation Memory",
+                                                text = "Online · 100% On-Device Neural Inference",
                                                 color = Color(0xFF0284C7),
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Medium,
@@ -313,27 +319,53 @@ fun AiTutorContent(
                                             .padding(14.dp)
                                     ) {
                                         Column {
-                                            Text(
-                                                text = message.text,
-                                                color = inputTextColor,
-                                                fontSize = 13.sp,
-                                                lineHeight = 18.sp,
-                                            )
-                                            if (!message.paragraph2.isNullOrBlank()) {
-                                                Spacer(modifier = Modifier.height(10.dp))
+                                            if (message.text.isEmpty()) {
+                                                // Streaming thinking state
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    modifier = Modifier.padding(vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "SYNAPSE AI is thinking",
+                                                        color = Color(0xFF64748B),
+                                                        fontSize = 13.sp,
+                                                        fontStyle = FontStyle.Italic
+                                                    )
+                                                    PulsingDotsIndicator()
+                                                }
+                                            } else {
                                                 Text(
-                                                    text = message.paragraph2,
+                                                    text = message.text,
                                                     color = inputTextColor,
                                                     fontSize = 13.sp,
                                                     lineHeight = 18.sp,
                                                 )
+                                                if (!message.paragraph2.isNullOrBlank()) {
+                                                    Spacer(modifier = Modifier.height(10.dp))
+                                                    Text(
+                                                        text = message.paragraph2,
+                                                        color = inputTextColor,
+                                                        fontSize = 13.sp,
+                                                        lineHeight = 18.sp,
+                                                    )
+                                                }
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                text = "Synapse AI · ${message.timeAgo}",
-                                                color = Color(0xFF94A3B8),
-                                                fontSize = 11.sp,
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = "SYNAPSE AI · ${message.timeAgo}",
+                                                    color = Color(0xFF94A3B8),
+                                                    fontSize = 11.sp,
+                                                )
+                                                if (uiState.isGenerating && message == uiState.messages.lastOrNull { !it.isUser }) {
+                                                    PulsingDotsIndicator()
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -346,12 +378,22 @@ fun AiTutorContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 contentPadding = 6.dp
                             ) {
-                                Text(
-                                    text = uiState.aiThoughtStatus,
-                                    color = Color(0xFF0284C7),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = uiState.aiThoughtStatus,
+                                        color = Color(0xFF0284C7),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (uiState.isGenerating) {
+                                        PulsingDotsIndicator()
+                                    }
+                                }
                             }
                         }
 
@@ -371,7 +413,7 @@ fun AiTutorContent(
                                                 .fillMaxWidth()
                                                 .background(Color.White, RoundedCornerShape(12.dp))
                                                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                                .clickable { onPromptClick(prompt) }
+                                                .clickable(enabled = !uiState.isGenerating) { onPromptClick(prompt) }
                                                 .padding(horizontal = 12.dp, vertical = 10.dp)
                                         ) {
                                             Row(
@@ -384,14 +426,14 @@ fun AiTutorContent(
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     Text(
                                                         text = prompt,
-                                                        color = BlueAccent,
+                                                        color = if (uiState.isGenerating) Color(0xFF94A3B8) else BlueAccent,
                                                         fontSize = 12.sp,
                                                         fontWeight = FontWeight.SemiBold,
                                                     )
                                                 }
                                                 Text(
                                                     text = "↗",
-                                                    color = BlueAccent,
+                                                    color = if (uiState.isGenerating) Color(0xFF94A3B8) else BlueAccent,
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Bold,
                                                 )
@@ -424,12 +466,14 @@ fun AiTutorContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                val canSend = uiState.inputQuery.isNotBlank() && !uiState.isGenerating
+
                                 OutlinedTextField(
                                     value = uiState.inputQuery,
                                     onValueChange = onQueryChange,
                                     placeholder = {
                                         Text(
-                                            text = "Ask a question or follow up...",
+                                            text = if (uiState.isGenerating) "SYNAPSE AI is thinking..." else "Ask a question or follow up...",
                                             color = Color(0xFF94A3B8),
                                             fontSize = 14.sp,
                                         )
@@ -456,26 +500,35 @@ fun AiTutorContent(
 
                                 Spacer(modifier = Modifier.width(8.dp))
 
-                                // Send Button Circle
+                                // Send Button Circle (disabled while streaming)
                                 Box(
                                     modifier = Modifier
                                         .size(44.dp)
                                         .background(
-                                            brush = Brush.horizontalGradient(
-                                                colors = listOf(
-                                                    PurpleAccent,
-                                                    BlueAccent,
-                                                    CyanAccent,
+                                            brush = if (canSend) {
+                                                Brush.horizontalGradient(
+                                                    colors = listOf(
+                                                        PurpleAccent,
+                                                        BlueAccent,
+                                                        CyanAccent,
+                                                    )
                                                 )
-                                            ),
+                                            } else {
+                                                Brush.horizontalGradient(
+                                                    colors = listOf(
+                                                        Color(0xFF94A3B8).copy(alpha = 0.5f),
+                                                        Color(0xFFCBD5E1).copy(alpha = 0.5f)
+                                                    )
+                                                )
+                                            },
                                             shape = CircleShape
                                         )
-                                        .clickable { onSendMessage() },
+                                        .clickable(enabled = canSend) { onSendMessage() },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
                                         text = "↑",
-                                        color = Color.White,
+                                        color = Color.White.copy(alpha = if (canSend) 1f else 0.6f),
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -486,6 +539,63 @@ fun AiTutorContent(
                 }
             }
         }
+    }
+}
+
+/**
+ * Pulsing typing animation indicator for ChatGPT-style thinking and streaming state.
+ */
+@Composable
+fun PulsingDotsIndicator(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val dotAlpha1 by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(550, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot1"
+    )
+    val dotAlpha2 by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(550, delayMillis = 180, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot2"
+    )
+    val dotAlpha3 by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(550, delayMillis = 360, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dot3"
+    )
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(BlueAccent.copy(alpha = dotAlpha1), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(PurpleAccent.copy(alpha = dotAlpha2), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(CyanGlow.copy(alpha = dotAlpha3), CircleShape)
+        )
     }
 }
 

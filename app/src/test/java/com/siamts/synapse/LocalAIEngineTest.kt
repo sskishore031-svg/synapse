@@ -50,21 +50,37 @@ class LocalAIEngineTest {
     }
 
     @Test
-    fun testGreetings_returnConfiguredGreetingMessage() {
-        val greetingQueries = listOf("gm", "good morning", "hi", "hello", "vanakkam", "hey")
-
-        for (query in greetingQueries) {
+    fun testGreetings_returnChatGPTStyleConciseGreeting() {
+        val casualGreetings = listOf("hi", "hello", "hey")
+        for (query in casualGreetings) {
             val response = engine.generateResponse(query)
             assertTrue("Query '$query' should be detected as greeting", response.isGreeting)
-            assertTrue(
-                "Greeting response must contain 'Good morning! I am your SYNAPSE AI tutor.'",
-                response.paragraph1.contains("Good morning! I am your SYNAPSE AI tutor. Which subject or chapter would you like to explore today?")
-            )
-            assertTrue(
-                "Greeting paragraph 2 must list subject chapters",
-                response.paragraph2.contains("Quadratic Equations")
-            )
+            assertEquals("Hi! How can I help you with your studies today?", response.paragraph1)
+            assertTrue("Greeting should not dump long paragraphs", response.paragraph2.isBlank())
         }
+
+        val gmResponse = engine.generateResponse("good morning")
+        assertTrue(gmResponse.isGreeting)
+        assertEquals("Good morning! What topic or subject are we learning today?", gmResponse.paragraph1)
+
+        val gnResponse = engine.generateResponse("good night")
+        assertTrue(gnResponse.isGreeting)
+        assertEquals("Good night! Rest well and keep learning tomorrow.", gnResponse.paragraph1)
+
+        val vanakkamResp = engine.generateResponse("vanakkam")
+        assertTrue(vanakkamResp.isGreeting)
+        assertTrue(vanakkamResp.paragraph1.contains("Vanakkam"))
+    }
+
+    @Test
+    fun testCapabilitiesQuery_returnsSubjectsList() {
+        val response = engine.generateResponse("what can you do?")
+        assertFalse(response.isGreeting)
+        assertTrue(response.paragraph1.contains("I am your SYNAPSE AI on-device tutor"))
+        assertTrue(response.paragraph2.contains("Mathematics"))
+        assertTrue(response.paragraph2.contains("Computer Science"))
+        assertTrue(response.paragraph2.contains("Physics"))
+        assertTrue(response.paragraph2.contains("Chemistry"))
     }
 
     @Test
@@ -120,6 +136,40 @@ class LocalAIEngineTest {
         assertEquals("Chemistry", response.matchedSubject)
         assertEquals("Acids and Bases", response.matchedChapter)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
+    }
+
+    @Test
+    fun testBiologySynthesis_photosynthesisAndDNA() {
+        val photoResp = engine.generateResponse("Explain photosynthesis in plant biology")
+        assertEquals("Biology", photoResp.matchedSubject)
+        assertEquals("Photosynthesis", photoResp.matchedTopic)
+        assertTrue(photoResp.paragraph1.contains("Concept & Definition"))
+        assertTrue(photoResp.paragraph2.contains("6CO₂"))
+
+        val dnaResp = engine.generateResponse("What is DNA and how does RNA transcription work?")
+        assertEquals("Biology", dnaResp.matchedSubject)
+        assertTrue(dnaResp.paragraph1.contains("Genetics"))
+    }
+
+    @Test
+    fun testHistorySynthesis_worldWarAndCivilizations() {
+        val ww2Resp = engine.generateResponse("Explain the causes and consequences of World War 2")
+        assertEquals("History", ww2Resp.matchedSubject)
+        assertEquals("World War II", ww2Resp.matchedTopic)
+        assertTrue(ww2Resp.paragraph1.contains("1939–1945"))
+
+        val civResp = engine.generateResponse("Tell me about the Indus Valley Civilization")
+        assertEquals("History", civResp.matchedSubject)
+        assertTrue(civResp.paragraph2.contains("Mohenjo-daro") || civResp.paragraph1.contains("Indus"))
+    }
+
+    @Test
+    fun testGeographySynthesis_plateTectonicsAndAtmosphere() {
+        val geoResp = engine.generateResponse("How does plate tectonics cause earthquakes?")
+        assertEquals("Geography", geoResp.matchedSubject)
+        assertEquals("Plate Tectonics and Seismic Activity", geoResp.matchedTopic)
+        assertTrue(geoResp.paragraph1.contains("lithosphere"))
+        assertTrue(geoResp.paragraph2.contains("Convergent"))
     }
 
     @Test

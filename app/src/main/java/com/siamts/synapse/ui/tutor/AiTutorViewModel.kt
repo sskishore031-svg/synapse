@@ -8,6 +8,8 @@ import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,8 +19,9 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
- * ViewModel managing FRIDAY AI Tutor chat state, multi-turn conversation memory,
- * local session persistence, and real-time on-device LocalAIEngine Q&A.
+ * ViewModel managing SYNAPSE AI Tutor chat state, multi-turn conversation memory,
+ * local session persistence, real-time on-device LocalAIEngine reasoning, and
+ * ChatGPT-style progressive streaming typing effect.
  */
 class AiTutorViewModel(
     private val repository: AiTutorRepository = AiTutorRepositoryImpl(),
@@ -31,6 +34,7 @@ class AiTutorViewModel(
     val uiState: StateFlow<AiTutorUiState> = _uiState.asStateFlow()
 
     private var currentUserId: Int = 1
+    private var streamingJob: Job? = null
 
     init {
         loadHistory()
@@ -57,7 +61,7 @@ class AiTutorViewModel(
                         userQuestion = lastUser?.text ?: it.userQuestion,
                         aiAnswerParagraph1 = lastAi?.text ?: it.aiAnswerParagraph1,
                         aiAnswerParagraph2 = lastAi?.paragraph2 ?: it.aiAnswerParagraph2,
-                        aiThoughtStatus = "✨ FRIDAY AI · Ready to continue your conversation"
+                        aiThoughtStatus = "✨ SYNAPSE AI · Ready to continue your conversation"
                     )
                 }
                 return@launch
@@ -74,7 +78,7 @@ class AiTutorViewModel(
                 ),
                 ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    senderName = "FRIDAY AI",
+                    senderName = "SYNAPSE AI",
                     text = "📘 **Concept & Definition** (Artificial Intelligence · Neural Networks)\n\nThink of it like walking downhill in the fog: you take small steps in the direction that slopes downward the most.",
                     paragraph2 = "⚡ **Key Formula & Takeaway**\n\nA neural network adjusts its weights using W := W - η·∇W(Loss) to minimize prediction error. The learning rate controls how big each step is.",
                     timeAgo = "Just now",
@@ -93,7 +97,7 @@ class AiTutorViewModel(
                         val parts = dto.message.split("\n\n")
                         ChatMessage(
                             id = dto.id.toString(),
-                            senderName = if (dto.senderType == "user") "You" else "FRIDAY AI",
+                            senderName = if (dto.senderType == "user") "You" else "SYNAPSE AI",
                             text = parts.getOrNull(0) ?: dto.message,
                             paragraph2 = if (parts.size > 1) parts.drop(1).joinToString("\n\n") else null,
                             timeAgo = "Saved",
@@ -118,6 +122,8 @@ class AiTutorViewModel(
     }
 
     fun onSendMessage() {
+        if (_uiState.value.isGenerating) return
+
         val query = _uiState.value.inputQuery.trim()
         if (query.isBlank()) return
 
@@ -129,27 +135,104 @@ class AiTutorViewModel(
             isUser = true
         )
 
-        // 1. Immediately append user message to chat history
-        val listWithUser = _uiState.value.messages + userMessage
+        val aiMessageId = UUID.randomUUID().toString()
+        val initialAiMessage = ChatMessage(
+            id = aiMessageId,
+            senderName = "SYNAPSE AI",
+            text = "",
+            paragraph2 = null,
+            timeAgo = "Just now",
+            isUser = false
+        )
+
+        val listWithUserAndAi = _uiState.value.messages + userMessage + initialAiMessage
 
         _uiState.update {
             it.copy(
                 userQuestion = query,
                 inputQuery = "",
-                messages = listWithUser,
-                aiThoughtStatus = "✨ FRIDAY is reasoning with local context..."
+                messages = listWithUserAndAi,
+                isGenerating = true,
+                aiThoughtStatus = "✨ SYNAPSE AI is thinking..."
             )
         }
 
-        // 2. Generate context-aware on-device response asynchronously in coroutine
-        viewModelScope.launch {
+        streamingJob?.cancel()
+        streamingJob = viewModelScope.launch {
+            // 1. Generate on-device response in Default background dispatcher
             val localResponse = withContext(Dispatchers.Default) {
                 localAiEngine.generateResponse(query)
             }
 
-            val aiMessage = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                senderName = "FRIDAY AI",
+            // 2. Realistic neural processing pause before streaming starts
+            delay(180L)
+
+            // 3. Progressive streaming for paragraph 1 word-by-word
+            val p1Words = localResponse.paragraph1.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val p1Builder = StringBuilder()
+
+            for (i in p1Words.indices) {
+                if (i > 0) p1Builder.append(" ")
+                p1Builder.append(p1Words[i])
+                val currentP1 = p1Builder.toString()
+
+                _uiState.update { state ->
+                    val updatedMessages = state.messages.map { msg ->
+                        if (msg.id == aiMessageId) {
+                            msg.copy(
+                                text = currentP1,
+                                matchedSubject = localResponse.matchedSubject,
+                                matchedChapter = localResponse.matchedChapter,
+                                matchedTopic = localResponse.matchedTopic
+                            )
+                        } else msg
+                    }
+                    state.copy(
+                        messages = updatedMessages,
+                        aiAnswerParagraph1 = currentP1
+                    )
+                }
+                delay(24L)
+            }
+
+            // 4. Progressive streaming for paragraph 2 word-by-word (if non-blank)
+            val p2Text = localResponse.paragraph2.trim()
+            if (p2Text.isNotEmpty()) {
+                delay(40L)
+                val p2Words = p2Text.split(Regex("\\s+")).filter { it.isNotEmpty() }
+                val p2Builder = StringBuilder()
+
+                for (i in p2Words.indices) {
+                    if (i > 0) p2Builder.append(" ")
+                    p2Builder.append(p2Words[i])
+                    val currentP2 = p2Builder.toString()
+
+                    _uiState.update { state ->
+                        val updatedMessages = state.messages.map { msg ->
+                            if (msg.id == aiMessageId) {
+                                msg.copy(paragraph2 = currentP2)
+                            } else msg
+                        }
+                        state.copy(
+                            messages = updatedMessages,
+                            aiAnswerParagraph2 = currentP2
+                        )
+                    }
+                    delay(24L)
+                }
+            }
+
+            // 5. Finalize status and message state
+            val statusText = when {
+                localResponse.isGreeting -> "✨ SYNAPSE AI · Ready to explore subjects with you"
+                localResponse.isFollowUp -> "✨ SYNAPSE AI · Context Follow-up (${localResponse.matchedTopic})"
+                localResponse.matchedTopic != null -> "✨ SYNAPSE AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
+                else -> "✨ SYNAPSE AI · Knowledge Companion"
+            }
+
+            val completedAiMessage = ChatMessage(
+                id = aiMessageId,
+                senderName = "SYNAPSE AI",
                 text = localResponse.paragraph1,
                 paragraph2 = localResponse.paragraph2.ifBlank { null },
                 timeAgo = "Just now",
@@ -159,47 +242,44 @@ class AiTutorViewModel(
                 matchedTopic = localResponse.matchedTopic
             )
 
-            val finalMessages = listWithUser + aiMessage
-
-            val statusText = when {
-                localResponse.isGreeting -> "✨ FRIDAY AI · Ready to explore subjects with you"
-                localResponse.isFollowUp -> "✨ FRIDAY AI · Context Follow-up (${localResponse.matchedTopic})"
-                localResponse.matchedTopic != null -> "✨ FRIDAY AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
-                else -> "✨ FRIDAY AI · Knowledge Companion"
+            val finalizedMessages = _uiState.value.messages.map {
+                if (it.id == aiMessageId) completedAiMessage else it
             }
 
             _uiState.update {
                 it.copy(
-                    messages = finalMessages,
+                    messages = finalizedMessages,
                     aiAnswerParagraph1 = localResponse.paragraph1,
                     aiAnswerParagraph2 = localResponse.paragraph2,
-                    aiThoughtStatus = statusText
+                    aiThoughtStatus = statusText,
+                    isGenerating = false
                 )
             }
 
-            // 3. Persist messages locally
-            chatStorage?.saveMessages(currentUserId, finalMessages)
+            // 6. Persist conversation history locally
+            chatStorage?.saveMessages(currentUserId, finalizedMessages)
 
-            // 4. Asynchronously sync to backend repository
+            // 7. Asynchronously sync to backend repository
             try {
                 val user = sessionManager?.getSessionUser()
                 val email = user?.email ?: "student@synapse.ai"
                 repository.askQuestion(question = query, userId = currentUserId, email = email)
             } catch (_: Exception) {
-                // Backend offline or unreachable; local on-device engine has already handled it
+                // Offline fallback - on-device engine already handled response completely
             }
         }
     }
 
     fun onClearChat() {
+        streamingJob?.cancel()
         chatStorage?.clearMessages(currentUserId)
         localAiEngine.resetContext()
 
         val welcomeMessage = ChatMessage(
             id = UUID.randomUUID().toString(),
-            senderName = "FRIDAY AI",
-            text = "Good morning! I am your SYNAPSE AI tutor. Which subject or chapter would you like to explore today? (Mathematics, Computer Science, Data Science, AI, Physics, Chemistry)",
-            paragraph2 = "Feel free to ask any question across our 6 STEM subjects, or tap a quick prompt below to get started!",
+            senderName = "SYNAPSE AI",
+            text = "Good morning! I am your SYNAPSE AI tutor. Which subject or chapter would you like to explore today? (Mathematics, Computer Science, Data Science, AI, Physics, Chemistry, Biology, History, Geography)",
+            paragraph2 = "Feel free to ask any question across our academic subjects, or tap a quick prompt below to get started!",
             timeAgo = "Just now",
             isUser = false
         )
@@ -211,7 +291,8 @@ class AiTutorViewModel(
                 userQuestion = "",
                 aiAnswerParagraph1 = welcomeMessage.text,
                 aiAnswerParagraph2 = welcomeMessage.paragraph2.orEmpty(),
-                aiThoughtStatus = "✨ FRIDAY AI · New session started. Ready for your questions!"
+                aiThoughtStatus = "✨ SYNAPSE AI · New session started. Ready for your questions!",
+                isGenerating = false
             )
         }
 
@@ -219,6 +300,7 @@ class AiTutorViewModel(
     }
 
     fun onPromptClicked(prompt: String) {
+        if (_uiState.value.isGenerating) return
         _uiState.update { it.copy(inputQuery = prompt) }
         onSendMessage()
     }
