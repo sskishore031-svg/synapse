@@ -126,3 +126,4 @@ class ExtendedFeaturesTest {
         assertEquals(clearedState.subjects.size, clearedState.filteredSubjects.size)
     }
 }
+

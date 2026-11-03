@@ -37,3 +37,4 @@ data class CatalogChapter(
     @SerializedName("mcqs") val mcqs: List<QuizQuestionDto> = emptyList(),
     @SerializedName("rag_chunks") val ragChunks: List<KnowledgeChunk> = emptyList()
 )
+
