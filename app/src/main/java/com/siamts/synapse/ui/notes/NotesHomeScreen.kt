@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.data.model.NoteItemDto
+import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
+import com.siamts.synapse.ui.notes.components.threeDTouchEffect
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -68,6 +70,7 @@ fun NotesHomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
     var noteTitle by remember { mutableStateOf("") }
     var noteContent by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("COMMON") } // "COMMON", "SUBJECT", "SAVED"
@@ -265,10 +268,10 @@ fun NotesHomeScreen(
                             // Option C: Saved Notes
                             item {
                                 NoteCategoryCard(
-                                    title = "Option C: Saved Notes",
-                                    subtitle = "Your bookmarked and starred notes for rapid review.",
+                                    title = "Option C: Saved Notes 🌟",
+                                    subtitle = "Touch to view your bookmarked notes in interactive 3D perspective.",
                                     icon = "🔖",
-                                    countBadge = "${uiState.summary.savedNotesCount} Saved",
+                                    countBadge = "${uiState.summary.savedNotesCount} Saved (3D)",
                                     iconBgColor = Color(0xFFFEF3C7),
                                     onClick = { onOpenNotesList("saved", null, "Saved Notes") }
                                 )
@@ -382,6 +385,7 @@ fun NotesHomeScreen(
                                 items(uiState.filteredNotes, key = { it.id }) { note ->
                                     NoteRowItemCard(
                                         note = note,
+                                        onClick = { selected3DNote = note },
                                         onToggleSave = { viewModel.toggleSave(note.id) },
                                         onToggleDownload = { viewModel.toggleDownload(note.id) }
                                     )
@@ -520,6 +524,16 @@ fun NotesHomeScreen(
                 }
             )
         }
+
+        // 3D Perspective Note Viewer Dialog
+        if (selected3DNote != null) {
+            ThreeDNoteViewerDialog(
+                note = selected3DNote!!,
+                onDismiss = { selected3DNote = null },
+                onToggleSave = { viewModel.toggleSave(selected3DNote!!.id) },
+                onToggleDownload = { viewModel.toggleDownload(selected3DNote!!.id) }
+            )
+        }
     }
 }
 
@@ -545,10 +559,11 @@ private fun NoteCategoryCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .threeDTouchEffect()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -604,14 +619,18 @@ private fun NoteCategoryCard(
 @Composable
 private fun NoteRowItemCard(
     note: NoteItemDto,
+    onClick: () -> Unit,
     onToggleSave: () -> Unit,
     onToggleDownload: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .threeDTouchEffect()
+            .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -634,7 +653,18 @@ private fun NoteRowItemCard(
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                    }
+
                     // Save icon toggle
                     Text(
                         text = if (note.isSaved) "🔖" else "🏷️",

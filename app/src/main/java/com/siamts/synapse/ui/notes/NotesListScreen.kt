@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.data.model.NoteItemDto
+import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
+import com.siamts.synapse.ui.notes.components.threeDTouchEffect
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -63,6 +66,7 @@ fun NotesListScreen(
     var editContent by remember { mutableStateOf("") }
 
     var noteToDelete by remember { mutableStateOf<NoteItemDto?>(null) }
+    var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
 
     LaunchedEffect(type, subjectId) {
         viewModel.loadNotes(type, subjectId, title)
@@ -171,7 +175,10 @@ fun NotesListScreen(
                         ) {
                             items(uiState.notes, key = { it.id }) { note ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .threeDTouchEffect()
+                                        .clickable { selected3DNote = note },
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(containerColor = Color.White),
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -186,17 +193,27 @@ fun NotesListScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            ) {
-                                                Text(
-                                                    text = "${note.subjectIcon} ${note.subjectName}",
-                                                    color = BlueAccent,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "${note.subjectIcon} ${note.subjectName}",
+                                                        color = BlueAccent,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                }
                                             }
 
                                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -352,6 +369,16 @@ fun NotesListScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    // 3D Perspective Note Viewer Dialog
+    if (selected3DNote != null) {
+        ThreeDNoteViewerDialog(
+            note = selected3DNote!!,
+            onDismiss = { selected3DNote = null },
+            onToggleSave = { viewModel.toggleSave(selected3DNote!!.id) },
+            onToggleDownload = { viewModel.toggleDownload(selected3DNote!!.id) }
         )
     }
 }

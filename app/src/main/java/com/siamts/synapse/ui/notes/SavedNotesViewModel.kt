@@ -95,6 +95,20 @@ class SavedNotesViewModel(
         }
     }
 
+    fun toggleSave(id: Int) {
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+            notesRepository.toggleSave(noteId = id, userId = userId, email = userEmail)
+            loadData()
+        }
+    }
+
+    fun toggleDownload(id: Int) {
+        onDownloadNoteClicked(id.toString())
+    }
+
     fun onTabSelected(index: Int) {
         _uiState.update { it.copy(selectedTab = index) }
     }

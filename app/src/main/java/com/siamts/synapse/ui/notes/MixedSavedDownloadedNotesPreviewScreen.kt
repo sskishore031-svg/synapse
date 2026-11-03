@@ -40,6 +40,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.data.model.NoteItemDto
+import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
+import com.siamts.synapse.ui.notes.components.threeDTouchEffect
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -70,6 +73,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Saved Notes, 1: Downloaded Notes
     var searchQuery by remember { mutableStateOf("") }
+    var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
 
     val allNotes = listOf(
         MixedNoteItem(
@@ -274,7 +278,21 @@ fun MixedSavedDownloadedNotesPreviewScreen(
 
                                 displayedNotes.forEach { note ->
                                     Card(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .threeDTouchEffect(maxTiltDegrees = 7f, pressedScale = 0.97f)
+                                            .clickable {
+                                                selected3DNote = NoteItemDto(
+                                                    id = note.id.toIntOrNull() ?: note.title.hashCode(),
+                                                    title = note.title,
+                                                    content = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways.",
+                                                    category = if (note.isDownloaded) "DOWNLOADED" else "SAVED",
+                                                    subjectName = note.subjectTag,
+                                                    subjectIcon = note.subjectIcon,
+                                                    isSaved = true,
+                                                    isDownloaded = note.isDownloaded
+                                                )
+                                            },
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(containerColor = Color.White),
                                     ) {
@@ -284,17 +302,30 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    Text(
-                                                        text = "${note.subjectIcon} ${note.subjectTag}",
-                                                        color = BlueAccent,
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "${note.subjectIcon} ${note.subjectTag}",
+                                                            color = BlueAccent,
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                    }
                                                 }
 
                                                 Text(text = note.dateText, color = Color(0xFF94A3B8), fontSize = 10.sp)
@@ -328,10 +359,21 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                 Box(
                                                     modifier = Modifier
                                                         .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                                        .clickable { onReadNoteClick?.invoke(note.subjectTag) }
+                                                        .clickable {
+                                                            selected3DNote = NoteItemDto(
+                                                                id = note.id.toIntOrNull() ?: note.title.hashCode(),
+                                                                title = note.title,
+                                                                content = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways.",
+                                                                category = if (note.isDownloaded) "DOWNLOADED" else "SAVED",
+                                                                subjectName = note.subjectTag,
+                                                                subjectIcon = note.subjectIcon,
+                                                                isSaved = true,
+                                                                isDownloaded = note.isDownloaded
+                                                            )
+                                                        }
                                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                                 ) {
-                                                    Text(text = "📖 Read Note", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                    Text(text = "📖 Read in 3D", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                                 }
 
                                                 if (note.isDownloaded) {
@@ -373,6 +415,14 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                     }
                 }
             }
+        }
+
+        // 3D Perspective Note Viewer Dialog
+        if (selected3DNote != null) {
+            ThreeDNoteViewerDialog(
+                note = selected3DNote!!,
+                onDismiss = { selected3DNote = null }
+            )
         }
     }
 }

@@ -24,6 +24,12 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.siamts.synapse.data.model.NoteItemDto
+import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
+import com.siamts.synapse.ui.notes.components.threeDTouchEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -57,6 +63,8 @@ fun SavedNotesScreen(
         onSearchChange = { viewModel.onSearchQueryChanged(it) },
         onOpenNote = { viewModel.onOpenNoteClicked(it) },
         onDownloadNote = { viewModel.onDownloadNoteClicked(it) },
+        onToggleSave = { viewModel.toggleSave(it) },
+        onToggleDownload = { viewModel.toggleDownload(it) },
         onTabSelect = { index ->
             viewModel.onTabSelected(index)
             onTabSelect(index)
@@ -75,7 +83,11 @@ fun SavedNotesContent(
     onTabSelect: (Int) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onToggleSave: (Int) -> Unit = {},
+    onToggleDownload: (Int) -> Unit = {},
 ) {
+    var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -212,7 +224,21 @@ fun SavedNotesContent(
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     uiState.savedNotes.forEach { note ->
                                         Card(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .threeDTouchEffect(maxTiltDegrees = 7f, pressedScale = 0.97f)
+                                                .clickable {
+                                                    selected3DNote = NoteItemDto(
+                                                        id = note.id.toIntOrNull() ?: note.title.hashCode(),
+                                                        title = note.title,
+                                                        content = "${note.subtitle}\n\nKey Concepts & High-Yield Summary:\n• Core principle and definition: Comprehensive study notes for ${note.title}.\n• Detailed mathematical formulations, worked examples, and formulas.\n• High-yield takeaways and problem-solving steps.",
+                                                        category = "SAVED",
+                                                        subjectName = note.subtitle.split("·").firstOrNull()?.trim()?.ifBlank { "Saved Notes" } ?: "Saved Notes",
+                                                        subjectIcon = "🔖",
+                                                        isSaved = true,
+                                                        isDownloaded = note.statusText.contains("Downloaded", ignoreCase = true)
+                                                    )
+                                                },
                                             shape = RoundedCornerShape(14.dp),
                                             colors = CardDefaults.cardColors(containerColor = Color.White),
                                         ) {
@@ -245,26 +271,48 @@ fun SavedNotesContent(
                                                     )
                                                 }
 
-                                                Box(
-                                                    modifier = Modifier
-                                                        .background(Color.White, RoundedCornerShape(12.dp))
-                                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                                        .clickable {
-                                                            if (note.buttonAction == "Open") {
-                                                                onOpenNote(note.id)
-                                                            } else {
-                                                                onDownloadNote(note.id)
-                                                            }
-                                                        }
-                                                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                                                    contentAlignment = Alignment.Center,
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    Text(
-                                                        text = note.buttonAction,
-                                                        color = BlueAccent,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                    }
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color.White, RoundedCornerShape(12.dp))
+                                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                                            .clickable {
+                                                                if (note.buttonAction == "Open") {
+                                                                    selected3DNote = NoteItemDto(
+                                                                        id = note.id.toIntOrNull() ?: note.title.hashCode(),
+                                                                        title = note.title,
+                                                                        content = "${note.subtitle}\n\nKey Concepts & High-Yield Summary:\n• Core principle and definition: Comprehensive study notes for ${note.title}.\n• Detailed mathematical formulations, worked examples, and formulas.\n• High-yield takeaways and problem-solving steps.",
+                                                                        category = "SAVED",
+                                                                        subjectName = note.subtitle.split("·").firstOrNull()?.trim()?.ifBlank { "Saved Notes" } ?: "Saved Notes",
+                                                                        subjectIcon = "🔖",
+                                                                        isSaved = true,
+                                                                        isDownloaded = note.statusText.contains("Downloaded", ignoreCase = true)
+                                                                    )
+                                                                } else {
+                                                                    onDownloadNote(note.id)
+                                                                }
+                                                            }
+                                                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Text(
+                                                            text = note.buttonAction,
+                                                            color = BlueAccent,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -302,7 +350,21 @@ fun SavedNotesContent(
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     uiState.downloadedFiles.forEach { file ->
                                         Card(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .threeDTouchEffect(maxTiltDegrees = 7f, pressedScale = 0.97f)
+                                                .clickable {
+                                                    selected3DNote = NoteItemDto(
+                                                        id = file.id.toIntOrNull() ?: file.title.hashCode(),
+                                                        title = file.title,
+                                                        content = "${file.subtitle}\n\nOffline Cached Syllabus Notes:\n• Full offline curriculum study notes for ${file.title}.\n• Comprehensive worked examples, diagrams, formulas, and cheat sheet.\n• High-yield exam revision accessible completely offline.",
+                                                        category = "DOWNLOADED",
+                                                        subjectName = file.subtitle.split("·").firstOrNull()?.trim()?.ifBlank { "Offline Notes" } ?: "Offline Notes",
+                                                        subjectIcon = "💾",
+                                                        isSaved = true,
+                                                        isDownloaded = true
+                                                    )
+                                                },
                                             shape = RoundedCornerShape(14.dp),
                                             colors = CardDefaults.cardColors(containerColor = Color.White),
                                         ) {
@@ -342,20 +404,44 @@ fun SavedNotesContent(
                                                     }
                                                 }
 
-                                                Box(
-                                                    modifier = Modifier
-                                                        .background(Color.White, RoundedCornerShape(12.dp))
-                                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                                        .clickable { onOpenNote(file.id) }
-                                                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                                                    contentAlignment = Alignment.Center,
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    Text(
-                                                        text = file.buttonAction,
-                                                        color = BlueAccent,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                    }
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color.White, RoundedCornerShape(12.dp))
+                                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                                            .clickable {
+                                                                selected3DNote = NoteItemDto(
+                                                                    id = file.id.toIntOrNull() ?: file.title.hashCode(),
+                                                                    title = file.title,
+                                                                    content = "${file.subtitle}\n\nOffline Cached Syllabus Notes:\n• Full offline curriculum study notes for ${file.title}.\n• Comprehensive worked examples, diagrams, formulas, and cheat sheet.\n• High-yield exam revision accessible completely offline.",
+                                                                    category = "DOWNLOADED",
+                                                                    subjectName = file.subtitle.split("·").firstOrNull()?.trim()?.ifBlank { "Offline Notes" } ?: "Offline Notes",
+                                                                    subjectIcon = "💾",
+                                                                    isSaved = true,
+                                                                    isDownloaded = true
+                                                                )
+                                                            }
+                                                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Text(
+                                                            text = file.buttonAction,
+                                                            color = BlueAccent,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -420,6 +506,20 @@ fun SavedNotesContent(
                     }
                 }
             }
+        }
+
+        // 3D Perspective Note Viewer Dialog
+        if (selected3DNote != null) {
+            ThreeDNoteViewerDialog(
+                note = selected3DNote!!,
+                onDismiss = { selected3DNote = null },
+                onToggleSave = {
+                    onToggleSave(selected3DNote!!.id)
+                },
+                onToggleDownload = {
+                    onToggleDownload(selected3DNote!!.id)
+                }
+            )
         }
     }
 }
