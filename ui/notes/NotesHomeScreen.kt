@@ -49,6 +49,11 @@ import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.DarkBackground
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
@@ -83,18 +88,18 @@ fun NotesHomeScreen(
         Pair(6, "Chemistry")
     )
 
+    val isDark = LocalThemeIsDark.current
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Box
@@ -112,7 +117,7 @@ fun NotesHomeScreen(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -121,7 +126,7 @@ fun NotesHomeScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NOTES & STUDY GUIDES",
-                            color = CyanAccent,
+                            color = if (isDark) CyanAccent else BlueAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -129,7 +134,7 @@ fun NotesHomeScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Notes Organizer",
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -292,7 +297,7 @@ fun NotesHomeScreen(
                                 )
                             }
 
-                            items(uiState.subjects) { sub ->
+                            items(uiState.subjects, key = { it.id }) { sub ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -374,7 +379,7 @@ fun NotesHomeScreen(
                                     }
                                 }
                             } else {
-                                items(uiState.filteredNotes) { note ->
+                                items(uiState.filteredNotes, key = { it.id }) { note ->
                                     NoteRowItemCard(
                                         note = note,
                                         onToggleSave = { viewModel.toggleSave(note.id) },

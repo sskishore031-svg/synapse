@@ -42,6 +42,11 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.DarkBackground
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
@@ -125,18 +130,20 @@ fun DashboardContent(
     onNotificationClick: (() -> Unit)? = null,
     onProfileClick: (() -> Unit)? = null,
 ) {
+    val isDark = LocalThemeIsDark.current
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+    val controlBgColor = if (isDark) Color(0xFF161F42) else Color.White
+    val controlBorderColor = if (isDark) Color.Transparent else Color(0xFFE2E8F0)
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Dark Header Section
@@ -153,7 +160,7 @@ fun DashboardContent(
                     Column {
                         Text(
                             text = uiState.dateText,
-                            color = TextMuted,
+                            color = if (isDark) TextMuted else BlueAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -161,7 +168,7 @@ fun DashboardContent(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Hello, ${uiState.userName} 👋",
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -172,7 +179,8 @@ fun DashboardContent(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFF161F42), CircleShape)
+                                .background(controlBgColor, CircleShape)
+                                .border(1.dp, controlBorderColor, CircleShape)
                                 .clickable { onNotificationClick?.invoke() },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -220,7 +228,8 @@ fun DashboardContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .background(Color(0xFF161F42), RoundedCornerShape(16.dp))
+                        .background(controlBgColor, RoundedCornerShape(16.dp))
+                        .border(1.dp, controlBorderColor, RoundedCornerShape(16.dp))
                         .clickable { onAskAiClick() }
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.CenterStart,

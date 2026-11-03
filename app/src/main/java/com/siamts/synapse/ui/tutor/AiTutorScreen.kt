@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,9 +41,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
+import com.siamts.synapse.ui.theme.DarkBackground
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -78,6 +87,19 @@ fun AiTutorContent(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val isDark = LocalThemeIsDark.current
+
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+    val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF8FAFC)
+    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+    val aiCardBgColor = if (isDark) Color(0xFF131C38) else Color.White
+    val aiCardBorderColor = if (isDark) Color(0xFF1E2B58) else Color(0xFFE2E8F0)
+    val inputCardBgColor = if (isDark) Color(0xFF131C38) else Color.White
+    val inputTextColor = if (isDark) TextPrimary else LightTextPrimary
 
     // Smoothly scroll down whenever new messages arrive
     LaunchedEffect(uiState.messages.size) {
@@ -89,15 +111,7 @@ fun AiTutorContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Header Section
@@ -114,7 +128,7 @@ fun AiTutorContent(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -123,7 +137,7 @@ fun AiTutorContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.headerTag,
-                            color = CyanGlow,
+                            color = if (isDark) CyanGlow else BlueAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -131,7 +145,7 @@ fun AiTutorContent(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = uiState.tutorTitle,
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -140,8 +154,15 @@ fun AiTutorContent(
                     // Clear Chat / New Chat action button in TopAppBar
                     Box(
                         modifier = Modifier
-                            .background(Color(0xFF161F42), RoundedCornerShape(16.dp))
-                            .border(1.dp, Color(0xFF2A3660), RoundedCornerShape(16.dp))
+                            .background(
+                                color = if (isDark) Color(0xFF161F42) else Color(0xFFEFF6FF),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .border(
+                                1.dp,
+                                if (isDark) Color(0xFF2A3660) else Color(0xFFBFDBFE),
+                                RoundedCornerShape(16.dp)
+                            )
                             .clickable { onClearChat() }
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
@@ -151,7 +172,7 @@ fun AiTutorContent(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "New",
-                                color = CyanGlow,
+                                color = if (isDark) CyanGlow else BlueAccent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -160,13 +181,13 @@ fun AiTutorContent(
                 }
             }
 
-            // Light Rounded Sheet Container
+            // Rounded Sheet Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = bodyBgColor,
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -285,16 +306,16 @@ fun AiTutorContent(
                                             .fillMaxWidth(0.92f)
                                             .align(Alignment.CenterStart)
                                             .background(
-                                                color = Color.White,
+                                                color = aiCardBgColor,
                                                 shape = RoundedCornerShape(16.dp)
                                             )
-                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                                            .border(1.dp, aiCardBorderColor, RoundedCornerShape(16.dp))
                                             .padding(14.dp)
                                     ) {
                                         Column {
                                             Text(
                                                 text = message.text,
-                                                color = Color(0xFF1E293B),
+                                                color = inputTextColor,
                                                 fontSize = 13.sp,
                                                 lineHeight = 18.sp,
                                             )
@@ -302,7 +323,7 @@ fun AiTutorContent(
                                                 Spacer(modifier = Modifier.height(10.dp))
                                                 Text(
                                                     text = message.paragraph2,
-                                                    color = Color(0xFF1E293B),
+                                                    color = inputTextColor,
                                                     fontSize = 13.sp,
                                                     lineHeight = 18.sp,
                                                 )
@@ -389,70 +410,76 @@ fun AiTutorContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Chat Input Bar Box
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 6.dp
+                    // Chat Input Bar Box with automatic IME Keyboard Elevation
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
                     ) {
-                        Row(
+                        DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
+                            contentPadding = 6.dp
                         ) {
-                            OutlinedTextField(
-                                value = uiState.inputQuery,
-                                onValueChange = onQueryChange,
-                                placeholder = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.inputQuery,
+                                    onValueChange = onQueryChange,
+                                    placeholder = {
+                                        Text(
+                                            text = "Ask a question or follow up...",
+                                            color = Color(0xFF94A3B8),
+                                            fontSize = 14.sp,
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = BlueAccent,
+                                        unfocusedBorderColor = aiCardBorderColor,
+                                        focusedContainerColor = inputCardBgColor,
+                                        unfocusedContainerColor = inputCardBgColor,
+                                        focusedTextColor = inputTextColor,
+                                        unfocusedTextColor = inputTextColor,
+                                    ),
+                                    singleLine = true,
+                                    trailingIcon = {
+                                        Text(
+                                            text = "🎙️",
+                                            fontSize = 18.sp,
+                                            modifier = Modifier.clickable { }
+                                        )
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Send Button Circle
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .background(
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    PurpleAccent,
+                                                    BlueAccent,
+                                                    CyanAccent,
+                                                )
+                                            ),
+                                            shape = CircleShape
+                                        )
+                                        .clickable { onSendMessage() },
+                                    contentAlignment = Alignment.Center,
+                                ) {
                                     Text(
-                                        text = "Ask a question or follow up...",
-                                        color = Color(0xFF94A3B8),
-                                        fontSize = 14.sp,
-                                    )
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
-                                ),
-                                singleLine = true,
-                                trailingIcon = {
-                                    Text(
-                                        text = "🎙️",
-                                        fontSize = 18.sp,
-                                        modifier = Modifier.clickable { }
+                                        text = "↑",
+                                        color = Color.White,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
                                     )
                                 }
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            // Send Button Circle
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                PurpleAccent,
-                                                BlueAccent,
-                                                CyanAccent,
-                                            )
-                                        ),
-                                        shape = CircleShape
-                                    )
-                                    .clickable { onSendMessage() },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = "↑",
-                                    color = Color.White,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
                             }
                         }
                     }

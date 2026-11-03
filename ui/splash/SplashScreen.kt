@@ -5,11 +5,9 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -21,10 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,20 +38,42 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
-import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
-import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
+import kotlinx.coroutines.delay
+
+@Composable
+fun SplashScreen(
+    viewModel: SplashViewModel,
+    onSplashFinished: (isAuthenticated: Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.isNavigating) {
+        if (uiState.isNavigating) {
+            onSplashFinished(uiState.isAuthenticated)
+        }
+    }
+
+    // Auto-advancing timer transitions within 1.8 seconds without requiring any manual button tap
+    LaunchedEffect(Unit) {
+        delay(1800L)
+        onSplashFinished(uiState.isAuthenticated)
+    }
+
+    SplashContent(
+        uiState = uiState,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun SplashScreen(
@@ -64,17 +81,9 @@ fun SplashScreen(
     onSplashFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(uiState.isNavigatingToWelcome) {
-        if (uiState.isNavigatingToWelcome) {
-            onSplashFinished()
-        }
-    }
-
-    SplashContent(
-        uiState = uiState,
-        onStartClick = onSplashFinished,
+    SplashScreen(
+        viewModel = viewModel,
+        onSplashFinished = { _ -> onSplashFinished() },
         modifier = modifier,
     )
 }
@@ -189,7 +198,7 @@ fun SplashContent(
                 modifier = Modifier.padding(vertical = 8.dp),
             )
 
-            // 5. Pagination Indicators & Footer Subtitle
+            // 4. Pagination Indicators & Footer Subtitle
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -230,56 +239,33 @@ fun SplashContent(
                 )
             }
 
-            // 6. Action Button Section: Let's Start
+            // 5. Automated Launching Status Indicator (No manual button needed)
             DashedBorderBox(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 12.dp),
-                contentPadding = 4.dp,
+                    .padding(top = 8.dp, bottom = 16.dp),
+                contentPadding = 8.dp,
             ) {
-                Button(
-                    onClick = onStartClick,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    contentPadding = PaddingValues(0.dp),
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        PurpleAccent,
-                                        BlueAccent,
-                                        CyanAccent,
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp),
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = "→",
-                                color = TextPrimary,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = uiState.buttonText,
-                                color = TextPrimary,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                    }
+                            .size(8.dp)
+                            .background(CyanGlow, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "✨ Initializing Synapse AI Neural Core...",
+                        color = CyanGlow,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp
+                    )
                 }
             }
 
@@ -294,7 +280,6 @@ fun SplashScreenPreview() {
     SYNAPSETheme {
         SplashContent(
             uiState = SplashUiState(),
-            onStartClick = {},
             modifier = Modifier.fillMaxSize(),
             isAnimated = false,
         )

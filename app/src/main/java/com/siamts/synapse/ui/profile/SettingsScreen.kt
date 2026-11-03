@@ -1,6 +1,9 @@
 package com.siamts.synapse.ui.profile
 
 import android.widget.Toast
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,21 +28,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siamts.synapse.data.local.ThemeMode
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackground
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -57,11 +65,15 @@ import com.siamts.synapse.ui.theme.LightBackground
 import com.siamts.synapse.ui.theme.LightBorder
 import com.siamts.synapse.ui.theme.LightTextPrimary
 import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.theme.ThemeViewModel
+import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
@@ -70,6 +82,8 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val activeTheme by themeViewModel.themeMode.collectAsState()
     val isDark = when (activeTheme) {
@@ -96,6 +110,7 @@ fun SettingsScreen(
     var soundEffectsEnabled by remember { mutableStateOf(true) }
     var offlineSyncEnabled by remember { mutableStateOf(true) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showThemeModal by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -173,7 +188,7 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // =========================================================
-                    // SECTION 1: APPEARANCE & THEME
+                    // SECTION 1: APPEARANCE & THEME (3D Interactive Selector)
                     // =========================================================
                     SettingsSectionHeader(
                         title = "Appearance & Theme",
@@ -181,71 +196,85 @@ fun SettingsScreen(
                     )
 
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showThemeModal = true },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = cardBgColor),
                         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
-                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Choose Theme Mode",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = primaryTextColor
-                            )
-
-                            // Theme Options List
-                            ThemeOptionItem(
-                                title = ThemeMode.SYSTEM.title,
-                                description = ThemeMode.SYSTEM.description,
-                                icon = "⚙️",
-                                isSelected = activeTheme == ThemeMode.SYSTEM,
-                                isDark = isDark,
-                                onSelect = {
-                                    themeViewModel.setThemeMode(ThemeMode.SYSTEM)
-                                    Toast.makeText(
-                                        context,
-                                        "Theme set to System Default",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(
+                                            brush = if (isDark) {
+                                                Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A)))
+                                            } else {
+                                                Brush.linearGradient(listOf(Color(0xFFEFF6FF), Color(0xFFDBEAFE)))
+                                            },
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .border(
+                                            1.dp,
+                                            if (isDark) CyanAccent.copy(alpha = 0.5f) else BlueAccent.copy(alpha = 0.3f),
+                                            RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val icon = when (activeTheme) {
+                                        ThemeMode.LIGHT -> "☀️"
+                                        ThemeMode.DARK -> "🌙"
+                                        ThemeMode.SYSTEM -> "⚙️"
+                                    }
+                                    Text(text = icon, fontSize = 22.sp)
                                 }
-                            )
 
-                            ThemeOptionItem(
-                                title = ThemeMode.LIGHT.title,
-                                description = ThemeMode.LIGHT.description,
-                                icon = "☀️",
-                                isSelected = activeTheme == ThemeMode.LIGHT,
-                                isDark = isDark,
-                                onSelect = {
-                                    themeViewModel.setThemeMode(ThemeMode.LIGHT)
-                                    Toast.makeText(
-                                        context,
-                                        "Theme set to Light Mode",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
+                                Spacer(modifier = Modifier.width(14.dp))
 
-                            ThemeOptionItem(
-                                title = ThemeMode.DARK.title,
-                                description = ThemeMode.DARK.description,
-                                icon = "🌙",
-                                isSelected = activeTheme == ThemeMode.DARK,
-                                isDark = isDark,
-                                onSelect = {
-                                    themeViewModel.setThemeMode(ThemeMode.DARK)
-                                    Toast.makeText(
-                                        context,
-                                        "Theme set to Dark Mode",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                Column {
+                                    Text(
+                                        text = "Theme Selection",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = primaryTextColor
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${activeTheme.title} active",
+                                        fontSize = 12.sp,
+                                        color = if (isDark) CyanAccent else BlueAccent,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
-                            )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = if (isDark) Color(0xFF1A274E) else Color(0xFFEEF2FF),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "Customize 3D 🎨",
+                                    color = if (isDark) CyanGlow else BlueAccent,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
 
@@ -343,7 +372,7 @@ fun SettingsScreen(
                     }
 
                     // =========================================================
-                    // SECTION 4: ABOUT SYNAPSE AI
+                    // SECTION 4: ABOUT SYNAPSE AI (With Brain Graphic)
                     // =========================================================
                     SettingsSectionHeader(
                         title = "About Synapse AI",
@@ -356,19 +385,40 @@ fun SettingsScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
                         elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Text(
-                                text = "SYNAPSE AI: Intelligent Learning Companion",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = primaryTextColor
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Version 1.0.0 · Powered by Jetpack Compose & On-Device LocalAIEngine",
-                                fontSize = 12.sp,
-                                color = secondaryTextColor
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = if (isDark) Color(0xFF161F42) else Color(0xFFEFF6FF),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                BrainGraphic(modifier = Modifier.size(36.dp))
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    text = "SYNAPSE AI Companion",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = primaryTextColor
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Version 1.0.0 · Jetpack Compose & On-Device Engine",
+                                    fontSize = 12.sp,
+                                    color = secondaryTextColor
+                                )
+                            }
                         }
                     }
 
@@ -412,6 +462,83 @@ fun SettingsScreen(
             }
         }
 
+        // =============================================================
+        // 3D CARD-STYLE THEME SELECTOR MODAL BOTTOM SHEET
+        // =============================================================
+        if (showThemeModal) {
+            ModalBottomSheet(
+                onDismissRequest = { showThemeModal = false },
+                sheetState = sheetState,
+                containerColor = if (isDark) Color(0xFF0C132C) else Color.White,
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Customize Appearance",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryTextColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Interactive 3D Preview Cards · Instant Recomposition",
+                            fontSize = 12.sp,
+                            color = secondaryTextColor
+                        )
+                    }
+
+                    // 1. Light Mode 3D Preview Card
+                    ThemePreview3DCard(
+                        title = "Light Mode",
+                        subtitle = "Crisp daytime UI with elevated card surfaces",
+                        icon = "☀️",
+                        isSelected = activeTheme == ThemeMode.LIGHT,
+                        previewMode = ThemeMode.LIGHT,
+                        onSelect = {
+                            themeViewModel.setThemeMode(ThemeMode.LIGHT)
+                            Toast.makeText(context, "Theme set to Light Mode", Toast.LENGTH_SHORT).show()
+                            coroutineScope.launch { sheetState.hide(); showThemeModal = false }
+                        }
+                    )
+
+                    // 2. Dark Mode 3D Preview Card
+                    ThemePreview3DCard(
+                        title = "Dark Mode",
+                        subtitle = "Sleek cyber-neon dark aesthetic with glowing accents",
+                        icon = "🌙",
+                        isSelected = activeTheme == ThemeMode.DARK,
+                        previewMode = ThemeMode.DARK,
+                        onSelect = {
+                            themeViewModel.setThemeMode(ThemeMode.DARK)
+                            Toast.makeText(context, "Theme set to Dark Mode", Toast.LENGTH_SHORT).show()
+                            coroutineScope.launch { sheetState.hide(); showThemeModal = false }
+                        }
+                    )
+
+                    // 3. System Default Split/Dual-Tone 3D Card
+                    ThemePreview3DCard(
+                        title = "System Default",
+                        subtitle = "Auto dual-tone mode synchronized with device appearance",
+                        icon = "⚙️",
+                        isSelected = activeTheme == ThemeMode.SYSTEM,
+                        previewMode = ThemeMode.SYSTEM,
+                        onSelect = {
+                            themeViewModel.setThemeMode(ThemeMode.SYSTEM)
+                            Toast.makeText(context, "Theme set to System Default", Toast.LENGTH_SHORT).show()
+                            coroutineScope.launch { sheetState.hide(); showThemeModal = false }
+                        }
+                    )
+                }
+            }
+        }
+
         // Logout Confirmation Dialog
         if (showLogoutDialog) {
             AlertDialog(
@@ -439,69 +566,168 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * 3D-styled theme preview card with depth, elevation, shadows, and spring animation on tap.
+ */
 @Composable
-private fun ThemeOptionItem(
+private fun ThemePreview3DCard(
     title: String,
-    description: String,
+    subtitle: String,
     icon: String,
     isSelected: Boolean,
-    isDark: Boolean,
+    previewMode: ThemeMode,
     onSelect: () -> Unit
 ) {
-    val activeBorderColor = if (isDark) CyanAccent else BlueAccent
-    val inactiveBorderColor = if (isDark) Color(0xFF223058) else LightBorder
-    val itemBgColor = if (isSelected) {
-        if (isDark) Color(0xFF19284F) else Color(0xFFEFF6FF)
-    } else {
-        if (isDark) Color(0xFF0F172E) else Color(0xFFFAFAFA)
+    // Spring bounce scale animation when selected
+    val scaleAnim by animateFloatAsState(
+        targetValue = if (isSelected) 1.02f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "Theme3DCardScale"
+    )
+
+    val cardShape = RoundedCornerShape(18.dp)
+
+    val cardBorder = when {
+        isSelected && previewMode == ThemeMode.DARK -> androidx.compose.foundation.BorderStroke(2.dp, CyanGlow)
+        isSelected && previewMode == ThemeMode.LIGHT -> androidx.compose.foundation.BorderStroke(2.dp, BlueAccent)
+        isSelected -> androidx.compose.foundation.BorderStroke(2.dp, PurpleAccent)
+        else -> androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155).copy(alpha = 0.3f))
+    }
+
+    val cardBg = when (previewMode) {
+        ThemeMode.LIGHT -> Color(0xFFFFFFFF)
+        ThemeMode.DARK -> Color(0xFF0F172E)
+        ThemeMode.SYSTEM -> Color(0xFF1E293B)
     }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(itemBgColor, RoundedCornerShape(12.dp))
-            .border(
-                width = if (isSelected) 1.5.dp else 1.dp,
-                color = if (isSelected) activeBorderColor else inactiveBorderColor,
-                shape = RoundedCornerShape(12.dp)
+            .scale(scaleAnim)
+            .shadow(
+                elevation = if (isSelected) 8.dp else 3.dp,
+                shape = cardShape,
+                ambientColor = if (previewMode == ThemeMode.DARK) CyanGlow else Color.Black,
+                spotColor = if (isSelected) BlueAccent else Color.Gray
             )
+            .background(cardBg, cardShape)
+            .border(cardBorder, cardShape)
             .clickable(onClick = onSelect)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(14.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Card Header
             Row(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = icon, fontSize = 20.sp)
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text(
-                        text = title,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                        color = if (isDark) TextPrimary else LightTextPrimary
-                    )
-                    Text(
-                        text = description,
-                        fontSize = 11.sp,
-                        color = if (isDark) TextSecondary else LightTextSecondary
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = icon, fontSize = 22.sp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = if (previewMode == ThemeMode.LIGHT) Color(0xFF0F172A) else Color.White
+                        )
+                        Text(
+                            text = subtitle,
+                            fontSize = 11.sp,
+                            color = if (previewMode == ThemeMode.LIGHT) Color(0xFF64748B) else Color(0xFF94A3B8)
+                        )
+                    }
+                }
+
+                // Selected Spring-Animated Tick Mark
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                color = if (previewMode == ThemeMode.DARK) CyanGlow else BlueAccent,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✓",
+                            color = if (previewMode == ThemeMode.DARK) Color.Black else Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            RadioButton(
-                selected = isSelected,
-                onClick = onSelect,
-                colors = RadioButtonDefaults.colors(
-                    selectedColor = if (isDark) CyanAccent else BlueAccent,
-                    unselectedColor = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
-                )
-            )
+            // 3D Miniature Mock UI Preview
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(
+                        brush = when (previewMode) {
+                            ThemeMode.LIGHT -> Brush.horizontalGradient(
+                                listOf(Color(0xFFF1F5F9), Color(0xFFE2E8F0))
+                            )
+                            ThemeMode.DARK -> Brush.horizontalGradient(
+                                listOf(Color(0xFF090D1E), Color(0xFF161F42))
+                            )
+                            ThemeMode.SYSTEM -> Brush.horizontalGradient(
+                                listOf(Color(0xFFF1F5F9), Color(0xFF090D1E))
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .border(
+                        1.dp,
+                        if (previewMode == ThemeMode.DARK) Color(0xFF1E2B58) else Color(0xFFCBD5E1),
+                        RoundedCornerShape(10.dp)
+                    )
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(
+                                    if (previewMode == ThemeMode.DARK) CyanGlow else BlueAccent,
+                                    CircleShape
+                                )
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(50.dp)
+                                .height(6.dp)
+                                .background(
+                                    if (previewMode == ThemeMode.LIGHT) Color(0xFF94A3B8) else Color(0xFF475569),
+                                    RoundedCornerShape(3.dp)
+                                )
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(14.dp)
+                            .background(
+                                if (previewMode == ThemeMode.DARK) Color(0xFF223058) else Color(0xFFDBEAFE),
+                                RoundedCornerShape(6.dp)
+                            )
+                    )
+                }
+            }
         }
     }
 }

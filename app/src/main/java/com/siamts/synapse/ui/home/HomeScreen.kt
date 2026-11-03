@@ -49,6 +49,11 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.DarkBackground
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
@@ -131,18 +136,18 @@ fun HomeContent(
     onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val isDark = LocalThemeIsDark.current
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Section
@@ -159,12 +164,12 @@ fun HomeContent(
                     Column {
                         Text(
                             text = uiState.greeting,
-                            color = TextSecondary,
+                            color = if (isDark) TextSecondary else BlueAccent,
                             fontSize = 13.sp,
                         )
                         Text(
                             text = "${uiState.userName} 👋",
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                         )

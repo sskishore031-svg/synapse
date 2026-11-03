@@ -43,6 +43,11 @@ import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.DarkBackground
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
@@ -120,18 +125,18 @@ fun ProfileContent(
     onSettingsClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
 ) {
+    val isDark = LocalThemeIsDark.current
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Dark Header Box (DashedBorderBox)
@@ -149,7 +154,7 @@ fun ProfileContent(
                     Column {
                         Text(
                             text = uiState.headerTag,
-                            color = TextMuted,
+                            color = if (isDark) TextMuted else BlueAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -157,7 +162,7 @@ fun ProfileContent(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = uiState.title,
-                            color = TextPrimary,
+                            color = headerTextColor,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -166,7 +171,10 @@ fun ProfileContent(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(
+                                color = if (isDark) Color(0xFF161F42) else Color(0xFFE2E8F0),
+                                shape = CircleShape
+                            )
                             .clickable { onSettingsClick?.invoke() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -361,14 +369,6 @@ fun ProfileContent(
                                         title = "Study Goals",
                                         trailingText = uiState.studyGoalText,
                                         onClick = { onStudyGoalsClick?.invoke() },
-                                    )
-
-                                    // Item 4: Language
-                                    ProfileOptionRow(
-                                        icon = "🔤",
-                                        title = "Language",
-                                        trailingText = uiState.languageText,
-                                        onClick = { onLanguageClick?.invoke() },
                                     )
 
                                     // Item 5: Saved Notes

@@ -30,3 +30,4 @@ class ThemeModeTest {
         assertEquals("Dark Mode", ThemeMode.DARK.title)
     }
 }
+

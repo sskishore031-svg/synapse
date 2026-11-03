@@ -7,11 +7,13 @@ import com.siamts.synapse.data.local.AiChatStorage
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
@@ -139,44 +141,46 @@ class AiTutorViewModel(
             )
         }
 
-        // 2. Generate context-aware on-device response
-        val localResponse = localAiEngine.generateResponse(query)
-
-        val aiMessage = ChatMessage(
-            id = UUID.randomUUID().toString(),
-            senderName = "FRIDAY AI",
-            text = localResponse.paragraph1,
-            paragraph2 = localResponse.paragraph2.ifBlank { null },
-            timeAgo = "Just now",
-            isUser = false,
-            matchedSubject = localResponse.matchedSubject,
-            matchedChapter = localResponse.matchedChapter,
-            matchedTopic = localResponse.matchedTopic
-        )
-
-        val finalMessages = listWithUser + aiMessage
-
-        val statusText = when {
-            localResponse.isGreeting -> "✨ FRIDAY AI · Ready to explore subjects with you"
-            localResponse.isFollowUp -> "✨ FRIDAY AI · Context Follow-up (${localResponse.matchedTopic})"
-            localResponse.matchedTopic != null -> "✨ FRIDAY AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
-            else -> "✨ FRIDAY AI · Knowledge Companion"
-        }
-
-        _uiState.update {
-            it.copy(
-                messages = finalMessages,
-                aiAnswerParagraph1 = localResponse.paragraph1,
-                aiAnswerParagraph2 = localResponse.paragraph2,
-                aiThoughtStatus = statusText
-            )
-        }
-
-        // 3. Persist messages locally
-        chatStorage?.saveMessages(currentUserId, finalMessages)
-
-        // 4. Asynchronously sync to backend repository
+        // 2. Generate context-aware on-device response asynchronously in coroutine
         viewModelScope.launch {
+            val localResponse = withContext(Dispatchers.Default) {
+                localAiEngine.generateResponse(query)
+            }
+
+            val aiMessage = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "FRIDAY AI",
+                text = localResponse.paragraph1,
+                paragraph2 = localResponse.paragraph2.ifBlank { null },
+                timeAgo = "Just now",
+                isUser = false,
+                matchedSubject = localResponse.matchedSubject,
+                matchedChapter = localResponse.matchedChapter,
+                matchedTopic = localResponse.matchedTopic
+            )
+
+            val finalMessages = listWithUser + aiMessage
+
+            val statusText = when {
+                localResponse.isGreeting -> "✨ FRIDAY AI · Ready to explore subjects with you"
+                localResponse.isFollowUp -> "✨ FRIDAY AI · Context Follow-up (${localResponse.matchedTopic})"
+                localResponse.matchedTopic != null -> "✨ FRIDAY AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
+                else -> "✨ FRIDAY AI · Knowledge Companion"
+            }
+
+            _uiState.update {
+                it.copy(
+                    messages = finalMessages,
+                    aiAnswerParagraph1 = localResponse.paragraph1,
+                    aiAnswerParagraph2 = localResponse.paragraph2,
+                    aiThoughtStatus = statusText
+                )
+            }
+
+            // 3. Persist messages locally
+            chatStorage?.saveMessages(currentUserId, finalMessages)
+
+            // 4. Asynchronously sync to backend repository
             try {
                 val user = sessionManager?.getSessionUser()
                 val email = user?.email ?: "student@synapse.ai"

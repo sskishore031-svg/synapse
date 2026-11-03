@@ -96,3 +96,4 @@ class ThemePreferences private constructor(context: Context) {
         }
     }
 }
+

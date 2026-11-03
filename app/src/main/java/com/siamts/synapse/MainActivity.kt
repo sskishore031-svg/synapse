@@ -298,7 +298,8 @@ class MainActivity : ComponentActivity() {
                                 SplashScreen(
                                     viewModel = splashViewModel,
                                     onSplashFinished = { isAuthenticated ->
-                                        currentScreen = if (isAuthenticated) AppScreen.Dashboard else AppScreen.Welcome
+                                        screenBackStack.clear()
+                                        currentScreen = if (isAuthenticated) AppScreen.Dashboard else AppScreen.Login
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

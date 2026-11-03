@@ -6,8 +6,14 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import com.siamts.synapse.SynapseApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
 import java.util.Locale
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Knowledge chunk representing an educational concept across subjects.
@@ -73,7 +79,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private val greetings = setOf(
         "gm", "good morning", "good afternoon", "good evening",
-        "hi", "hello", "hey", "vanakkam", "namaste", "hola", "greetings"
+        "hi", "hello", "hey", "vanakkam", "namaste", "hola", "greetings", "hii", "heyy", "yo"
     )
 
     private val examplePrompts = setOf(
@@ -92,21 +98,24 @@ class LocalAIEngine private constructor(context: Context?) {
         "what is the formula", "what is the formula?", "why does it happen", "why does it happen?"
     )
 
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     init {
-        if (context != null) {
-            loadFromAssets(context)
-        } else {
-            try {
-                val appContext = SynapseApplication.getAppContext()
-                loadFromAssets(appContext)
-            } catch (e: Throwable) {
-                logW(TAG, "Application context not yet ready for LocalAIEngine auto-load: ${e.message}")
+        val targetContext = context ?: try {
+            SynapseApplication.getAppContext()
+        } catch (_: Throwable) {
+            null
+        }
+
+        if (targetContext != null) {
+            ioScope.launch {
+                loadFromAssets(targetContext)
             }
         }
     }
 
     /**
-     * Loads knowledge dataset from Android assets folder.
+     * Loads knowledge dataset asynchronously strictly in Dispatchers.IO.
      */
     fun loadFromAssets(context: Context, filename: String = "all_subjects_expanded.json") {
         try {
@@ -118,7 +127,7 @@ class LocalAIEngine private constructor(context: Context?) {
                         chunks.clear()
                         chunks.addAll(list)
                     }
-                    logD(TAG, "Successfully loaded ${chunks.size} knowledge chunks from assets.")
+                    logD(TAG, "Successfully loaded ${chunks.size} knowledge chunks from assets in Dispatchers.IO.")
                 }
             }
         } catch (e: Throwable) {
@@ -169,12 +178,26 @@ class LocalAIEngine private constructor(context: Context?) {
 
         val lowerQuery = query.lowercase(Locale.ROOT)
 
-        // 1. Check for Greetings
+        // 1. Check for Instant Greetings
         if (isGreetingQuery(lowerQuery)) {
             return buildGreetingResponse()
         }
 
-        // 2. Check for Context-Aware Follow-up Queries
+        // 2. Check for App Features & Navigation Guidance
+        val appFeatureResp = checkAppFeatureQuery(lowerQuery)
+        if (appFeatureResp != null) {
+            return appFeatureResp
+        }
+
+        // If dataset hasn't finished loading yet, try synchronous load from app context
+        if (chunks.isEmpty()) {
+            try {
+                val appCtx = SynapseApplication.getAppContext()
+                loadFromAssets(appCtx)
+            } catch (_: Throwable) {}
+        }
+
+        // 3. Check for Context-Aware Follow-up Queries
         val lastTopicTurn = synchronized(contextHistory) {
             contextHistory.lastOrNull { it.matchedTopic != null || it.chunkId != null }
         }
@@ -232,6 +255,48 @@ class LocalAIEngine private constructor(context: Context?) {
                 }
             }
             buildFallbackResponse(query)
+        }
+    }
+
+    private fun checkAppFeatureQuery(lowerQuery: String): LocalAiResponse? {
+        val q = lowerQuery.trim()
+        return when {
+            q.contains("note") && (q.contains("how") || q.contains("create") || q.contains("save") || q.contains("where") || q.contains("download")) -> {
+                LocalAiResponse(
+                    paragraph1 = "📝 **SYNAPSE Notes Organizer**\n\nYou can access, create, and organize study notes by tapping the Notes icon in the bottom navigation bar.",
+                    paragraph2 = "⚡ **Key Capabilities**\n\n• Tap the **➕** button on the Notes screen to create Common, Subject-specific, or Saved notes.\n• Access **Subject Notes** directly for Mathematics, CS, AI, Physics, and Chemistry.\n• Save or download any note for instant offline study.",
+                    confidenceScore = 95.0
+                )
+            }
+            q.contains("quiz") && (q.contains("how") || q.contains("take") || q.contains("start") || q.contains("where") || q.contains("attempt")) -> {
+                LocalAiResponse(
+                    paragraph1 = "🎯 **SYNAPSE Interactive Quizzes**\n\nYou can test your knowledge anytime by tapping the Quiz icon in the bottom navigation bar.",
+                    paragraph2 = "⚡ **Quiz Guide**\n\n• Choose your subject and specific chapter topic to start a targeted quiz.\n• Receive instant scoring, comprehensive answer explanations, and performance metrics.",
+                    confidenceScore = 95.0
+                )
+            }
+            q.contains("brain") && (q.contains("map") || q.contains("what") || q.contains("where") || q.contains("how")) -> {
+                LocalAiResponse(
+                    paragraph1 = "🧠 **SYNAPSE BrainMap Knowledge Graph**\n\nBrainMap visualizes your learning journey, showing interconnected subject concepts and prerequisite relationships.",
+                    paragraph2 = "⚡ **How to Use**\n\n• Tap **BrainMap** from the Dashboard to explore interactive nodes.\n• Track mastery levels and discover recommended study paths.",
+                    confidenceScore = 95.0
+                )
+            }
+            q.contains("flashcard") -> {
+                LocalAiResponse(
+                    paragraph1 = "🎴 **Interactive Flashcards**\n\nFlashcards use spaced repetition to help you remember key formulas, definitions, and theorems.",
+                    paragraph2 = "⚡ **Study Tip**\n\n• Tap **Flashcards** from the Dashboard to flip through curated question-and-answer cards across all subjects.",
+                    confidenceScore = 95.0
+                )
+            }
+            q.contains("theme") || q.contains("dark mode") || q.contains("light mode") -> {
+                LocalAiResponse(
+                    paragraph1 = "🎨 **Theme Customization**\n\nSYNAPSE AI supports real-time Dark Mode, Light Mode, and System Default appearance.",
+                    paragraph2 = "⚡ **How to Switch**\n\n• Navigate to **Profile → Settings (⚙️)**.\n• Tap **Theme Selection** to choose between 3D-styled Light, Dark, or System preview cards.",
+                    confidenceScore = 95.0
+                )
+            }
+            else -> null
         }
     }
 

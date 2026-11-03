@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -32,34 +31,44 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanGlow
+import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.DarkBackground
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
-import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
-import com.siamts.synapse.ui.welcome.components.SynapseBrandLogo
 
 @Composable
 fun AboutSynapseScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = LocalThemeIsDark.current
+
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+    }
+
+    val bodyBg = if (isDark) DarkBackground else Color(0xFFF8FAFC)
+    val cardBg = if (isDark) Color(0xFF131C38) else Color.White
+    val cardBorder = if (isDark) Color(0xFF1E2B58) else LightBorder
+    val primaryText = if (isDark) TextPrimary else LightTextPrimary
+    val secondaryText = if (isDark) Color(0xFF94A3B8) else LightTextSecondary
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Box
@@ -74,25 +83,31 @@ fun AboutSynapseScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "←", color = primaryText, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(
+                            text = "PROFILE & SETTINGS",
+                            color = if (isDark) TextMuted else BlueAccent,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "About Synapse AI", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "About Synapse AI", color = primaryText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            // Light Sheet Container
+            // Main Content Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = bodyBg, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -106,55 +121,81 @@ fun AboutSynapseScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // App Logo Card
+                        // Official App Logo Card (Correct Brain Graphic)
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                SynapseBrandLogo(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    isDarkTheme = false
+                                Box(
+                                    modifier = Modifier.size(90.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BrainGraphic(modifier = Modifier.fillMaxSize())
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = "SYNAPSE AI",
+                                    color = primaryText,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
                                 )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(text = "Version 1.0.0", color = Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Version 1.0.0",
+                                    color = if (isDark) CyanAccent else BlueAccent,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
 
                         // Description Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Text(
-                                text = "Synapse AI is your personal learning companion that helps you study efficiently with AI-powered tools, quizzes, notes and personalized insights.",
-                                color = Color(0xFF475569),
-                                fontSize = 12.sp,
-                                lineHeight = 17.sp,
+                                text = "Synapse AI is your intelligent on-device learning companion. Master complex subjects, generate dynamic quizzes, organize comprehensive study notes, and explore the interactive BrainMap knowledge graph with zero cloud dependency.",
+                                color = secondaryText,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(6.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
                             )
                         }
 
                         // Options Links Box
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                    AboutLinkRow("What's New", "📰")
-                                    AboutLinkRow("Terms of Service", "📜")
-                                    AboutLinkRow("Privacy Policy", "🔒")
-                                    AboutLinkRow("Open Source Licenses", "📄")
-                                }
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                AboutLinkRow("What's New in 1.0.0", "📰", primaryText)
+                                AboutLinkRow("Terms of Service", "📜", primaryText)
+                                AboutLinkRow("Privacy Policy", "🔒", primaryText)
+                                AboutLinkRow("Open Source Licenses", "📄", primaryText)
                             }
                         }
 
-                        // Made with Love Footer Box
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 6.dp) {
+                        // Footer Box
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = "Made with ❤️ for learners",
+                                text = "Crafted with ❤️ for students worldwide",
                                 color = Color(0xFF94A3B8),
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
@@ -165,16 +206,19 @@ fun AboutSynapseScreen(
 }
 
 @Composable
-private fun AboutLinkRow(title: String, icon: String) {
+private fun AboutLinkRow(title: String, icon: String, textColor: Color) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = icon, fontSize = 16.sp)
             Spacer(modifier = Modifier.width(10.dp))
-            Text(text = title, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = title, color = textColor, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
         Text(text = "›", color = Color(0xFF94A3B8), fontSize = 18.sp)
     }
