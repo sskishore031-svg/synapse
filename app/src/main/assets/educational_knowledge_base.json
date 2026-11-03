@@ -1,208 +1,170 @@
 {
-  "subjects": {
-    "mathematics": {
+  "version": "4.0",
+  "app_name": "SYNAPSE AI",
+  "subjects": [
+    {
       "subject": "Mathematics",
-      "overview": "Mathematics is the science of numbers, quantities, structures, patterns, transformations, and continuous change. It provides the analytical bedrock for computer science, engineering physics, data analysis, and scientific modeling.",
+      "overview": "Fundamental study of quantity, structure, space, algebra, calculus, and mathematical change.",
       "topics": [
-        "Quadratic Equations and Roots",
-        "Differential Calculus and Derivatives",
-        "Integral Calculus and Area Accumulation",
-        "Linear Algebra, Vectors and Matrices",
-        "Probability Theory and Random Variables"
+        "Quadratic Equations",
+        "Calculus (Differentiation & Integration)",
+        "Linear Algebra (Matrices & Vectors)",
+        "Probability & Statistics",
+        "Trigonometry & Geometry"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "MATH_QE_001",
-          "chapter": "Quadratic Equations",
-          "topic": "Standard Form and Quadratic Formula",
+          "chunk_id": "MATH_001",
+          "chapter": "Algebra",
+          "topic": "Quadratic Equations",
           "keywords": [
-            "quadratic",
+            "maths topic",
+            "maths",
             "quadratic equation",
             "quadratic formula",
             "roots",
-            "parabola",
-            "algebra",
-            "standard form",
-            "ax2 + bx + c = 0"
-          ],
-          "definition": "A quadratic equation is a second-order polynomial equation in a single variable x, expressed in standard form as ax² + bx + c = 0, where a, b, and c are real constants and a ≠ 0. The solutions to the equation are called roots or zeros, corresponding geometrically to the x-intercepts of the parabola y = ax² + bx + c.",
-          "formula_or_core_rule": "The Quadratic Formula gives universal roots: x = (-b ± √(b² - 4ac)) / (2a). The vertex of the parabola occurs at x = -b / (2a).",
-          "worked_example": "For 2x² - 4x - 6 = 0: Here a=2, b=-4, c=-6. Discriminant Δ = (-4)² - 4(2)(-6) = 16 + 48 = 64. Roots x = (4 ± √64) / (2×2) = (4 ± 8)/4. Thus x₁ = 3 and x₂ = -1.",
-          "content": "A quadratic equation is a second-order polynomial equation in a single variable x, expressed in standard form as ax² + bx + c = 0, where a, b, and c are real constants and a ≠ 0. The solutions to the equation are called roots or zeros, corresponding geometrically to the x-intercepts of the parabola y = ax² + bx + c. The Quadratic Formula gives universal roots: x = (-b ± √(b² - 4ac)) / (2a). For 2x² - 4x - 6 = 0: a=2, b=-4, c=-6, yielding roots x = 3 and x = -1."
-        },
-        {
-          "chunk_id": "MATH_QE_002",
-          "chapter": "Quadratic Equations",
-          "topic": "Discriminant and Nature of Roots",
-          "keywords": [
             "discriminant",
-            "delta",
-            "b2 - 4ac",
-            "nature of roots",
-            "real roots",
-            "distinct roots",
-            "equal roots",
-            "complex roots"
+            "algebra"
           ],
-          "definition": "The discriminant of a quadratic equation ax² + bx + c = 0 is the algebraic term Δ = b² - 4ac beneath the radical sign. It characterizes the quantity and nature of the roots without computing the full equation.",
-          "formula_or_core_rule": "If Δ > 0: Two distinct real roots (parabola crosses x-axis twice). If Δ = 0: Exactly one repeated real root (parabola touches x-axis tangentially). If Δ < 0: Two complex conjugate roots (parabola never touches x-axis).",
-          "worked_example": "For x² + 2x + 5 = 0: Δ = (2)² - 4(1)(5) = 4 - 20 = -16. Since Δ < 0, the equation has two complex roots: x = (-2 ± 4i) / 2 = -1 ± 2i.",
-          "content": "The discriminant of a quadratic equation ax² + bx + c = 0 is the algebraic term Δ = b² - 4ac. If Δ > 0, there are two distinct real roots. If Δ = 0, there is one repeated real root. If Δ < 0, there are two complex conjugate roots. For x² + 2x + 5 = 0, Δ = -16 < 0, resulting in complex conjugate roots x = -1 ± 2i."
+          "definition": "A quadratic equation is a second-order polynomial equation in a single variable x, standard form: ax^2 + bx + c = 0, where a != 0.",
+          "formula": "Quadratic Formula: x = (-b +- sqrt(b^2 - 4ac)) / (2a). Discriminant: D = b^2 - 4ac (D > 0 gives two real roots, D = 0 gives one repeated real root, D < 0 gives complex conjugate roots).",
+          "worked_example": "For x^2 - 5x + 6 = 0: a=1, b=-5, c=6. D = (-5)^2 - 4(1)(6) = 25 - 24 = 1. Roots are x = (5 +- 1)/2 => x = 3 and x = 2.",
+          "content": "Quadratic equations model parabolic trajectories, projectile motions, and area optimizations. Roots can be determined by factoring, completing the square, or applying the quadratic formula directly."
         },
         {
-          "chunk_id": "MATH_CALC_001",
+          "chunk_id": "MATH_002",
           "chapter": "Calculus",
-          "topic": "Differential Calculus and Derivatives",
+          "topic": "Differentiation Rules",
           "keywords": [
+            "calculus",
             "derivative",
-            "differential calculus",
             "differentiation",
             "rate of change",
-            "tangent line",
-            "slope",
             "power rule",
             "chain rule"
           ],
-          "definition": "Differential calculus is the mathematical study of continuous change and instantaneous rates of change. The derivative f'(x) represents the instantaneous rate of change of f(x) with respect to x, geometrically equal to the slope of the tangent line to the curve at that point.",
-          "formula_or_core_rule": "Definition of derivative: f'(x) = lim(h→0) [f(x + h) - f(x)] / h. Power Rule: d/dx(xⁿ) = n·xⁿ⁻¹. Product Rule: (uv)' = u'v + uv'. Chain Rule: d/dx[f(g(x))] = f'(g(x))·g'(x).",
-          "worked_example": "If position is s(t) = 3t² + 5t meters, instantaneous velocity v(t) = s'(t) = 6t + 5 m/s. At t = 2s, velocity is v(2) = 6(2) + 5 = 17 m/s.",
-          "content": "Differential calculus studies instantaneous rates of change. The derivative f'(x) = lim(h→0) [f(x + h) - f(x)] / h gives the slope of the tangent line. Key rules include the Power Rule d/dx(xⁿ) = n·xⁿ⁻¹ and Chain Rule d/dx[f(g(x))] = f'(g(x))·g'(x). For position s(t) = 3t² + 5t, velocity v(t) = 6t + 5 m/s."
+          "definition": "A derivative measures the instantaneous rate at which a function f(x) changes with respect to its variable x.",
+          "formula": "Power Rule: d/dx(x^n) = n*x^(n-1). Product Rule: (uv)' = u'v + uv'. Quotient Rule: (u/v)' = (u'v - uv') / v^2. Chain Rule: d/dx(f(g(x))) = f'(g(x)) * g'(x).",
+          "worked_example": "If f(x) = 3x^3 + 2x, then f'(x) = 3*(3x^2) + 2*(1) = 9x^2 + 2.",
+          "content": "Differentiation is widely utilized in physics for velocity and acceleration calculations and in AI algorithms for gradient descent optimization."
         },
         {
-          "chunk_id": "MATH_CALC_002",
-          "chapter": "Calculus",
-          "topic": "Integral Calculus and Area Accumulation",
-          "keywords": [
-            "integral",
-            "integral calculus",
-            "integration",
-            "antiderivative",
-            "area under curve",
-            "fundamental theorem of calculus",
-            "definite integral"
-          ],
-          "definition": "Integral calculus is the branch of calculus concerning the accumulation of quantities and the calculation of areas, volumes, and displacement bounded by continuous functions. Integration is the inverse operation of differentiation.",
-          "formula_or_core_rule": "Fundamental Theorem of Calculus: ∫[a to b] f(x) dx = F(b) - F(a), where F'(x) = f(x). Indefinite Power Rule: ∫ xⁿ dx = (xⁿ⁺¹)/(n + 1) + C (for n ≠ -1).",
-          "worked_example": "Evaluate ∫[0 to 3] (2x + 1) dx: Antiderivative F(x) = x² + x. Area = F(3) - F(0) = (3² + 3) - (0) = 9 + 3 = 12 square units.",
-          "content": "Integral calculus evaluates accumulation and areas bounded by functions. The Fundamental Theorem of Calculus connects differentiation and integration: ∫[a to b] f(x) dx = F(b) - F(a). Evaluating ∫[0 to 3] (2x + 1) dx yields F(3) - F(0) = (9 + 3) - 0 = 12."
-        },
-        {
-          "chunk_id": "MATH_LA_001",
+          "chunk_id": "MATH_003",
           "chapter": "Linear Algebra",
-          "topic": "Linear Algebra, Vectors and Matrices",
+          "topic": "Matrices and Eigenvalues",
           "keywords": [
             "linear algebra",
             "matrices",
-            "matrix",
-            "vector",
             "determinant",
-            "matrix multiplication",
-            "eigenvalues",
-            "eigenvectors",
-            "inverse matrix"
+            "eigenvalue",
+            "eigenvector",
+            "vector spaces"
           ],
-          "definition": "Linear algebra is the mathematical framework concerning linear equations, vector spaces, and linear transformations represented compactly as matrices. It is central to 3D computer graphics, machine learning, and quantum mechanics.",
-          "formula_or_core_rule": "Matrix Multiplication: (AB)ᵢⱼ = ∑ₖ Aᵢₖ Bₖⱼ. A square matrix A has an inverse A⁻¹ iff det(A) ≠ 0. Eigenvalue Equation: A·v = λ·v, where v is the non-zero eigenvector and λ is the scalar eigenvalue.",
-          "worked_example": "For 2x2 matrix A = [[2, 1], [1, 2]], trace is 4 and determinant is 2(2) - 1(1) = 3. Characteristic equation: λ² - 4λ + 3 = 0, giving eigenvalues λ₁ = 3 and λ₂ = 1.",
-          "content": "Linear algebra models vector spaces and linear transformations through matrices. Matrix multiplication follows (AB)ᵢⱼ = ∑ₖ Aᵢₖ Bₖⱼ. A matrix possesses an inverse if its determinant is non-zero. Eigenvectors satisfy A·v = λ·v. For A = [[2, 1], [1, 2]], the eigenvalues are λ = 3 and λ = 1."
+          "definition": "A matrix is a rectangular array of numbers. An eigenvector of a square matrix A satisfies Av = lambda*v where lambda is its eigenvalue.",
+          "formula": "Characteristic Equation: det(A - lambda*I) = 0. Inverse: A^(-1) = adj(A) / det(A), valid when det(A) != 0.",
+          "worked_example": "For 2x2 matrix [[a, b], [c, d]], Determinant det(A) = ad - bc.",
+          "content": "Eigenvalues and eigenvectors are the core building blocks of computer vision, 3D transformations, dimensionality reduction (PCA), and recommendation algorithms."
         },
         {
-          "chunk_id": "MATH_PROB_001",
+          "chunk_id": "MATH_004",
           "chapter": "Probability",
-          "topic": "Probability Theory and Random Variables",
+          "topic": "Probability and Bayes' Theorem",
           "keywords": [
             "probability",
             "bayes theorem",
             "conditional probability",
             "random variables",
-            "normal distribution",
-            "standard deviation",
-            "variance",
-            "gaussian"
+            "statistics"
           ],
-          "definition": "Probability theory provides mathematical frameworks to quantify uncertainty and analyze the frequencies of random phenomena. Random variables map experimental outcomes to real numerical values with defined probability distributions.",
-          "formula_or_core_rule": "Bayes' Theorem: P(A|B) = [P(B|A) · P(A)] / P(B). Normal Gaussian PDF: f(x) = (1 / (σ√(2π))) · e^(-(x - μ)² / (2σ²)). Variance: Var(X) = E[(X - μ)²] = σ².",
-          "worked_example": "If a medical test is 99% accurate (sensitivity) for a disease affecting 1% of the population, Bayes' theorem reveals the probability of actually having the disease given a positive test is approximately 50%, highlighting the importance of the base rate.",
-          "content": "Probability theory measures the likelihood of events under uncertainty. Bayes' Theorem P(A|B) = [P(B|A) · P(A)] / P(B) updates beliefs based on observed evidence. The Gaussian normal distribution is parameterized by mean μ and standard deviation σ."
+          "definition": "Probability quantifies the likelihood of occurrence of events under uncertainty, with values ranging from 0 to 1.",
+          "formula": "Bayes' Theorem: P(A|B) = [P(B|A) * P(A)] / P(B). Expected Value: E[X] = sum(x * P(x)).",
+          "worked_example": "If a diagnostic test has 99% accuracy for a condition affecting 1% of the population, Bayes' theorem reveals true positive probability given a positive test is ~50%.",
+          "content": "Bayes' theorem is foundational to probabilistic reasoning, machine learning classification, medical diagnosis, and spam filtering algorithms."
+        },
+        {
+          "chunk_id": "MATH_005",
+          "chapter": "Calculus",
+          "topic": "Integral Calculus & Fundamental Theorem",
+          "keywords": [
+            "integral",
+            "integration",
+            "antiderivative",
+            "area under curve",
+            "calculus integral"
+          ],
+          "definition": "Integration is the mathematical operation representing the accumulation of quantities and continuous area under curves.",
+          "formula": "Fundamental Theorem of Calculus: integral[a to b] f(x) dx = F(b) - F(a), where F'(x) = f(x). Power Rule: integral x^n dx = (x^(n+1))/(n+1) + C.",
+          "worked_example": "integral[0 to 3] (2x) dx = [x^2] from 0 to 3 = 3^2 - 0^2 = 9 square units.",
+          "content": "Integrals calculate work, centers of mass, electrical flux, and probability distributions in physical and computational systems."
         }
       ]
     },
-    "computer_science": {
+    {
       "subject": "Computer Science",
-      "overview": "Computer Science is the systematic study of algorithmic computation, data representation, computer systems architecture, operating systems, networking protocols, and software engineering principles.",
+      "overview": "Study of computers, computational systems, algorithmic efficiency, data storage, and operating architecture.",
       "topics": [
-        "Algorithm Analysis and Big-O Notation",
-        "Data Structures: Arrays, Stacks, Queues and Trees",
-        "Operating Systems, Processes and Concurrency",
-        "Computer Networks and TCP/IP Architecture",
-        "Relational Databases, Normalization and SQL"
+        "Data Structures (Arrays, Lists, Trees, Graphs)",
+        "Algorithms & Big-O Complexity",
+        "Operating Systems (Process, Threads, Memory)",
+        "Computer Networks (OSI, TCP/IP, Sockets)",
+        "Database Management Systems (RDBMS & SQL)"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "CS_ALGO_001",
+          "chunk_id": "CS_001",
           "chapter": "Algorithms",
-          "topic": "Algorithm Analysis and Big-O Notation",
+          "topic": "Algorithm Analysis & Big-O Notation",
           "keywords": [
-            "algorithm",
+            "cs topic",
+            "computer science",
+            "algorithms",
             "big o",
-            "big-o",
             "time complexity",
             "space complexity",
-            "asymptotic notation",
-            "linear search",
-            "binary search",
             "sorting"
           ],
-          "definition": "Big-O notation describes the limiting asymptotic behavior of an algorithm as input size n grows to infinity, measuring upper-bound worst-case runtime and memory scalability independently of hardware.",
-          "formula_or_core_rule": "Common complexities: O(1) Constant < O(log n) Logarithmic < O(n) Linear < O(n log n) Linearithmic < O(n²) Quadratic < O(2ⁿ) Exponential. Binary Search is O(log n), Merge Sort is O(n log n).",
-          "worked_example": "In an array of 1,000,000 sorted elements, Linear Search requires up to 1,000,000 comparisons (O(n)), whereas Binary Search locates the target in at most 20 comparisons (log₂(1,000,000) ≈ 20).",
-          "content": "Big-O notation quantifies algorithm runtime and memory efficiency as input size n grows. Complexity classes range from O(1) constant to O(log n) logarithmic, O(n) linear, and O(n log n) linearithmic. Binary Search runs in O(log n), requiring only ~20 checks for one million items."
+          "definition": "An algorithm is a finite, well-defined sequence of computational steps. Big-O notation categorizes algorithmic execution time and memory requirements as input size n grows.",
+          "formula": "Complexity Hierarchy: O(1) < O(log n) < O(n) < O(n log n) < O(n^2) < O(2^n).",
+          "worked_example": "Binary Search on a sorted array divides search intervals in half each step, achieving O(log n) time compared to linear search O(n).",
+          "content": "Efficient algorithm design minimizes hardware bottlenecks. Sorting techniques like Merge Sort achieve optimal worst-case O(n log n) by divide-and-conquer principles."
         },
         {
-          "chunk_id": "CS_DS_001",
+          "chunk_id": "CS_002",
           "chapter": "Data Structures",
-          "topic": "Data Structures: Stacks, Queues and Binary Search Trees",
+          "topic": "Stacks, Queues, and Trees",
           "keywords": [
-            "data structure",
             "data structures",
             "stack",
             "queue",
-            "binary search tree",
-            "bst",
+            "binary tree",
             "lifo",
             "fifo",
-            "trees",
-            "nodes"
+            "bst"
           ],
-          "definition": "Data structures are specialized formats for organizing, managing, and storing data efficiently. A Stack follows LIFO (Last-In, First-Out), a Queue follows FIFO (First-In, First-Out), and a Binary Search Tree arranges ordered hierarchical keys.",
-          "formula_or_core_rule": "Stack: Push O(1), Pop O(1). Queue: Enqueue O(1), Dequeue O(1). Balanced BST (AVL/Red-Black): Search, Insert, and Delete run in O(log n) time; in-order traversal yields strictly sorted keys.",
-          "worked_example": "Web browser history uses a Stack (clicking 'Back' pops the current URL from the history stack). Printer job queues use a Queue (first submitted document prints first).",
-          "content": "Data structures organize data for fast access. Stacks operate via LIFO (Last-In First-Out) with O(1) push/pop. Queues operate via FIFO (First-In First-Out). Binary Search Trees maintain left < parent < right ordering, enabling O(log n) search, insertion, and deletion in balanced trees."
+          "definition": "Data structures format and store information to optimize access, insertion, and manipulation.",
+          "formula": "Stack: Last-In-First-Out (LIFO). Queue: First-In-First-Out (FIFO). Balanced BST search complexity: O(log n).",
+          "worked_example": "Call stack in programming languages operates via push (function entry) and pop (function return).",
+          "content": "Choosing the appropriate data structure directly affects app performance. Hash tables offer expected O(1) lookups, while trees manage hierarchical data efficiently."
         },
         {
-          "chunk_id": "CS_OS_001",
+          "chunk_id": "CS_003",
           "chapter": "Operating Systems",
-          "topic": "Operating Systems, Processes and Concurrency",
+          "topic": "Process Synchronization and Deadlocks",
           "keywords": [
             "operating system",
-            "operating systems",
-            "os",
+            "deadlock",
             "process",
             "thread",
             "concurrency",
-            "deadlock",
-            "mutex",
-            "semaphore",
-            "virtual memory",
-            "paging"
+            "semaphore"
           ],
-          "definition": "An Operating System manages computer hardware (CPU, RAM, disks, I/O) and provides foundational abstraction layers for applications, executing multitasking through processes and concurrent threads.",
-          "formula_or_core_rule": "Deadlock occurs when four Coffman conditions hold: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait. Virtual memory divides process address spaces into fixed-size Pages mapped to physical RAM Frames.",
-          "worked_example": "When two threads attempt to transfer money between accounts simultaneously, mutual exclusion locks (Mutexes) ensure balance updates execute atomically, preventing race conditions.",
-          "content": "Operating systems manage hardware resources through processes and threads. Concurrency primitives like Mutexes and Semaphores prevent race conditions. Deadlocks occur when processes enter circular wait holding non-preemptible resources. Virtual memory abstracts RAM into pages."
+          "definition": "Deadlock is a state in concurrent systems where a set of processes are permanently blocked because each holds resources requested by another.",
+          "formula": "The 4 Coffman Conditions: 1. Mutual Exclusion 2. Hold and Wait 3. No Preemption 4. Circular Wait.",
+          "worked_example": "Process A holds Resource 1 and requests Resource 2. Process B holds Resource 2 and requests Resource 1. Both freeze indefinitely.",
+          "content": "Deadlock handling relies on prevention, avoidance using algorithms like Banker's Algorithm, or detection and automated process termination."
         },
         {
-          "chunk_id": "CS_NET_001",
+          "chunk_id": "CS_004",
           "chapter": "Computer Networks",
           "topic": "Computer Networks and TCP/IP Architecture",
           "keywords": [
@@ -211,277 +173,265 @@
             "tcp",
             "udp",
             "osi model",
-            "ip",
+            "ip address",
             "dns",
-            "http",
-            "packets",
-            "handshake",
-            "layers"
+            "http"
           ],
-          "definition": "Computer networks interconnect computing nodes to transmit data using layered protocols. The OSI 7-Layer model and TCP/IP protocol suite standardize transmission from physical cables up to software application layers.",
-          "formula_or_core_rule": "TCP 3-Way Handshake: SYN → SYN-ACK → ACK establishes a reliable, ordered, error-checked connection. UDP is connectionless and low-latency without delivery guarantees.",
-          "worked_example": "Entering https://synapse.ai triggers DNS resolution (UDP port 53) to obtain the host IP, followed by a TCP handshake and TLS handshake (TCP port 443) before HTTPS data flows.",
-          "content": "Computer networks exchange packets via standardized layered protocols. The TCP protocol guarantees ordered, reliable packet delivery using a three-way handshake (SYN, SYN-ACK, ACK), while UDP provides lightweight, connectionless, low-latency streaming."
+          "definition": "Computer networks interconnect computing nodes to exchange packetized data using layered protocol stacks.",
+          "formula": "TCP 3-Way Handshake: SYN -> SYN-ACK -> ACK. OSI Layers: Physical, Data Link, Network, Transport, Session, Presentation, Application.",
+          "worked_example": "Browsing to https://synapse.ai triggers DNS lookup (UDP 53) to retrieve IP, then TCP 3-way handshake (TCP 443) before encrypted HTTPS packets transmit.",
+          "content": "The Internet is built upon TCP/IP protocol layers ensuring reliable, ordered data stream transmission."
+        },
+        {
+          "chunk_id": "CS_005",
+          "chapter": "Databases",
+          "topic": "Relational Databases and ACID Transactions",
+          "keywords": [
+            "sql",
+            "database",
+            "rdbms",
+            "acid",
+            "normalization",
+            "transactions"
+          ],
+          "definition": "A relational database management system organizes structured data into tables with schemas and foreign keys.",
+          "formula": "ACID Properties: Atomicity (all-or-nothing), Consistency (schema constraints), Isolation (concurrent execution), Durability (persists after crashes).",
+          "worked_example": "Bank fund transfer: debits Account A and credits Account B in a single transaction; if crash occurs midway, entire transaction rolls back.",
+          "content": "Relational databases use B-Trees for fast O(log n) index lookups and SQL queries for efficient data filtering."
         }
       ]
     },
-    "data_science": {
+    {
       "subject": "Data Science",
-      "overview": "Data Science combines statistical analysis, exploratory data processing, visual graphic design, and predictive machine learning models to extract actionable insights from raw structured and unstructured data.",
+      "overview": "Multidisciplinary domain analyzing structured and unstructured data using statistics, algorithms, and visualization tools.",
       "topics": [
-        "Data Visualization and Visual Grammar",
-        "Exploratory Data Analysis (EDA) and Cleaning",
-        "Supervised Machine Learning: Regression and Classification",
-        "Unsupervised Machine Learning and Clustering",
-        "Model Evaluation Metrics and Validation"
+        "Data Visualization Principles",
+        "Supervised Machine Learning",
+        "Unsupervised Clustering & PCA",
+        "Feature Engineering & Normalization",
+        "Model Evaluation Metrics"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "DS_VIS_001",
+          "chunk_id": "DS_001",
           "chapter": "Data Visualization",
-          "topic": "Data Visualization and Visual Grammar",
+          "topic": "Data Visualization & Data-Ink Ratio",
           "keywords": [
+            "data science",
             "data visualization",
             "visualization",
             "data-ink ratio",
             "chart",
-            "tufte",
-            "grammar of graphics",
-            "scatter plot",
-            "histogram",
-            "heatmap"
+            "tufte"
           ],
-          "definition": "Data visualization communicates complex quantitative information clearly and efficiently through graphical representations, mapping data variables to visual aesthetic channels (position, length, color, shape).",
-          "formula_or_core_rule": "Edward Tufte's Data-Ink Ratio: Data-Ink Ratio = (Data-Ink) / (Total Ink Used). Maximize the share of ink devoted to essential data while eliminating redundant decorative chartjunk.",
-          "worked_example": "Comparing test scores across 10 school districts: Replace a cluttered 3D bar chart with a clean, horizontal box plot or scatter plot with direct labels, instantly highlighting median spread and outliers.",
-          "content": "Data visualization maps data attributes to visual graphics. Edward Tufte's Data-Ink Ratio emphasizes maximizing the proportion of graphics dedicated to actual data while eliminating non-essential chartjunk. Clean scatter plots, box plots, and histograms communicate data distributions effectively."
+          "definition": "Data visualization communicates complex quantitative information clearly and efficiently through visual graphical representations.",
+          "formula": "Data-Ink Ratio = (Data-Ink) / (Total Ink Used in Graphic). Maximize the share of ink devoted to essential data.",
+          "worked_example": "Replacing cluttered 3D bar charts with clean 2D box plots removes decorative chartjunk and clarifies distribution percentiles.",
+          "content": "Effective data visualization empowers rapid decision making by mapping numbers to human visual perceptual channels."
         },
         {
-          "chunk_id": "DS_EDA_001",
-          "chapter": "Exploratory Data Analysis",
-          "topic": "Exploratory Data Analysis (EDA) and Cleaning",
-          "keywords": [
-            "exploratory data analysis",
-            "eda",
-            "data cleaning",
-            "outliers",
-            "missing values",
-            "imputation",
-            "skewness",
-            "correlation",
-            "feature engineering"
-          ],
-          "definition": "Exploratory Data Analysis (EDA) is the preliminary phase of inspecting, cleaning, transforming, and modeling tabular datasets to discover underlying patterns, detect anomalies, test hypotheses, and verify assumptions.",
-          "formula_or_core_rule": "IQR Outlier Rule: An observation x is an outlier if x < Q1 - 1.5·IQR or x > Q3 + 1.5·IQR, where IQR = Q3 - Q1. Pearson correlation coefficient r measures linear association between -1 and +1.",
-          "worked_example": "When cleaning housing sale prices, right-skewed prices are normalized using log transformation y' = ln(y), preventing high-end luxury estates from disproportionately biasing linear model coefficients.",
-          "content": "Exploratory Data Analysis cleans and characterizes datasets before modeling. Outliers are identified using the Interquartile Range (IQR = Q3 - Q1), where values beyond 1.5·IQR are flagged. Missing data is handled through median imputation or removal, and skewed features are normalized."
-        },
-        {
-          "chunk_id": "DS_ML_001",
+          "chunk_id": "DS_002",
           "chapter": "Machine Learning",
-          "topic": "Supervised Learning, Regression and Classification",
+          "topic": "Supervised Learning: Regression and Classification",
           "keywords": [
             "supervised learning",
             "machine learning",
             "regression",
             "classification",
             "linear regression",
-            "logistic regression",
-            "random forest",
-            "decision tree"
+            "logistic regression"
           ],
-          "definition": "Supervised learning trains mathematical models on labeled input-output pairs (X, y) to learn a mapping function f(X) ≈ y capable of accurately predicting outputs on previously unseen test observations.",
-          "formula_or_core_rule": "Linear Regression minimizes Mean Squared Error (MSE): Loss = (1/n) ∑ (yᵢ - ŷᵢ)². Logistic Regression models binary probability using the sigmoid function: P(y=1|x) = 1 / (1 + e^(-w·x)).",
-          "worked_example": "Predicting hospital readmission (Yes/No): Logistic regression calculates readmission probability based on patient age, previous visits, and blood biomarkers, classifying readmission if P ≥ 0.5.",
-          "content": "Supervised learning learns predictive mappings from labeled training data. Regression predicts continuous target values by minimizing Mean Squared Error, while Classification predicts discrete categories using probabilistic decision boundaries such as the logistic sigmoid function."
+          "definition": "Supervised learning trains models on labeled input-output pairs to learn a mapping function capable of predicting outputs for new data.",
+          "formula": "Linear Regression Loss: MSE = (1/n) * sum((y_true - y_pred)^2). Logistic Sigmoid: sigma(z) = 1 / (1 + e^(-z)).",
+          "worked_example": "Predicting apartment rental price based on square footage, bedrooms, and location via multi-variable linear regression.",
+          "content": "Supervised learning powers predictive analytics, autonomous vehicle perception, credit scoring, and automated text categorization."
         },
         {
-          "chunk_id": "DS_EVAL_001",
+          "chunk_id": "DS_003",
+          "chapter": "Unsupervised Learning",
+          "topic": "Unsupervised Clustering & PCA",
+          "keywords": [
+            "unsupervised learning",
+            "clustering",
+            "k-means",
+            "pca",
+            "dimensionality reduction"
+          ],
+          "definition": "Unsupervised learning discovers intrinsic patterns, groupings, and low-dimensional representations in unlabeled datasets.",
+          "formula": "K-Means Objective: min sum_k sum_{x in C_k} ||x - mu_k||^2. PCA maximizes variance along orthogonal eigenvectors of the covariance matrix.",
+          "worked_example": "Customer segmentation: grouping e-commerce shoppers into 5 clusters based on browsing history and purchase amounts.",
+          "content": "Clustering and PCA identify anomaly patterns, compress data representations, and power recommendation engines."
+        },
+        {
+          "chunk_id": "DS_004",
           "chapter": "Model Evaluation",
-          "topic": "Model Evaluation Metrics and Validation",
+          "topic": "Model Evaluation Metrics (Precision, Recall, ROC-AUC)",
           "keywords": [
             "model evaluation",
             "metrics",
-            "accuracy",
             "precision",
             "recall",
             "f1-score",
             "roc-auc",
-            "confusion matrix",
-            "cross-validation"
+            "confusion matrix"
           ],
-          "definition": "Model evaluation quantifies how reliably a predictive model generalizes to independent, unseen validation data, balancing variance and bias trade-offs.",
-          "formula_or_core_rule": "Precision = TP / (TP + FP). Recall = TP / (TP + FN). F1-Score = 2 · (Precision · Recall) / (Precision + Recall). Accuracy = (TP + TN) / Total.",
-          "worked_example": "In cancer diagnosis, high Recall is prioritized over raw accuracy because a False Negative (missing a malignant tumor) is life-threatening, whereas a False Positive can be safely ruled out with follow-up scans.",
-          "content": "Model evaluation measures generalization performance using confusion matrix metrics. Precision measures positive predictive value, Recall measures true positive detection rate, and the F1-Score calculates their harmonic mean. Cross-validation prevents overfitting."
+          "definition": "Model evaluation measures how reliably a trained model generalizes to independent, unseen test datasets.",
+          "formula": "Precision = TP / (TP + FP). Recall = TP / (TP + FN). F1 = 2 * (Precision * Recall) / (Precision + Recall). Accuracy = (TP + TN) / Total.",
+          "worked_example": "In medical disease detection, high Recall is critical to avoid false negatives (missing an infected patient).",
+          "content": "Choosing appropriate metrics prevents misleading conclusions in datasets with extreme class imbalances."
         }
       ]
     },
-    "artificial_intelligence": {
+    {
       "subject": "Artificial Intelligence",
-      "overview": "Artificial Intelligence studies computational agents that perceive, reason, learn, and generate content, spanning multilayer artificial neural networks, transformer architectures, and retrieval-augmented reasoning.",
+      "overview": "Engineering intelligent agents that perceive environments, learn representations, reason, and generate solutions autonomously.",
       "topics": [
-        "Artificial Neural Networks and Perceptrons",
-        "Backpropagation and Gradient Descent Optimization",
-        "Transformer Architecture and Self-Attention Mechanism",
+        "Artificial Neural Networks & Perceptrons",
+        "Gradient Descent & Backpropagation",
+        "Transformer Architecture & Self-Attention",
         "Retrieval-Augmented Generation (RAG)",
-        "Natural Language Processing and Large Language Models"
+        "Large Language Models & Prompt Engineering"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "AI_NN_001",
+          "chunk_id": "AI_001",
           "chapter": "Neural Networks",
-          "topic": "Artificial Neural Networks and Perceptrons",
+          "topic": "Artificial Neural Networks and Deep Learning",
           "keywords": [
-            "neural networks",
+            "artificial intelligence",
+            "ai topic",
             "neural network",
+            "neural networks",
             "perceptron",
-            "weights",
-            "biases",
-            "activation function",
-            "relu",
-            "sigmoid",
-            "deep learning"
+            "deep learning",
+            "activation function"
           ],
-          "definition": "An Artificial Neural Network is a computational graph inspired by biological neurons, composed of stacked layers of parameterized nodes that apply weighted sums and non-linear activation functions to approximate complex functions.",
-          "formula_or_core_rule": "Neuron output: y = σ(∑ wᵢxᵢ + b) = σ(WᵀX + b). The Rectified Linear Unit (ReLU) activation function f(x) = max(0, x) prevents vanishing gradients in deep layers.",
-          "worked_example": "Recognizing handwritten digits: An input image of 28x28 pixels (784 inputs) passes through hidden dense layers with ReLU activations, outputting 10 Softmax probabilities representing digits 0 through 9.",
-          "content": "Artificial Neural Networks model non-linear mappings through interconnected layers. Each neuron calculates y = σ(WᵀX + b), applying non-linear activation functions such as ReLU (f(x) = max(0, x)) or Sigmoid. Deep multi-layer perceptrons learn hierarchical representations of complex inputs."
+          "definition": "An artificial neural network is a computational graph composed of interconnected layers of artificial neurons applying weighted sums and non-linear activations.",
+          "formula": "Neuron: y = f(W^T * X + b). Activation functions include ReLU: f(z) = max(0, z) and Softmax for probability distributions.",
+          "worked_example": "Classifying digits from 28x28 pixel images by passing flattened 784 inputs through hidden dense layers to output 10 digit probabilities.",
+          "content": "Deep neural networks learn hierarchical feature representations from raw data, revolutionizing computer vision, speech synthesis, and NLP."
         },
         {
-          "chunk_id": "AI_OPT_001",
+          "chunk_id": "AI_002",
           "chapter": "Optimization",
-          "topic": "Backpropagation and Gradient Descent Optimization",
+          "topic": "Backpropagation and Gradient Descent",
           "keywords": [
             "gradient descent",
             "backpropagation",
             "loss function",
             "optimization",
-            "learning rate",
-            "chain rule",
-            "stochastic gradient descent"
+            "learning rate"
           ],
-          "definition": "Gradient descent is an iterative optimization algorithm that updates neural network weights in the opposite direction of the gradient of the loss function, minimizing prediction error. Backpropagation applies the calculus chain rule to compute gradients layer by layer.",
-          "formula_or_core_rule": "Weight update rule: W := W - η · ∇W(Loss), where η is the learning rate. Backpropagation computes ∂Loss/∂W = (∂Loss/∂y) · (∂y/∂z) · (∂z/∂W).",
-          "worked_example": "If learning rate η is too high (e.g. 10.0), weight updates oscillate wildly and diverge. If η is appropriately tuned (e.g. 0.001), loss decreases monotonically across epochs until convergence.",
-          "content": "Gradient descent minimizes prediction loss by updating weights along the negative gradient: W := W - η · ∇W(Loss). Backpropagation utilizes the differential chain rule to propagate error gradients backwards from the output layer to early feature layers, tuning parameters iteratively."
+          "definition": "Gradient descent minimizes prediction loss by iteratively updating weights in the negative direction of the loss gradient calculated via backpropagation.",
+          "formula": "Weight Update: W := W - eta * grad_W(Loss). Chain Rule: dLoss/dW = (dLoss/dy) * (dy/dz) * (dz/dW).",
+          "worked_example": "If gradient is positive (+4.2) and learning rate eta is 0.01, the weight is decreased by 0.042 to step downhill on the loss curve.",
+          "content": "Backpropagation applies the differential calculus chain rule to efficiently calculate parameter gradients across all network layers."
         },
         {
-          "chunk_id": "AI_TRANS_001",
+          "chunk_id": "AI_003",
           "chapter": "Transformers",
-          "topic": "Transformer Architecture and Self-Attention Mechanism",
+          "topic": "Transformer Architecture & Self-Attention",
           "keywords": [
             "transformer",
             "transformers",
             "self-attention",
-            "attention",
-            "query key value",
-            "qkv",
-            "multi-head attention",
-            "positional encoding"
+            "attention mechanism",
+            "multi-head attention"
           ],
-          "definition": "The Transformer is a deep learning architecture based entirely on the Self-Attention mechanism, processing sequential tokens in parallel rather than recurrently, powering modern state-of-the-art foundation models.",
-          "formula_or_core_rule": "Scaled Dot-Product Attention: Attention(Q, K, V) = softmax((Q · Kᵀ) / √(d_k)) · V, where Q is Query, K is Key, V is Value, and d_k is key dimensionality.",
-          "worked_example": "In the sentence 'The bank of the river', self-attention compares the query token 'bank' against keys for 'river' and 'money', assigning high attention weight to 'river' to resolve the word's ecological meaning.",
-          "content": "Transformers process tokens concurrently using self-attention. Scaled Dot-Product Attention calculates Attention(Q, K, V) = softmax((Q · Kᵀ) / √(d_k)) · V, allowing every word in a sequence to attend to every other word regardless of distance, capturing rich contextual semantics."
+          "definition": "The Transformer is a deep learning architecture replacing recurrent recurrence with parallel self-attention mechanisms across tokens.",
+          "formula": "Attention(Q, K, V) = softmax((Q * K^T) / sqrt(d_k)) * V.",
+          "worked_example": "In 'The animal did not cross the street because it was too tired', self-attention links 'it' to 'animal' rather than 'street'.",
+          "content": "Transformers form the architectural foundation of state-of-the-art Large Language Models, vision transformers, and speech encoders."
         },
         {
-          "chunk_id": "AI_RAG_001",
+          "chunk_id": "AI_004",
           "chapter": "RAG",
           "topic": "Retrieval-Augmented Generation (RAG)",
           "keywords": [
             "rag",
             "retrieval augmented generation",
             "retrieval-augmented generation",
-            "embeddings",
             "vector search",
-            "cosine similarity",
-            "hallucination",
-            "knowledge base"
+            "embeddings",
+            "hallucination"
           ],
-          "definition": "Retrieval-Augmented Generation (RAG) is an architectural pattern that retrieves relevant factual context chunks from an external or local knowledge base and injects them into the language model prompt, ensuring grounded, accurate, hallucination-free generation.",
-          "formula_or_core_rule": "RAG Pipeline: User Query → Embed Query → Vector Similarity Search (e.g. Cosine Similarity = (A·B) / (||A||·||B||)) → Top-k Chunks → Prompt Augmentation → Grounded Response Generation.",
-          "worked_example": "When a student asks 'What is Newton's third law?', an on-device RAG engine retrieves the exact physics curriculum chunk and grounds the response on verified text rather than guessing.",
-          "content": "Retrieval-Augmented Generation (RAG) grounds language models on factual reference data. The engine tokenizes or embeds incoming user queries, retrieves high-confidence knowledge chunks via vector similarity matching, and synthesizes structured, verifiable responses without hallucinations."
+          "definition": "RAG is a framework that retrieves verified factual chunks from a knowledge base and inserts them into prompt context before generative synthesis.",
+          "formula": "Pipeline: Query -> Vector Embedding -> Cosine Similarity Matching -> Top-K Context Injection -> Grounded Response Synthesis.",
+          "worked_example": "Answering student queries with grounded curriculum chunks from on-device assets to eliminate model hallucinations.",
+          "content": "RAG enables lightweight local models to deliver domain-specific, factual answers without expensive full model fine-tuning."
         }
       ]
     },
-    "physics": {
+    {
       "subject": "Physics",
-      "overview": "Physics is the fundamental science exploring the properties of matter, energy, space, and time, explaining mechanical motion, wave acoustics, thermal entropy, and electromagnetic fields.",
+      "overview": "Fundamental study of nature, kinematics, forces, energy conservation, wave optics, and electromagnetic fields.",
       "topics": [
-        "Newton's Laws of Motion and Mechanics",
-        "Waves, Frequency, Wavelength and Sound",
-        "Thermodynamics, Entropy and Heat Engines",
-        "Electromagnetism, Circuits and Induction",
-        "Optics, Refraction and Wave Nature of Light"
+        "Newton's Laws of Motion & Classical Mechanics",
+        "Waves, Frequency & Sound Mechanics",
+        "Thermodynamics & Heat Engines",
+        "Electromagnetism & Faraday's Induction",
+        "Optics & Wave Nature of Light"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "PHYS_MECH_001",
-          "chapter": "Newton's Laws of Motion",
-          "topic": "Newton's Laws of Motion and Mechanics",
+          "chunk_id": "PHYS_001",
+          "chapter": "Mechanics",
+          "topic": "Newton's Laws of Motion & Mechanics",
           "keywords": [
+            "physics",
+            "physics topic",
             "newton's laws",
             "newtons laws",
             "f = ma",
             "force",
             "mass",
             "acceleration",
-            "inertia",
-            "action reaction",
-            "momentum"
+            "inertia"
           ],
-          "definition": "Newton's Laws of Motion form the foundation of classical mechanics, describing how physical forces govern the state of rest or acceleration of bodies possessing inertial mass.",
-          "formula_or_core_rule": "1st Law: An object remains at rest or in uniform motion unless acted upon by a net external force. 2nd Law: F_net = m · a (Force = mass × acceleration). 3rd Law: For every action, there is an equal and opposite reaction (F_AB = -F_BA).",
-          "worked_example": "Accelerating a 1,500 kg automobile at 2.0 m/s² requires a net horizontal force of F = m·a = 1500 × 2.0 = 3,000 Newtons produced by tire-road friction.",
-          "content": "Newton's three laws govern classical kinematics and dynamics. The First Law establishes inertia; the Second Law quantifies dynamics as F = m·a; the Third Law dictates that interaction forces between two bodies are equal in magnitude and opposite in direction."
+          "definition": "Newton's laws of motion are three physical laws establishing relationships between physical forces and body acceleration in classical mechanics.",
+          "formula": "1st Law: Inertia. 2nd Law: F_net = m * a. 3rd Law: Action = -Reaction (F_AB = -F_BA). Kinetic Energy: KE = (1/2) * m * v^2.",
+          "worked_example": "Accelerating a 1,200 kg car at 2.5 m/s^2 requires a net forward force of F = 1200 * 2.5 = 3,000 Newtons.",
+          "content": "Newton's laws explain planetary orbits, automotive safety, projectile physics, and aerospace engineering."
         },
         {
-          "chunk_id": "PHYS_WAVE_001",
-          "chapter": "Waves and Sound",
-          "topic": "Waves, Frequency, Wavelength and Sound",
+          "chunk_id": "PHYS_002",
+          "chapter": "Waves",
+          "topic": "Waves, Frequency & Sound Mechanics",
           "keywords": [
             "waves",
             "sound",
             "frequency",
             "wavelength",
             "amplitude",
-            "speed of wave",
-            "transverse",
-            "longitudinal",
             "v = f lambda",
             "doppler effect"
           ],
-          "definition": "A wave is an oscillating disturbance that propagates through space or a material medium, transporting energy without permanently transporting matter. Sound waves are mechanical longitudinal pressure waves requiring a physical medium.",
-          "formula_or_core_rule": "Universal Wave Equation: v = f · λ (Speed = frequency × wavelength). Period T = 1 / f. Sound speed in dry air at 20°C is approximately 343 m/s.",
-          "worked_example": "A middle C musical pitch has a frequency of 261.6 Hz. In air (v = 343 m/s), its wavelength is λ = v / f = 343 / 261.6 ≈ 1.31 meters.",
-          "content": "Waves transfer energy across space via periodic oscillations. Longitudinal waves (sound) oscillate parallel to wave propagation, whereas transverse waves (light) oscillate perpendicular. The wave velocity equation v = f · λ links propagation speed, frequency, and wavelength."
+          "definition": "A wave is an oscillating disturbance that propagates through space or a material medium, transporting energy without permanently transporting matter.",
+          "formula": "Wave Equation: v = f * lambda (Speed = frequency * wavelength). Period: T = 1 / f. Sound speed in air at 20 deg C is ~343 m/s.",
+          "worked_example": "A musical pitch at 440 Hz (Concert A) traveling at 343 m/s in air has a wavelength lambda = 343 / 440 = 0.78 meters.",
+          "content": "Sound is a longitudinal mechanical pressure wave requiring a medium, whereas light is a transverse electromagnetic wave capable of traveling through vacuum."
         },
         {
-          "chunk_id": "PHYS_THERMO_001",
+          "chunk_id": "PHYS_003",
           "chapter": "Thermodynamics",
-          "topic": "Thermodynamics, Entropy and Heat Engines",
+          "topic": "Thermodynamics & Heat Engines",
           "keywords": [
             "thermodynamics",
             "entropy",
-            "heat",
             "first law",
             "second law",
-            "carnot",
-            "internal energy",
-            "work",
-            "delta u = q - w"
+            "heat engine",
+            "carnot"
           ],
-          "definition": "Thermodynamics investigates energy transformation, heat flow, temperature, and physical work done by macroscopic systems of matter.",
-          "formula_or_core_rule": "1st Law (Conservation of Energy): ΔU = Q - W (Change in internal energy equals heat added minus work done). 2nd Law (Entropy): In any isolated spontaneous process, total entropy ΔS ≥ 0.",
-          "worked_example": "If a gas absorbs Q = 500 Joules of heat and expands doing W = 200 Joules of mechanical work on a piston, its internal energy increases by ΔU = 500 - 200 = 300 Joules.",
-          "content": "Thermodynamics governs heat and energy transfer. The First Law states energy cannot be created or destroyed (ΔU = Q - W). The Second Law dictates that the entropy of an isolated system always increases over time (ΔS ≥ 0), placing fundamental limits on heat engine efficiency."
+          "definition": "Thermodynamics is the study of heat, mechanical work, temperature, and energy transformations in macroscopic physical systems.",
+          "formula": "1st Law: Delta U = Q - W (Energy conservation). 2nd Law: In spontaneous isolated processes, entropy Delta S >= 0. Carnot Efficiency: eta = 1 - (T_cold / T_hot).",
+          "worked_example": "A gas absorbing 500 J of heat and expanding to perform 200 J of work undergoes internal energy change Delta U = 500 - 200 = 300 Joules.",
+          "content": "Thermodynamic laws dictate the fundamental physical efficiency limits of power generation, refrigeration, and biological metabolism."
         },
         {
-          "chunk_id": "PHYS_EM_001",
+          "chunk_id": "PHYS_004",
           "chapter": "Electromagnetism",
-          "topic": "Electromagnetism, Circuits and Induction",
+          "topic": "Electromagnetism, Ohm's Law and Induction",
           "keywords": [
             "electromagnetism",
             "ohm's law",
@@ -491,50 +441,49 @@
             "current",
             "resistance",
             "faraday",
-            "induction",
-            "magnetic field"
+            "induction"
           ],
-          "definition": "Electromagnetism describes the physical interactions of electric charges, electric fields, currents, and magnetic fields, unifying electricity and magnetism into a single fundamental force.",
-          "formula_or_core_rule": "Ohm's Law: V = I · R (Voltage = Current × Resistance). Electrical Power: P = V · I = I²R. Faraday's Law of Induction: ε = -dΦ_B / dt (Induced voltage equals negative rate of change of magnetic flux).",
-          "worked_example": "A 12V battery connected to a 4Ω resistor causes an electric current of I = V / R = 12 / 4 = 3 Amperes, dissipating power P = V·I = 12 × 3 = 36 Watts as heat.",
-          "content": "Electromagnetism unifies electrical and magnetic phenomena. Ohm's Law relates circuit voltage, current, and resistance via V = I · R. Faraday's Law of Induction states that changing magnetic flux induces an electromotive force, enabling electric generators and motors."
+          "definition": "Electromagnetism unifies electrical charges, currents, and magnetic fields into a single fundamental interaction of nature.",
+          "formula": "Ohm's Law: V = I * R. Electrical Power: P = V * I = I^2 * R. Faraday's Law: EMF = -dPhi_B / dt.",
+          "worked_example": "Connecting a 12V automotive battery to a 4-ohm circuit yields a current of I = 12 / 4 = 3 Amperes, consuming 36 Watts.",
+          "content": "Faraday's electromagnetic induction is the physical principle behind commercial electric turbine generators, transformers, and electric motors."
         }
       ]
     },
-    "chemistry": {
+    {
       "subject": "Chemistry",
-      "overview": "Chemistry is the central science studying the atomic structure, electron configurations, chemical bonding, reactions, thermodynamic equilibria, and properties of all matter.",
+      "overview": "Study of matter, atomic electron configurations, chemical bonding, reactions, stoichiometric balances, and properties of substances.",
       "topics": [
         "Chemical Bonding (Ionic, Covalent, Metallic)",
-        "Acids, Bases, pH Scale and Neutralization",
-        "Periodic Table and Periodic Elemental Trends",
-        "Stoichiometry, Avogadro's Number and Moles",
-        "Chemical Equilibrium and Le Chatelier's Principle"
+        "Acids, Bases & the pH Scale",
+        "Periodic Table & Elemental Trends",
+        "Stoichiometry & Mole Calculations",
+        "Chemical Equilibrium & Le Chatelier"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "CHEM_BOND_001",
+          "chunk_id": "CHEM_001",
           "chapter": "Chemical Bonding",
           "topic": "Chemical Bonding: Ionic, Covalent and Metallic",
           "keywords": [
+            "chemistry",
+            "chemistry topic",
             "chemical bonding",
             "chemical bonds",
             "ionic bond",
             "covalent bond",
-            "metallic bond",
             "octet rule",
-            "electronegativity",
-            "valence electrons"
+            "electronegativity"
           ],
-          "definition": "Chemical bonds are attractive forces holding atoms together in molecular and crystalline compounds, driven by atoms striving to achieve stable, full valence electron shells (the octet rule).",
-          "formula_or_core_rule": "Ionic Bonds form when electronegativity difference ΔEN > 2.0 (complete transfer of electrons from metal to non-metal). Covalent Bonds form when ΔEN < 1.7 (sharing of electron pairs between non-metals).",
-          "worked_example": "In NaCl (table salt), sodium (Na) transfers its solitary valence electron to chlorine (Cl), forming Na⁺ and Cl⁻ ions bound by electrostatic attraction in a crystal lattice.",
-          "content": "Chemical bonding achieves stable octet configurations. Ionic bonding involves complete electron transfer between metals and non-metals forming electrostatic crystal lattices. Covalent bonding involves shared electron pairs between non-metals, such as H₂O or CH₄."
+          "definition": "Chemical bonds are electrostatic attractive forces holding atoms together in molecular and crystalline substances to achieve stable valence electron shells.",
+          "formula": "Ionic Bond: Electronegativity difference Delta EN > 2.0 (metal to non-metal electron transfer). Covalent Bond: Delta EN < 1.7 (shared electron pairs).",
+          "worked_example": "In NaCl (table salt), sodium (Na) transfers its outer valence electron to chlorine (Cl), forming Na+ and Cl- ions bound in a crystal lattice.",
+          "content": "Chemical bonding determines boiling points, molecular geometry, crystalline conductivity, and biological macromolecular folding."
         },
         {
-          "chunk_id": "CHEM_ACID_001",
+          "chunk_id": "CHEM_002",
           "chapter": "Acids and Bases",
-          "topic": "Acids, Bases, pH Scale and Neutralization",
+          "topic": "Acids, Bases & the pH Scale",
           "keywords": [
             "acids and bases",
             "acid",
@@ -542,38 +491,31 @@
             "ph",
             "ph scale",
             "bronsted-lowry",
-            "neutralization",
-            "h+",
-            "oh-",
-            "hydronium",
-            "buffer"
+            "neutralization"
           ],
-          "definition": "Acids and bases are chemical compounds characterized by their proton exchange behavior in aqueous solutions. Under the Brønsted-Lowry definition, an acid is a proton (H⁺) donor, while a base is a proton acceptor.",
-          "formula_or_core_rule": "pH definition: pH = -log₁₀[H⁺]. In pure water at 25°C, [H⁺][OH⁻] = 1.0 × 10⁻¹⁴. Neutral pH = 7; Acidic pH < 7; Basic (alkaline) pH > 7. Neutralization: Acid + Base → Salt + Water.",
-          "worked_example": "If hydrochloric acid solution has [H⁺] = 0.001 M (10⁻³ M), its pH = -log₁₀(10⁻³) = 3.0. Neutralizing it with NaOH: HCl + NaOH → NaCl + H₂O.",
-          "content": "Acids donate protons (H⁺) and bases accept protons. The pH scale quantifies acidity via pH = -log₁₀[H⁺], where pH 7 is neutral, pH < 7 is acidic, and pH > 7 is basic. Acid-base neutralization reacts an acid and base to form a salt and water."
+          "definition": "Acids and bases are chemical compounds characterized by proton transfer. Under Bronsted-Lowry, acids donate protons (H+) while bases accept protons.",
+          "formula": "pH = -log10[H+]. At 25 deg C: [H+][OH-] = 1.0 * 10^(-14). pH < 7 is acidic; pH = 7 is neutral; pH > 7 is basic. Neutralization: Acid + Base -> Salt + Water.",
+          "worked_example": "A hydrochloric acid solution with [H+] = 0.001 M has pH = -log10(10^-3) = 3.0 (strongly acidic).",
+          "content": "pH balance regulates biochemical enzyme functionality in blood buffers, aquatic ecology, and industrial chemical synthesis."
         },
         {
-          "chunk_id": "CHEM_PT_001",
+          "chunk_id": "CHEM_003",
           "chapter": "Periodic Table",
-          "topic": "The Periodic Table and Periodic Elemental Trends",
+          "topic": "Periodic Table and Periodic Elemental Trends",
           "keywords": [
             "periodic table",
             "periodic trends",
             "atomic radius",
             "ionization energy",
-            "electronegativity",
-            "electron configuration",
-            "periods",
-            "groups"
+            "electronegativity"
           ],
-          "definition": "The Periodic Table organizes all 118 known elements in order of increasing atomic number (Z), grouping elements with identical valence electron counts into vertical columns that exhibit recurring chemical properties.",
-          "formula_or_core_rule": "Across a Period (Left to Right): Atomic radius decreases, while ionization energy and electronegativity increase (Fluorine is highest). Down a Group: Atomic radius increases due to extra electron shells; ionization energy decreases.",
-          "worked_example": "Sodium (Na) has atomic radius 186 pm and low ionization energy (496 kJ/mol), losing its outer electron readily. Chlorine (Cl) has small radius 99 pm and high electronegativity (3.16), eagerly gaining an electron.",
-          "content": "The Periodic Table arranges chemical elements by atomic number. Moving left-to-right across a period, atomic radius decreases while electronegativity and ionization energy increase. Moving down a group, atomic radius increases as additional electron shells shield the nucleus."
+          "definition": "The Periodic Table organizes all 118 chemical elements in order of atomic number, exhibiting periodic recurring valence electron trends.",
+          "formula": "Across a Period (Left to Right): Atomic radius decreases; Electronegativity and Ionization Energy increase. Down a Group: Atomic radius increases.",
+          "worked_example": "Fluorine (F) exhibits the highest electronegativity (3.98 Pauling scale), while Francium (Fr) has the lowest.",
+          "content": "Periodic trends explain why alkali metals react aggressively with water while noble gases remain chemically inert."
         },
         {
-          "chunk_id": "CHEM_STOICH_001",
+          "chunk_id": "CHEM_004",
           "chapter": "Stoichiometry",
           "topic": "Stoichiometry, Avogadro's Number and Moles",
           "keywords": [
@@ -581,50 +523,47 @@
             "mole",
             "avogadro",
             "molar mass",
-            "limiting reagent",
-            "balanced equation",
-            "6.022x10^23"
+            "balanced equation"
           ],
-          "definition": "Stoichiometry is the quantitative calculation of chemical masses, mole proportions, and yields involved in balanced chemical reactions based on the conservation of mass.",
-          "formula_or_core_rule": "1 mole = 6.022 × 10²³ particles (Avogadro's constant N_A). Moles n = mass (g) / Molar Mass (g/mol). Molarity M = moles / volume (liters).",
-          "worked_example": "In 2H₂ + O₂ → 2H₂O: 4 grams of H₂ (2 moles) reacts with 32 grams of O₂ (1 mole) to produce 36 grams of H₂O (2 moles), perfectly conserving total mass.",
-          "content": "Stoichiometry calculates quantitative reactant and product relationships. One mole equals 6.022 × 10²³ elementary particles. Mole calculations link mass and molecular quantities: n = mass / Molar Mass, ensuring mass conservation in balanced equations."
+          "definition": "Stoichiometry calculates quantitative mass-mole relationships in chemical reactions based on conservation of mass.",
+          "formula": "1 mole = 6.022 * 10^23 particles (Avogadro's number). Moles n = mass (g) / Molar Mass (g/mol). Molarity = moles / Volume (L).",
+          "worked_example": "In 2H2 + O2 -> 2H2O: 4g of H2 (2 moles) reacts with 32g of O2 (1 mole) to produce 36g of H2O (2 moles).",
+          "content": "Stoichiometry enables precise calculation of industrial reactant proportions and theoretical chemical reaction yields."
         }
       ]
     },
-    "biology": {
+    {
       "subject": "Biology",
-      "overview": "Biology is the scientific study of living organisms and vital life processes, spanning cytology, genetic inheritance, cellular respiration, photosynthesis, ecology, and evolutionary adaptation.",
+      "overview": "Scientific study of life, living organisms, cytology, molecular genetics, respiration, ecosystems, and biological evolution.",
       "topics": [
-        "Cell Structure, Membranes and Organelles",
-        "Photosynthesis and Cellular Respiration",
-        "Molecular Genetics, DNA and RNA Transcription",
-        "Cell Division: Mitosis and Meiosis",
-        "Ecology, Trophic Levels and Energy Transfer"
+        "Cell Structure, Organelles & Membranes",
+        "Photosynthesis & Cellular Respiration",
+        "Molecular Genetics, DNA & Protein Synthesis",
+        "Cell Division: Mitosis & Meiosis",
+        "Ecology, Trophic Levels & Biodiversity"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "BIO_CELL_001",
+          "chunk_id": "BIO_001",
           "chapter": "Cell Biology",
-          "topic": "Cell Structure, Membranes and Organelles",
+          "topic": "Cell Structure, Organelles & Plasma Membrane",
           "keywords": [
+            "biology",
+            "biology topic",
             "cell",
             "organelle",
-            "organelles",
             "mitochondria",
             "nucleus",
             "ribosome",
-            "plasma membrane",
-            "phospholipid bilayer",
-            "eukaryotic"
+            "plasma membrane"
           ],
-          "definition": "The cell is the basic structural and functional unit of all known living organisms. Eukaryotic cells possess specialized membrane-bound organelles organized inside a cytoplasm enclosed by a semi-permeable phospholipid bilayer.",
-          "formula_or_core_rule": "Mitochondria produce cellular ATP via oxidative phosphorylation. Nucleus contains genomic DNA. Ribosomes translate mRNA into proteins. Cell membrane regulates selective permeability via transport proteins.",
-          "worked_example": "Human cardiac muscle cells contain up to 5,000 mitochondria per cell to continuously regenerate ATP required for involuntary, rhythmic myocardial contractions.",
-          "content": "The biological cell is the fundamental unit of life. Eukaryotic cells house membrane-bound organelles: the nucleus protects genetic DNA, mitochondria synthesize ATP energy currency, ribosomes translate proteins, and the phospholipid bilayer maintains homeostasis."
+          "definition": "The cell is the basic structural and functional unit of all known living organisms. Eukaryotic cells possess specialized membrane-bound organelles.",
+          "formula": "Mitochondria produce cellular ATP via oxidative phosphorylation. Nucleus stores genomic DNA. Ribosomes translate mRNA into proteins.",
+          "worked_example": "Human cardiac myocytes contain up to 5,000 mitochondria per cell to continuously supply ATP required for heart contractions.",
+          "content": "Cellular compartmentalization allows distinct metabolic reactions to occur simultaneously under regulated micro-environments."
         },
         {
-          "chunk_id": "BIO_PHOTO_001",
+          "chunk_id": "BIO_002",
           "chapter": "Bioenergetics",
           "topic": "Photosynthesis and Cellular Respiration",
           "keywords": [
@@ -633,18 +572,15 @@
             "atp",
             "glucose",
             "chloroplast",
-            "chlorophyll",
-            "calvin cycle",
-            "light reactions",
-            "krebs cycle"
+            "chlorophyll"
           ],
-          "definition": "Photosynthesis and cellular respiration are reciprocal biochemical pathways that cycle carbon and energy through the biosphere. Plants harness sunlight to synthesize carbohydrates, which organisms metabolize to generate ATP.",
-          "formula_or_core_rule": "Photosynthesis: 6CO₂ + 6H₂O + Photons → C₆H₁₂O₆ + 6O₂ (in chloroplasts). Cellular Respiration: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ~32 ATP (in mitochondria).",
-          "worked_example": "During daytime, forest tree canopies absorb gigatons of atmospheric carbon dioxide, converting it into plant biomass and releasing oxygen essential for aerobic animals.",
-          "content": "Photosynthesis and respiration drive planetary energy cycles. In photosynthesis, chloroplasts convert 6CO₂ + 6H₂O + light into C₆H₁₂O₆ + 6O₂. In cellular respiration, mitochondria oxidize glucose back to carbon dioxide and water, yielding ~32 ATP energy units."
+          "definition": "Photosynthesis and cellular respiration are reciprocal biochemical pathways that cycle carbon and energy throughout the terrestrial biosphere.",
+          "formula": "Photosynthesis: 6CO2 + 6H2O + Photons -> C6H12O6 + 6O2. Respiration: C6H12O6 + 6O2 -> 6CO2 + 6H2O + ~32 ATP.",
+          "worked_example": "Green plant leaves absorb atmospheric carbon dioxide through stomata and pull water from soil roots to synthesize glucose and release oxygen.",
+          "content": "Photosynthesis captures solar energy into organic chemical bonds, which heterotrophic organisms consume to fuel cellular metabolism."
         },
         {
-          "chunk_id": "BIO_GEN_001",
+          "chunk_id": "BIO_003",
           "chapter": "Genetics",
           "topic": "Molecular Genetics, DNA and RNA Transcription",
           "keywords": [
@@ -654,52 +590,50 @@
             "transcription",
             "translation",
             "base pairing",
-            "central dogma",
-            "mutation",
-            "genes"
+            "central dogma"
           ],
-          "definition": "Genetics investigates how molecular biological traits are encoded in nucleic acids and inherited across generations. The Central Dogma describes sequential information transfer from DNA to RNA to functional protein.",
-          "formula_or_core_rule": "Chargaff's Rule: Adenine pairs with Thymine (A=T via 2 H-bonds) and Guanine pairs with Cytosine (G≡C via 3 H-bonds); in RNA, Uracil (U) replaces Thymine. Central Dogma: DNA → mRNA → Protein.",
-          "worked_example": "In sickle cell disease, a single point mutation changing a GAG codon to GTG replaces glutamic acid with valine in hemoglobin, altering red blood cell shape and oxygen transport.",
-          "content": "Molecular genetics explains inheritance. DNA forms a double helix governed by complementary base pairing (A=T, G≡C). The Central Dogma states that DNA transcribes to messenger RNA, which ribosomes translate into amino acid sequences that fold into functional proteins."
+          "definition": "Genetics examines how molecular biological traits are encoded in nucleic acids and inherited across generations.",
+          "formula": "Base Pairing: Adenine pairs with Thymine (A=T), Guanine pairs with Cytosine (G=C); Uracil (U) replaces Thymine in RNA. Central Dogma: DNA -> mRNA -> Protein.",
+          "worked_example": "A point mutation in the beta-globin gene replacing glutamic acid with valine causes sickle cell anemia.",
+          "content": "The genetic code is universal across Earth's biology, proving common evolutionary descent among all kingdoms of life."
         }
       ]
     },
-    "world_history": {
+    {
       "subject": "World History",
-      "overview": "World History documents the origins of human civilizations, agricultural transitions, intellectual revolutions, global conflicts, and democratic struggles that formed modern global societies.",
+      "overview": "Documentation of human civilizational origins, political revolutions, social movements, global conflicts, and cultural transformations.",
       "topics": [
         "Ancient River Valley Civilizations (Indus, Mesopotamia, Egypt)",
-        "The Industrial Revolution and Modern Urbanization",
-        "World War I: Origins, Trench Warfare and Legacy",
-        "World War II: Global Conflict, Turning Points and the UN",
-        "The Indian Freedom Struggle and Satyagraha"
+        "The Industrial Revolution & Factory Mechanization",
+        "World War I: Origins, Trench Warfare & Legacy",
+        "World War II: Global Conflict, Holocaust & the UN",
+        "The Indian Freedom Struggle & Satyagraha"
       ],
       "rag_chunks": [
         {
-          "chunk_id": "HIST_CIV_001",
+          "chunk_id": "HIST_001",
           "chapter": "Ancient Civilizations",
           "topic": "Ancient River Valley Civilizations",
           "keywords": [
+            "history",
+            "history topic",
             "civilization",
             "ancient history",
             "indus valley",
             "harappa",
             "mohenjo-daro",
             "mesopotamia",
-            "egypt",
-            "nile",
-            "tigris"
+            "egypt"
           ],
-          "definition": "Early complex human civilizations emerged along fertile river basins where predictable flooding enabled irrigation agriculture, food surpluses, specialized labor, urban architecture, and codified laws.",
-          "formula_or_core_rule": "Major River Cradles: Indus Valley (Indus River, urban grid planning), Mesopotamia (Tigris-Euphrates, Code of Hammurabi), Egypt (Nile River, hieroglyphs and pharaonic statecraft).",
-          "worked_example": "Excavations at Mohenjo-daro reveal sophisticated covered municipal drainage systems, public baths, and standardized baked bricks dating back to 2500 BCE.",
-          "content": "Early civilizations flourished along major rivers where agricultural surpluses supported urban centers. Mohenjo-daro and Harappa in the Indus Valley demonstrated sophisticated municipal engineering, standardized brick architecture, and underground drainage networks."
+          "definition": "Early complex human civilizations emerged along fertile river valleys where agricultural surpluses supported urban planning and organized statecraft.",
+          "formula": "Major River Basins: Indus Valley (Indus River, urban drainage grids), Mesopotamia (Tigris-Euphrates, Code of Hammurabi), Egypt (Nile River, hieroglyphs).",
+          "worked_example": "Excavations at Mohenjo-daro reveal sophisticated covered municipal drainage systems and standardized baked bricks dating back to 2500 BCE.",
+          "content": "Ancient civilizations laid the foundations for modern law codes, urban architecture, mathematics, astronomy, and written literature."
         },
         {
-          "chunk_id": "HIST_IND_001",
-          "chapter": "Industrial Revolution",
-          "topic": "The Industrial Revolution and Modern Urbanization",
+          "chunk_id": "HIST_002",
+          "chapter": "Modern History",
+          "topic": "The Industrial Revolution & Factory Mechanization",
           "keywords": [
             "industrial revolution",
             "steam engine",
@@ -707,18 +641,17 @@
             "mechanization",
             "factories",
             "textiles",
-            "urbanization",
-            "coal"
+            "urbanization"
           ],
-          "definition": "The Industrial Revolution (circa 1760–1840) was the profound transition from manual artisanal cottage manufacturing to automated machine and steam-powered factory production, originating in Great Britain.",
-          "formula_or_core_rule": "Technological Catalysts: James Watt's steam engine, textile mechanization (spinning jenny, power loom), coal smelting of iron, and locomotive railways connecting industrial cities.",
-          "worked_example": "Manchester evolved from a modest market town into the global textile capital ('Cottonopolis'), catalyzing modern factory labor regulations, public sanitation, and organized labor unions.",
-          "content": "The Industrial Revolution transformed human labor from agrarian handcrafting to steam-powered mechanization. Key innovations including James Watt's steam engine and mechanized textile looms led to rapid urbanization, factory manufacturing, and modern commercial transportation networks."
+          "definition": "The Industrial Revolution (circa 1760-1840) was the transition from agrarian artisanal cottage manufacturing to automated steam-powered factory production.",
+          "formula": "Technological Drivers: James Watt's refined steam engine, mechanized textile power looms, coal iron smelting, and steam locomotive railways.",
+          "worked_example": "Manchester expanded from a market town to the global textile manufacturing capital, driving modern public labor laws and trade unions.",
+          "content": "Industrialization fundamentally reshaped human demographics, creating modern urban centers, globalized trade networks, and labor regulations."
         },
         {
-          "chunk_id": "HIST_WW2_001",
-          "chapter": "World Wars",
-          "topic": "World War II: Global Conflict, Turning Points and the UN",
+          "chunk_id": "HIST_003",
+          "chapter": "World Conflicts",
+          "topic": "World War II: Global Conflict, Turning Points & the UN",
           "keywords": [
             "world war 2",
             "world war ii",
@@ -727,16 +660,15 @@
             "axis powers",
             "stalingrad",
             "d-day",
-            "united nations",
-            "holocaust"
+            "united nations"
           ],
-          "definition": "World War II (1939–1945) was the deadliest conflict in human history, fought globally between the Allied Powers (USA, USSR, UK, China, France) and Axis Powers (Germany, Japan, Italy), initiated by the invasion of Poland.",
-          "formula_or_core_rule": "Decisive Turning Points: Battle of Stalingrad (1942-43, Eastern front reversal), D-Day Normandy Landings (June 6, 1944), concluding with the surrender of Axis forces and establishment of the United Nations (1945).",
-          "worked_example": "The post-WWII reconstruction led to the Universal Declaration of Human Rights and the Bretton Woods monetary system, creating global institutions to avert future world wars.",
-          "content": "World War II was a worldwide total conflict from 1939 to 1945 pitting Allied Powers against Axis Powers. Major turning points like the Battle of Stalingrad and D-Day led to Allied victory, the dismantling of colonial empires, and the formation of the United Nations."
+          "definition": "World War II (1939-1945) was a global conflict fought between the Allied Powers (USA, USSR, UK, China, France) and Axis Powers (Germany, Japan, Italy).",
+          "formula": "Major Turning Points: Battle of Stalingrad (1942-43), D-Day Normandy Landings (June 6, 1944), concluding with Axis surrender and United Nations formation (1945).",
+          "worked_example": "The post-war international order established the United Nations and Bretton Woods monetary institutions to preserve collective peace.",
+          "content": "World War II was the deadliest conflict in human history, resulting in the dismantling of European colonial empires and initiating the Cold War."
         },
         {
-          "chunk_id": "HIST_IND_FREE_001",
+          "chunk_id": "HIST_004",
           "chapter": "Indian Freedom Movement",
           "topic": "The Indian Freedom Struggle and Satyagraha",
           "keywords": [
@@ -747,15 +679,14 @@
             "ahimsa",
             "dandi march",
             "quit india",
-            "1947",
-            "british raj"
+            "1947"
           ],
-          "definition": "The Indian National Movement was a historic mass anti-colonial struggle against British colonial rule, characterized by Mahatma Gandhi's principles of non-violent resistance (Satyagraha) and peaceful civil disobedience.",
-          "formula_or_core_rule": "Major Campaigns: 1857 First War of Independence, Non-Cooperation Movement (1920), Dandi Salt March (1930), and Quit India Movement (1942), leading to independence on August 15, 1947.",
-          "worked_example": "During the 240-mile Salt March, Gandhi marched to the Arabian Sea to harvest untaxed salt, inspiring millions to peacefully defy colonial monopolies and proving the moral power of Ahimsa.",
-          "content": "The Indian Independence Movement liberated the subcontinent from British colonial rule. Guided by Mahatma Gandhi's principles of Satyagraha (truth-force) and Ahimsa (non-violence), nationwide campaigns such as the Salt March and Quit India movement culminated in independence on August 15, 1947."
+          "definition": "The Indian National Movement was a nationwide mass anti-colonial movement against British rule, pioneering non-violent civil resistance (Satyagraha).",
+          "formula": "Major Campaigns: 1857 First War of Independence, Non-Cooperation Movement (1920), Dandi Salt March (1930), and Quit India Movement (1942), leading to independence on August 15, 1947.",
+          "worked_example": "During the 240-mile Salt March, Mahatma Gandhi mobilized millions to peacefully break colonial salt monopolies, proving the power of Ahimsa.",
+          "content": "India's non-violent liberation struggle inspired civil rights and anti-colonial movements across Africa, Asia, and the Americas."
         }
       ]
     }
-  }
+  ]
 }

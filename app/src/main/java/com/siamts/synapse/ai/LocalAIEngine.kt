@@ -35,7 +35,7 @@ data class KnowledgeChunk(
     val keywords: List<String> = emptyList(),
     @SerializedName("definition")
     val definition: String = "",
-    @SerializedName("formula_or_core_rule")
+    @SerializedName(value = "formula_or_core_rule", alternate = ["formula"])
     val formulaOrCoreRule: String = "",
     @SerializedName("worked_example")
     val workedExample: String = "",
@@ -171,21 +171,7 @@ class LocalAIEngine private constructor(context: Context?) {
         try {
             context.assets.open("educational_knowledge_base.json").use { inputStream ->
                 InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
-                    val kb: EducationalKnowledgeBase = gson.fromJson(reader, EducationalKnowledgeBase::class.java)
-                    synchronized(subjectMap) {
-                        subjectMap.clear()
-                        subjectMap.putAll(kb.subjects)
-                    }
-                    synchronized(chunks) {
-                        chunks.clear()
-                        for ((_, sub) in kb.subjects) {
-                            for (chunk in sub.ragChunks) {
-                                val fixedChunk = if (chunk.subject.isBlank()) chunk.copy(subject = sub.subject) else chunk
-                                chunks.add(fixedChunk)
-                            }
-                        }
-                    }
-                    logD(TAG, "Loaded educational_knowledge_base.json: ${subjectMap.size} subjects, ${chunks.size} chunks.")
+                    parseKnowledgeBase(reader.readText())
                 }
             }
         } catch (e: Throwable) {
@@ -215,48 +201,78 @@ class LocalAIEngine private constructor(context: Context?) {
      * Loads knowledge dataset directly from a JSON string (supports both Map and List schemas).
      */
     fun loadFromJson(jsonString: String) {
-        val trimmed = jsonString.trim()
         try {
-            if (trimmed.startsWith("{")) {
-                val kb: EducationalKnowledgeBase = gson.fromJson(trimmed, EducationalKnowledgeBase::class.java)
+            parseKnowledgeBase(jsonString)
+        } catch (e: Throwable) {
+            logE(TAG, "Error loading dataset from JSON string: ${e.message}", e)
+        }
+    }
+
+    private fun parseKnowledgeBase(jsonString: String) {
+        val jsonElement = JsonParser.parseString(jsonString.trim())
+        if (jsonElement.isJsonObject) {
+            val rootObj = jsonElement.asJsonObject
+            if (rootObj.has("subjects")) {
+                val subjectsElement = rootObj.get("subjects")
+                val subjectList = mutableListOf<SubjectKnowledge>()
+
+                if (subjectsElement.isJsonArray) {
+                    val type = object : TypeToken<List<SubjectKnowledge>>() {}.type
+                    val parsed: List<SubjectKnowledge> = gson.fromJson(subjectsElement, type)
+                    subjectList.addAll(parsed)
+                } else if (subjectsElement.isJsonObject) {
+                    for ((_, subObj) in subjectsElement.asJsonObject.entrySet()) {
+                        val sub: SubjectKnowledge = gson.fromJson(subObj, SubjectKnowledge::class.java)
+                        subjectList.add(sub)
+                    }
+                }
+
                 synchronized(subjectMap) {
                     subjectMap.clear()
-                    subjectMap.putAll(kb.subjects)
+                    for (sub in subjectList) {
+                        val rawName = sub.subject.lowercase(Locale.ROOT)
+                        subjectMap[rawName] = sub
+                        val normName = rawName.replace(Regex("[^a-z0-9]+"), "_")
+                        subjectMap[normName] = sub
+                    }
                 }
+
                 synchronized(chunks) {
                     chunks.clear()
-                    for ((_, sub) in kb.subjects) {
+                    for (sub in subjectList) {
                         for (chunk in sub.ragChunks) {
                             val fixedChunk = if (chunk.subject.isBlank()) chunk.copy(subject = sub.subject) else chunk
                             chunks.add(fixedChunk)
                         }
                     }
                 }
-            } else if (trimmed.startsWith("[")) {
-                val type = object : TypeToken<List<KnowledgeChunk>>() {}.type
-                val list: List<KnowledgeChunk> = gson.fromJson(trimmed, type)
-                synchronized(chunks) {
-                    chunks.clear()
-                    chunks.addAll(list)
-                }
-                // Group by subject to populate subjectMap
-                synchronized(subjectMap) {
-                    val grouped = list.groupBy { it.subject }
-                    for ((subName, subChunks) in grouped) {
-                        if (subName.isNotBlank()) {
-                            val topics = subChunks.map { it.chapter }.distinct()
-                            subjectMap[subName.lowercase(Locale.ROOT)] = SubjectKnowledge(
-                                subject = subName,
-                                overview = "$subName educational curriculum modules.",
-                                topics = topics,
-                                ragChunks = subChunks
-                            )
-                        }
+                logD(TAG, "Successfully loaded knowledge base: ${subjectList.size} subjects, ${chunks.size} chunks.")
+                return
+            }
+        } else if (jsonElement.isJsonArray) {
+            val type = object : TypeToken<List<KnowledgeChunk>>() {}.type
+            val list: List<KnowledgeChunk> = gson.fromJson(jsonElement, type)
+            synchronized(chunks) {
+                chunks.clear()
+                chunks.addAll(list)
+            }
+            synchronized(subjectMap) {
+                val grouped = list.groupBy { it.subject }
+                for ((subName, subChunks) in grouped) {
+                    if (subName.isNotBlank()) {
+                        val topics = subChunks.map { it.chapter }.distinct()
+                        val rawName = subName.lowercase(Locale.ROOT)
+                        val sub = SubjectKnowledge(
+                            subject = subName,
+                            overview = "$subName educational curriculum modules.",
+                            topics = topics,
+                            ragChunks = subChunks
+                        )
+                        subjectMap[rawName] = sub
+                        subjectMap[rawName.replace(Regex("[^a-z0-9]+"), "_")] = sub
                     }
                 }
             }
-        } catch (e: Throwable) {
-            logE(TAG, "Error loading dataset from JSON string: ${e.message}", e)
         }
     }
 
