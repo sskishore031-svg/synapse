@@ -1,0 +1,2682 @@
+{
+  "version": "1.0",
+  "description": "Production-Grade Scalable Catalog of 10 Extended Academic Subjects for SYNAPSE AI",
+  "subjects": [
+    {
+      "id": "ext_bio",
+      "subject_id": 101,
+      "name": "Biology",
+      "slug": "biology",
+      "icon_symbol": "🧬",
+      "color_hex": "#10B981",
+      "category": "Natural Sciences",
+      "description": "Exploration of cellular life, heredity, human systems, and ecosystem sustainability.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1011,
+          "chapter_order": 1,
+          "title": "Cell Biology & Structure",
+          "estimated_minutes": 15,
+          "summary": "Study of cell theory, prokaryotic vs eukaryotic cells, organelles, and membrane transport.",
+          "syllabus": [
+            "Prokaryotic and Eukaryotic Cells",
+            "Organelles: Nucleus, Mitochondria, Ribosomes, Golgi",
+            "Cell Membrane & Fluid Mosaic Model",
+            "Passive and Active Transport"
+          ],
+          "core_formulas": [
+            "Surface Area to Volume Ratio = SA / V (limits cell size)",
+            "Water Potential (Ψ) = Ψs + Ψp",
+            "Rate of Diffusion ∝ (Surface Area × Concentration Difference) / Membrane Thickness"
+          ],
+          "part1_title": "Cell Theory and Organelles",
+          "part1_content": "The cell is the basic structural and functional unit of all living organisms. All living cells arise from pre-existing cells through division. Eukaryotic cells possess a true membrane-bound nucleus containing DNA, whereas prokaryotes lack a nucleus. The mitochondria act as the powerhouse, synthesizing ATP through cellular respiration.",
+          "part2_title": "Membrane Transport Mechanics",
+          "part2_content": "The plasma membrane is selectively permeable, composed of a phospholipid bilayer with embedded transport proteins. Passive transport, including simple diffusion and facilitated osmosis, requires no cellular energy. Active transport requires ATP hydrolysis to move solutes against their electrochemical concentration gradients via protein pumps such as the Na+/K+ ATPase pump.",
+          "mcqs": [
+            {
+              "id": 10111,
+              "question_number": 1,
+              "question": "Which organelle is responsible for synthesizing ATP through aerobic cellular respiration?",
+              "options": {
+                "A": "Ribosome",
+                "B": "Mitochondria",
+                "C": "Golgi apparatus",
+                "D": "Endoplasmic reticulum"
+              },
+              "correct_option": "B",
+              "explanation": "Mitochondria are often termed the powerhouse of the cell because they generate the bulk of chemical energy (ATP) through the citric acid cycle and oxidative phosphorylation."
+            },
+            {
+              "id": 10112,
+              "question_number": 2,
+              "question": "Which model best describes the dynamic structure of the cell membrane?",
+              "options": {
+                "A": "Lock and Key Model",
+                "B": "Fluid Mosaic Model",
+                "C": "Unit Membrane Hypothesis",
+                "D": "Sandwich Model"
+              },
+              "correct_option": "B",
+              "explanation": "Proposed by Singer and Nicolson, the Fluid Mosaic Model portrays the membrane as a viscous two-dimensional liquid wherein phospholipid molecules and proteins diffuse laterally."
+            },
+            {
+              "id": 10113,
+              "question_number": 3,
+              "question": "What is the primary difference between passive transport and active transport?",
+              "options": {
+                "A": "Passive transport requires ATP energy",
+                "B": "Active transport moves molecules down their concentration gradient",
+                "C": "Active transport requires cellular energy (ATP) to move against gradients",
+                "D": "Passive transport only occurs in plant cells"
+              },
+              "correct_option": "C",
+              "explanation": "Active transport requires metabolic energy (ATP) because molecules are pumped against their concentration or electrochemical gradient."
+            },
+            {
+              "id": 10114,
+              "question_number": 4,
+              "question": "Where does protein synthesis primarily occur within a cell?",
+              "options": {
+                "A": "Ribosomes",
+                "B": "Lysosomes",
+                "C": "Peroxisomes",
+                "D": "Vacuoles"
+              },
+              "correct_option": "A",
+              "explanation": "Ribosomes are macromolecular complexes of RNA and protein that catalyze mRNA translation into polypeptide amino acid chains."
+            },
+            {
+              "id": 10115,
+              "question_number": 5,
+              "question": "Why does a cell's surface-area-to-volume ratio decrease as it grows larger?",
+              "options": {
+                "A": "Volume increases proportionally to the cube (r³), while surface area increases as the square (r²)",
+                "B": "Surface area increases faster than volume",
+                "C": "The membrane expands faster than cytoplasmic mass",
+                "D": "Membrane proteins disintegrate during cellular growth"
+              },
+              "correct_option": "A",
+              "explanation": "Volume scales as r³ while surface area scales as r². A lower ratio limits nutrient diffusion, necessitating cellular division."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "BIO_001",
+              "subject": "Biology",
+              "chapter": "Cell Biology",
+              "topic": "Cell Structure & Organelles",
+              "keywords": [
+                "biology",
+                "cell",
+                "mitochondria",
+                "organelle",
+                "atp",
+                "eukaryote",
+                "prokaryote",
+                "membrane"
+              ],
+              "definition": "Cells are the fundamental functional and structural units of all biological life forms.",
+              "formula_or_core_rule": "SA/V = 3/r for a spherical cell; diffusion efficiency decreases as volume expands.",
+              "worked_example": "If a cell doubles in radius, its volume increases 8-fold while its surface area only increases 4-fold.",
+              "content": "Eukaryotic cells contain specialized membrane-bound organelles including the nucleus for genomic DNA storage, mitochondria for ATP production via oxidative phosphorylation, and ribosomes for protein translation."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1012,
+          "chapter_order": 2,
+          "title": "Genetics & Molecular Heredity",
+          "estimated_minutes": 18,
+          "summary": "Mendelian inheritance laws, DNA double-helix architecture, transcription, and translation.",
+          "syllabus": [
+            "Mendel's Laws of Segregation and Independent Assortment",
+            "DNA Replication & Polymerase Function",
+            "Central Dogma: DNA to mRNA to Protein",
+            "Genetic Code and Point Mutations"
+          ],
+          "core_formulas": [
+            "Hardy-Weinberg Equilibrium: p² + 2pq + q² = 1 and p + q = 1",
+            "Base Pairing Equivalence: [A] = [T] and [G] = [C] (Chargaff's Rule)"
+          ],
+          "part1_title": "Mendelian Inheritance and Punnett Squares",
+          "part1_content": "Gregor Mendel discovered that traits are inherited as discrete gene units. The Law of Segregation states that two alleles of a given gene segregate during gamete formation so that each gamete carries only one allele. Independent Assortment states that genes for different traits separate independently during gamete formation.",
+          "part2_title": "The Central Dogma of Molecular Biology",
+          "part2_content": "Genetic information flows from DNA to RNA via transcription, and from RNA to functional proteins via translation. In transcription, RNA polymerase binds the promoter sequence and synthesizes messenger RNA (mRNA). At the ribosome, transfer RNAs (tRNAs) match anticodons to mRNA codons, assembling polypeptide chains.",
+          "mcqs": [
+            {
+              "id": 10121,
+              "question_number": 1,
+              "question": "According to Chargaff's rules of DNA base pairing, adenine (A) always pairs with which base?",
+              "options": {
+                "A": "Guanine",
+                "B": "Cytosine",
+                "C": "Thymine",
+                "D": "Uracil"
+              },
+              "correct_option": "C",
+              "explanation": "In double-stranded DNA, adenine forms two hydrogen bonds specifically with thymine (A=T), while cytosine pairs with guanine (C≡G)."
+            },
+            {
+              "id": 10122,
+              "question_number": 2,
+              "question": "What is the phenotypic ratio in a standard Mendelian monohybrid cross between two heterozygotes (Aa × Aa)?",
+              "options": {
+                "A": "1:1",
+                "B": "3:1",
+                "C": "9:3:3:1",
+                "D": "1:2:1"
+              },
+              "correct_option": "B",
+              "explanation": "A monohybrid cross yields genotypic ratio 1 AA : 2 Aa : 1 aa, which expresses phenotypically as 3 dominant : 1 recessive."
+            },
+            {
+              "id": 10123,
+              "question_number": 3,
+              "question": "Which enzyme unwinds the double helix DNA strands during replication?",
+              "options": {
+                "A": "DNA Ligase",
+                "B": "DNA Helicase",
+                "C": "RNA Primase",
+                "D": "DNA Polymerase"
+              },
+              "correct_option": "B",
+              "explanation": "DNA Helicase breaks the hydrogen bonds between complementary base pairs to open the replication fork."
+            },
+            {
+              "id": 10124,
+              "question_number": 4,
+              "question": "What sequence marks the start codon for protein translation in mRNA?",
+              "options": {
+                "A": "UAA",
+                "B": "UAG",
+                "C": "AUG",
+                "D": "UGA"
+              },
+              "correct_option": "C",
+              "explanation": "AUG encodes Methionine and serves as the universal start codon initiating eukaryotic translation."
+            },
+            {
+              "id": 10125,
+              "question_number": 5,
+              "question": "In the Hardy-Weinberg equation p² + 2pq + q² = 1, what does 2pq represent?",
+              "options": {
+                "A": "Frequency of homozygous dominant genotype",
+                "B": "Frequency of heterozygous genotype",
+                "C": "Frequency of homozygous recessive genotype",
+                "D": "Overall mutation rate"
+              },
+              "correct_option": "B",
+              "explanation": "2pq represents the expected frequency of heterozygous genotypes (Aa) in an ideal population at equilibrium."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "BIO_002",
+              "subject": "Biology",
+              "chapter": "Genetics",
+              "topic": "DNA Replication & Gene Expression",
+              "keywords": [
+                "genetics",
+                "dna",
+                "mendel",
+                "transcription",
+                "translation",
+                "rna",
+                "alleles",
+                "mutation"
+              ],
+              "definition": "Genetics is the branch of biology studying heredity, gene variation, and the molecular mechanism of genetic traits.",
+              "formula_or_core_rule": "Central Dogma: DNA -> (Transcription via RNA Polymerase) -> mRNA -> (Translation at Ribosomes) -> Protein.",
+              "worked_example": "In a dihybrid cross (AaBb × AaBb), the expected phenotypic ratio among offspring is 9:3:3:1.",
+              "content": "Inheritance follows segregation and independent assortment of alleles. DNA replication is semiconservative where each strand acts as a template for a newly synthesized daughter strand."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1013,
+          "chapter_order": 3,
+          "title": "Human Physiology & Homeostasis",
+          "estimated_minutes": 16,
+          "summary": "Neural signalling, endocrine control, cardiovascular circulation, and feedback homeostasis.",
+          "syllabus": [
+            "Negative and Positive Feedback Loops",
+            "Action Potentials and Neurotransmitter Synapses",
+            "Cardiovascular Pressure & Pulmonary Gas Exchange",
+            "Hormonal Regulation of Blood Glucose"
+          ],
+          "core_formulas": [
+            "Cardiac Output (CO) = Heart Rate (HR) × Stroke Volume (SV)",
+            "Blood Pressure = Cardiac Output × Total Peripheral Resistance (TPR)"
+          ],
+          "part1_title": "Principles of Homeostatic Regulation",
+          "part1_content": "Homeostasis maintains a stable internal physiological environment despite external perturbations. Negative feedback mechanisms counteract changes from a setpoint. For instance, high blood glucose stimulates pancreatic beta cells to secrete insulin, promoting cellular glucose uptake, whereas glucagon triggers glycogenolysis when glucose falls.",
+          "part2_title": "Neural Transmission and Circulation",
+          "part2_content": "Neurons transmit electrical signals as action potentials, initiated when voltage-gated Na+ channels open, depolarizing the membrane above threshold (-55 mV). The cardiovascular system pumps oxygenated blood from the left ventricle through the systemic circuit to supply tissues.",
+          "mcqs": [
+            {
+              "id": 10131,
+              "question_number": 1,
+              "question": "Which hormone is released by pancreatic beta cells to lower elevated blood glucose levels?",
+              "options": {
+                "A": "Glucagon",
+                "B": "Insulin",
+                "C": "Cortisol",
+                "D": "Thyroxine"
+              },
+              "correct_option": "B",
+              "explanation": "Insulin binds to tyrosine kinase receptors on muscle and adipose tissues to induce GLUT4 glucose transporter translocation, reducing blood glucose."
+            },
+            {
+              "id": 10132,
+              "question_number": 2,
+              "question": "During a neuron action potential, what causes rapid depolarization across the axon membrane?",
+              "options": {
+                "A": "Outflow of Potassium ions (K+)",
+                "B": "Rapid influx of Sodium ions (Na+)",
+                "C": "Efflux of Chloride ions (Cl-)",
+                "D": "Active pumping of Calcium ions (Ca2+)"
+              },
+              "correct_option": "B",
+              "explanation": "Depolarization is driven by the opening of voltage-gated Na+ channels, allowing sodium ions to flood down their electrochemical gradient into the cell."
+            },
+            {
+              "id": 10133,
+              "question_number": 3,
+              "question": "What is calculated by multiplying heart rate (beats/min) by stroke volume (mL/beat)?",
+              "options": {
+                "A": "Pulse pressure",
+                "B": "Mean arterial pressure",
+                "C": "Cardiac output",
+                "D": "Vital capacity"
+              },
+              "correct_option": "C",
+              "explanation": "Cardiac Output (CO) = HR × SV, representing the total volume of blood pumped by each ventricle per minute (typically 5 L/min at rest)."
+            },
+            {
+              "id": 10134,
+              "question_number": 4,
+              "question": "Which chamber of the human heart pumps oxygenated blood directly into the systemic aorta?",
+              "options": {
+                "A": "Right atrium",
+                "B": "Right ventricle",
+                "C": "Left atrium",
+                "D": "Left ventricle"
+              },
+              "correct_option": "D",
+              "explanation": "The left ventricle features thick muscular walls to generate high systemic pressure, pumping oxygen-rich blood into the aorta."
+            },
+            {
+              "id": 10135,
+              "question_number": 5,
+              "question": "What is an example of a physiological positive feedback mechanism in humans?",
+              "options": {
+                "A": "Thermoregulation via sweating",
+                "B": "Blood clotting cascade and labor contractions (oxytocin)",
+                "C": "Osmoregulation via ADH hormone",
+                "D": "Blood pH buffering"
+              },
+              "correct_option": "B",
+              "explanation": "Positive feedback amplifies a stimulus until a definitive endpoint is achieved, such as platelet plug formation during clotting or oxytocin-driven uterine contractions."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "BIO_003",
+              "subject": "Biology",
+              "chapter": "Human Physiology",
+              "topic": "Homeostasis & Organ Systems",
+              "keywords": [
+                "physiology",
+                "homeostasis",
+                "insulin",
+                "action potential",
+                "cardiac",
+                "circulation",
+                "endocrine",
+                "neuron"
+              ],
+              "definition": "Physiology explores mechanical, physical, and biochemical functions of living organisms and their organ systems.",
+              "formula_or_core_rule": "CO = HR × SV; Blood Pressure = CO × TPR.",
+              "worked_example": "If Heart Rate is 70 bpm and Stroke Volume is 70 mL, Cardiac Output = 4,900 mL/min (4.9 L/min).",
+              "content": "Homeostatic balance relies upon receptor detection, control center comparison against setpoints, and effector responses via negative feedback loops to regulate body temperature, blood glucose, and pH."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_history",
+      "subject_id": 102,
+      "name": "World History",
+      "slug": "world-history",
+      "icon_symbol": "🏛️",
+      "color_hex": "#D97706",
+      "category": "Humanities",
+      "description": "Chronological study of ancient empires, cultural revolutions, global conflicts, and geopolitical shifts.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1021,
+          "chapter_order": 1,
+          "title": "Ancient Civilizations & River Valleys",
+          "estimated_minutes": 14,
+          "summary": "Development of agriculture, urban centers, writing systems, and legal codes in Mesopotamia, Egypt, and the Indus Valley.",
+          "syllabus": [
+            "Neolithic Agricultural Revolution",
+            "Mesopotamian Cuneiform & Code of Hammurabi",
+            "Nile Inundation and Pharaonic Egypt",
+            "Indus Valley Urban Planning (Harappa & Mohenjo-Daro)"
+          ],
+          "core_formulas": [
+            "Historical Causality = Trigger Event + Structural Underlying Factors + Cultural Mindset",
+            "Agricultural Surplus -> Social Stratification -> State Formation"
+          ],
+          "part1_title": "The Neolithic Transition and Urbanization",
+          "part1_content": "The transition from nomadic foraging to settled farming (Neolithic Revolution) facilitated permanent settlements, surplus food accumulation, and rapid demographic expansion. River valleys provided predictable seasonal water supplies, fertile silt deposits, and communication routes.",
+          "part2_title": "Early Legal Codes and Governance",
+          "part2_content": "The Code of Hammurabi established one of history's earliest codified legal standards in Babylon under the principle of Lex Talionis (an eye for an eye). In the Indus Valley, sophisticated brick drainage systems and orthogonal grid street layouts displayed centralized civic coordination.",
+          "mcqs": [
+            {
+              "id": 10211,
+              "question_number": 1,
+              "question": "Between which two rivers did the ancient civilization of Mesopotamia develop?",
+              "options": {
+                "A": "Nile and Congo",
+                "B": "Tigris and Euphrates",
+                "C": "Indus and Ganges",
+                "D": "Yellow and Yangtze"
+              },
+              "correct_option": "B",
+              "explanation": "Mesopotamia, meaning 'between rivers' in Greek, flourished in the fertile crescent formed by the Tigris and Euphrates rivers."
+            },
+            {
+              "id": 10212,
+              "question_number": 2,
+              "question": "What is the primary significance of the Code of Hammurabi in Babylonian history?",
+              "options": {
+                "A": "First recorded democratic election system",
+                "B": "One of the earliest public, comprehensive written legal codes",
+                "C": "A religious hymnal praising the sun god Ra",
+                "D": "A mathematical textbook calculating pyramid geometry"
+              },
+              "correct_option": "B",
+              "explanation": "King Hammurabi of Babylon codified 282 laws onto diorite steles, establishing public accountability and standard judicial penalties."
+            },
+            {
+              "id": 10213,
+              "question_number": 3,
+              "question": "Which ancient civilization developed Mohenjo-Daro featuring grid street plans and covered sewer drainage?",
+              "options": {
+                "A": "Indus Valley Civilization",
+                "B": "Minoan Civilization",
+                "C": "Olmec Civilization",
+                "D": "Mycenaean Civilization"
+              },
+              "correct_option": "A",
+              "explanation": "The Indus Valley (Harappan) civilization was renowned for its high degree of urban planning, standard kiln-burnt bricks, and advanced hydraulic drainage."
+            },
+            {
+              "id": 10214,
+              "question_number": 4,
+              "question": "What script was developed in Sumer, Mesopotamia, using wedge-shaped stylus impressions on wet clay?",
+              "options": {
+                "A": "Hieroglyphs",
+                "B": "Cuneiform",
+                "C": "Phoenician Alphabet",
+                "D": "Brahmi"
+              },
+              "correct_option": "B",
+              "explanation": "Cuneiform was developed around 3200 BCE by the Sumerians to record grain inventories, trade contracts, and imperial decrees."
+            },
+            {
+              "id": 10215,
+              "question_number": 5,
+              "question": "What technological advancement marked the end of the Stone Age and onset of early civilization bronze casting?",
+              "options": {
+                "A": "Metallurgy (alloying copper with tin)",
+                "B": "Steam power engine",
+                "C": "Movable type printing",
+                "D": "Gunpowder formulation"
+              },
+              "correct_option": "A",
+              "explanation": "The Bronze Age began when metallurgists learned that alloying copper with tin produced harder, more durable tools and weaponry."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "HIST_001",
+              "subject": "World History",
+              "chapter": "Ancient Civilizations",
+              "topic": "River Valley Empires & Social Stratification",
+              "keywords": [
+                "history",
+                "civilization",
+                "mesopotamia",
+                "hammurabi",
+                "indus",
+                "cuneiform",
+                "neolithic",
+                "egypt"
+              ],
+              "definition": "Ancient civilizations were complex urban societies characterized by social hierarchy, centralized government, specialized labor, and writing systems.",
+              "formula_or_core_rule": "Lex Talionis: Retributive justice establishing codified penalties proportional to the offense.",
+              "worked_example": "The Code of Hammurabi standardized trade disputes, land tenure contracts, and criminal accountability on public stone monuments.",
+              "content": "Early civilizations emerged in fertile alluvial basins such as the Nile, Tigris-Euphrates, Indus, and Yellow rivers where irrigation enabled substantial agricultural surplus."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1022,
+          "chapter_order": 2,
+          "title": "The Renaissance & Scientific Revolution",
+          "estimated_minutes": 15,
+          "summary": "Rebirth of classical humanist philosophy, artistic realism, printing press dissemination, and heliocentrism.",
+          "syllabus": [
+            "Italian Humanism: Petrarca & Machiavelli",
+            "Gutenberg's Movable Type Printing Press",
+            "Heliocentric Astronomy: Copernicus & Galileo",
+            "Baconian Empirical Method and Cartesian Rationalism"
+          ],
+          "core_formulas": [
+            "Empirical Science: Observation -> Hypothesis -> Controlled Experiment -> Mathematical Formulation"
+          ],
+          "part1_title": "Humanism and the Spread of Knowledge",
+          "part1_content": "The Renaissance represented a cultural rebirth beginning in 14th-century Florence. Scholars turned away from medieval scholasticism toward classical Greek and Roman literature, championing secular humanism and individual dignity. Johannes Gutenberg's movable type printing press (c. 1440) drastically reduced book production costs, spurring literacy across Europe.",
+          "part2_title": "The Scientific Shift: From Geocentric to Heliocentric",
+          "part2_content": "Nicolaus Copernicus overturned the Ptolemaic geocentric model by proposing that planets revolve around the Sun. Galileo Galilei constructed optical telescopes, discovering Jupiter's moons and lunar craters. Isaac Newton subsequently unified terrestrial and celestial mechanics with his universal law of gravitation.",
+          "mcqs": [
+            {
+              "id": 10221,
+              "question_number": 1,
+              "question": "Which invention by Johannes Gutenberg around 1440 revolutionized the rapid spread of knowledge across Europe?",
+              "options": {
+                "A": "Astrolabe",
+                "B": "Movable metal type printing press",
+                "C": "Magnetic compass",
+                "D": "Pendulum clock"
+              },
+              "correct_option": "B",
+              "explanation": "Gutenberg's movable type press made books inexpensive and widely accessible, breaking monopolies on intellectual and religious knowledge."
+            },
+            {
+              "id": 10222,
+              "question_number": 2,
+              "question": "Which astronomer formulated the heliocentric theory stating that Earth and other planets orbit the Sun?",
+              "options": {
+                "A": "Ptolemy",
+                "B": "Aristotle",
+                "C": "Nicolaus Copernicus",
+                "D": "Tycho Brahe"
+              },
+              "correct_option": "C",
+              "explanation": "Copernicus published 'De revolutionibus orbium coelestium' in 1543, positing a sun-centered solar system."
+            },
+            {
+              "id": 10223,
+              "question_number": 3,
+              "question": "In political philosophy, who authored 'The Prince' advocating pragmatic statecraft and realpolitik?",
+              "options": {
+                "A": "Thomas More",
+                "B": "Niccolò Machiavelli",
+                "C": "Desiderius Erasmus",
+                "D": "John Locke"
+              },
+              "correct_option": "B",
+              "explanation": "Niccolò Machiavelli analyzed political power as grounded in practical survival and expediency rather than traditional moral ideals."
+            },
+            {
+              "id": 10224,
+              "question_number": 4,
+              "question": "Which scientific pioneer was tried by the Roman Inquisition for supporting Copernican heliocentrism with telescopic observations?",
+              "options": {
+                "A": "Galileo Galilei",
+                "B": "René Descartes",
+                "C": "Francis Bacon",
+                "D": "Johannes Kepler"
+              },
+              "correct_option": "A",
+              "explanation": "Galileo was sentenced to life house arrest in 1633 after defending the heliocentric view through observational proofs such as the phases of Venus."
+            },
+            {
+              "id": 10225,
+              "question_number": 5,
+              "question": "What is the defining premise of Francis Bacon's scientific empiricism?",
+              "options": {
+                "A": "Scientific truth is discovered purely through divine revelation",
+                "B": "Knowledge must be derived systematically from inductive observation and empirical experimentation",
+                "C": "Deductive speculation without experimentation is infallible",
+                "D": "Ancient philosophers possessed complete physical knowledge"
+              },
+              "correct_option": "B",
+              "explanation": "Bacon argued that true scientific progress requires empirical investigation, careful sensory observation, and inductive reasoning from repeatable tests."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "HIST_002",
+              "subject": "World History",
+              "chapter": "Renaissance & Scientific Revolution",
+              "topic": "Scientific Revolution & Humanist Enlightenment",
+              "keywords": [
+                "history",
+                "renaissance",
+                "copernicus",
+                "galileo",
+                "gutenberg",
+                "humanism",
+                "scientific method",
+                "astronomy"
+              ],
+              "definition": "The Scientific Revolution was a period of transformative discoveries in mathematics, physics, and astronomy during the 16th and 17th centuries.",
+              "formula_or_core_rule": "Empirical Scientific Method: Inductive observation validated by mathematical modelling.",
+              "worked_example": "Galileo observed the four Galilean moons orbiting Jupiter, disproving the dogma that all celestial bodies must orbit the Earth.",
+              "content": "The European Renaissance re-engaged Greek and Roman classical thought, leading to humanist philosophy and experimental scientific inquiry that replaced medieval scholasticism."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1023,
+          "chapter_order": 3,
+          "title": "World War Era & The Modern Global Order",
+          "estimated_minutes": 17,
+          "summary": "Causes of WWI, rise of totalitarian regimes, WWII alliances, the Cold War, and modern globalization.",
+          "syllabus": [
+            "M-A-I-N Causes of WWI (Militarism, Alliances, Imperialism, Nationalism)",
+            "Treaty of Versailles & League of Nations",
+            "World War II and the United Nations Charter (1945)",
+            "Bipolar Cold War Geopolitics and Decolonization"
+          ],
+          "core_formulas": [
+            "Balance of Power Theory: Hegemonic imbalance causes international conflict or war",
+            "Nuclear Deterrence: Mutually Assured Destruction (MAD)"
+          ],
+          "part1_title": "The Catalysts of World War I and Totalitarianism",
+          "part1_content": "The outbreak of World War I in 1914 was ignited by the assassination of Archduke Franz Ferdinand in Sarajevo, interacting with complex mutual defense alliances, arms races, and imperial rivalries. The punitive terms of the 1919 Treaty of Versailles contributed to economic distress in Germany, fostering conditions for fascist totalitarianism.",
+          "part2_title": "World War II, The United Nations, and Cold War",
+          "part2_content": "World War II culminated in Allied victory in 1945 and the establishment of the United Nations to prevent future world wars. The postwar landscape polarized into a bipolar Cold War between the democratic-capitalist NATO coalition and the Soviet Warsaw Pact, characterized by nuclear deterrence and proxy conflicts.",
+          "mcqs": [
+            {
+              "id": 10231,
+              "question_number": 1,
+              "question": "What does the historical acronym 'M-A-I-N' represent when studying the underlying causes of World War I?",
+              "options": {
+                "A": "Monarchy, Agriculture, Industry, Navy",
+                "B": "Militarism, Alliances, Imperialism, Nationalism",
+                "C": "Morality, Armaments, Inflation, Neutrality",
+                "D": "Marxism, Autocracy, Isolation, Negotiations"
+              },
+              "correct_option": "B",
+              "explanation": "M-A-I-N summarizes the four structural forces that created the explosive tensions culminating in the summer of 1914."
+            },
+            {
+              "id": 10232,
+              "question_number": 2,
+              "question": "Which international organization was founded in 1945 following World War II to foster global security and cooperation?",
+              "options": {
+                "A": "League of Nations",
+                "B": "United Nations",
+                "C": "Warsaw Pact",
+                "D": "Organization of American States"
+              },
+              "correct_option": "B",
+              "explanation": "The United Nations was established in San Francisco in 1945 with 51 founding member nations to maintain international peace."
+            },
+            {
+              "id": 10233,
+              "question_number": 3,
+              "question": "What military alliance was formed in 1949 by Western nations for collective defense against Soviet expansion?",
+              "options": {
+                "A": "NATO (North Atlantic Treaty Organization)",
+                "B": "Warsaw Pact",
+                "C": "Triple Entente",
+                "D": "SEATO"
+              },
+              "correct_option": "A",
+              "explanation": "NATO was founded as a collective security alliance under Article 5 stating that an armed attack against one member is considered an attack against all."
+            },
+            {
+              "id": 10234,
+              "question_number": 4,
+              "question": "Which 1962 geopolitical confrontation brought the United States and the Soviet Union closest to direct nuclear conflict?",
+              "options": {
+                "A": "Berlin Airlift",
+                "B": "Korean War",
+                "C": "Cuban Missile Crisis",
+                "D": "Suez Crisis"
+              },
+              "correct_option": "C",
+              "explanation": "The 13-day Cuban Missile Crisis occurred when American surveillance discovered Soviet nuclear missile installations in Cuba, 90 miles off Florida."
+            },
+            {
+              "id": 10235,
+              "question_number": 5,
+              "question": "What historic event in November 1989 symbolized the beginning of the collapse of the Eastern Bloc and end of the Cold War?",
+              "options": {
+                "A": "Fall of the Berlin Wall",
+                "B": "Signing of the Helsinki Accords",
+                "C": "Launch of Sputnik 1",
+                "D": "Treaty of Maastricht"
+              },
+              "correct_option": "A",
+              "explanation": "The opening of the Berlin Wall in 1989 catalyzed the reunification of Germany and preceded the dissolution of the Soviet Union in 1991."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "HIST_003",
+              "subject": "World History",
+              "chapter": "World War Era & Cold War",
+              "topic": "Global Geopolitics & United Nations",
+              "keywords": [
+                "history",
+                "world war",
+                "cold war",
+                "united nations",
+                "nato",
+                "berlin wall",
+                "treaty of versailles",
+                "alliances"
+              ],
+              "definition": "The Cold War was an era of intense ideological, geopolitical, and military competition between the US and USSR from 1947 to 1991 without direct armed conflict between superpowers.",
+              "formula_or_core_rule": "Mutually Assured Destruction (MAD): Full-scale deployment of nuclear weapons guarantees destruction of both combatants, deterring direct war.",
+              "worked_example": "The Cuban Missile Crisis resolved peacefully when Soviet missiles were withdrawn in exchange for public US non-invasion pledges and secret missile removal from Turkey.",
+              "content": "20th-century geopolitics were reshaped by the destruction of two world wars, decolonization across Africa and Asia, and the emergence of multilateral trade and security treaties."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_econ",
+      "subject_id": 103,
+      "name": "Economics & Finance",
+      "slug": "economics",
+      "icon_symbol": "📊",
+      "color_hex": "#2563EB",
+      "category": "Social Sciences",
+      "description": "Microeconomic market forces, macroeconomic fiscal and monetary policies, and financial asset valuation.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1031,
+          "chapter_order": 1,
+          "title": "Microeconomics: Supply, Demand & Markets",
+          "estimated_minutes": 15,
+          "summary": "Market equilibrium, price elasticity of demand and supply, consumer surplus, and market structures.",
+          "syllabus": [
+            "Law of Demand and Supply Curves",
+            "Market Clearing Equilibrium Price & Quantity",
+            "Price Elasticity of Demand (PED)",
+            "Perfect Competition vs Monopoly vs Oligopoly"
+          ],
+          "core_formulas": [
+            "PED = (% Change in Quantity Demanded) / (% Change in Price)",
+            "Market Equilibrium: Quantity Demanded (Qd) = Quantity Supplied (Qs)",
+            "Total Revenue (TR) = Price (P) × Quantity (Q)"
+          ],
+          "part1_title": "Demand, Supply, and Equilibrium Price",
+          "part1_content": "Markets coordinate buyers and sellers through price signals. The Law of Demand posits an inverse relationship between price and quantity demanded, ceteris paribus. The Law of Supply posits a direct positive relationship. Where demand and supply intersect, the market clears at the equilibrium price, eliminating shortages or surpluses.",
+          "part2_title": "Elasticity and Market Structures",
+          "part2_content": "Price Elasticity of Demand (PED) measures consumer responsiveness to price fluctuations. If |PED| > 1, demand is elastic; price hikes reduce total revenue. Market structures range from perfect competition (price takers, zero barriers) to monopolies (single price setter, high barriers to entry).",
+          "mcqs": [
+            {
+              "id": 10311,
+              "question_number": 1,
+              "question": "What happens in a competitive market if the price is set above the equilibrium clearing price?",
+              "options": {
+                "A": "A market shortage develops",
+                "B": "A market surplus develops as quantity supplied exceeds quantity demanded",
+                "C": "Demand shifts to the right",
+                "D": "Supply shifts to the left"
+              },
+              "correct_option": "B",
+              "explanation": "At a price above equilibrium, producers supply more goods than consumers wish to purchase, creating an inventory surplus that puts downward pressure on price."
+            },
+            {
+              "id": 10312,
+              "question_number": 2,
+              "question": "If a 10% increase in price leads to a 20% decrease in quantity demanded, what is the absolute price elasticity of demand (PED)?",
+              "options": {
+                "A": "0.5 (Inelastic)",
+                "B": "1.0 (Unit Elastic)",
+                "C": "2.0 (Elastic)",
+                "D": "4.0 (Hyperbolic)"
+              },
+              "correct_option": "C",
+              "explanation": "PED = |-20% / +10%| = 2.0. Because |PED| > 1, demand is elastic."
+            },
+            {
+              "id": 10313,
+              "question_number": 3,
+              "question": "Which market structure is characterized by numerous firms selling identical homogeneous products with zero barriers to entry?",
+              "options": {
+                "A": "Monopoly",
+                "B": "Oligopoly",
+                "C": "Monopolistic Competition",
+                "D": "Perfect Competition"
+              },
+              "correct_option": "D",
+              "explanation": "In perfect competition, individual firms are price takers with zero market power because products are homogeneous and entry is frictionless."
+            },
+            {
+              "id": 10314,
+              "question_number": 4,
+              "question": "What is consumer surplus?",
+              "options": {
+                "A": "The extra profit manufacturers earn above production costs",
+                "B": "The difference between what consumers are willing to pay and the actual price paid",
+                "C": "Taxes collected by governments on consumer transactions",
+                "D": "The remaining goods left unsold at year end"
+              },
+              "correct_option": "B",
+              "explanation": "Consumer surplus is the economic gain enjoyed by buyers when they purchase a good for less than the maximum price they were willing to pay."
+            },
+            {
+              "id": 10315,
+              "question_number": 5,
+              "question": "If two goods are complementary goods (like coffee and sugar), what occurs when the price of coffee rises?",
+              "options": {
+                "A": "Demand for sugar increases",
+                "B": "Demand for sugar decreases",
+                "C": "Supply of coffee increases",
+                "D": "Demand for sugar remains unaffected"
+              },
+              "correct_option": "B",
+              "explanation": "Complementary goods are consumed together. An increase in coffee price reduces coffee consumption, thereby decreasing demand for sugar (negative cross-price elasticity)."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ECON_001",
+              "subject": "Economics & Finance",
+              "chapter": "Microeconomics",
+              "topic": "Supply, Demand & Price Elasticity",
+              "keywords": [
+                "economics",
+                "supply",
+                "demand",
+                "elasticity",
+                "equilibrium",
+                "market",
+                "monopoly",
+                "price"
+              ],
+              "definition": "Microeconomics analyzes decision-making by individual households, workers, and firms in allocating scarce resources.",
+              "formula_or_core_rule": "PED = (%ΔQd) / (%ΔP); Equilibrium occurs where Qd(P) = Qs(P).",
+              "worked_example": "If price rises from $10 to $11 (10% increase) and sales drop from 100 to 80 (20% decrease), PED = -2.0, meaning demand is price-elastic.",
+              "content": "Market equilibrium balances supply and demand. Elasticity determines tax incidence and revenue consequences when prices shift."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1032,
+          "chapter_order": 2,
+          "title": "Macroeconomics: GDP, Inflation & Monetary Policy",
+          "estimated_minutes": 16,
+          "summary": "Gross domestic product components, fiscal stimulus, central banking interest rates, and inflation targeting.",
+          "syllabus": [
+            "GDP Formula: Consumption + Investment + Government + Net Exports",
+            "Inflation Measurement: Consumer Price Index (CPI)",
+            "Central Banking: Open Market Operations & Reserve Rates",
+            "Fiscal Policy vs Monetary Policy Interventions"
+          ],
+          "core_formulas": [
+            "GDP = C + I + G + (X - M)",
+            "Quantity Theory of Money: M × V = P × Y",
+            "Real Interest Rate = Nominal Interest Rate - Inflation Rate (Fisher Equation)"
+          ],
+          "part1_title": "Measuring the Aggregate Economy: GDP and Inflation",
+          "part1_content": "Gross Domestic Product (GDP) quantifies the total monetary value of all finished goods and services produced within a country's borders during a specific period. Real GDP adjusts nominal GDP for inflation to gauge true output growth. Inflation is the persistent increase in aggregate price levels, commonly measured by the Consumer Price Index (CPI).",
+          "part2_title": "Monetary and Fiscal Counter-Cyclical Policy",
+          "part2_content": "Central banks govern monetary policy by adjusting benchmark interest rates and reserve requirements to stabilize price levels and employment. When inflation spikes, central banks raise rates to cool borrowing and demand. Governments conduct fiscal policy through taxation and public spending.",
+          "mcqs": [
+            {
+              "id": 10321,
+              "question_number": 1,
+              "question": "In the macroeconomic expenditure formula GDP = C + I + G + (X - M), what does 'I' represent?",
+              "options": {
+                "A": "Inflation rate",
+                "B": "Gross private domestic investment (business capital & housing)",
+                "C": "Interest rate payments",
+                "D": "Import tariffs"
+              },
+              "correct_option": "B",
+              "explanation": "Investment (I) includes business purchases of machinery, commercial structures, new residential construction, and inventory additions."
+            },
+            {
+              "id": 10322,
+              "question_number": 2,
+              "question": "What is the Fisher Equation relating nominal interest rate (i), real interest rate (r), and expected inflation (π)?",
+              "options": {
+                "A": "r = i - π",
+                "B": "r = i × π",
+                "C": "r = i + π",
+                "D": "r = π / i"
+              },
+              "correct_option": "A",
+              "explanation": "The real interest rate is the nominal interest rate minus the rate of inflation: r = i - π."
+            },
+            {
+              "id": 10323,
+              "question_number": 3,
+              "question": "When a central bank wants to combat surging inflation, which monetary policy action is standard?",
+              "options": {
+                "A": "Lower benchmark interest rates to encourage borrowing",
+                "B": "Raise benchmark interest rates to tighten credit and cool demand",
+                "C": "Print more currency banknotes",
+                "D": "Decrease commercial bank reserve requirements"
+              },
+              "correct_option": "B",
+              "explanation": "Higher interest rates increase borrowing costs, discouraging debt-financed consumption and investment, which moderates inflationary pressure."
+            },
+            {
+              "id": 10324,
+              "question_number": 4,
+              "question": "What is 'stagflation' in macroeconomic terms?",
+              "options": {
+                "A": "Simultaneous rapid economic growth with falling prices",
+                "B": "A combination of stagnant economic growth, high unemployment, and high inflation",
+                "C": "A balanced federal budget with zero debt",
+                "D": "Rapid depreciation of foreign exchange reserves"
+              },
+              "correct_option": "B",
+              "explanation": "Stagflation represents the difficult condition where slow output growth and elevated unemployment coexist with persistent inflation."
+            },
+            {
+              "id": 10325,
+              "question_number": 5,
+              "question": "What does the Quantity Theory of Money equation M × V = P × Y establish?",
+              "options": {
+                "A": "Money supply times velocity of circulation equals nominal output (Price level × Real GDP)",
+                "B": "Government debt equals taxes minus spending",
+                "C": "Exchange rate equals purchasing power parity",
+                "D": "Imports always equal exports over the long run"
+              },
+              "correct_option": "A",
+              "explanation": "M × V = P × Y states that the money stock multiplied by its velocity equals the aggregate price level times real GDP."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ECON_002",
+              "subject": "Economics & Finance",
+              "chapter": "Macroeconomics",
+              "topic": "GDP, Inflation & Central Bank Policy",
+              "keywords": [
+                "macroeconomics",
+                "gdp",
+                "inflation",
+                "cpi",
+                "central bank",
+                "interest rate",
+                "fiscal policy",
+                "monetary policy"
+              ],
+              "definition": "Macroeconomics studies economy-wide phenomena including national income, inflation, business cycles, and unemployment.",
+              "formula_or_core_rule": "GDP = C + I + G + NX; Real Rate r = i - Inflation; M·V = P·Y.",
+              "worked_example": "If a bank lends at 7% nominal interest and annual inflation is 3%, the real purchasing power return earned is 4%.",
+              "content": "Gross Domestic Product reflects overall economic health. Central banks manage liquidity and interest rates to pursue full employment and low, stable inflation."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1033,
+          "chapter_order": 3,
+          "title": "Financial Markets & Asset Valuation",
+          "estimated_minutes": 15,
+          "summary": "Time value of money, discounted cash flow (DCF), bonds, stock equities, and portfolio diversification.",
+          "syllabus": [
+            "Time Value of Money (PV & FV)",
+            "Discounted Cash Flow (DCF) Equity Valuation",
+            "Bond Yield to Maturity (YTM) & Duration",
+            "Modern Portfolio Theory & Diversification"
+          ],
+          "core_formulas": [
+            "Present Value (PV) = FV / (1 + r)^n",
+            "Future Value (FV) = PV × (1 + r)^n",
+            "Gordon Growth Model: Stock Price P0 = D1 / (r - g)"
+          ],
+          "part1_title": "The Time Value of Money (TVM)",
+          "part1_content": "A fundamental tenet of financial finance is that a dollar today is worth more than a dollar tomorrow due to its potential earning capacity and risk discount. The present value (PV) discounts anticipated future cash flows using an opportunity cost discount rate r across time periods n.",
+          "part2_title": "Valuation of Stocks, Bonds, and Risk",
+          "part2_content": "Bonds represent debt contracts paying periodic fixed coupons until returning principal at maturity; bond prices move inversely with market yields. Equities represent proportional ownership in corporate earnings, valued via discounted dividend or free cash flow models. Harry Markowitz's Modern Portfolio Theory proves that unsystematic risk can be minimized via non-correlated asset diversification.",
+          "mcqs": [
+            {
+              "id": 10331,
+              "question_number": 1,
+              "question": "What is the present value (PV) of $1,210 to be received 2 years from today at an annual discount interest rate of 10%?",
+              "options": {
+                "A": "$1,000",
+                "B": "$1,100",
+                "C": "$950",
+                "D": "$1,200"
+              },
+              "correct_option": "A",
+              "explanation": "PV = FV / (1 + r)^n = $1,210 / (1 + 0.10)² = $1,210 / 1.21 = $1,000."
+            },
+            {
+              "id": 10332,
+              "question_number": 2,
+              "question": "What is the relationship between bond market prices and prevailing market interest yields?",
+              "options": {
+                "A": "They move in lockstep in the same direction",
+                "B": "Inverse relationship: when yields rise, bond prices fall",
+                "C": "Bond prices remain fixed regardless of yield shifts",
+                "D": "Yields fluctuate only if the bond defaults"
+              },
+              "correct_option": "B",
+              "explanation": "Because existing bond coupon payments are fixed, higher market yields mean new bonds offer better returns, driving down the resale price of existing lower-coupon bonds."
+            },
+            {
+              "id": 10333,
+              "question_number": 3,
+              "question": "Using the Gordon Dividend Growth Model P0 = D1 / (r - g), what is the stock price if next year's dividend is $3, required return is 9%, and dividend growth rate is 3%?",
+              "options": {
+                "A": "$30",
+                "B": "$50",
+                "C": "$60",
+                "D": "$100"
+              },
+              "correct_option": "B",
+              "explanation": "P0 = 3 / (0.09 - 0.03) = 3 / 0.06 = $50."
+            },
+            {
+              "id": 10334,
+              "question_number": 4,
+              "question": "In Modern Portfolio Theory, which type of risk can be eliminated through broad asset diversification?",
+              "options": {
+                "A": "Systematic market-wide risk",
+                "B": "Unsystematic (firm-specific / idiosyncratic) risk",
+                "C": "Macroeconomic inflation risk",
+                "D": "Global interest rate risk"
+              },
+              "correct_option": "B",
+              "explanation": "Firm-specific risks (e.g., labor strikes or product failure) cancel out in a diversified basket of uncorrelated securities."
+            },
+            {
+              "id": 10335,
+              "question_number": 5,
+              "question": "What financial metric measures the volatility or sensitivity of an individual stock compared to the broader market index?",
+              "options": {
+                "A": "Alpha",
+                "B": "Beta (β)",
+                "C": "Sharpe Ratio",
+                "D": "Debt-to-Equity Ratio"
+              },
+              "correct_option": "B",
+              "explanation": "Beta reflects systematic market volatility: a beta of 1.0 moves in sync with the index, while a beta > 1.0 indicates higher volatility."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ECON_003",
+              "subject": "Economics & Finance",
+              "chapter": "Financial Markets",
+              "topic": "Time Value of Money & Portfolio Theory",
+              "keywords": [
+                "finance",
+                "valuation",
+                "time value of money",
+                "bonds",
+                "stocks",
+                "diversification",
+                "portfolio",
+                "present value"
+              ],
+              "definition": "Finance analyzes asset pricing, time value of money, risk management, and the optimal allocation of capital across investment opportunities.",
+              "formula_or_core_rule": "PV = FV / (1 + r)^n; Gordon Model: P = D1 / (r - g); CAPM: E(R) = Rf + β(Rm - Rf).",
+              "worked_example": "Discounting $1,000 receivable in 1 year at 8% yield: PV = 1,000 / 1.08 = $925.93.",
+              "content": "Investment evaluation rests on cash flow discounting, bond duration sensitivity, and asset diversification to minimize unsystematic volatility."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_env",
+      "subject_id": 104,
+      "name": "Environmental Science",
+      "slug": "environmental-science",
+      "icon_symbol": "🌿",
+      "color_hex": "#059669",
+      "category": "Earth & Life",
+      "description": "Ecology principles, climate thermodynamics, renewable energy technologies, and environmental conservation.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1041,
+          "chapter_order": 1,
+          "title": "Ecosystem Dynamics & Biodiversity",
+          "estimated_minutes": 15,
+          "summary": "Trophic energy pyramids, 10% rule, keystone species, biogeochemical cycles, and ecological succession.",
+          "syllabus": [
+            "Trophic Levels and Lindeman's 10% Energy Efficiency Rule",
+            "Carbon, Nitrogen, and Phosphorus Cycles",
+            "Keystone Species & Trophic Cascades",
+            "Primary and Secondary Ecological Succession"
+          ],
+          "core_formulas": [
+            "Net Primary Productivity (NPP) = Gross Primary Productivity (GPP) - Respiration (R)",
+            "Energy Transfer Efficiency: E_n+1 = 0.10 × E_n"
+          ],
+          "part1_title": "Energy Flow and Trophic Pyramids",
+          "part1_content": "Ecosystems function via unidirectional solar energy flow through trophic food webs. Primary producers fix solar radiation into chemical carbohydrates. According to Raymond Lindeman's 10% rule, only approximately 10% of energy at any trophic level is converted into biomass at the subsequent level, with 90% dissipated as metabolic heat.",
+          "part2_title": "Biogeochemical Cycles and Keystone Organisms",
+          "part2_content": "Elements essential to life cycle through biological and geological reservoirs. The nitrogen cycle converts atmospheric inert N2 into bioavailable ammonia and nitrates through nitrogen-fixing bacteria (Rhizobium). Keystone species exert disproportionate ecological control relative to their abundance; their removal precipitates catastrophic trophic cascades.",
+          "mcqs": [
+            {
+              "id": 10411,
+              "question_number": 1,
+              "question": "According to the ecological 10% rule, if primary producers contain 10,000 Joules of energy, how much energy is transferred to secondary consumers?",
+              "options": {
+                "A": "1,000 Joules",
+                "B": "100 Joules",
+                "C": "10 Joules",
+                "D": "500 Joules"
+              },
+              "correct_option": "B",
+              "explanation": "Primary consumers receive 10% of 10,000 J = 1,000 J. Secondary consumers receive 10% of 1,000 J = 100 J."
+            },
+            {
+              "id": 10412,
+              "question_number": 2,
+              "question": "Which bacteria genus form symbiotic root nodule relationships with legumes to fix atmospheric nitrogen gas?",
+              "options": {
+                "A": "Streptococcus",
+                "B": "Rhizobium",
+                "C": "Lactobacillus",
+                "D": "Escherichia"
+              },
+              "correct_option": "B",
+              "explanation": "Rhizobium bacteria fix N2 into ammonia (NH3) inside legume root nodules, providing plants with usable nitrogen."
+            },
+            {
+              "id": 10413,
+              "question_number": 3,
+              "question": "What is the ecological term for a species whose presence exerts foundational control over community structure?",
+              "options": {
+                "A": "Pioneer species",
+                "B": "Invasive species",
+                "C": "Keystone species",
+                "D": "Endemic species"
+              },
+              "correct_option": "C",
+              "explanation": "Keystone species (such as sea otters or gray wolves) play critical roles in sustaining biodiversity; removing them disrupts the entire trophic web."
+            },
+            {
+              "id": 10414,
+              "question_number": 4,
+              "question": "What is Net Primary Productivity (NPP)?",
+              "options": {
+                "A": "Total solar energy absorbed by Earth's atmosphere",
+                "B": "Energy captured by autotrophs minus energy lost to cellular respiration (GPP - R)",
+                "C": "Total biomass consumed by carnivores",
+                "D": "Amount of water transpired through tree canopies"
+              },
+              "correct_option": "B",
+              "explanation": "NPP = GPP - R, representing the organic biomass accumulated by plants that is actually available to herbivores."
+            },
+            {
+              "id": 10415,
+              "question_number": 5,
+              "question": "Where does primary ecological succession typically begin?",
+              "options": {
+                "A": "In a forest destroyed by a wildfire where soil remains intact",
+                "B": "On newly formed lifeless terrain without soil (e.g., bare volcanic basalt or retreating glaciers)",
+                "C": "In an abandoned farm pasture",
+                "D": "In a clearcut timber logging zone"
+              },
+              "correct_option": "B",
+              "explanation": "Primary succession begins on sterile substrates devoid of soil, where pioneer species like lichens and mosses gradually weather rock into soil."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ENV_001",
+              "subject": "Environmental Science",
+              "chapter": "Ecosystem Dynamics",
+              "topic": "Trophic Cascades & Biogeochemical Cycles",
+              "keywords": [
+                "environment",
+                "ecosystem",
+                "biodiversity",
+                "nitrogen cycle",
+                "keystone species",
+                "succession",
+                "trophic level",
+                "npp"
+              ],
+              "definition": "Ecology is the scientific analysis of interactions among biological organisms and their physical and chemical environment.",
+              "formula_or_core_rule": "NPP = GPP - Respiration; 10% Lindeman trophic transfer efficiency.",
+              "worked_example": "If a meadow generates 2,000 kcal/m²/yr of plant biomass, primary herbivores assimilate roughly 200 kcal/m²/yr.",
+              "content": "Ecosystem balance depends on nutrient cycling through air, water, and soil reservoirs, energy dissipation at each trophic tier, and biodiversity maintenance."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1042,
+          "chapter_order": 2,
+          "title": "Climate Change, Greenhouse Effect & Energy",
+          "estimated_minutes": 16,
+          "summary": "Radiative forcing, greenhouse gas absorption spectra, ocean acidification, and renewable transition.",
+          "syllabus": [
+            "Greenhouse Gas Absorption (CO2, CH4, N2O, H2O vapor)",
+            "Radiative Forcing and Albedo Feedback",
+            "Ocean Acidification Chemistry (Carbonic Acid Formation)",
+            "Renewable Energy Generation (Photovoltaic Solar, Wind, Geothermal)"
+          ],
+          "core_formulas": [
+            "Ocean Acidification: CO2 + H2O ⇌ H2CO3 ⇌ H+ + HCO3-",
+            "Solar Cell Efficiency = (P_max) / (Incident Solar Radiation × Area)",
+            "Wind Turbine Power = 0.5 × ρ × A × v³ (Betz limit = 59.3%)"
+          ],
+          "part1_title": "The Physics of the Greenhouse Effect",
+          "part1_content": "Earth absorbs incoming shortwave ultraviolet and visible solar radiation and radiates longwave infrared radiation back into space. Greenhouse gases such as carbon dioxide (CO2) and methane (CH4) possess asymmetric molecular bonds that vibrate upon absorbing infrared frequencies, re-radiating thermal energy downward and warming the lower troposphere.",
+          "part2_title": "Ocean Carbon Chemistry and Renewable Transition",
+          "part2_content": "Oceans absorb roughly 25-30% of anthropogenic CO2 emissions. Dissolved carbon dioxide forms carbonic acid, which dissociates into hydrogen ions that react with free carbonate ions, decreasing ocean pH and impairing calcification in corals and shellfish. The transition to solar photovoltaics, wind turbines, and energy storage is essential to de-carbonize energy grids.",
+          "mcqs": [
+            {
+              "id": 10421,
+              "question_number": 1,
+              "question": "Which greenhouse gas has a Global Warming Potential (GWP) roughly 28-36 times greater than CO2 over a 100-year timescale?",
+              "options": {
+                "A": "Nitrogen (N2)",
+                "B": "Methane (CH4)",
+                "C": "Argon (Ar)",
+                "D": "Oxygen (O2)"
+              },
+              "correct_option": "B",
+              "explanation": "Methane is significantly more potent at absorbing infrared radiation per mole than CO2, giving it a 100-year GWP around 28-36."
+            },
+            {
+              "id": 10422,
+              "question_number": 2,
+              "question": "What happens to seawater pH as it absorbs excess atmospheric carbon dioxide?",
+              "options": {
+                "A": "pH increases, becoming more alkaline",
+                "B": "pH decreases, becoming more acidic as carbonic acid forms",
+                "C": "pH remains perfectly constant at 7.0",
+                "D": "Salinity drops to zero"
+              },
+              "correct_option": "B",
+              "explanation": "CO2 reacts with water to form carbonic acid (H2CO3), releasing H+ ions that lower seawater pH, a process known as ocean acidification."
+            },
+            {
+              "id": 10423,
+              "question_number": 3,
+              "question": "According to the wind power equation P = 0.5 × ρ × A × v³, if the wind speed (v) doubles, by what factor does potential wind power increase?",
+              "options": {
+                "A": "2 times",
+                "B": "4 times",
+                "C": "8 times",
+                "D": "16 times"
+              },
+              "correct_option": "C",
+              "explanation": "Wind power is proportional to the cube of wind velocity (v³). If speed doubles (2v), the power increases by 2³ = 8 times."
+            },
+            {
+              "id": 10424,
+              "question_number": 4,
+              "question": "What is the maximum theoretical efficiency limit for any wind turbine rotor according to Betz's law?",
+              "options": {
+                "A": "100%",
+                "B": "59.3%",
+                "C": "42.5%",
+                "D": "25.0%"
+              },
+              "correct_option": "B",
+              "explanation": "Betz's law proves that no turbine rotor can capture more than 16/27 (approximately 59.3%) of the kinetic energy in wind."
+            },
+            {
+              "id": 10425,
+              "question_number": 5,
+              "question": "How does the melting of Arctic sea ice amplify global warming through positive feedback?",
+              "options": {
+                "A": "White reflective ice is replaced by dark ocean water, lowering surface albedo and absorbing more solar heat",
+                "B": "Cold water causes oceanic volcanic eruptions",
+                "C": "Melted ice decreases total sea level",
+                "D": "Sublimation destroys oxygen molecules"
+              },
+              "correct_option": "A",
+              "explanation": "Ice-albedo feedback occurs because bright white sea ice reflects up to 85% of solar radiation, while exposed dark seawater absorbs 90%, heating the water and driving further melt."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ENV_002",
+              "subject": "Environmental Science",
+              "chapter": "Climate Science",
+              "topic": "Greenhouse Effect & Ocean Acidification",
+              "keywords": [
+                "climate",
+                "greenhouse gas",
+                "methane",
+                "co2",
+                "ocean acidification",
+                "renewable",
+                "solar",
+                "wind power",
+                "albedo"
+              ],
+              "definition": "Radiative forcing is the net change in the energy balance of the Earth system due to an external perturbation such as greenhouse gas emissions.",
+              "formula_or_core_rule": "Wind Power P = 0.5·ρ·A·v³; Betz Limit = 59.3%; Ocean: CO2 + H2O -> H2CO3 -> H+ + HCO3-.",
+              "worked_example": "Doubling wind velocity from 5 m/s to 10 m/s increases extracted kinetic power by 2³ = 8 times.",
+              "content": "Anthropogenic greenhouse gas emissions alter the planet's thermal equilibrium, triggering ice-albedo positive feedbacks, sea level rise, and marine calcification stress."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_net",
+      "subject_id": 105,
+      "name": "Computer Networks",
+      "slug": "computer-networks",
+      "icon_symbol": "🌐",
+      "color_hex": "#0284C7",
+      "category": "Computer Science",
+      "description": "Architectures, protocols, routing algorithms, transport layer flow control, and internet security.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1051,
+          "chapter_order": 1,
+          "title": "Network Models: OSI & TCP/IP",
+          "estimated_minutes": 15,
+          "summary": "The 7 layers of OSI, TCP/IP four-layer stack, packet encapsulation, and addressing paradigms.",
+          "syllabus": [
+            "7-Layer OSI Model vs 4-Layer TCP/IP Model",
+            "Data Encapsulation: Frame, Packet, Segment, Message",
+            "Physical & Data Link: MAC Address and CSMA/CD",
+            "Network Layer: IPv4 vs IPv6 Addressing & Subnetting"
+          ],
+          "core_formulas": [
+            "Usable IPv4 Host Addresses = 2^(32 - Prefix Length) - 2",
+            "Transmission Delay = Packet Size (L) / Bandwidth (R)",
+            "Propagation Delay = Distance (d) / Propagation Speed (s)"
+          ],
+          "part1_title": "Layered Architecture and Encapsulation",
+          "part1_content": "Computer networks rely on modular layered protocols. The OSI reference model defines 7 distinct layers: Physical, Data Link, Network, Transport, Session, Presentation, and Application. During transmission, data moves down the stack, prepending layer-specific headers (encapsulation). At the receiver, headers are processed and stripped (decapsulation).",
+          "part2_title": "Addressing and Subnetting Fundamentals",
+          "part2_content": "Data Link frames use 48-bit physical MAC addresses, while Network packets route via 32-bit IPv4 or 128-bit IPv6 addresses. Classless Inter-Domain Routing (CIDR) uses prefix masking (e.g., /24) to partition addresses into network and host bits. The total delay experienced by a packet comprises nodal processing, queuing, transmission, and propagation delays.",
+          "mcqs": [
+            {
+              "id": 10511,
+              "question_number": 1,
+              "question": "Which layer of the OSI model is responsible for logical end-to-end routing of packets across internetworks?",
+              "options": {
+                "A": "Data Link Layer",
+                "B": "Network Layer (Layer 3)",
+                "C": "Transport Layer",
+                "D": "Session Layer"
+              },
+              "correct_option": "B",
+              "explanation": "The Network Layer manages IP addressing and selects paths across intermediate networks via routing protocols."
+            },
+            {
+              "id": 10512,
+              "question_number": 2,
+              "question": "How many usable host IP addresses are available in a /26 IPv4 subnet?",
+              "options": {
+                "A": "64",
+                "B": "62",
+                "C": "30",
+                "D": "128"
+              },
+              "correct_option": "B",
+              "explanation": "A /26 mask leaves 32 - 26 = 6 host bits. Total addresses = 2^6 = 64. Subtracting network and broadcast addresses yields 64 - 2 = 62 usable host IPs."
+            },
+            {
+              "id": 10513,
+              "question_number": 3,
+              "question": "What is the Protocol Data Unit (PDU) at the Transport layer called when using TCP?",
+              "options": {
+                "A": "Frame",
+                "B": "Packet",
+                "C": "Segment",
+                "D": "Bit"
+              },
+              "correct_option": "C",
+              "explanation": "PDUs are termed Bits (Physical), Frames (Data Link), Packets (Network), Segments (Transport/TCP), or Datagrams (UDP)."
+            },
+            {
+              "id": 10514,
+              "question_number": 4,
+              "question": "Which formula calculates the packet transmission delay when sending a packet of size L bits over a link with transmission rate R bps?",
+              "options": {
+                "A": "L × R",
+                "B": "L / R",
+                "C": "R / L",
+                "D": "d / s"
+              },
+              "correct_option": "B",
+              "explanation": "Transmission delay is the time required to push all packet bits onto the wire: L / R."
+            },
+            {
+              "id": 10515,
+              "question_number": 5,
+              "question": "What bit length is used for standard physical Ethernet MAC hardware addresses?",
+              "options": {
+                "A": "32 bits",
+                "B": "48 bits (6 bytes)",
+                "C": "64 bits",
+                "D": "128 bits"
+              },
+              "correct_option": "B",
+              "explanation": "MAC addresses are 48 bits long, represented as 12 hexadecimal digits (e.g., 00:1A:2B:3C:4D:5E)."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "NET_001",
+              "subject": "Computer Networks",
+              "chapter": "Network Models",
+              "topic": "OSI & TCP/IP Layering & Subnetting",
+              "keywords": [
+                "networks",
+                "osi model",
+                "tcp/ip",
+                "subnetting",
+                "packet",
+                "segment",
+                "mac address",
+                "delay"
+              ],
+              "definition": "Network layering decouples communication into modular hierarchical abstractions from physical bit transmission to high-level application protocols.",
+              "formula_or_core_rule": "Transmission Delay = L/R; Hosts = 2^(32 - mask) - 2.",
+              "worked_example": "A 1 Megabyte file (8,000,000 bits) on a 10 Mbps link takes 8,000,000 / 10,000,000 = 0.8 seconds transmission time.",
+              "content": "The TCP/IP suite forms the foundation of modern internet communication, routing data packets between source and destination IP addresses."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1052,
+          "chapter_order": 2,
+          "title": "Transport & Application Protocols: TCP, UDP & DNS",
+          "estimated_minutes": 16,
+          "summary": "Three-way handshake, TCP flow and congestion control, UDP datagrams, DNS resolution, and HTTP/HTTPS.",
+          "syllabus": [
+            "TCP 3-Way Handshake (SYN, SYN-ACK, ACK)",
+            "Flow Control: Sliding Window Protocol",
+            "TCP Congestion Control: AIMD, Slow Start, Fast Recovery",
+            "DNS Hierarchy & Root Servers, HTTP/1.1 vs HTTP/2 vs HTTP/3"
+          ],
+          "core_formulas": [
+            "Bandwidth-Delay Product (BDP) = Bandwidth × Round Trip Time (RTT)",
+            "TCP Throughput ≈ 1.22 × MSS / (RTT × √Loss Rate)"
+          ],
+          "part1_title": "Transport Layer: TCP Reliability vs UDP Low Latency",
+          "part1_content": "The Transport layer coordinates process-to-process communication using 16-bit port numbers. TCP is connection-oriented, establishing sessions through a three-way handshake (SYN, SYN-ACK, ACK). It ensures ordered, reliable delivery via sequence numbers, checksums, and retransmissions. In contrast, UDP is lightweight and connectionless, favored for real-time gaming, VoIP, and streaming where speed surpasses perfection.",
+          "part2_title": "Congestion Control and DNS Resolution",
+          "part2_content": "TCP adapts to network buffer limits using congestion control algorithms (Slow Start exponential growth, followed by Congestion Avoidance additive increase/multiplicative decrease). In the application layer, the Domain Name System (DNS) operates as a distributed hierarchical database translating human-friendly domain names (e.g. synapse.ai) into numerical IP addresses via recursive and authoritative lookups.",
+          "mcqs": [
+            {
+              "id": 10521,
+              "question_number": 1,
+              "question": "What sequence of packet flags establishes a standard TCP connection?",
+              "options": {
+                "A": "ACK, SYN, FIN",
+                "B": "SYN, SYN-ACK, ACK",
+                "C": "RST, SYN, ACK",
+                "D": "HELLO, READY, GO"
+              },
+              "correct_option": "B",
+              "explanation": "TCP establishes a reliable connection using the three-way handshake: Client sends SYN, Server replies SYN-ACK, and Client acknowledges with ACK."
+            },
+            {
+              "id": 10522,
+              "question_number": 2,
+              "question": "Why is UDP preferred over TCP for live video calls and online multiplayer gaming?",
+              "options": {
+                "A": "UDP automatically encrypts all payload data",
+                "B": "UDP avoids connection establishment and retransmission delays, prioritizing low latency",
+                "C": "UDP guarantees packet delivery without loss",
+                "D": "UDP runs exclusively on fiber optic cables"
+              },
+              "correct_option": "B",
+              "explanation": "UDP eliminates handshake overhead, acknowledgments, and head-of-line blocking retransmissions, minimizing packet delivery delay."
+            },
+            {
+              "id": 10523,
+              "question_number": 3,
+              "question": "What is the primary role of DNS (Domain Name System)?",
+              "options": {
+                "A": "Assign MAC addresses to Ethernet cards",
+                "B": "Translate human-readable domain names into numerical IP addresses",
+                "C": "Filter spam emails",
+                "D": "Encrypt HTTP web traffic"
+              },
+              "correct_option": "B",
+              "explanation": "DNS acts as the internet's phonebook, mapping domain names like google.com to routable IP addresses like 142.250.190.46."
+            },
+            {
+              "id": 10524,
+              "question_number": 4,
+              "question": "What congestion control mechanism causes TCP to halve its congestion window upon experiencing packet loss?",
+              "options": {
+                "A": "Multiplicative Decrease",
+                "B": "Additive Increase",
+                "C": "Slow Start",
+                "D": "Selective Acknowledgement"
+              },
+              "correct_option": "A",
+              "explanation": "In AIMD (Additive Increase Multiplicative Decrease), the window grows linearly by 1 MSS per RTT until packet loss occurs, when it cuts the window in half."
+            },
+            {
+              "id": 10525,
+              "question_number": 5,
+              "question": "Which port does secure HTTPS web traffic use by default?",
+              "options": {
+                "A": "Port 80",
+                "B": "Port 22",
+                "C": "Port 443",
+                "D": "Port 53"
+              },
+              "correct_option": "C",
+              "explanation": "HTTPS runs over TLS/SSL encryption on standard TCP port 443, whereas unencrypted HTTP operates on port 80."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "NET_002",
+              "subject": "Computer Networks",
+              "chapter": "Transport & Application Protocols",
+              "topic": "TCP Handshake, Congestion & DNS",
+              "keywords": [
+                "tcp",
+                "udp",
+                "handshake",
+                "dns",
+                "https",
+                "congestion control",
+                "ports",
+                "flow control"
+              ],
+              "definition": "TCP is a reliable, byte-stream connection-oriented transport protocol, while UDP is a minimal, datagram-oriented connectionless protocol.",
+              "formula_or_core_rule": "Bandwidth-Delay Product (BDP) = Bandwidth × RTT; AIMD congestion dynamics.",
+              "worked_example": "A 100 Mbps link with 50 ms RTT has BDP = 100,000,000 × 0.05 = 5,000,000 bits (625 KB buffer needed in flight).",
+              "content": "Transport layer mechanisms guarantee packet ordering, retransmit lost data, prevent network buffer collapse, and route application traffic to specific ports."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_sec",
+      "subject_id": 106,
+      "name": "Cyber Security",
+      "slug": "cyber-security",
+      "icon_symbol": "🛡️",
+      "color_hex": "#DC2626",
+      "category": "Computer Science",
+      "description": "Cryptographic algorithms, threat modeling, network defense, penetration testing, and Zero Trust architectures.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1061,
+          "chapter_order": 1,
+          "title": "Cryptography & Authentication",
+          "estimated_minutes": 16,
+          "summary": "Symmetric vs asymmetric encryption, cryptographic hashing (SHA-256), digital signatures, and public key infrastructure (PKI).",
+          "syllabus": [
+            "CIA Triad: Confidentiality, Integrity, Availability",
+            "Symmetric Ciphers: AES-GCM and Block Chipher Modes",
+            "Asymmetric Cryptography: RSA, Diffie-Hellman, ECC",
+            "Hashing Algorithms (SHA-256, HMAC) & Digital Certificates (X.509)"
+          ],
+          "core_formulas": [
+            "RSA Key Generation: n = p × q, φ(n) = (p - 1)(q - 1), e · d ≡ 1 (mod φ(n))",
+            "Encryption: C ≡ M^e (mod n); Decryption: M ≡ C^d (mod n)",
+            "Entropy: H(X) = - Σ p(x) log2 p(x)"
+          ],
+          "part1_title": "The CIA Triad and Encryption Foundations",
+          "part1_content": "Information security centers on the CIA triad: Confidentiality (preventing unauthorized disclosure), Integrity (safeguarding data against tampering), and Availability (ensuring authorized access). Symmetric encryption uses identical shared keys for encryption and decryption (e.g. AES-256), achieving high throughput.",
+          "part2_title": "Asymmetric Cryptography and Digital Signatures",
+          "part2_content": "Asymmetric cryptography utilizes mathematically coupled key pairs: a public key for encryption and a private key for decryption. Digital signatures invert this: the sender signs a cryptographic hash of the message with their private key, and recipients verify authenticity using the sender's public key.",
+          "mcqs": [
+            {
+              "id": 10611,
+              "question_number": 1,
+              "question": "What three core security objectives constitute the CIA Triad?",
+              "options": {
+                "A": "Control, Identification, Access",
+                "B": "Confidentiality, Integrity, Availability",
+                "C": "Cryptography, Inspection, Auditing",
+                "D": "Certificate, Identity, Authorization"
+              },
+              "correct_option": "B",
+              "explanation": "Confidentiality, Integrity, and Availability form the foundational model of information security architecture."
+            },
+            {
+              "id": 10612,
+              "question_number": 2,
+              "question": "Which encryption standard is widely used globally as a fast symmetric block cipher with key lengths of 128, 192, or 256 bits?",
+              "options": {
+                "A": "RSA",
+                "B": "AES (Advanced Encryption Standard)",
+                "C": "MD5",
+                "D": "Diffie-Hellman"
+              },
+              "correct_option": "B",
+              "explanation": "AES is the standardized symmetric cipher approved by NIST, providing robust security with low computational overhead."
+            },
+            {
+              "id": 10613,
+              "question_number": 3,
+              "question": "What property of a cryptographic hash function guarantees that finding two distinct inputs producing the identical output is computationally infeasible?",
+              "options": {
+                "A": "Collision resistance",
+                "B": "Reversibility",
+                "C": "Commutativity",
+                "D": "Linearity"
+              },
+              "correct_option": "A",
+              "explanation": "Collision resistance ensures that an attacker cannot generate two different plaintext messages that yield the exact same hash output."
+            },
+            {
+              "id": 10614,
+              "question_number": 4,
+              "question": "In asymmetric public-key cryptography, how does Alice verify a digital signature authored by Bob?",
+              "options": {
+                "A": "Using Alice's private key",
+                "B": "Using Bob's public key",
+                "C": "Using Bob's private key",
+                "D": "Using a shared secret passphrase"
+              },
+              "correct_option": "B",
+              "explanation": "Bob creates the signature with his secret private key; anyone can verify the signature using Bob's publicly distributed public key."
+            },
+            {
+              "id": 10615,
+              "question_number": 5,
+              "question": "Why is salt added to passwords before cryptographic hashing?",
+              "options": {
+                "A": "To compress the password into fewer bytes",
+                "B": "To prevent precomputed rainbow table attacks and defend identical passwords",
+                "C": "To allow the server to easily recover forgotten passwords",
+                "D": "To speed up user login time"
+              },
+              "correct_option": "B",
+              "explanation": "A cryptographic salt is unique random data appended to a password before hashing, rendering precomputed rainbow tables useless and ensuring duplicate passwords produce different hashes."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "SEC_001",
+              "subject": "Cyber Security",
+              "chapter": "Cryptography & Authentication",
+              "topic": "Symmetric vs Asymmetric Encryption & PKI",
+              "keywords": [
+                "security",
+                "cryptography",
+                "aes",
+                "rsa",
+                "hash",
+                "sha-256",
+                "digital signature",
+                "cia triad"
+              ],
+              "definition": "Cryptography is the discipline of securing data in transit and at rest through mathematical transformation into ciphertext.",
+              "formula_or_core_rule": "RSA: C = M^e mod n; M = C^d mod n; Hash collision resistance: H(m1) != H(m2) for m1 != m2.",
+              "worked_example": "A website's TLS certificate binds its public key to its domain name, validated by a trusted root Certificate Authority (CA).",
+              "content": "Modern cybersecurity relies on hybrid cryptosystems: asymmetric key exchange (RSA/ECDH) to agree on a session key, followed by symmetric AES for fast bulk data encryption."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1062,
+          "chapter_order": 2,
+          "title": "Threat Landscape & Defensive Architecture",
+          "estimated_minutes": 15,
+          "summary": "Common web attacks (SQLi, XSS, CSRF), network intrusion, Zero Trust architecture, and firewalls.",
+          "syllabus": [
+            "OWASP Top 10: SQL Injection, Cross-Site Scripting (XSS), CSRF",
+            "Network Threats: DDoS, Man-in-the-Middle (MitM), Phishing",
+            "Zero Trust Philosophy: Never Trust, Always Verify",
+            "Firewalls (Stateful & WAF), IDS/IPS, and Endpoint Detection (EDR)"
+          ],
+          "core_formulas": [
+            "Risk = Likelihood × Impact",
+            "Mean Time to Detect (MTTD) & Mean Time to Remediate (MTTR)"
+          ],
+          "part1_title": "Web Application Vulnerabilities (OWASP)",
+          "part1_content": "Web applications frequently succumb to injection flaws when untrusted user input is directly concatenated into database queries (SQL Injection). Prepared statements with parameterized queries sanitize inputs to remediate this vulnerability. Cross-Site Scripting (XSS) occurs when malicious JavaScript is injected into web pages viewed by other users.",
+          "part2_title": "Defensive Architecture and Zero Trust",
+          "part2_content": "Traditional perimeter defenses relied on castle-and-moat models. Modern security champions the Zero Trust architecture, founded on three core principles: Verify explicitly, Use least-privilege access, and Assume breach. Stateful inspection firewalls and Web Application Firewalls (WAF) inspect traffic payloads.",
+          "mcqs": [
+            {
+              "id": 10621,
+              "question_number": 1,
+              "question": "What is the primary mitigation against SQL Injection vulnerabilities in software development?",
+              "options": {
+                "A": "Installing more RAM on the database server",
+                "B": "Using Parameterized Queries and Prepared Statements",
+                "C": "Restricting database connections to daytime hours",
+                "D": "Compressing database backup files"
+              },
+              "correct_option": "B",
+              "explanation": "Parameterized queries treat user input strictly as literals rather than executable SQL code, preventing injection."
+            },
+            {
+              "id": 10622,
+              "question_number": 2,
+              "question": "Which attack injects malicious executable JavaScript scripts into legitimate websites to steal session cookies?",
+              "options": {
+                "A": "Cross-Site Scripting (XSS)",
+                "B": "Buffer Overflow",
+                "C": "Denial of Service (DoS)",
+                "D": "ARP Poisoning"
+              },
+              "correct_option": "A",
+              "explanation": "XSS attacks execute arbitrary script code within victim browsers, stealing tokens, cookies, or redirecting users."
+            },
+            {
+              "id": 10623,
+              "question_number": 3,
+              "question": "What is the foundational mantra of the Zero Trust security model?",
+              "options": {
+                "A": "Trust internal intranet users, verify external visitors",
+                "B": "Never trust, always verify",
+                "C": "Encrypt only financial transactions",
+                "D": "Perimeter firewalls are completely impervious"
+              },
+              "correct_option": "B",
+              "explanation": "Zero Trust eliminates implicit trust from any entity regardless of its location inside or outside the network."
+            },
+            {
+              "id": 10624,
+              "question_number": 4,
+              "question": "What type of attack coordinates thousands of compromised IoT botnet computers to overwhelm a web server with traffic?",
+              "options": {
+                "A": "Distributed Denial of Service (DDoS)",
+                "B": "Man-in-the-Middle (MitM)",
+                "C": "Phishing",
+                "D": "Privilege Escalation"
+              },
+              "correct_option": "A",
+              "explanation": "DDoS floods target servers with bogus request floods from thousands of distributed botnets, exhausting bandwidth and compute capacity."
+            },
+            {
+              "id": 10625,
+              "question_number": 5,
+              "question": "What security principle mandates that users, processes, and programs should be granted only the minimal permissions necessary to perform their tasks?",
+              "options": {
+                "A": "Principle of Least Privilege (PoLP)",
+                "B": "Security through Obscurity",
+                "C": "Open Door Policy",
+                "D": "Defense in Isolation"
+              },
+              "correct_option": "A",
+              "explanation": "The Principle of Least Privilege limits access rights for users to only what is strictly required, shrinking the blast radius of any compromise."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "SEC_002",
+              "subject": "Cyber Security",
+              "chapter": "Threat Landscape & Defense",
+              "topic": "OWASP Attacks & Zero Trust Architecture",
+              "keywords": [
+                "security",
+                "owasp",
+                "sql injection",
+                "xss",
+                "zero trust",
+                "firewall",
+                "least privilege",
+                "ddos"
+              ],
+              "definition": "Zero Trust is a security paradigm that requires all users and devices, whether inside or outside the corporate perimeter, to be continuously authenticated and validated.",
+              "formula_or_core_rule": "Risk = Likelihood × Impact; Principle of Least Privilege (PoLP).",
+              "worked_example": "Preventing SQL injection by substituting `SELECT * FROM users WHERE id = ' + input` with a prepared statement `SELECT * FROM users WHERE id = ?`.",
+              "content": "Effective cyberdefense integrates perimeter inspection, parameterized input sanitization, multi-factor authentication (MFA), and micro-segmentation."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_psych",
+      "subject_id": 107,
+      "name": "Psychology",
+      "slug": "psychology",
+      "icon_symbol": "🧠",
+      "color_hex": "#8B5CF6",
+      "category": "Behavioral Science",
+      "description": "Cognitive psychology, neuroscience, developmental stages, learning theories, and abnormal psychology.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1071,
+          "chapter_order": 1,
+          "title": "Cognitive Psychology & Memory Systems",
+          "estimated_minutes": 15,
+          "summary": "Information processing model, sensory, working and long-term memory, encoding, and cognitive biases.",
+          "syllabus": [
+            "Atkinson-Shiffrin Multi-Store Memory Model",
+            "Working Memory Model (Baddeley & Hitch)",
+            "Explicit (Episodic/Semantic) vs Implicit (Procedural) Memory",
+            "Cognitive Biases: Confirmation Bias, Heuristics, Availability"
+          ],
+          "core_formulas": [
+            "Miller's Magic Number: 7 ± 2 chunks in short-term memory",
+            "Ebbinghaus Forgetting Curve: R = e^(-t/S)"
+          ],
+          "part1_title": "The Multi-Store Model of Human Memory",
+          "part1_content": "Cognitive psychology studies mental operations such as perception, reasoning, attention, and memory storage. The Atkinson-Shiffrin model divides memory into three stores: Sensory Memory (fleeting perceptual impressions), Short-Term Memory (limited capacity: 7 ± 2 items), and Long-Term Memory (virtually unlimited capacity, persistent encoding).",
+          "part2_title": "Working Memory and Cognitive Biases",
+          "part2_content": "Alan Baddeley expanded short-term memory into a multi-component Working Memory system comprising the Central Executive, Phonological Loop, and Visuospatial Sketchpad. Human cognition frequently relies on mental shortcuts (heuristics). These shortcuts can produce systematic cognitive biases, such as confirmation bias (favoring evidence that confirms pre-existing beliefs).",
+          "mcqs": [
+            {
+              "id": 10711,
+              "question_number": 1,
+              "question": "What is the capacity limit of short-term memory identified by psychologist George Miller?",
+              "options": {
+                "A": "3 ± 1 items",
+                "B": "7 ± 2 items",
+                "C": "12 ± 3 items",
+                "D": "Unlimited items"
+              },
+              "correct_option": "B",
+              "explanation": "George Miller published research demonstrating that short-term memory span is roughly 7 ± 2 chunks of information."
+            },
+            {
+              "id": 10712,
+              "question_number": 2,
+              "question": "Which memory system stores personal autobiographical life experiences and specific events?",
+              "options": {
+                "A": "Semantic Memory",
+                "B": "Episodic Memory",
+                "C": "Procedural Memory",
+                "D": "Sensory Memory"
+              },
+              "correct_option": "B",
+              "explanation": "Episodic memory stores autobiographical events (times, places, associated emotions) that can be explicitly recollected."
+            },
+            {
+              "id": 10713,
+              "question_number": 3,
+              "question": "What cognitive bias describes the tendency to search for, interpret, and recall information in a way that confirms prior beliefs?",
+              "options": {
+                "A": "Availability heuristic",
+                "B": "Confirmation bias",
+                "C": "Hindsight bias",
+                "D": "Anchoring effect"
+              },
+              "correct_option": "B",
+              "explanation": "Confirmation bias leads people to seek out and credit confirming evidence while ignoring disconfirming data."
+            },
+            {
+              "id": 10714,
+              "question_number": 4,
+              "question": "What does the Ebbinghaus Forgetting Curve demonstrate about unrehearsed retention over time?",
+              "options": {
+                "A": "Memory retention declines exponentially within the first few hours and days, then plateaus",
+                "B": "Memory increases linearly over time",
+                "C": "Information is retained permanently without degradation",
+                "D": "Forgetting occurs strictly in sleep cycles"
+              },
+              "correct_option": "A",
+              "explanation": "Hermann Ebbinghaus discovered that memory retention drops sharply shortly after learning, but spaced repetition flattens the curve."
+            },
+            {
+              "id": 10715,
+              "question_number": 5,
+              "question": "In Baddeley's Working Memory model, which component coordinates attention and manages subordinate slave systems?",
+              "options": {
+                "A": "Phonological Loop",
+                "B": "Visuospatial Sketchpad",
+                "C": "Central Executive",
+                "D": "Episodic Buffer"
+              },
+              "correct_option": "C",
+              "explanation": "The Central Executive acts as the attentional supervisory controller allocating mental resources between auditory and visual slave systems."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "PSY_001",
+              "subject": "Psychology",
+              "chapter": "Cognitive Psychology",
+              "topic": "Memory Architecture & Cognitive Biases",
+              "keywords": [
+                "psychology",
+                "memory",
+                "cognitive",
+                "working memory",
+                "confirmation bias",
+                "ebbinghaus",
+                "episodic",
+                "heuristic"
+              ],
+              "definition": "Cognitive psychology is the scientific study of human mental processes including attention, memory, problem-solving, and decision-making.",
+              "formula_or_core_rule": "Miller's capacity: 7 ± 2 chunks; Ebbinghaus decay: R = e^(-t/S); Spaced repetition strengthens retention.",
+              "worked_example": "Chunking phone numbers into groups of 3 and 4 digits transforms 10 isolated digits into 3 manageable chunks in working memory.",
+              "content": "Human memory encodes information through sensory, working, and long-term stores. Retention declines exponentially unless reinforced via spaced retrieval practice."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1072,
+          "chapter_order": 2,
+          "title": "Learning Theories & Behavioral Conditioning",
+          "estimated_minutes": 14,
+          "summary": "Classical conditioning (Pavlov), operant conditioning (Skinner), reinforcement schedules, and social learning.",
+          "syllabus": [
+            "Classical Conditioning: UCS, UCR, CS, CR",
+            "Operant Conditioning: Positive/Negative Reinforcement & Punishment",
+            "Schedules of Reinforcement: Fixed/Variable Ratio/Interval",
+            "Bandura's Social Learning Theory & Bobo Doll Experiment"
+          ],
+          "core_formulas": [
+            "Reinforcement = Increases target behavior frequency",
+            "Punishment = Decreases target behavior frequency",
+            "Variable Ratio Schedule -> Highest rate of steady responding, most resistant to extinction"
+          ],
+          "part1_title": "Classical Conditioning (Pavlovian Association)",
+          "part1_content": "Ivan Pavlov discovered classical conditioning when experimenting with canine salivation. In this paradigm, an unconditioned stimulus (UCS, like meat powder) naturally elicits an unconditioned response (UCR, salivation). When repeatedly paired with a neutral conditioned stimulus (CS, a bell tone), the subject forms an associative link so the CS alone triggers a conditioned response (CR).",
+          "part2_title": "Operant Conditioning and Observational Learning",
+          "part2_content": "B.F. Skinner developed operant conditioning, which explains how behavior is shaped by its consequences. Reinforcement increases the probability of a behavior recurring, whereas punishment decreases it. Variable ratio schedules (like slot machines) produce the highest response rates. Albert Bandura demonstrated that humans also learn by observing models (observational social learning).",
+          "mcqs": [
+            {
+              "id": 10721,
+              "question_number": 1,
+              "question": "In Pavlov's classic canine experiment, what was the metronome or bell before conditioning took place?",
+              "options": {
+                "A": "Unconditioned Stimulus (UCS)",
+                "B": "Conditioned Response (CR)",
+                "C": "Neutral Stimulus (NS)",
+                "D": "Negative Reinforcer"
+              },
+              "correct_option": "C",
+              "explanation": "Before being paired with food, the bell tone was a neutral stimulus that did not evoke salivation."
+            },
+            {
+              "id": 10722,
+              "question_number": 2,
+              "question": "In operant conditioning, what is 'negative reinforcement'?",
+              "options": {
+                "A": "Administering an unpleasant shock to suppress behavior",
+                "B": "Removing or preventing an aversive stimulus to strengthen a desired behavior",
+                "C": "Ignoring a behavior until it goes extinct",
+                "D": "Taking away a privileged toy as punishment"
+              },
+              "correct_option": "B",
+              "explanation": "Reinforcement always strengthens behavior. Negative reinforcement does so by removing an unpleasant condition (e.g., buckling a seatbelt to silence a buzzer)."
+            },
+            {
+              "id": 10723,
+              "question_number": 3,
+              "question": "Which schedule of partial reinforcement produces the highest response rates and the greatest resistance to extinction?",
+              "options": {
+                "A": "Fixed Interval",
+                "B": "Variable Interval",
+                "C": "Fixed Ratio",
+                "D": "Variable Ratio (e.g. gambling/slot machines)"
+              },
+              "correct_option": "D",
+              "explanation": "Variable ratio schedules deliver rewards after an unpredictable number of responses, fostering persistent engagement."
+            },
+            {
+              "id": 10724,
+              "question_number": 4,
+              "question": "Which landmark experiment by Albert Bandura highlighted observational learning and modeling of aggressive behaviors in children?",
+              "options": {
+                "A": "Stanford Prison Experiment",
+                "B": "Bobo Doll Experiment",
+                "C": "Little Albert Study",
+                "D": "Asch Conformity Experiment"
+              },
+              "correct_option": "B",
+              "explanation": "In the Bobo doll experiment, children who watched an adult model beat an inflatable doll later mimicked that aggression."
+            },
+            {
+              "id": 10725,
+              "question_number": 5,
+              "question": "What occurs during 'extinction' in classical conditioning?",
+              "options": {
+                "A": "The conditioned stimulus (CS) is presented repeatedly without the unconditioned stimulus (UCS), causing the conditioned response (CR) to fade",
+                "B": "The animal forgets all sensory input permanently",
+                "C": "The response strengthens uncontrollably",
+                "D": "The subject undergoes biological fatigue"
+              },
+              "correct_option": "A",
+              "explanation": "Extinction occurs when the conditioned stimulus is repeatedly encountered without reinforcement, decoupling the association."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "PSY_002",
+              "subject": "Psychology",
+              "chapter": "Learning Theories",
+              "topic": "Classical & Operant Conditioning",
+              "keywords": [
+                "psychology",
+                "pavlov",
+                "skinner",
+                "operant conditioning",
+                "reinforcement",
+                "classical conditioning",
+                "bandura"
+              ],
+              "definition": "Behaviorism is a theoretical perspective that focuses on objectively observable behaviors shaped by environmental stimuli and conditioning histories.",
+              "formula_or_core_rule": "Reinforcement -> Increases behavior; Punishment -> Decreases behavior; Variable Ratio yields highest persistence.",
+              "worked_example": "A student studying to avoid poor grades illustrates negative reinforcement (avoiding a negative outcome).",
+              "content": "Behavioral conditioning illustrates how associative learning and consequence schedules modify organism responses across animal and human species."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_biz",
+      "subject_id": 108,
+      "name": "Business Management",
+      "slug": "business-management",
+      "icon_symbol": "💼",
+      "color_hex": "#F59E0B",
+      "category": "Commerce & Management",
+      "description": "Strategic frameworks, marketing mix, organizational leadership, and financial operations.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1081,
+          "chapter_order": 1,
+          "title": "Strategic Frameworks & Market Positioning",
+          "estimated_minutes": 15,
+          "summary": "SWOT, Porter's Five Forces, Blue Ocean Strategy, and competitive advantage principles.",
+          "syllabus": [
+            "SWOT Analysis: Strengths, Weaknesses, Opportunities, Threats",
+            "Porter's 5 Forces of Industry Attractiveness",
+            "Porter's Generic Strategies: Cost Leadership vs Differentiation",
+            "Blue Ocean Strategy vs Red Ocean Competition"
+          ],
+          "core_formulas": [
+            "Return on Investment (ROI) = (Net Profit / Cost of Investment) × 100%",
+            "Break-Even Quantity = Fixed Costs / (Selling Price - Variable Cost per unit)"
+          ],
+          "part1_title": "Strategic Analysis Tools: SWOT and Porter's Five Forces",
+          "part1_content": "Strategic management enables organizations to align internal resources with external competitive realities. A SWOT matrix categorizes internal attributes (Strengths, Weaknesses) alongside external conditions (Opportunities, Threats). Michael Porter's Five Forces model assesses competitive rivalry, supplier power, buyer power, threat of substitutes, and barrier threats.",
+          "part2_title": "Competitive Advantage and Market Execution",
+          "part2_content": "Sustainable competitive advantage arises either through lower costs (cost leadership) or through unique product features commanding premium pricing (differentiation). W. Chan Kim and Renée Mauborgne's Blue Ocean Strategy encourages firms to create uncontested market space rather than competing head-to-head in bloody 'red oceans'.",
+          "mcqs": [
+            {
+              "id": 10811,
+              "question_number": 1,
+              "question": "Which of Porter's Five Forces evaluates the ease with which customers can switch to alternative products satisfying the same need?",
+              "options": {
+                "A": "Bargaining power of suppliers",
+                "B": "Threat of substitute products or services",
+                "C": "Threat of new entrants",
+                "D": "Barriers to exit"
+              },
+              "correct_option": "B",
+              "explanation": "Threat of substitutes analyzes external alternatives (e.g., trains versus domestic flights) that cap industry pricing power."
+            },
+            {
+              "id": 10812,
+              "question_number": 2,
+              "question": "If a firm has fixed costs of $100,000, selling price of $50/unit, and variable cost of $30/unit, what is its break-even production volume?",
+              "options": {
+                "A": "2,000 units",
+                "B": "5,000 units",
+                "C": "10,000 units",
+                "D": "3,333 units"
+              },
+              "correct_option": "B",
+              "explanation": "Break-even = Fixed Costs / (Price - Variable Cost) = $100,000 / ($50 - $30) = $100,000 / $20 = 5,000 units."
+            },
+            {
+              "id": 10813,
+              "question_number": 3,
+              "question": "In a SWOT analysis, which two quadrants evaluate internal organizational capabilities rather than external environmental factors?",
+              "options": {
+                "A": "Opportunities and Threats",
+                "B": "Strengths and Weaknesses",
+                "C": "Strengths and Opportunities",
+                "D": "Weaknesses and Threats"
+              },
+              "correct_option": "B",
+              "explanation": "Strengths and Weaknesses reside inside the enterprise, whereas Opportunities and Threats stem from external market environments."
+            },
+            {
+              "id": 10814,
+              "question_number": 4,
+              "question": "What is the core strategic principle of 'Blue Ocean Strategy'?",
+              "options": {
+                "A": "Aggressively cutting prices below cost to drive rivals out of business",
+                "B": "Creating uncontested new market space that makes the competition irrelevant",
+                "C": "Focusing solely on hostile corporate takeovers",
+                "D": "Expanding exclusively into coastal marine industries"
+              },
+              "correct_option": "B",
+              "explanation": "Blue Ocean Strategy focuses on value innovation that opens up novel demand, avoiding crowded, saturated markets."
+            },
+            {
+              "id": 10815,
+              "question_number": 5,
+              "question": "What generic strategy is IKEA or Walmart pursuing when optimizing operations to offer the lowest market prices?",
+              "options": {
+                "A": "Differentiation",
+                "B": "Cost Leadership",
+                "C": "Niche Focus",
+                "D": "Conglomerate Diversification"
+              },
+              "correct_option": "B",
+              "explanation": "Cost leadership focuses on scale economies, efficient supply chains, and low overhead to deliver industry-lowest prices."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "BIZ_001",
+              "subject": "Business Management",
+              "chapter": "Strategic Frameworks",
+              "topic": "Porter's 5 Forces & Competitive Advantage",
+              "keywords": [
+                "business",
+                "management",
+                "strategy",
+                "porter",
+                "swot",
+                "break-even",
+                "roi",
+                "competitive advantage"
+              ],
+              "definition": "Strategic management is the formulation and execution of major organizational goals based on resource allocation and competitive environment analysis.",
+              "formula_or_core_rule": "Break-Even Q = Fixed Costs / (P - VC); ROI = (Net Profit / Investment) × 100%.",
+              "worked_example": "If total investment is $200,000 and net returns are $50,000, the ROI is (50,000 / 200,000) × 100% = 25%.",
+              "content": "Strategic positioning relies upon identifying core competencies, conducting SWOT appraisals, and assessing industry attractiveness."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1082,
+          "chapter_order": 2,
+          "title": "Marketing Strategy & Consumer Behavior",
+          "estimated_minutes": 14,
+          "summary": "The 4 Ps of marketing, STP framework (Segmentation, Targeting, Positioning), and Customer Lifetime Value.",
+          "syllabus": [
+            "The 4 Ps of Marketing: Product, Price, Place, Promotion",
+            "STP Framework: Market Segmentation, Targeting, Positioning",
+            "Customer Acquisition Cost (CAC) vs Customer Lifetime Value (LTV)",
+            "Brand Equity and Digital Funnel Conversion"
+          ],
+          "core_formulas": [
+            "LTV : CAC Ratio (Healthy Benchmark ≥ 3:1)",
+            "Customer Lifetime Value (LTV) = (Average Purchase Value × Frequency) × Customer Lifespan",
+            "Customer Acquisition Cost (CAC) = Total Marketing Costs / Customers Acquired"
+          ],
+          "part1_title": "The Marketing Mix (The 4 Ps) and STP",
+          "part1_content": "Marketing creates, communicates, and delivers value to customers. The traditional marketing mix centers on the 4 Ps: Product (features and design), Price (revenue models and discounting), Place (distribution channels), and Promotion (advertising and public relations). The STP framework segments market demographics, targets viable customer segments, and positions brand identity.",
+          "part2_title": "Customer Unit Economics: CAC and LTV",
+          "part2_content": "Modern business performance depends on sustainable unit economics. Customer Acquisition Cost (CAC) quantifies total sales and marketing spend divided by newly acquired customers. Customer Lifetime Value (LTV) estimates the total net revenue a single customer yields across their relationship. A healthy commercial model maintains an LTV:CAC ratio of at least 3:1.",
+          "mcqs": [
+            {
+              "id": 10821,
+              "question_number": 1,
+              "question": "What four elements comprise the traditional operational Marketing Mix?",
+              "options": {
+                "A": "People, Process, Profit, Purpose",
+                "B": "Product, Price, Place, Promotion (The 4 Ps)",
+                "C": "Planning, Production, Packaging, Public Relations",
+                "D": "Performance, Positioning, Potential, Policy"
+              },
+              "correct_option": "B",
+              "explanation": "Formulated by E. Jerome McCarthy, the 4 Ps (Product, Price, Place, Promotion) govern marketing strategy execution."
+            },
+            {
+              "id": 10822,
+              "question_number": 2,
+              "question": "If a company spends $60,000 on digital marketing and acquires 600 paying customers, what is its Customer Acquisition Cost (CAC)?",
+              "options": {
+                "A": "$10",
+                "B": "$100",
+                "C": "$600",
+                "D": "$1,000"
+              },
+              "correct_option": "B",
+              "explanation": "CAC = Total Marketing Spend / Customers Acquired = $60,000 / 600 = $100 per customer."
+            },
+            {
+              "id": 10823,
+              "question_number": 3,
+              "question": "What is the recommended benchmark ratio of Customer Lifetime Value to Customer Acquisition Cost (LTV : CAC) for viable software businesses?",
+              "options": {
+                "A": "0.5 : 1",
+                "B": "1 : 1",
+                "C": "3 : 1 or greater",
+                "D": "100 : 1"
+              },
+              "correct_option": "C",
+              "explanation": "An LTV:CAC ratio of 3:1 indicates healthy return on acquisition investment; a 1:1 ratio leaves zero margin for operating costs."
+            },
+            {
+              "id": 10824,
+              "question_number": 4,
+              "question": "What does the 'STP' framework stand for in marketing strategy?",
+              "options": {
+                "A": "Sales, Training, Performance",
+                "B": "Segmentation, Targeting, Positioning",
+                "C": "Standardization, Testing, Pricing",
+                "D": "Supplies, Logistics, Production"
+              },
+              "correct_option": "B",
+              "explanation": "STP involves Segmenting heterogeneous markets into groups, Targeting selected segments, and Positioning the product distinctively."
+            },
+            {
+              "id": 10825,
+              "question_number": 5,
+              "question": "What marketing term describes the percentage of website visitors who complete a desired action, such as purchasing a product or registering an account?",
+              "options": {
+                "A": "Bounce rate",
+                "B": "Churn rate",
+                "C": "Conversion rate",
+                "D": "Net Promoter Score"
+              },
+              "correct_option": "C",
+              "explanation": "Conversion rate measures the proportion of prospects who take a defined transactional action out of the total visitors."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "BIZ_002",
+              "subject": "Business Management",
+              "chapter": "Marketing Strategy",
+              "topic": "STP & Unit Economics (CAC/LTV)",
+              "keywords": [
+                "marketing",
+                "4 ps",
+                "stp",
+                "cac",
+                "ltv",
+                "conversion rate",
+                "unit economics",
+                "branding"
+              ],
+              "definition": "Marketing management is the analytical process of planning and executing product conception, pricing, promotion, and distribution to satisfy consumer needs profitably.",
+              "formula_or_core_rule": "CAC = Spend / Customers; LTV:CAC ≥ 3:1; Conversion Rate = (Conversions / Visitors) × 100%.",
+              "worked_example": "If LTV is $450 and CAC is $150, the LTV:CAC ratio is 3:1, confirming viable customer unit economics.",
+              "content": "Effective marketing blends segmentation targeting, positioning distinctives, customer funnel conversion, and lifetime retention optimization."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_ee",
+      "subject_id": 109,
+      "name": "Electrical Engineering",
+      "slug": "electrical-engineering",
+      "icon_symbol": "⚡",
+      "color_hex": "#EAB308",
+      "category": "Engineering",
+      "description": "Circuit theorems, AC analysis, semiconductor diodes, transistors, and microcontrollers.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1091,
+          "chapter_order": 1,
+          "title": "Circuit Analysis & Kirchhoff's Laws",
+          "estimated_minutes": 16,
+          "summary": "Ohm's law, Kirchhoff's Current & Voltage Laws (KCL/KVL), Thévenin and Norton equivalents, and nodal analysis.",
+          "syllabus": [
+            "Ohm's Law: Voltage, Current, and Resistance (V = IR)",
+            "Kirchhoff's Current Law (KCL) & Nodal Analysis",
+            "Kirchhoff's Voltage Law (KVL) & Mesh Analysis",
+            "Thévenin and Norton Circuit Equivalence Theorems"
+          ],
+          "core_formulas": [
+            "Ohm's Law: V = I × R; Electric Power: P = V × I = I² × R = V² / R",
+            "Series Resistance: R_eq = R1 + R2 + ... + Rn",
+            "Parallel Resistance: 1 / R_eq = 1 / R1 + 1 / R2 + ... + 1 / Rn",
+            "Thévenin Voltage V_th and Resistance R_th"
+          ],
+          "part1_title": "Foundational Laws: Ohm and Kirchhoff",
+          "part1_content": "Electric charge movement produces electric current (amperes), driven by electrical potential difference (volts). Ohm's law defines linear resistance as V = IR. Kirchhoff's Current Law (KCL), based on conservation of charge, states the algebraic sum of currents entering any node equals zero. Kirchhoff's Voltage Law (KVL), based on conservation of energy, states the sum of voltages around any closed loop is zero.",
+          "part2_title": "Network Theorems: Thévenin and Superposition",
+          "part2_content": "Complex linear circuits can be simplified using Thévenin's theorem, which replaces any two-terminal linear network with an ideal independent voltage source (V_th) in series with an equivalent resistance (R_th). Norton's theorem converts the network into an equivalent current source (I_no) in parallel with R_th.",
+          "mcqs": [
+            {
+              "id": 10911,
+              "question_number": 1,
+              "question": "What is the total equivalent resistance of two 100-ohm resistors connected in parallel?",
+              "options": {
+                "A": "200 ohms",
+                "B": "100 ohms",
+                "C": "50 ohms",
+                "D": "25 ohms"
+              },
+              "correct_option": "C",
+              "explanation": "For two identical parallel resistors: R_eq = R / 2 = 100 / 2 = 50 ohms."
+            },
+            {
+              "id": 10912,
+              "question_number": 2,
+              "question": "Kirchhoff's Current Law (KCL) is a direct consequence of which fundamental law of physics?",
+              "options": {
+                "A": "Conservation of Energy",
+                "B": "Conservation of Electric Charge",
+                "C": "Conservation of Momentum",
+                "D": "Faraday's Law of Induction"
+              },
+              "correct_option": "B",
+              "explanation": "KCL dictates that charge cannot accumulate at an electrical node; total current entering must equal total current leaving."
+            },
+            {
+              "id": 10913,
+              "question_number": 3,
+              "question": "How much electrical power is dissipated as heat by a 5-ohm resistor carrying a steady direct current of 3 amperes?",
+              "options": {
+                "A": "15 Watts",
+                "B": "45 Watts",
+                "C": "75 Watts",
+                "D": "225 Watts"
+              },
+              "correct_option": "B",
+              "explanation": "Power P = I² × R = (3 A)² × 5 Ω = 9 × 5 = 45 Watts."
+            },
+            {
+              "id": 10914,
+              "question_number": 4,
+              "question": "What does Thévenin's Theorem state regarding any two-terminal linear electrical network?",
+              "options": {
+                "A": "It can be simplified to a single voltage source V_th in series with a resistor R_th",
+                "B": "It always dissipates zero power",
+                "C": "All alternating currents cancel to zero",
+                "D": "It can only contain inductors and capacitors"
+              },
+              "correct_option": "A",
+              "explanation": "Thévenin's theorem proves that any linear resistive two-terminal circuit can be simplified to an open-circuit voltage V_th in series with R_th."
+            },
+            {
+              "id": 10915,
+              "question_number": 5,
+              "question": "What electrical instrument is connected in series with a circuit branch to measure current without creating a voltage drop?",
+              "options": {
+                "A": "Voltmeter (ideal infinite resistance)",
+                "B": "Ammeter (ideal zero resistance)",
+                "C": "Ohmmeter",
+                "D": "Oscilloscope probe"
+              },
+              "correct_option": "B",
+              "explanation": "Ammeters must be placed in series and possess near-zero internal resistance so they do not alter the current flowing through the branch."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "EE_001",
+              "subject": "Electrical Engineering",
+              "chapter": "Circuit Analysis",
+              "topic": "Ohm's & Kirchhoff's Laws & Network Theorems",
+              "keywords": [
+                "electrical",
+                "circuits",
+                "ohm's law",
+                "kcl",
+                "kvl",
+                "thevenin",
+                "resistor",
+                "power",
+                "current"
+              ],
+              "definition": "Circuit analysis is the mathematical determination of voltages and currents across all branches of an interconnected electrical network.",
+              "formula_or_core_rule": "V = IR; P = VI = I²R; KCL: Σ I_in = 0; KVL: Σ V_loop = 0.",
+              "worked_example": "A 12V automotive battery driving a 4Ω headlight bulb draws I = 12 / 4 = 3 Amperes and dissipates P = 12 × 3 = 36 Watts.",
+              "content": "Electrical circuit analysis utilizes Kirchhoff's current and voltage laws, nodal mesh analysis, and Thévenin-Norton equivalents to model linear circuits."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1092,
+          "chapter_order": 2,
+          "title": "Semiconductor Electronics: Diodes & Transistors",
+          "estimated_minutes": 15,
+          "summary": "P-N junctions, diode rectification, BJT & MOSFET operations, amplifiers, and digital logic gates.",
+          "syllabus": [
+            "P-N Junction Barrier Potential & Depletion Region",
+            "Diode Rectification: Half-Wave and Full-Wave Bridge Rectifiers",
+            "Bipolar Junction Transistors (BJT): NPN/PNP Active & Saturation Modes",
+            "MOSFET Gate Field-Effect Operation and CMOS Logic"
+          ],
+          "core_formulas": [
+            "Shockley Diode Equation: I = I_s × (e^(V_D / (n × V_T)) - 1)",
+            "BJT Collector Current: I_C = β × I_B",
+            "MOSFET Saturation Current: I_D = 0.5 × k_n × (V_GS - V_th)²"
+          ],
+          "part1_title": "The P-N Junction Diode and Rectification",
+          "part1_content": "Semiconductors like silicon conduct current via electrons and positive holes. Doping creates P-type (excess holes) and N-type (excess electrons) materials. Joining them forms a P-N junction with a depletion region. In forward bias (>0.7V for silicon), current flows freely; in reverse bias, current is blocked, making diodes effective rectifiers converting AC into DC.",
+          "part2_title": "Transistors: BJT and MOSFET Switches",
+          "part2_content": "Transistors are three-terminal active devices that amplify signals and act as digital switches. In a Bipolar Junction Transistor (BJT), a tiny base current (I_B) controls a large collector current (I_C = β × I_B). In a MOSFET (Metal-Oxide-Semiconductor Field-Effect Transistor), a voltage applied to the insulated gate creates an electric field controlling drain current with near-zero gate current.",
+          "mcqs": [
+            {
+              "id": 10921,
+              "question_number": 1,
+              "question": "What is the typical forward-bias barrier threshold voltage required for a silicon P-N junction diode to conduct significant current?",
+              "options": {
+                "A": "0.1 V",
+                "B": "0.3 V (Germanium)",
+                "C": "0.7 V (Silicon)",
+                "D": "2.0 V"
+              },
+              "correct_option": "C",
+              "explanation": "Silicon diodes require approximately 0.7 V of forward bias to overcome the depletion layer potential barrier."
+            },
+            {
+              "id": 10922,
+              "question_number": 2,
+              "question": "What circuit arrangement of four diodes converts bidirectional Alternating Current (AC) into smooth direct current (DC)?",
+              "options": {
+                "A": "Voltage Divider",
+                "B": "Full-Wave Bridge Rectifier",
+                "C": "Schmitt Trigger",
+                "D": "H-Bridge Motor Driver"
+              },
+              "correct_option": "B",
+              "explanation": "A full-wave diode bridge rectifier conducts during both positive and negative AC half-cycles, producing pulsating DC."
+            },
+            {
+              "id": 10923,
+              "question_number": 3,
+              "question": "What key advantage do MOSFETs possess over BJTs in digital logic computer processors?",
+              "options": {
+                "A": "MOSFETs require zero continuous static gate current because the gate is electrically insulated by oxide",
+                "B": "MOSFETs only operate at absolute zero temperature",
+                "C": "MOSFETs are made exclusively out of copper",
+                "D": "MOSFETs cannot switch off"
+              },
+              "correct_option": "A",
+              "explanation": "The SiO2 insulated gate of a MOSFET draws virtually zero static current, enabling dense, low-power CMOS integration."
+            },
+            {
+              "id": 10924,
+              "question_number": 4,
+              "question": "If a BJT has a current amplification factor (β) of 100, what is the collector current when a base current of 0.2 mA is applied in active mode?",
+              "options": {
+                "A": "2 mA",
+                "B": "20 mA",
+                "C": "200 mA",
+                "D": "0.002 mA"
+              },
+              "correct_option": "B",
+              "explanation": "Collector Current I_C = β × I_B = 100 × 0.2 mA = 20 mA."
+            },
+            {
+              "id": 10925,
+              "question_number": 5,
+              "question": "Which basic digital logic gate outputs HIGH (1) if and only if both of its inputs are HIGH (1)?",
+              "options": {
+                "A": "OR Gate",
+                "B": "AND Gate",
+                "C": "XOR Gate",
+                "D": "NOT Gate"
+              },
+              "correct_option": "B",
+              "explanation": "An AND gate requires all inputs to be true (1) in order to produce a true (1) output."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "EE_002",
+              "subject": "Electrical Engineering",
+              "chapter": "Semiconductor Electronics",
+              "topic": "Diodes, BJTs & MOSFET Transistors",
+              "keywords": [
+                "semiconductor",
+                "diode",
+                "transistor",
+                "bjt",
+                "mosfet",
+                "rectifier",
+                "logic gate",
+                "silicon"
+              ],
+              "definition": "Semiconductor electronics studies solid-state devices whose electrical conductivity can be controlled via doping, electric fields, or gate voltages.",
+              "formula_or_core_rule": "Diode barrier V_f ≈ 0.7V; BJT I_C = β·I_B; MOSFET I_D = 0.5·k·(V_GS - V_th)².",
+              "worked_example": "Applying 1V across a silicon diode yields forward conduction, dropping ~0.7V across the junction with the remainder across series resistance.",
+              "content": "P-N junctions enable rectification and switching, while MOSFETs form the architectural foundation for microprocessors and memory chips."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ext_astro",
+      "subject_id": 110,
+      "name": "Astronomy & Astrophysics",
+      "slug": "astronomy",
+      "icon_symbol": "🔭",
+      "color_hex": "#6366F1",
+      "category": "Space Sciences",
+      "description": "Orbital mechanics, stellar evolution, black holes, galactic structures, and Big Bang cosmology.",
+      "is_added": false,
+      "chapters": [
+        {
+          "chapter_id": 1101,
+          "chapter_order": 1,
+          "title": "Orbital Mechanics & The Solar System",
+          "estimated_minutes": 15,
+          "summary": "Kepler's three planetary laws, Newton's universal gravitation, orbital velocity, and planetary properties.",
+          "syllabus": [
+            "Kepler's 3 Laws of Planetary Motion",
+            "Newton's Law of Universal Gravitation",
+            "Orbital Velocity and Escape Velocity Formulations",
+            "Terrestrial Rocky Planets vs Jovian Gas Giants"
+          ],
+          "core_formulas": [
+            "Kepler's 3rd Law: T² = (4π² / (G × M)) × a³",
+            "Newton's Gravitation: F = G × (m1 × m2) / r²",
+            "Circular Orbital Speed: v_orb = √(G × M / r)",
+            "Escape Velocity: v_esc = √(2 × G × M / r)"
+          ],
+          "part1_title": "Kepler's Laws of Planetary Motion",
+          "part1_content": "Johannes Kepler deduced three geometric laws governing planetary motion. First: Planets orbit the Sun in ellipses with the Sun at one focus. Second (Equal Areas): A line connecting a planet to the Sun sweeps out equal areas during equal intervals of time, meaning planets accelerate at perihelion (closest) and decelerate at aphelion (farthest). Third (Harmonic Law): The square of the orbital period T is proportional to the cube of the semi-major axis a (T² ∝ a³).",
+          "part2_title": "Newtonian Gravity and Escape Velocity",
+          "part2_content": "Isaac Newton provided the physical foundation for Kepler's laws through universal gravitation: every mass attracts every other mass with a force directly proportional to the product of their masses and inversely proportional to the square of their separation distance. To permanently escape a celestial body's gravitational field without further propulsion, an object must reach escape velocity, which is √2 times circular orbital speed.",
+          "mcqs": [
+            {
+              "id": 11011,
+              "question_number": 1,
+              "question": "According to Kepler's First Law, what geometric shape describes the orbits of planets around the Sun?",
+              "options": {
+                "A": "Perfect circle",
+                "B": "Ellipse with the Sun at one focal point",
+                "C": "Parabola",
+                "D": "Hyperbola"
+              },
+              "correct_option": "B",
+              "explanation": "Kepler's First Law proves that planetary orbits are ellipses with the Sun situated at one of the two foci."
+            },
+            {
+              "id": 11012,
+              "question_number": 2,
+              "question": "What is the mathematical relationship between circular orbital velocity (v_orb) and escape velocity (v_esc) from the same orbital radius?",
+              "options": {
+                "A": "v_esc = v_orb / 2",
+                "B": "v_esc = √2 × v_orb (approximately 1.414 × v_orb)",
+                "C": "v_esc = 2 × v_orb",
+                "D": "v_esc = (v_orb)²"
+              },
+              "correct_option": "B",
+              "explanation": "Escape velocity is derived from conservation of energy: v_esc = √(2GM/r) = √2 × √(GM/r) = √2 × v_orb."
+            },
+            {
+              "id": 11013,
+              "question_number": 3,
+              "question": "If a planet orbits at 4 Astronomical Units (AU) from the Sun, what is its orbital period in Earth years according to Kepler's Third Law (T² = a³)?",
+              "options": {
+                "A": "4 years",
+                "B": "8 years",
+                "C": "16 years",
+                "D": "64 years"
+              },
+              "correct_option": "B",
+              "explanation": "T² = a³ -> T² = 4³ = 64 -> T = √64 = 8 Earth years."
+            },
+            {
+              "id": 11014,
+              "question_number": 4,
+              "question": "What happens to the gravitational attraction force between two stars if the distance separating them is doubled?",
+              "options": {
+                "A": "The force is halved (1/2)",
+                "B": "The force drops to one-quarter (1/4)",
+                "C": "The force doubles (2x)",
+                "D": "The force remains unchanged"
+              },
+              "correct_option": "B",
+              "explanation": "Gravitational attraction follows the inverse-square law (F ∝ 1/r²). Doubling the distance (2r) reduces the force by 1/(2)² = 1/4."
+            },
+            {
+              "id": 11015,
+              "question_number": 5,
+              "question": "Which planet in the solar system possesses the greatest planetary mass and powerful magnetosphere?",
+              "options": {
+                "A": "Mars",
+                "B": "Saturn",
+                "C": "Jupiter",
+                "D": "Neptune"
+              },
+              "correct_option": "C",
+              "explanation": "Jupiter is the most massive planet in the solar system, containing more than double the combined mass of all other planets."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ASTRO_001",
+              "subject": "Astronomy & Astrophysics",
+              "chapter": "Orbital Mechanics",
+              "topic": "Kepler's Laws & Gravitational Physics",
+              "keywords": [
+                "astronomy",
+                "kepler's laws",
+                "gravity",
+                "orbit",
+                "escape velocity",
+                "solar system",
+                "newton",
+                "ellipse"
+              ],
+              "definition": "Orbital mechanics studies the motion of natural and artificial satellites under the influence of gravitational attraction.",
+              "formula_or_core_rule": "T² = a³ (in AU and years); F = G·m1·m2/r²; v_esc = √(2GM/r).",
+              "worked_example": "For Earth with radius 6,371 km and mass 5.97e24 kg, escape velocity v_esc = √(2 × 6.67e-11 × 5.97e24 / 6.371e6) ≈ 11.2 km/s.",
+              "content": "Planetary bodies follow elliptical trajectories around gravitational centers. Kepler's laws describe observed motion, while Newton's law of gravitation explains the underlying physical force."
+            }
+          ]
+        },
+        {
+          "chapter_id": 1102,
+          "chapter_order": 2,
+          "title": "Stellar Evolution, Black Holes & Cosmology",
+          "estimated_minutes": 16,
+          "summary": "Nuclear fusion in stars, Hertzsprung-Russell diagram, supernovae, neutron stars, black holes, and the Big Bang.",
+          "syllabus": [
+            "Proton-Proton Chain and CNO Cycle Stellar Fusion",
+            "The Hertzsprung-Russell (H-R) Diagram",
+            "Stellar Endpoints: White Dwarfs, Neutron Stars, and Black Holes",
+            "Hubble's Law and Big Bang Cosmic Microwave Background (CMB)"
+          ],
+          "core_formulas": [
+            "Hubble's Law: v = H0 × d (Recession Velocity = Hubble Constant × Distance)",
+            "Schwarzschild Black Hole Radius: R_s = 2 × G × M / c²",
+            "Stefan-Boltzmann Stellar Luminosity: L = 4π × R² × σ × T⁴"
+          ],
+          "part1_title": "Stellar Fusion and the Hertzsprung-Russell Diagram",
+          "part1_content": "Stars are sustained by hydrostatic equilibrium balancing inward gravitational collapse with outward thermal radiation pressure from core nuclear fusion. Main sequence stars fuse hydrogen into helium via the proton-proton chain. The Hertzsprung-Russell (H-R) diagram plots stellar luminosity against surface temperature, charting stellar life cycles from giant red phases to dense remnants.",
+          "part2_title": "Black Holes and Expanding Universe Cosmology",
+          "part2_content": "When massive stars (>8 solar masses) exhaust nuclear fuel, their iron cores collapse, producing core-collapse supernovae. Remnants exceeding the Tolman-Oppenheimer-Volkoff limit collapse past an event horizon into a gravitational singularity (black hole), bounded by the Schwarzschild radius R_s = 2GM/c². On cosmological scales, Edwin Hubble proved that distant galaxies recede at speeds proportional to their distance (v = H0 × d), establishing cosmic expansion from the Big Bang.",
+          "mcqs": [
+            {
+              "id": 11021,
+              "question_number": 1,
+              "question": "What nuclear fusion process generates the bulk of solar energy in the Sun's core?",
+              "options": {
+                "A": "Uranium fission",
+                "B": "Proton-Proton chain (fusing Hydrogen into Helium)",
+                "C": "Triple-Alpha carbon burning",
+                "D": "Oxygen decay"
+              },
+              "correct_option": "B",
+              "explanation": "Main sequence stars with masses like the Sun convert hydrogen nuclei into helium-4 primarily through the proton-proton chain reaction."
+            },
+            {
+              "id": 11022,
+              "question_number": 2,
+              "question": "What is the boundary surrounding a black hole from which not even light can escape called?",
+              "options": {
+                "A": "Accretion Disk",
+                "B": "Event Horizon",
+                "C": "Ergosphere",
+                "D": "Photon Sphere"
+              },
+              "correct_option": "B",
+              "explanation": "The event horizon marks the threshold where escape velocity equals the speed of light c; nothing inside can escape."
+            },
+            {
+              "id": 11023,
+              "question_number": 3,
+              "question": "What does Hubble's Law (v = H0 × d) demonstrate regarding the distant galaxies in our universe?",
+              "options": {
+                "A": "Distant galaxies are moving toward the Milky Way",
+                "B": "Galaxies are stationary in a static universe",
+                "C": "Distant galaxies are receding with velocities directly proportional to their distance, proving cosmic expansion",
+                "D": "Galaxies are orbiting a central cosmic sun"
+              },
+              "correct_option": "C",
+              "explanation": "Hubble observed that spectral redshift increases with galactic distance, demonstrating that the fabric of space itself is expanding."
+            },
+            {
+              "id": 11024,
+              "question_number": 4,
+              "question": "What is the remnant leftover of a star with initial mass similar to the Sun after it sheds its outer planetary nebula?",
+              "options": {
+                "A": "Black Hole",
+                "B": "Neutron Star / Pulsar",
+                "C": "White Dwarf (supported by electron degeneracy pressure)",
+                "D": "Magnetar"
+              },
+              "correct_option": "C",
+              "explanation": "Low-to-medium mass stars end their lives as dense white dwarfs supported against gravity by electron degeneracy pressure (up to the Chandrasekhar limit of 1.4 solar masses)."
+            },
+            {
+              "id": 11025,
+              "question_number": 5,
+              "question": "What pervasive relic electromagnetic radiation left over from the Big Bang was discovered by Penzias and Wilson in 1965?",
+              "options": {
+                "A": "Cosmic Microwave Background (CMB) at ~2.7 Kelvin",
+                "B": "Solar Wind",
+                "C": "Gamma Ray Bursts",
+                "D": "Van Allen Radiation"
+              },
+              "correct_option": "A",
+              "explanation": "The Cosmic Microwave Background (CMB) is the thermal blackbody afterglow of recombination 380,000 years after the Big Bang, redshifted into the microwave band at 2.725 K."
+            }
+          ],
+          "rag_chunks": [
+            {
+              "chunk_id": "ASTRO_002",
+              "subject": "Astronomy & Astrophysics",
+              "chapter": "Stellar Evolution & Cosmology",
+              "topic": "Black Holes, Supernovae & Big Bang Cosmology",
+              "keywords": [
+                "astronomy",
+                "black hole",
+                "cosmology",
+                "big bang",
+                "supernova",
+                "fusion",
+                "hubble's law",
+                "cmb",
+                "event horizon"
+              ],
+              "definition": "Astrophysics applies the laws of physics and chemistry to explain the birth, life, and death of stars, planets, galaxies, and the universe.",
+              "formula_or_core_rule": "Hubble's Law: v = H0·d; Schwarzschild Radius R_s = 2GM/c²; Chandrasekhar limit = 1.4 M_sun.",
+              "worked_example": "For Earth (M = 5.97e24 kg), the Schwarzschild event horizon radius is R_s = 2(6.67e-11)(5.97e24)/(3e8)² ≈ 8.8 millimeters.",
+              "content": "Stellar evolution charts nucleosynthesis from hydrogen burning to core collapse. Cosmology models universe metric expansion, dark energy, and cosmic microwave relic radiation."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

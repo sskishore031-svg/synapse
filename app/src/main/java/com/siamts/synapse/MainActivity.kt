@@ -114,6 +114,8 @@ import com.siamts.synapse.ui.auth.ForgotPasswordViewModel
 import com.siamts.synapse.ui.auth.SignUpScreen
 import com.siamts.synapse.ui.auth.SignUpViewModel
 import com.siamts.synapse.data.model.QuizResultDataDto
+import com.siamts.synapse.data.model.QuizQuestionDto
+import com.siamts.synapse.ui.results.QuizReviewScreen
 import com.siamts.synapse.ui.lesson.ChapterLessonScreen
 import com.siamts.synapse.ui.lesson.ChapterLessonViewModel
 import com.siamts.synapse.ui.quiz.QuizHomeSelectionScreen
@@ -177,7 +179,16 @@ sealed class AppScreen {
     data object QuizHomeSelection : AppScreen()
     data class SubjectQuizSelection(val subjectId: Int, val subjectName: String) : AppScreen()
     data class DynamicQuizAttempt(val chapterId: Int) : AppScreen()
-    data class DynamicQuizResults(val resultData: QuizResultDataDto) : AppScreen()
+    data class DynamicQuizResults(
+        val resultData: QuizResultDataDto,
+        val questions: List<QuizQuestionDto> = emptyList(),
+        val userAnswers: Map<Int, String> = emptyMap()
+    ) : AppScreen()
+    data class DynamicQuizReview(
+        val resultData: QuizResultDataDto,
+        val questions: List<QuizQuestionDto> = emptyList(),
+        val userAnswers: Map<Int, String> = emptyMap()
+    ) : AppScreen()
     open class NotesHome(val initialFilter: String = "ALL") : AppScreen() {
         companion object : NotesHome("ALL")
 
@@ -249,6 +260,7 @@ class MainActivity : ComponentActivity() {
                                 is AppScreen.SubjectQuizSelection -> AppScreen.QuizHomeSelection
                                 is AppScreen.DynamicQuizAttempt -> AppScreen.QuizHomeSelection
                                 is AppScreen.DynamicQuizResults -> AppScreen.QuizHomeSelection
+                                is AppScreen.DynamicQuizReview -> AppScreen.QuizHomeSelection
                                 is AppScreen.Quiz -> AppScreen.Dashboard
                                 is AppScreen.MixedQuiz -> AppScreen.Dashboard
                                 is AppScreen.QuizResults -> AppScreen.Dashboard
@@ -471,10 +483,23 @@ class MainActivity : ComponentActivity() {
                                             "artificial intelligence", "ai" -> 4
                                             "physics" -> 5
                                             "chemistry" -> 6
+                                            "biology", "bio", "ext_bio" -> 101
+                                            "world history", "history", "ext_history" -> 102
+                                            "economics & finance", "economics", "finance", "ext_econ" -> 103
+                                            "environmental science", "ecology", "ext_env" -> 104
+                                            "computer networks", "networks", "ext_net" -> 105
+                                            "cyber security", "security", "ext_sec" -> 106
+                                            "psychology", "ext_psych" -> 107
+                                            "business management", "business", "management", "ext_biz" -> 108
+                                            "electrical engineering", "ee", "circuits", "ext_ee" -> 109
+                                            "astronomy & astrophysics", "astronomy", "astrophysics", "ext_astro" -> 110
                                             else -> 4
                                         }
                                         roadmapViewModel.loadSubjectRoadmap(subjectId = idInt)
-                                        currentScreen = AppScreen.Roadmap
+                                        navigateTo(AppScreen.Roadmap)
+                                    },
+                                    onChapterClick = { chapterId ->
+                                        navigateTo(AppScreen.DynamicChapterLesson(chapterId))
                                     },
                                     onTabSelect = { tabIndex ->
                                         if (tabIndex == 0) {
@@ -1495,13 +1520,15 @@ class MainActivity : ComponentActivity() {
                                 QuizScreen(
                                     viewModel = quizViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        navigateTo(AppScreen.QuizHomeSelection)
                                     },
                                     onQuizComplete = { result ->
                                         if (result != null) {
-                                            currentScreen = AppScreen.DynamicQuizResults(result)
+                                            val qList = quizViewModel.uiState.value.questions
+                                            val uAnswers = quizViewModel.uiState.value.answersMap
+                                            navigateTo(AppScreen.DynamicQuizResults(result, qList, uAnswers))
                                         } else {
-                                            currentScreen = AppScreen.QuizHomeSelection
+                                            navigateTo(AppScreen.QuizHomeSelection)
                                         }
                                     },
                                     modifier = Modifier
@@ -1518,10 +1545,33 @@ class MainActivity : ComponentActivity() {
                                 QuizResultsScreen(
                                     viewModel = quizResultsViewModel,
                                     onHomeClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        navigateTo(AppScreen.QuizHomeSelection)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        navigateTo(AppScreen.QuizHomeSelection)
+                                    },
+                                    onReviewAnswersClick = {
+                                        navigateTo(AppScreen.DynamicQuizReview(screen.resultData, screen.questions, screen.userAnswers))
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.DynamicQuizReview -> {
+                                QuizReviewScreen(
+                                    resultData = screen.resultData,
+                                    questions = screen.questions,
+                                    userAnswers = screen.userAnswers,
+                                    onRetakeQuizClick = {
+                                        navigateTo(AppScreen.DynamicQuizAttempt(screen.resultData.chapterId))
+                                    },
+                                    onBackToChaptersClick = {
+                                        navigateTo(AppScreen.QuizHomeSelection)
+                                    },
+                                    onBackClick = {
+                                        navigateBack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

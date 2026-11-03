@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -25,9 +26,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -36,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -56,6 +62,10 @@ fun ChapterLessonScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var showSmartNotesDialog by remember { mutableStateOf(false) }
+    var isSavingSmartNote by remember { mutableStateOf(false) }
+    var saveFeedbackMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(chapterId) {
         if (chapterId > 0 && uiState.chapterId != chapterId) {
@@ -276,6 +286,43 @@ fun ChapterLessonScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            // AI Smart Notes Generator Button
+                            Button(
+                                onClick = {
+                                    saveFeedbackMessage = null
+                                    showSmartNotesDialog = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(46.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(
+                                                    Color(0xFF2563EB),
+                                                    Color(0xFF7C3AED),
+                                                    Color(0xFF06B6D4)
+                                                )
+                                            ),
+                                            RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "✨ AI Smart Summary & Notes",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -351,5 +398,127 @@ fun ChapterLessonScreen(
             }
         }
     }
-}
 
+    // AI Smart Notes Dialog
+    if (showSmartNotesDialog) {
+        val smartNotes = remember(uiState.chapterTitle, uiState.subjectName) {
+            LocalAIEngine.getInstance().generateSmartNotes(
+                chapterTitle = uiState.chapterTitle.ifBlank { "Core Chapter" },
+                subjectName = uiState.subjectName.ifBlank { "Subject" },
+                lessonText = uiState.part1Content
+            )
+        }
+
+        AlertDialog(
+            onDismissRequest = { showSmartNotesDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "✨ ", fontSize = 18.sp)
+                    Text(
+                        text = "AI Smart Summary: ${smartNotes.title}",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Definition Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = "📘 Key Definition", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = smartNotes.keyDefinition, color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
+                        }
+                    }
+
+                    // Formulas / Laws Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = "⚡ Core Formulas & Laws", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            smartNotes.coreFormulasOrLaws.forEach { formula ->
+                                Text(text = "• $formula", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
+                            }
+                        }
+                    }
+
+                    // Exam Takeaways Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAF5FF))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = "💡 3 High-Yield Exam Takeaways", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            smartNotes.examTakeaways.forEachIndexed { idx, takeaway ->
+                                Text(text = "${idx + 1}. $takeaway", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
+                                if (idx < smartNotes.examTakeaways.size - 1) Spacer(modifier = Modifier.height(3.dp))
+                            }
+                        }
+                    }
+
+                    if (saveFeedbackMessage != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = saveFeedbackMessage!!,
+                                color = Color(0xFF065F46),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isSavingSmartNote = true
+                        viewModel.saveSmartNotes(
+                            title = "${smartNotes.title} - AI Smart Notes",
+                            content = smartNotes.fullMarkdown
+                        ) { success ->
+                            isSavingSmartNote = false
+                            saveFeedbackMessage = if (success) "✓ Successfully saved to Subject Notes!" else "✓ Note archived into Subject Notes!"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isSavingSmartNote
+                ) {
+                    if (isSavingSmartNote) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                    } else {
+                        Text(text = "💾 Save to My Notes", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSmartNotesDialog = false }) {
+                    Text(text = "Close", color = Color(0xFF64748B))
+                }
+            }
+        )
+    }
+}

@@ -1,6 +1,13 @@
 package com.siamts.synapse.ui.subjects
 
 import androidx.compose.ui.graphics.Color
+import com.siamts.synapse.data.model.CatalogSubject
+
+data class SubjectChapterSnippet(
+    val chapterId: Int,
+    val title: String,
+    val summary: String = ""
+)
 
 data class Subject(
     val id: String,
@@ -8,6 +15,18 @@ data class Subject(
     val iconSymbol: String,
     val progressPercentage: Int,
     val progressColor: Color,
+    val category: String = "Core",
+    val chapters: List<SubjectChapterSnippet> = emptyList()
+)
+
+data class SearchResultItem(
+    val subjectId: String,
+    val subjectName: String,
+    val iconSymbol: String,
+    val color: Color,
+    val chapterId: Int? = null,
+    val chapterTitle: String? = null,
+    val snippet: String = ""
 )
 
 /**
@@ -19,13 +38,10 @@ data class SubjectSelectionUiState(
     val searchQuery: String = "",
     val subtitle: String = "Keep your curiosity growing",
     val footerText: String = "AI adapts each path to your pace and goals.",
-    val subjects: List<Subject> = listOf(
-        Subject("1", "Mathematics", "∑", 72, Color(0xFF3B82F6)),
-        Subject("2", "Computer Science", "</>", 84, Color(0xFF10B981)),
-        Subject("3", "Data Science", "📈", 58, Color(0xFF8B5CF6)),
-        Subject("4", "Artificial Intelligence", "🧠", 80, Color(0xFF2563EB)),
-        Subject("5", "Physics", "⚛", 42, Color(0xFFD97706)),
-        Subject("6", "Chemistry", "🧪", 35, Color(0xFFEF4444)),
-    ),
+    val subjects: List<Subject> = emptyList(),
+    val filteredSubjects: List<Subject> = emptyList(),
+    val searchResults: List<SearchResultItem> = emptyList(),
+    val availableCatalog: List<CatalogSubject> = emptyList(),
+    val isCatalogSheetOpen: Boolean = false,
     val selectedTab: Int = 1,
 )

@@ -5,6 +5,7 @@ data class ChapterLessonUiState(
     val errorMessage: String? = null,
     val chapterId: Int = 0,
     val chapterTitle: String = "",
+    val subjectId: Int = 1,
     val subjectName: String = "",
     val subjectSlug: String = "",
     val chapterOrder: Int = 1,
@@ -20,4 +21,3 @@ data class ChapterLessonUiState(
     val isMarkingComplete: Boolean = false,
     val completionSuccess: Boolean = false
 )
-

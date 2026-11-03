@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.ChaptersRepository
 import com.siamts.synapse.data.repository.ChaptersRepositoryImpl
+import com.siamts.synapse.data.repository.NotesRepository
+import com.siamts.synapse.data.repository.NotesRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class ChapterLessonViewModel(
     private val chaptersRepository: ChaptersRepository = ChaptersRepositoryImpl(),
+    private val notesRepository: NotesRepository = NotesRepositoryImpl(),
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
 ) : ViewModel() {
 
@@ -51,6 +54,7 @@ class ChapterLessonViewModel(
                         isLoading = false,
                         chapterId = chap?.id ?: chapterId,
                         chapterTitle = chap?.title.orEmpty(),
+                        subjectId = sub?.id ?: 1,
                         subjectName = sub?.name ?: "Core Subject",
                         subjectSlug = sub?.slug.orEmpty(),
                         chapterOrder = chap?.chapterOrder ?: 1,
@@ -78,6 +82,30 @@ class ChapterLessonViewModel(
 
     fun selectPart(partIndex: Int) {
         _uiState.update { it.copy(currentPartIndex = partIndex) }
+    }
+
+    fun saveSmartNotes(
+        title: String,
+        content: String,
+        onDone: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+            val state = _uiState.value
+
+            val result = notesRepository.createNote(
+                title = title,
+                content = content,
+                subjectId = state.subjectId,
+                chapterId = state.chapterId,
+                category = "Subject Notes",
+                userId = userId,
+                email = userEmail
+            )
+            onDone(result.isSuccess)
+        }
     }
 
     fun markAsCompleted(onCompleted: (() -> Unit)? = null) {
