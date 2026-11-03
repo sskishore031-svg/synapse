@@ -423,3 +423,4 @@ fun OpenSourceLicensesScreenPreview() {
         OpenSourceLicensesScreen(onBackClick = {}, modifier = Modifier.fillMaxSize())
     }
 }
+

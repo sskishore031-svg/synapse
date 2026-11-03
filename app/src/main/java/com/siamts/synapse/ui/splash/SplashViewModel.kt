@@ -73,9 +73,9 @@ class SplashViewModel(
                 _sessionState.value = AuthSessionState.Unauthenticated
             }
 
-            // Ensure branding animation has minimum display time (1200ms)
+            // Ensure branding animation display time of 1500ms
             val elapsed = System.currentTimeMillis() - startTime
-            val remainingDelay = (1200L - elapsed).coerceAtLeast(0L)
+            val remainingDelay = (1500L - elapsed).coerceAtLeast(0L)
             if (remainingDelay > 0) {
                 delay(remainingDelay)
             }

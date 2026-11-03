@@ -308,3 +308,4 @@ fun TermsOfServiceScreenPreview() {
         TermsOfServiceScreen(onBackClick = {}, modifier = Modifier.fillMaxSize())
     }
 }
+

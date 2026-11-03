@@ -395,3 +395,4 @@ fun WhatsNewScreenPreview() {
         WhatsNewScreen(onBackClick = {}, modifier = Modifier.fillMaxSize())
     }
 }
+

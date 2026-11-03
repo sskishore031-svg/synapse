@@ -157,7 +157,7 @@ class AiTutorViewModel(
 
         streamingJob?.cancel()
         streamingJob = viewModelScope.launch {
-            localAiEngine.streamResponse(query, delayPerWordMs = 24L).collect { streamEvent ->
+            localAiEngine.streamResponse(query, delayPerWordMs = 20L).collect { streamEvent ->
                 when (streamEvent) {
                     is LocalAiStreamToken.Thinking -> {
                         _uiState.update { it.copy(aiThoughtStatus = streamEvent.status) }

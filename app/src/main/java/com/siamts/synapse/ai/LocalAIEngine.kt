@@ -470,7 +470,7 @@ class LocalAIEngine private constructor(context: Context?) {
     /**
      * Progressive streaming API returning AI response as a Kotlin Flow with word-by-word emission (20-30ms delay).
      */
-    fun streamResponse(userQuery: String, delayPerWordMs: Long = 24L): Flow<LocalAiStreamToken> = flow {
+    fun streamResponse(userQuery: String, delayPerWordMs: Long = 20L): Flow<LocalAiStreamToken> = flow {
         emit(LocalAiStreamToken.Thinking())
         val response = generateResponse(userQuery)
         delay(160L) // Initial retrieval thinking pause

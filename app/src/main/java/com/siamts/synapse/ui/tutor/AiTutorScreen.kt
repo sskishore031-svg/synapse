@@ -1,5 +1,17 @@
 package com.siamts.synapse.ui.tutor
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -31,18 +43,24 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
@@ -90,6 +108,57 @@ fun AiTutorContent(
 ) {
     val listState = rememberLazyListState()
     val isDark = LocalThemeIsDark.current
+    val context = LocalContext.current
+
+    var isListening by remember { mutableStateOf(false) }
+    var speechRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startSpeechRecognition(
+                context = context,
+                setRecognizer = { speechRecognizer = it },
+                setListening = { isListening = it },
+                onQueryChange = onQueryChange,
+                currentQuery = uiState.inputQuery
+            )
+        } else {
+            Toast.makeText(context, "Microphone permission is required for voice input", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            speechRecognizer?.destroy()
+            speechRecognizer = null
+        }
+    }
+
+    val onMicClick = {
+        if (isListening) {
+            speechRecognizer?.stopListening()
+            isListening = false
+        } else {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                startSpeechRecognition(
+                    context = context,
+                    setRecognizer = { speechRecognizer = it },
+                    setListening = { isListening = it },
+                    onQueryChange = onQueryChange,
+                    currentQuery = uiState.inputQuery
+                )
+            } else {
+                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+    }
 
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
@@ -458,6 +527,46 @@ fun AiTutorContent(
                             .fillMaxWidth()
                             .imePadding()
                     ) {
+                        AnimatedVisibility(visible = isListening) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 6.dp)
+                                    .background(
+                                        brush = Brush.horizontalGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED))),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(Color(0xFFEF4444), CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "🎙️ Listening... Speak your academic question",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Text(
+                                    text = "Tap to Stop",
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        speechRecognizer?.stopListening()
+                                        isListening = false
+                                    }
+                                )
+                            }
+                        }
+
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 6.dp
@@ -473,7 +582,7 @@ fun AiTutorContent(
                                     onValueChange = onQueryChange,
                                     placeholder = {
                                         Text(
-                                            text = if (uiState.isGenerating) "SYNAPSE AI is thinking..." else "Ask a question or follow up...",
+                                            text = if (isListening) "Listening to your voice..." else if (uiState.isGenerating) "SYNAPSE AI is thinking..." else "Ask a question or follow up...",
                                             color = Color(0xFF94A3B8),
                                             fontSize = 14.sp,
                                         )
@@ -490,11 +599,22 @@ fun AiTutorContent(
                                     ),
                                     singleLine = true,
                                     trailingIcon = {
-                                        Text(
-                                            text = "🎙️",
-                                            fontSize = 18.sp,
-                                            modifier = Modifier.clickable { }
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(end = 4.dp)
+                                                .size(34.dp)
+                                                .background(
+                                                    color = if (isListening) Color(0xFFEF4444).copy(alpha = 0.15f) else Color.Transparent,
+                                                    shape = CircleShape
+                                                )
+                                                .clickable { onMicClick() },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = if (isListening) "🔴" else "🎙️",
+                                                fontSize = 18.sp
+                                            )
+                                        }
                                     }
                                 )
 
@@ -612,5 +732,94 @@ fun AiTutorScreenPreview() {
             onBackClick = {},
             modifier = Modifier.fillMaxSize(),
         )
+    }
+}
+
+/**
+ * Connects the microphone to Android SpeechRecognizer with real-time partial results
+ * and robust error / lifecycle handling.
+ */
+private fun startSpeechRecognition(
+    context: Context,
+    setRecognizer: (SpeechRecognizer?) -> Unit,
+    setListening: (Boolean) -> Unit,
+    onQueryChange: (String) -> Unit,
+    currentQuery: String,
+) {
+    if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+        Toast.makeText(context, "Speech recognition is not available on this device", Toast.LENGTH_SHORT).show()
+        setListening(false)
+        return
+    }
+
+    try {
+        val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+        setRecognizer(recognizer)
+
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        }
+
+        val baseQuery = currentQuery.trim()
+
+        recognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                setListening(true)
+            }
+
+            override fun onBeginningOfSpeech() {
+                setListening(true)
+            }
+
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {
+                setListening(false)
+            }
+
+            override fun onError(error: Int) {
+                setListening(false)
+                val msg = when (error) {
+                    SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                    SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Listening timed out"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Audio permission missing"
+                    else -> null
+                }
+                if (msg != null && error != SpeechRecognizer.ERROR_NO_MATCH && error != SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResults(results: Bundle?) {
+                setListening(false)
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val text = matches?.firstOrNull()?.trim().orEmpty()
+                if (text.isNotBlank()) {
+                    val fullText = if (baseQuery.isEmpty()) text else "$baseQuery $text"
+                    onQueryChange(fullText)
+                }
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {
+                val partialMatches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val partialText = partialMatches?.firstOrNull()?.trim().orEmpty()
+                if (partialText.isNotBlank()) {
+                    val liveText = if (baseQuery.isEmpty()) partialText else "$baseQuery $partialText"
+                    onQueryChange(liveText)
+                }
+            }
+
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+
+        recognizer.startListening(intent)
+        setListening(true)
+    } catch (e: Exception) {
+        setListening(false)
+        Toast.makeText(context, "Voice recognition error: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }

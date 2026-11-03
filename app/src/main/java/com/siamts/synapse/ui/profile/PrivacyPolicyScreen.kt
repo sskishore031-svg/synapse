@@ -338,3 +338,4 @@ fun PrivacyPolicyScreenPreview() {
         PrivacyPolicyScreen(onBackClick = {}, modifier = Modifier.fillMaxSize())
     }
 }
+
