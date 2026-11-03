@@ -79,7 +79,8 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
-    themeViewModel: ThemeViewModel = viewModel()
+    themeViewModel: ThemeViewModel = viewModel(),
+    onAboutClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -379,7 +380,9 @@ fun SettingsScreen(
                         color = sectionHeaderColor
                     )
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = onAboutClick != null) { onAboutClick?.invoke() },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = cardBgColor),
                         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
@@ -389,36 +392,49 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(
-                                        color = if (isDark) Color(0xFF161F42) else Color(0xFFEFF6FF),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
-                                BrainGraphic(modifier = Modifier.size(36.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(
+                                            color = if (isDark) Color(0xFF161F42) else Color(0xFFEFF6FF),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BrainGraphic(modifier = Modifier.size(36.dp))
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column {
+                                    Text(
+                                        text = "SYNAPSE AI Companion",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = primaryTextColor
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Version 1.0.0 · Tap to view details",
+                                        fontSize = 12.sp,
+                                        color = secondaryTextColor
+                                    )
+                                }
                             }
 
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column {
-                                Text(
-                                    text = "SYNAPSE AI Companion",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = primaryTextColor
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Version 1.0.0 · Jetpack Compose & On-Device Engine",
-                                    fontSize = 12.sp,
-                                    color = secondaryTextColor
-                                )
-                            }
+                            Text(
+                                text = "›",
+                                color = secondaryTextColor,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 

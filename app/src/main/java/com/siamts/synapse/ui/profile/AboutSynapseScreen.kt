@@ -46,10 +46,22 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
+object AboutRoutes {
+    const val WHATS_NEW = "whats_new_screen"
+    const val TERMS_OF_SERVICE = "terms_of_service_screen"
+    const val PRIVACY_POLICY = "privacy_policy_screen"
+    const val OPEN_SOURCE_LICENSES = "open_source_licenses_screen"
+}
+
 @Composable
 fun AboutSynapseScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onWhatsNewClick: () -> Unit = {},
+    onTermsOfServiceClick: () -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
+    onOpenSourceLicensesClick: () -> Unit = {},
+    onNavigateToRoute: ((String) -> Unit)? = null,
 ) {
     val isDark = LocalThemeIsDark.current
 
@@ -177,10 +189,22 @@ fun AboutSynapseScreen(
                             border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                AboutLinkRow("What's New in 1.0.0", "📰", primaryText)
-                                AboutLinkRow("Terms of Service", "📜", primaryText)
-                                AboutLinkRow("Privacy Policy", "🔒", primaryText)
-                                AboutLinkRow("Open Source Licenses", "📄", primaryText)
+                                AboutLinkRow("What's New in 1.0.0", "📰", primaryText) {
+                                    onWhatsNewClick()
+                                    onNavigateToRoute?.invoke(AboutRoutes.WHATS_NEW)
+                                }
+                                AboutLinkRow("Terms of Service", "📜", primaryText) {
+                                    onTermsOfServiceClick()
+                                    onNavigateToRoute?.invoke(AboutRoutes.TERMS_OF_SERVICE)
+                                }
+                                AboutLinkRow("Privacy Policy", "🔒", primaryText) {
+                                    onPrivacyPolicyClick()
+                                    onNavigateToRoute?.invoke(AboutRoutes.PRIVACY_POLICY)
+                                }
+                                AboutLinkRow("Open Source Licenses", "📄", primaryText) {
+                                    onOpenSourceLicensesClick()
+                                    onNavigateToRoute?.invoke(AboutRoutes.OPEN_SOURCE_LICENSES)
+                                }
                             }
                         }
 
@@ -206,11 +230,16 @@ fun AboutSynapseScreen(
 }
 
 @Composable
-private fun AboutLinkRow(title: String, icon: String, textColor: Color) {
+private fun AboutLinkRow(
+    title: String,
+    icon: String,
+    textColor: Color,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -223,6 +252,28 @@ private fun AboutLinkRow(title: String, icon: String, textColor: Color) {
         Text(text = "›", color = Color(0xFF94A3B8), fontSize = 18.sp)
     }
 }
+
+/**
+ * AboutScreen alias for AboutSynapseScreen
+ */
+@Composable
+fun AboutScreen(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onWhatsNewClick: () -> Unit = {},
+    onTermsOfServiceClick: () -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
+    onOpenSourceLicensesClick: () -> Unit = {},
+    onNavigateToRoute: ((String) -> Unit)? = null,
+) = AboutSynapseScreen(
+    onBackClick = onBackClick,
+    modifier = modifier,
+    onWhatsNewClick = onWhatsNewClick,
+    onTermsOfServiceClick = onTermsOfServiceClick,
+    onPrivacyPolicyClick = onPrivacyPolicyClick,
+    onOpenSourceLicensesClick = onOpenSourceLicensesClick,
+    onNavigateToRoute = onNavigateToRoute,
+)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

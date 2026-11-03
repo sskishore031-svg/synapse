@@ -56,17 +56,22 @@ import com.siamts.synapse.ui.notes.NotesGeneratorScreen
 import com.siamts.synapse.ui.notes.NotesGeneratorViewModel
 import com.siamts.synapse.ui.notes.SavedNotesScreen
 import com.siamts.synapse.ui.notes.SavedNotesViewModel
+import com.siamts.synapse.ui.profile.AboutRoutes
 import com.siamts.synapse.ui.profile.AboutSynapseScreen
 import com.siamts.synapse.ui.profile.AchievementsScreen
 import com.siamts.synapse.ui.profile.HelpSupportScreen
 import com.siamts.synapse.ui.profile.LanguageSelectionScreen
 import com.siamts.synapse.ui.profile.NotificationsSettingsScreen
+import com.siamts.synapse.ui.profile.OpenSourceLicensesScreen
 import com.siamts.synapse.ui.profile.PersonalInfoScreen
+import com.siamts.synapse.ui.profile.PrivacyPolicyScreen
 import com.siamts.synapse.ui.profile.ProfileScreen
 import com.siamts.synapse.ui.profile.ProfileViewModel
 import com.siamts.synapse.ui.profile.ProgressAnalyticsScreen
 import com.siamts.synapse.ui.profile.SettingsScreen
 import com.siamts.synapse.ui.profile.StudyGoalsScreen
+import com.siamts.synapse.ui.profile.TermsOfServiceScreen
+import com.siamts.synapse.ui.profile.WhatsNewScreen
 import com.siamts.synapse.ui.quadratic.MathChapterQuizViewModel
 import com.siamts.synapse.ui.quadratic.MathNotesViewModel
 import com.siamts.synapse.ui.quadratic.MathPracticeViewModel
@@ -171,6 +176,10 @@ sealed class AppScreen {
     data object NotificationsSettings : AppScreen()
     data object HelpSupport : AppScreen()
     data object AboutSynapse : AppScreen()
+    data object WhatsNew : AppScreen()
+    data object TermsOfService : AppScreen()
+    data object PrivacyPolicy : AppScreen()
+    data object OpenSourceLicenses : AppScreen()
     data object ProgressAnalytics : AppScreen()
     data object Flashcards : AppScreen()
     data object AiTutor : AppScreen()
@@ -254,6 +263,10 @@ class MainActivity : ComponentActivity() {
                                 is AppScreen.NotificationsSettings -> AppScreen.Profile
                                 is AppScreen.HelpSupport -> AppScreen.Profile
                                 is AppScreen.AboutSynapse -> AppScreen.Profile
+                                is AppScreen.WhatsNew -> AppScreen.AboutSynapse
+                                is AppScreen.TermsOfService -> AppScreen.AboutSynapse
+                                is AppScreen.PrivacyPolicy -> AppScreen.AboutSynapse
+                                is AppScreen.OpenSourceLicenses -> AppScreen.AboutSynapse
                                 is AppScreen.ProgressAnalytics -> AppScreen.Profile
                                 is AppScreen.AiTutor -> AppScreen.Dashboard
                                 is AppScreen.QuizHomeSelection -> AppScreen.Dashboard
@@ -1385,7 +1398,71 @@ class MainActivity : ComponentActivity() {
                             AppScreen.AboutSynapse -> {
                                 AboutSynapseScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        navigateBack()
+                                    },
+                                    onWhatsNewClick = {
+                                        navigateTo(AppScreen.WhatsNew)
+                                    },
+                                    onTermsOfServiceClick = {
+                                        navigateTo(AppScreen.TermsOfService)
+                                    },
+                                    onPrivacyPolicyClick = {
+                                        navigateTo(AppScreen.PrivacyPolicy)
+                                    },
+                                    onOpenSourceLicensesClick = {
+                                        navigateTo(AppScreen.OpenSourceLicenses)
+                                    },
+                                    onNavigateToRoute = { route ->
+                                        when (route) {
+                                            AboutRoutes.WHATS_NEW -> navigateTo(AppScreen.WhatsNew)
+                                            AboutRoutes.TERMS_OF_SERVICE -> navigateTo(AppScreen.TermsOfService)
+                                            AboutRoutes.PRIVACY_POLICY -> navigateTo(AppScreen.PrivacyPolicy)
+                                            AboutRoutes.OPEN_SOURCE_LICENSES -> navigateTo(AppScreen.OpenSourceLicenses)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.WhatsNew -> {
+                                WhatsNewScreen(
+                                    onBackClick = {
+                                        navigateBack()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.TermsOfService -> {
+                                TermsOfServiceScreen(
+                                    onBackClick = {
+                                        navigateBack()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.PrivacyPolicy -> {
+                                PrivacyPolicyScreen(
+                                    onBackClick = {
+                                        navigateBack()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            AppScreen.OpenSourceLicenses -> {
+                                OpenSourceLicensesScreen(
+                                    onBackClick = {
+                                        navigateBack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1619,6 +1696,9 @@ class MainActivity : ComponentActivity() {
                                         profileViewModel.logout {
                                             currentScreen = AppScreen.Login
                                         }
+                                    },
+                                    onAboutClick = {
+                                        navigateTo(AppScreen.AboutSynapse)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
