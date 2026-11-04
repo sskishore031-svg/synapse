@@ -59,3 +59,4 @@ class ShareNotesTest {
         assertTrue(formatted.contains("Ionic vs Covalent bonds."))
     }
 }
+
