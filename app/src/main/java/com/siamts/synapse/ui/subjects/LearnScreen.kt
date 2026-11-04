@@ -24,9 +24,12 @@ fun LearnScreen(
         onTabSelect = onTabSelect,
         modifier = modifier,
         onSubjectClick = { subjectId ->
-            onNavigateToRoute?.invoke("subject_detail_screen/$subjectId")
+            onNavigateToRoute?.invoke("roadmap_screen/$subjectId")
             onSubjectClick?.invoke(subjectId)
         },
-        onChapterClick = onChapterClick,
+        onChapterClick = { chapterId ->
+            onNavigateToRoute?.invoke("lesson_screen/$chapterId")
+            onChapterClick?.invoke(chapterId)
+        },
     )
 }

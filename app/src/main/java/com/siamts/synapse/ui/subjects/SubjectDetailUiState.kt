@@ -30,3 +30,4 @@ data class SubjectDetailUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )
+

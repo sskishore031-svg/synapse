@@ -4,9 +4,10 @@ import android.app.Application
 import android.content.Context
 import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.repository.SubjectCatalogRepository
 
 /**
- * Main application class initializing application-level singletons such as [SessionManager] and [LocalAIEngine].
+ * Main application class initializing application-level singletons such as [SessionManager], [LocalAIEngine], and [SubjectCatalogRepository].
  */
 class SynapseApplication : Application() {
 
@@ -15,6 +16,9 @@ class SynapseApplication : Application() {
         instance = this
         SessionManager.init(this)
         LocalAIEngine.init(this)
+        try {
+            SubjectCatalogRepository.getInstance(this)
+        } catch (_: Throwable) {}
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.siamts.synapse.data.repository
 
+import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.model.ChapterCompleteResponse
 import com.siamts.synapse.data.model.ChapterDetailResponse
 import com.siamts.synapse.data.model.SubjectChaptersResponse
@@ -21,24 +22,28 @@ class ChaptersRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<SubjectChaptersResponse> {
-        // Resolve subject numeric ID if only slug provided
-        val resolvedId = subjectId ?: subjectSlug?.let { catalogRepo?.resolveSubjectNumericId(it) }
+        // Resolve subject numeric ID dynamically
+        val resolvedId = subjectId
+            ?: subjectSlug?.let { BaseCurriculumData.resolveSubjectNumericId(it) }
+            ?: 1
 
         // Try remote API first
         try {
-            val response = api.getSubjectChapters(subjectId, subjectSlug, userId, email)
-            if (response.isSuccessful && response.body() != null) {
+            val response = api.getSubjectChapters(subjectId ?: resolvedId, subjectSlug, userId, email)
+            if (response.isSuccessful && response.body() != null && response.body()!!.data?.chapters?.isNotEmpty() == true) {
                 return Result.success(response.body()!!)
             }
         } catch (_: Exception) {
             // Fallback to local catalog
         }
 
-        // Local fallback for all subjects
-        if (resolvedId != null) {
-            val local = catalogRepo?.getSubjectChapters(resolvedId)
-            if (local != null) return Result.success(local)
-        }
+        // Local fallback for base curriculum (100% offline guarantee)
+        val base = BaseCurriculumData.getSubjectChapters(resolvedId)
+        if (base != null) return Result.success(base)
+
+        // Local fallback for extended catalog
+        val local = catalogRepo?.getSubjectChapters(resolvedId)
+        if (local != null) return Result.success(local)
 
         return Result.failure(Exception("Failed to fetch chapters for subject $subjectId / $subjectSlug"))
     }
@@ -52,13 +57,21 @@ class ChaptersRepositoryImpl(
         try {
             val response = api.getChapterLesson(chapterId, userId, email)
             if (response.isSuccessful && response.body() != null) {
-                return Result.success(response.body()!!)
+                val body = response.body()!!
+                val p1Text = body.data?.chapter?.part1?.conceptText.orEmpty()
+                if (p1Text.isNotBlank()) {
+                    return Result.success(body)
+                }
             }
         } catch (_: Exception) {
             // Fallback to local catalog
         }
 
-        // Local fallback for all chapters
+        // Local fallback from BaseCurriculumData first
+        val base = BaseCurriculumData.getChapterLesson(chapterId)
+        if (base != null) return Result.success(base)
+
+        // Local fallback for extended catalog
         val local = catalogRepo?.getChapterLesson(chapterId)
         if (local != null) return Result.success(local)
 

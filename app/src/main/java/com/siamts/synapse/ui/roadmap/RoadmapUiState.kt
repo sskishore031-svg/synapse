@@ -19,10 +19,10 @@ data class Milestone(
  */
 data class RoadmapUiState(
     val headerTag: String = "A PATH THAT EVOLVES WITH YOU",
-    val title: String = "Your Learning Roadmap",
-    val subjectId: Int = 4, // Default AI
-    val subjectIcon: String = "🧠",
-    val subjectName: String = "Artificial Intelligence",
+    val title: String = "Mathematics Roadmap",
+    val subjectId: Int = 1,
+    val subjectIcon: String = "∑",
+    val subjectName: String = "Mathematics",
     val progressPercentage: Int = 0,
     val milestoneSummary: String = "Loading roadmap...",
     val milestones: List<Milestone> = emptyList(),

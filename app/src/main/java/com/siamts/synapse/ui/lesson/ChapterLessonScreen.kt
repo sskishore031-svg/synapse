@@ -52,6 +52,47 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
+typealias LessonContentViewModel = ChapterLessonViewModel
+typealias LearningRoadmapViewModel = com.siamts.synapse.ui.roadmap.RoadmapViewModel
+
+@Composable
+fun LessonContentScreen(
+    chapterId: Int,
+    viewModel: ChapterLessonViewModel,
+    onBackClick: () -> Unit,
+    onNavigateToChapter: (Int) -> Unit,
+    onTakeQuiz: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    subjectId: String? = null,
+) {
+    ChapterLessonScreen(
+        chapterId = chapterId,
+        viewModel = viewModel,
+        onBackClick = onBackClick,
+        onNavigateToChapter = onNavigateToChapter,
+        onTakeQuiz = onTakeQuiz,
+        modifier = modifier,
+        subjectId = subjectId,
+    )
+}
+
+@Composable
+fun LearningRoadmapScreen(
+    viewModel: com.siamts.synapse.ui.roadmap.RoadmapViewModel,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onContinueClick: (() -> Unit)? = null,
+    onChapterClick: ((Int) -> Unit)? = null,
+) {
+    com.siamts.synapse.ui.roadmap.RoadmapScreen(
+        viewModel = viewModel,
+        onBackClick = onBackClick,
+        modifier = modifier,
+        onContinueClick = onContinueClick,
+        onChapterClick = onChapterClick,
+    )
+}
+
 @Composable
 fun ChapterLessonScreen(
     chapterId: Int,
@@ -59,7 +100,8 @@ fun ChapterLessonScreen(
     onBackClick: () -> Unit,
     onNavigateToChapter: (Int) -> Unit,
     onTakeQuiz: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    subjectId: String? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -67,9 +109,9 @@ fun ChapterLessonScreen(
     var isSavingSmartNote by remember { mutableStateOf(false) }
     var saveFeedbackMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(chapterId) {
-        if (chapterId > 0 && uiState.chapterId != chapterId) {
-            viewModel.loadChapterLesson(chapterId)
+    LaunchedEffect(chapterId, subjectId) {
+        if (chapterId > 0 && (uiState.chapterId != chapterId || uiState.part1Content.isBlank())) {
+            viewModel.loadChapterLesson(chapterId, subjectId)
         }
     }
 
@@ -252,6 +294,67 @@ fun ChapterLessonScreen(
                                         fontSize = 15.sp,
                                         lineHeight = 24.sp
                                     )
+                                }
+                            }
+
+                            if (uiState.currentPartIndex == 0 && uiState.syllabus.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "Syllabus Objectives",
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        uiState.syllabus.forEach { topic ->
+                                            Row(verticalAlignment = Alignment.Top) {
+                                                Text(text = "• ", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                Text(text = topic, color = Color(0xFF334155), fontSize = 13.sp, lineHeight = 20.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (uiState.currentPartIndex == 1 && uiState.coreFormulas.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "Core Formulas & Rules",
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        uiState.coreFormulas.forEach { formula ->
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(text = "⚡ ", fontSize = 14.sp)
+                                                Text(
+                                                    text = formula,
+                                                    color = Color(0xFF92400E),
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
 

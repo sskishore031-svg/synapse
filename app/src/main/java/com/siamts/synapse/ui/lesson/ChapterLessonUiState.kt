@@ -16,6 +16,8 @@ data class ChapterLessonUiState(
     val part1Content: String = "",
     val part2Title: String = "",
     val part2Content: String = "",
+    val syllabus: List<String> = emptyList(),
+    val coreFormulas: List<String> = emptyList(),
     val previousChapterId: Int? = null,
     val nextChapterId: Int? = null,
     val isMarkingComplete: Boolean = false,

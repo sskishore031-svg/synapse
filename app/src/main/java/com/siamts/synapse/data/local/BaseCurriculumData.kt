@@ -2,8 +2,17 @@ package com.siamts.synapse.data.local
 
 import com.siamts.synapse.data.model.CatalogChapter
 import com.siamts.synapse.data.model.CatalogSubject
+import com.siamts.synapse.data.model.ChapterDetailDto
+import com.siamts.synapse.data.model.ChapterDetailResponse
+import com.siamts.synapse.data.model.ChapterLessonData
+import com.siamts.synapse.data.model.HomeSubjectDto
+import com.siamts.synapse.data.model.LessonPartDto
 import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.data.model.QuizQuestionDto
+import com.siamts.synapse.data.model.SubjectChapterDto
+import com.siamts.synapse.data.model.SubjectChaptersData
+import com.siamts.synapse.data.model.SubjectChaptersResponse
+import java.util.Locale
 
 /**
  * Embedded on-device curriculum bank containing all base subjects (Mathematics, Computer Science,
@@ -78,6 +87,137 @@ object BaseCurriculumData {
             }
         }
         notes
+    }
+
+    fun resolveSubjectNumericId(identifier: String): Int {
+        val trimmed = identifier.trim().lowercase(Locale.ROOT)
+        return when (trimmed) {
+            "math", "maths", "mathematics", "algebra", "calculus", "1", "math_001" -> 1
+            "cs", "computer science", "algorithms", "data structures", "2" -> 2
+            "ds", "data science", "data analytics", "3" -> 3
+            "ai", "artificial intelligence", "ml", "deep learning", "4" -> 4
+            "phy", "physics", "waves", "5" -> 5
+            "chem", "chemistry", "bonding", "6" -> 6
+            "bio", "biology", "ext_bio", "101" -> 101
+            "history", "world history", "ext_history", "102" -> 102
+            "econ", "economics", "finance", "economics & finance", "ext_econ", "103" -> 103
+            "env", "environmental science", "ecology", "ext_env", "104" -> 104
+            "net", "networks", "computer networks", "ext_net", "105" -> 105
+            "sec", "security", "cyber security", "ext_sec", "106" -> 106
+            "psych", "psychology", "ext_psych", "107" -> 107
+            "biz", "business", "business management", "management", "ext_biz", "108" -> 108
+            "ee", "electrical engineering", "circuits", "ext_ee", "109" -> 109
+            "astro", "astronomy", "astronomy & astrophysics", "astrophysics", "ext_astro", "110" -> 110
+            else -> trimmed.toIntOrNull() ?: 1
+        }
+    }
+
+    fun getSubjectById(subjectId: String): CatalogSubject? {
+        val numId = resolveSubjectNumericId(subjectId)
+        val byNum = subjects.firstOrNull { it.subjectId == numId }
+        if (byNum != null) return byNum
+        return subjects.firstOrNull {
+            it.id.equals(subjectId, ignoreCase = true) ||
+            it.name.equals(subjectId, ignoreCase = true) ||
+            it.slug.equals(subjectId, ignoreCase = true)
+        }
+    }
+
+    fun getChapterById(chapterId: Int): CatalogChapter? {
+        for (subj in subjects) {
+            val ch = subj.chapters.firstOrNull { it.chapterId == chapterId }
+            if (ch != null) return ch
+        }
+        return null
+    }
+
+    fun getSubjectChapters(subjectId: Int): SubjectChaptersResponse? {
+        val subject = subjects.firstOrNull { it.subjectId == subjectId } ?: return null
+        val homeSub = HomeSubjectDto(
+            id = subject.subjectId,
+            name = subject.name,
+            slug = subject.slug,
+            iconSymbol = subject.iconSymbol,
+            colorHex = subject.colorHex,
+            totalChapters = subject.chapters.size,
+            completedChapters = 0,
+            progressPercent = 0
+        )
+        val chapterDtos = subject.chapters.mapIndexed { idx, ch ->
+            SubjectChapterDto(
+                id = ch.chapterId.toString(),
+                chapterId = ch.chapterId,
+                title = ch.title,
+                order = ch.chapterOrder,
+                chapterOrder = ch.chapterOrder,
+                estimatedMinutes = ch.estimatedMinutes,
+                isCompleted = false,
+                isUnlocked = true,
+                status = if (idx == 0) "ACTIVE" else "UNLOCKED",
+                subtext = ch.summary
+            )
+        }
+        return SubjectChaptersResponse(
+            status = "success",
+            data = SubjectChaptersData(
+                subject = homeSub,
+                chapters = chapterDtos
+            )
+        )
+    }
+
+    fun getChapterLesson(chapterId: Int): ChapterDetailResponse? {
+        val parentSubject = subjects.firstOrNull { subj ->
+            subj.chapters.any { it.chapterId == chapterId }
+        } ?: return null
+        val chapter = parentSubject.chapters.firstOrNull { it.chapterId == chapterId } ?: return null
+
+        val homeSub = HomeSubjectDto(
+            id = parentSubject.subjectId,
+            name = parentSubject.name,
+            slug = parentSubject.slug,
+            iconSymbol = parentSubject.iconSymbol,
+            colorHex = parentSubject.colorHex
+        )
+
+        val chList = parentSubject.chapters
+        val curIdx = chList.indexOfFirst { it.chapterId == chapterId }
+        val prevCh = if (curIdx > 0) chList[curIdx - 1] else null
+        val nextCh = if (curIdx >= 0 && curIdx < chList.size - 1) chList[curIdx + 1] else null
+
+        val detail = ChapterDetailDto(
+            id = chapter.chapterId,
+            title = chapter.title,
+            chapterOrder = chapter.chapterOrder,
+            estimatedMinutes = chapter.estimatedMinutes,
+            isCompleted = false,
+            previousChapterId = prevCh?.chapterId,
+            previousChapterTitle = prevCh?.title,
+            nextChapterId = nextCh?.chapterId,
+            nextChapterTitle = nextCh?.title,
+            part1 = LessonPartDto(
+                partNumber = 1,
+                subtitleTag = "Part 1: Core Fundamentals",
+                headline = chapter.part1Title.ifBlank { "${chapter.title} Fundamentals" },
+                conceptText = chapter.part1Content,
+                keyPoints = chapter.syllabus
+            ),
+            part2 = LessonPartDto(
+                partNumber = 2,
+                subtitleTag = "Part 2: Practical Applications",
+                headline = chapter.part2Title.ifBlank { "${chapter.title} Deep Dive & Formulas" },
+                conceptText = chapter.part2Content,
+                keyPoints = chapter.coreFormulas
+            )
+        )
+
+        return ChapterDetailResponse(
+            status = "success",
+            data = ChapterLessonData(
+                subject = homeSub,
+                chapter = detail
+            )
+        )
     }
 
     // =========================================================================
@@ -1778,3 +1918,4 @@ object BaseCurriculumData {
         )
     }
 }
+

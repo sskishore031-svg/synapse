@@ -1,12 +1,15 @@
 package com.siamts.synapse.ui.lesson
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.ChaptersRepository
 import com.siamts.synapse.data.repository.ChaptersRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
 import com.siamts.synapse.data.repository.NotesRepositoryImpl
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,69 +17,113 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ChapterLessonViewModel(
+    private val savedStateHandle: SavedStateHandle? = null,
     private val chaptersRepository: ChaptersRepository = ChaptersRepositoryImpl(),
     private val notesRepository: NotesRepository = NotesRepositoryImpl(),
-    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
+    private val externalScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope get() = externalScope ?: viewModelScope
 
     private val _uiState = MutableStateFlow(ChapterLessonUiState())
     val uiState: StateFlow<ChapterLessonUiState> = _uiState.asStateFlow()
 
-    fun loadChapterLesson(chapterId: Int) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, chapterId = chapterId) }
+    init {
+        val navChapterId = savedStateHandle?.get<Int>("chapterId")
+            ?: savedStateHandle?.get<String>("chapterId")?.toIntOrNull()
+            ?: savedStateHandle?.get<Int>("chapter_id")
+            ?: savedStateHandle?.get<String>("chapter_id")?.toIntOrNull()
+        val navSubjectId = savedStateHandle?.get<String>("subjectId")
+            ?: savedStateHandle?.get<String>("subject_id")
+        if (navChapterId != null && navChapterId > 0) {
+            loadChapterLesson(navChapterId, navSubjectId)
+        }
+    }
 
+    fun loadChapterLesson(chapterId: Int, subjectId: String? = null) {
+        val targetChapterId = if (chapterId > 0) chapterId else 4
+
+        // 1. Immediately apply local curriculum lesson synchronously for instant offline display
+        val localLesson = BaseCurriculumData.getChapterLesson(targetChapterId)
+        if (localLesson?.data != null) {
+            applyLessonData(targetChapterId, localLesson.data)
+        }
+
+        // 2. Background sync with backend
+        scope.launch {
             val user = sessionManager?.getSessionUser()
             val userId = user?.id ?: 1
             val userEmail = user?.email ?: "student@synapse.ai"
 
             val result = chaptersRepository.getChapterLesson(
-                chapterId = chapterId,
+                chapterId = targetChapterId,
                 userId = userId,
                 email = userEmail
             )
 
-            result.onSuccess { response ->
-                val data = response.data
-                val chap = data?.chapter
-                val sub = data?.subject
-
-                val p1 = chap?.part1
-                val p2 = chap?.part2
-
-                val p1Title = p1?.headline?.ifEmpty { "Part 1: Core Fundamentals" } ?: "Part 1: Core Fundamentals"
-                val p1Content = p1?.conceptText?.ifEmpty { "Welcome to this chapter lesson." } ?: "Welcome to this chapter lesson."
-                val p2Title = p2?.headline?.ifEmpty { "Part 2: Practical Applications" } ?: "Part 2: Practical Applications"
-                val p2Content = p2?.conceptText?.ifEmpty { "Deep dive and practice problems for this topic." } ?: "Deep dive and practice problems for this topic."
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        chapterId = chap?.id ?: chapterId,
-                        chapterTitle = chap?.title.orEmpty(),
-                        subjectId = sub?.id ?: 1,
-                        subjectName = sub?.name ?: "Core Subject",
-                        subjectSlug = sub?.slug.orEmpty(),
-                        chapterOrder = chap?.chapterOrder ?: 1,
-                        durationMinutes = chap?.estimatedMinutes ?: 15,
-                        isCompleted = chap?.isCompleted ?: false,
-                        currentPartIndex = 0,
-                        part1Title = p1Title,
-                        part1Content = p1Content,
-                        part2Title = p2Title,
-                        part2Content = p2Content,
-                        previousChapterId = chap?.previousChapterId,
-                        nextChapterId = chap?.nextChapterId
-                    )
-                }
-            }.onFailure { err ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = err.localizedMessage ?: "Failed to load chapter lesson"
-                    )
-                }
+            val response = result.getOrNull()
+            if (response?.data != null && response.data.chapter?.part1?.conceptText?.isNotBlank() == true) {
+                applyLessonData(targetChapterId, response.data)
             }
+        }
+    }
+
+    private fun applyLessonData(targetChapterId: Int, data: com.siamts.synapse.data.model.ChapterLessonData) {
+        val chap = data.chapter
+        val sub = data.subject
+
+        val p1 = chap?.part1
+        val p2 = chap?.part2
+
+        val syllabusPoints = p1?.keyPoints.orEmpty().ifEmpty {
+            BaseCurriculumData.getChapterById(targetChapterId)?.syllabus.orEmpty()
+        }
+        val formulaPoints = p2?.keyPoints.orEmpty().ifEmpty {
+            BaseCurriculumData.getChapterById(targetChapterId)?.coreFormulas.orEmpty()
+        }
+
+        val p1Title = p1?.headline?.ifBlank { "${chap?.title ?: "Chapter"} Fundamentals" }
+            ?: "${chap?.title ?: "Chapter"} Fundamentals"
+
+        val p1Content = p1?.conceptText?.ifBlank {
+            syllabusPoints.joinToString(separator = "\n\n") { "• $it" }
+                .ifBlank { "Core concepts and definitions for ${chap?.title ?: "this lesson"}." }
+        } ?: syllabusPoints.joinToString(separator = "\n\n") { "• $it" }
+            .ifBlank { "Core concepts and definitions for ${chap?.title ?: "this lesson"}." }
+
+        val p2Title = p2?.headline?.ifBlank { "${chap?.title ?: "Chapter"} Applications & Formulas" }
+            ?: "${chap?.title ?: "Chapter"} Applications & Formulas"
+
+        val p2Content = p2?.conceptText?.ifBlank {
+            formulaPoints.joinToString(separator = "\n\n") { "• $it" }
+                .ifBlank { "Worked practical examples, analytical derivations, and problem solving steps." }
+        } ?: formulaPoints.joinToString(separator = "\n\n") { "• $it" }
+            .ifBlank { "Worked practical examples, analytical derivations, and problem solving steps." }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                chapterId = chap?.id ?: targetChapterId,
+                chapterTitle = chap?.title.orEmpty().ifEmpty {
+                    BaseCurriculumData.getChapterById(targetChapterId)?.title ?: "Lesson"
+                },
+                subjectId = sub?.id ?: 1,
+                subjectName = sub?.name.orEmpty().ifEmpty { "Mathematics" },
+                subjectSlug = sub?.slug.orEmpty(),
+                chapterOrder = chap?.chapterOrder ?: 1,
+                durationMinutes = chap?.estimatedMinutes ?: 15,
+                isCompleted = chap?.isCompleted ?: false,
+                currentPartIndex = 0,
+                part1Title = p1Title,
+                part1Content = p1Content,
+                part2Title = p2Title,
+                part2Content = p2Content,
+                syllabus = syllabusPoints,
+                coreFormulas = formulaPoints,
+                previousChapterId = chap?.previousChapterId,
+                nextChapterId = chap?.nextChapterId
+            )
         }
     }
 
