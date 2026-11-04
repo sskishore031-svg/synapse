@@ -35,6 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -197,7 +200,11 @@ fun SubjectSelectionContent(
                             ),
                             singleLine = true,
                             leadingIcon = {
-                                Text(text = "🔍", fontSize = 16.sp)
+                                Text(
+                                    text = "🔍",
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.clickable { onOpenCatalog() }
+                                )
                             },
                             trailingIcon = {
                                 if (uiState.searchQuery.isNotEmpty()) {
@@ -544,6 +551,23 @@ fun SubjectSelectionContent(
 
     // Extended Catalog Dialog (+10 Subjects)
     if (uiState.isCatalogSheetOpen) {
+        var catalogSearchQuery by remember { mutableStateOf("") }
+        val filteredCatalog = remember(catalogSearchQuery, uiState.availableCatalog) {
+            if (catalogSearchQuery.isBlank()) {
+                uiState.availableCatalog
+            } else {
+                val q = catalogSearchQuery.trim().lowercase(java.util.Locale.ROOT)
+                uiState.availableCatalog.filter { sub ->
+                    sub.name.lowercase(java.util.Locale.ROOT).contains(q) ||
+                            sub.category.lowercase(java.util.Locale.ROOT).contains(q) ||
+                            sub.chapters.any { ch ->
+                                ch.title.lowercase(java.util.Locale.ROOT).contains(q) ||
+                                        ch.summary.lowercase(java.util.Locale.ROOT).contains(q)
+                            }
+                }
+            }
+        }
+
         AlertDialog(
             onDismissRequest = onCloseCatalog,
             title = {
@@ -563,12 +587,42 @@ fun SubjectSelectionContent(
                 }
             },
             text = {
-                LazyColumn(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(uiState.availableCatalog) { catalogSub ->
-                        val isAdded = catalogSub.isAdded
+                    OutlinedTextField(
+                        value = catalogSearchQuery,
+                        onValueChange = { catalogSearchQuery = it },
+                        placeholder = {
+                            Text(
+                                text = "Filter subjects & topics (e.g. Networks, Biology)",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 12.sp
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BlueAccent,
+                            unfocusedBorderColor = Color(0xFFE2E8F0),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF0F172A),
+                        ),
+                        singleLine = true,
+                        leadingIcon = { Text(text = "🔍", fontSize = 14.sp) }
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredCatalog) { catalogSub ->
+                            val isAdded = catalogSub.isAdded
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -627,8 +681,9 @@ fun SubjectSelectionContent(
                         }
                     }
                 }
-            },
-            confirmButton = {
+            }
+        },
+        confirmButton = {
                 Button(
                     onClick = onCloseCatalog,
                     colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
