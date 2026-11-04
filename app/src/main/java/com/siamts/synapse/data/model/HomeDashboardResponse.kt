@@ -164,7 +164,9 @@ data class HomeSubjectDto(
     @SerializedName("progress_percent")
     val progressPercent: Int = 0,
     @SerializedName("knowledge_percent")
-    val knowledgePercent: Int = 0
+    val knowledgePercent: Int = 0,
+    @SerializedName("isInterested")
+    val isInterested: Boolean = false
 )
 
 data class HomeActivityDto(

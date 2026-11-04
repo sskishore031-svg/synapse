@@ -454,6 +454,26 @@ fun SubjectSelectionContent(
                                                 fontWeight = FontWeight.Bold,
                                             )
 
+                                            if (subject.isInterested) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier
+                                                        .background(
+                                                            color = BlueAccent.copy(alpha = 0.12f),
+                                                            shape = RoundedCornerShape(6.dp)
+                                                        )
+                                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "★ Interested",
+                                                        color = BlueAccent,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+
                                             Spacer(modifier = Modifier.height(12.dp))
 
                                             Row(

@@ -180,14 +180,23 @@ class AuthViewModel(
 
             if (result.isSuccess) {
                 val response = result.getOrNull()
+                val user = response?.user
+                val token = response?.token
+
+                // Persist session into DataStore Preferences
+                val manager = sessionManager ?: SessionManager.getInstanceOrNull()
+                if (user != null) {
+                    manager?.saveSession(user, token)
+                }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         isSuccess = true,
                         errorMessage = null,
                         successMessage = response?.message ?: "Account created successfully!",
-                        user = response?.user,
-                        token = response?.token
+                        user = user,
+                        token = token
                     )
                 }
                 onSuccess()

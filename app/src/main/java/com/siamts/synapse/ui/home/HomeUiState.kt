@@ -26,7 +26,8 @@ data class HomeSubjectItem(
     val colorHex: String,
     val totalChapters: Int,
     val completedChapters: Int,
-    val progressPercent: Int
+    val progressPercent: Int,
+    val isInterested: Boolean = false
 )
 
 /**

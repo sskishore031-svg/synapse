@@ -16,7 +16,8 @@ data class Subject(
     val progressPercentage: Int,
     val progressColor: Color,
     val category: String = "Core",
-    val chapters: List<SubjectChapterSnippet> = emptyList()
+    val chapters: List<SubjectChapterSnippet> = emptyList(),
+    val isInterested: Boolean = false
 )
 
 data class SearchResultItem(
@@ -44,4 +45,5 @@ data class SubjectSelectionUiState(
     val availableCatalog: List<CatalogSubject> = emptyList(),
     val isCatalogSheetOpen: Boolean = false,
     val selectedTab: Int = 1,
+    val userInterests: List<String> = emptyList()
 )

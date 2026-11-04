@@ -3,6 +3,7 @@ package com.siamts.synapse.ui.auth
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AuthRepository
 import com.siamts.synapse.data.repository.AuthRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,9 +14,11 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel managing Create Account / Sign Up validation and API calls.
+ * Automatically saves authenticated session to SessionManager upon successful registration.
  */
 class SignUpViewModel(
-    private val authRepository: AuthRepository = AuthRepositoryImpl()
+    private val authRepository: AuthRepository = AuthRepositoryImpl(),
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -82,10 +85,20 @@ class SignUpViewModel(
                 confirmPassword = confirmPassword
             )
             if (result.isSuccess) {
+                val response = result.getOrNull()
+                val user = response?.user
+                val token = response?.token
+
+                // Persist session into DataStore Preferences
+                val manager = sessionManager ?: SessionManager.getInstanceOrNull()
+                if (user != null) {
+                    manager?.saveSession(user, token)
+                }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = result.getOrNull()?.message ?: "Account created successfully!"
+                        successMessage = response?.message ?: "Account created successfully!"
                     )
                 }
                 onSignUpSuccess()

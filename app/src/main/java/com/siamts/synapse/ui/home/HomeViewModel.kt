@@ -60,7 +60,8 @@ class HomeViewModel(
                             colorHex = sb.colorHex,
                             totalChapters = sb.totalChapters,
                             completedChapters = sb.completedChapters,
-                            progressPercent = sb.progressPercent
+                            progressPercent = sb.progressPercent,
+                            isInterested = sb.isInterested
                         )
                     }
 

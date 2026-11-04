@@ -337,7 +337,10 @@ class MainActivity : ComponentActivity() {
                                 WelcomeScreen(
                                     viewModel = welcomeViewModel,
                                     onStartClick = {
-                                        currentScreen = AppScreen.Login
+                                        screenBackStack.clear()
+                                        val sessionManager = com.siamts.synapse.data.local.SessionManager.getInstanceOrNull()
+                                        val isAuthenticated = sessionManager?.isLoggedInCached() == true
+                                        currentScreen = if (isAuthenticated) AppScreen.Dashboard else AppScreen.Login
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -369,7 +372,8 @@ class MainActivity : ComponentActivity() {
                                 SignUpScreen(
                                     viewModel = signUpViewModel,
                                     onSignUpSuccess = {
-                                        currentScreen = AppScreen.Login
+                                        screenBackStack.clear()
+                                        currentScreen = AppScreen.Dashboard
                                     },
                                     onSignInClick = {
                                         currentScreen = AppScreen.Login

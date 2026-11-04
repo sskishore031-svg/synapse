@@ -30,6 +30,9 @@ data class UserDto(
     @SerializedName("interests")
     val interests: List<String>? = emptyList(),
 
+    @SerializedName("selected_interests")
+    val selectedInterests: List<String>? = null,
+
     @SerializedName("study_goal")
     val studyGoal: String? = null,
 
@@ -41,6 +44,9 @@ data class UserDto(
 
     @SerializedName("photo_url")
     val photoUrl: String? = null,
+
+    @SerializedName("avatar_url")
+    val avatarUrl: String? = null,
 
     @SerializedName("last_login")
     val lastLogin: String? = null

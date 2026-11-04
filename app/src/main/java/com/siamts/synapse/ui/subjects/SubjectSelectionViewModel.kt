@@ -3,6 +3,8 @@ package com.siamts.synapse.ui.subjects
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.data.local.AuthSessionState
+import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,14 +14,16 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
- * ViewModel managing Subject Selection, Live Search, and Extended Catalog dynamic addition.
+ * ViewModel managing Subject Selection, Live Search, Dynamic Interests Mapping,
+ * and Extended Catalog dynamic addition.
  */
 class SubjectSelectionViewModel(
     private val catalogRepo: SubjectCatalogRepository? = try {
         SubjectCatalogRepository.getInstance()
     } catch (_: Throwable) {
         null
-    }
+    },
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
 ) : ViewModel() {
 
     private val baseSubjects = listOf(
@@ -118,8 +122,43 @@ class SubjectSelectionViewModel(
     val uiState: StateFlow<SubjectSelectionUiState> = _uiState.asStateFlow()
 
     init {
+        observeUserSession()
         if (catalogRepo != null) {
             observeCatalog()
+        }
+    }
+
+    private fun applyInterests(subjects: List<Subject>, interests: List<String>): List<Subject> {
+        if (interests.isEmpty()) return subjects
+        val mapped = subjects.map { sub ->
+            val match = interests.any { userInt ->
+                sub.title.contains(userInt, ignoreCase = true) ||
+                userInt.contains(sub.title, ignoreCase = true) ||
+                sub.category.contains(userInt, ignoreCase = true)
+            }
+            sub.copy(isInterested = match)
+        }
+        return mapped.sortedByDescending { it.isInterested }
+    }
+
+    private fun observeUserSession() {
+        val manager = sessionManager ?: SessionManager.getInstanceOrNull() ?: return
+        viewModelScope.launch {
+            manager.sessionStateFlow.collect { sessionState ->
+                if (sessionState is AuthSessionState.Authenticated) {
+                    val interests = (sessionState.user.selectedInterests ?: sessionState.user.interests).orEmpty()
+                    _uiState.update { current ->
+                        val updatedSubjects = applyInterests(current.subjects, interests)
+                        val (filtered, results) = performSearch(updatedSubjects, current.searchQuery)
+                        current.copy(
+                            userInterests = interests,
+                            subjects = updatedSubjects,
+                            filteredSubjects = filtered,
+                            searchResults = results
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -149,7 +188,7 @@ class SubjectSelectionViewModel(
                     )
                 }
 
-                val allCombined = baseSubjects + addedSubjects
+                val allCombined = applyInterests(baseSubjects + addedSubjects, _uiState.value.userInterests)
                 val currentQuery = _uiState.value.searchQuery
 
                 _uiState.update { current ->

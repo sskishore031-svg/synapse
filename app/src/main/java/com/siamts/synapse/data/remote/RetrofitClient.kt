@@ -1,6 +1,7 @@
 package com.siamts.synapse.data.remote
 
 import android.os.Build
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,17 +10,19 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Singleton Retrofit Client configured for Synapse AI backend communication.
- * Automatically routes traffic to:
- * - Android Emulator: http://10.0.2.2/synapse_backend/
- * - Physical Mobile Phone: http://172.23.176.100/synapse_backend/
+ * Connects via Ngrok tunnel or LAN IP, bypassing ngrok browser warning headers
+ * and enabling complete HTTP body logging.
  */
 object RetrofitClient {
 
-    // Android Emulator loopback alias
-    private const val EMULATOR_BASE_URL = "http://10.0.2.2/synapse_backend/"
+    // Public Ngrok Base URL for mobile & emulator tunneling (captures all live traffic in ngrok)
+    const val NGROK_BASE_URL = "https://bakery-shallot-repeater.ngrok-free.dev/Synapse_backend/"
 
     // Host PC LAN IP accessible by physical mobile devices on the same local network
-    const val PHYSICAL_DEVICE_BASE_URL = "http://172.23.176.100/synapse_backend/"
+    const val PHYSICAL_DEVICE_BASE_URL = "http://172.23.176.100/Synapse_backend/"
+
+    // Android Emulator loopback alias
+    const val EMULATOR_LOCAL_BASE_URL = "http://10.0.2.2/Synapse_backend/"
 
     val isEmulator: Boolean
         get() = try {
@@ -35,8 +38,9 @@ object RetrofitClient {
             false
         }
 
+    // Default to Ngrok tunnel so all mobile device and emulator traffic is captured
     val defaultBaseUrl: String
-        get() = if (isEmulator) EMULATOR_BASE_URL else PHYSICAL_DEVICE_BASE_URL
+        get() = NGROK_BASE_URL
 
     @Volatile
     private var currentBaseUrl: String = defaultBaseUrl
@@ -80,6 +84,17 @@ object RetrofitClient {
     @Volatile
     private var notificationsApiInstance: NotificationsApi? = null
 
+    private val headerInterceptor by lazy {
+        Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("ngrok-skip-browser-warning", "true")
+                .header("User-Agent", "Synapse-AI-Android/1.0")
+                .header("Accept", "application/json")
+                .build()
+            chain.proceed(request)
+        }
+    }
+
     private val loggingInterceptor: HttpLoggingInterceptor by lazy {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -88,10 +103,11 @@ object RetrofitClient {
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(headerInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
     }

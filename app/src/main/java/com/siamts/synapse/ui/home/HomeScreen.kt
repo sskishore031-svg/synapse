@@ -630,7 +630,21 @@ fun HomeContent(
                                             colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430))
                                         ) {
                                             Column(modifier = Modifier.padding(12.dp)) {
-                                                Text(text = subj.iconSymbol, fontSize = 22.sp)
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(text = subj.iconSymbol, fontSize = 22.sp)
+                                                    if (subj.isInterested) {
+                                                        Text(
+                                                            text = "★ Interested",
+                                                            color = CyanGlow,
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Text(
                                                     text = subj.name,

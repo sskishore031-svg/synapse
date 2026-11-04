@@ -26,6 +26,9 @@ class SessionManager private constructor(context: Context) {
 
     private val dataStore = context.applicationContext.sessionDataStore
 
+    @Volatile
+    private var cachedIsLoggedIn: Boolean = false
+
     companion object {
         private val KEY_IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
         private val KEY_USER_ID = intPreferencesKey("user_id")
@@ -37,6 +40,7 @@ class SessionManager private constructor(context: Context) {
         private val KEY_USER_PREFERRED_LANG = stringPreferencesKey("user_preferred_language")
         private val KEY_USER_STUDY_GOAL = stringPreferencesKey("user_study_goal")
         private val KEY_USER_PHOTO_URL = stringPreferencesKey("user_photo_url")
+        private val KEY_USER_INTERESTS = stringPreferencesKey("user_interests")
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_LAST_LOGIN_TIMESTAMP = longPreferencesKey("last_login_timestamp")
 
@@ -72,8 +76,17 @@ class SessionManager private constructor(context: Context) {
         .map { preferences ->
             val isLoggedIn = preferences[KEY_IS_LOGGED_IN] ?: false
             val userId = preferences[KEY_USER_ID] ?: 0
+            val authenticated = isLoggedIn && userId > 0
+            cachedIsLoggedIn = authenticated
 
-            if (isLoggedIn && userId > 0) {
+            if (authenticated) {
+                val interestsRaw = preferences[KEY_USER_INTERESTS].orEmpty()
+                val parsedInterests = if (interestsRaw.isNotBlank()) {
+                    interestsRaw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                } else {
+                    listOf("Computer Science", "Artificial Intelligence", "Mathematics")
+                }
+
                 val user = UserDto(
                     id = userId,
                     name = preferences[KEY_USER_NAME].orEmpty(),
@@ -82,6 +95,8 @@ class SessionManager private constructor(context: Context) {
                     bio = preferences[KEY_USER_BIO],
                     course = preferences[KEY_USER_COURSE] ?: "B.Tech Computer Science · Year 3",
                     preferredLanguage = preferences[KEY_USER_PREFERRED_LANG] ?: "English",
+                    interests = parsedInterests,
+                    selectedInterests = parsedInterests,
                     studyGoal = preferences[KEY_USER_STUDY_GOAL] ?: "25 min / day",
                     photoUrl = preferences[KEY_USER_PHOTO_URL]
                 )
@@ -97,6 +112,7 @@ class SessionManager private constructor(context: Context) {
      */
     suspend fun saveSession(user: UserDto?, token: String? = null) {
         if (user == null || user.id <= 0) return
+        cachedIsLoggedIn = true
 
         dataStore.edit { preferences ->
             preferences[KEY_IS_LOGGED_IN] = true
@@ -108,6 +124,10 @@ class SessionManager private constructor(context: Context) {
             if (!user.course.isNullOrBlank()) preferences[KEY_USER_COURSE] = user.course
             if (!user.preferredLanguage.isNullOrBlank()) preferences[KEY_USER_PREFERRED_LANG] = user.preferredLanguage
             if (!user.studyGoal.isNullOrBlank()) preferences[KEY_USER_STUDY_GOAL] = user.studyGoal
+            val userInterests = (user.selectedInterests ?: user.interests).orEmpty()
+            if (userInterests.isNotEmpty()) {
+                preferences[KEY_USER_INTERESTS] = userInterests.joinToString(",")
+            }
             if (!user.photoUrl.isNullOrBlank()) {
                 preferences[KEY_USER_PHOTO_URL] = user.photoUrl
             }
@@ -126,14 +146,28 @@ class SessionManager private constructor(context: Context) {
         }
     }
 
+    suspend fun updateInterests(interests: List<String>) {
+        dataStore.edit { preferences ->
+            if (interests.isNotEmpty()) {
+                preferences[KEY_USER_INTERESTS] = interests.joinToString(",")
+            }
+        }
+    }
+
     /**
      * Clears all session keys upon user logout.
      */
     suspend fun clearSession() {
+        cachedIsLoggedIn = false
         dataStore.edit { preferences ->
             preferences.clear()
         }
     }
+
+    /**
+     * Synchronously returns cached login state.
+     */
+    fun isLoggedInCached(): Boolean = cachedIsLoggedIn
 
     /**
      * Returns true if user has a valid active session.
