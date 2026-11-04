@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +99,7 @@ fun NotesGeneratorContent(
     onOpenSavedNotes: (() -> Unit)? = null,
     onDownloadNotes: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -451,6 +453,43 @@ fun NotesGeneratorContent(
                                         Text(
                                             text = "Download",
                                             color = BlueAccent,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+
+                                // Share Button
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(46.dp)
+                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            val content = buildString {
+                                                append(uiState.noteSummary).append("\n\n")
+                                                append("Key Points:\n")
+                                                uiState.keyPoints.forEach { append("• ").append(it).append("\n") }
+                                                append("\nImportant Terms:\n")
+                                                uiState.importantTerms.forEach { append("• ").append(it).append("\n") }
+                                            }
+                                            com.siamts.synapse.util.ShareUtils.shareNote(
+                                                context = context,
+                                                title = uiState.noteTitle.ifBlank { "AI Study Notes" },
+                                                content = content,
+                                                subject = "AI Generated Notes",
+                                                category = "Study Guide"
+                                            )
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "📤", fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Share",
+                                            color = Color(0xFF0284C7),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )

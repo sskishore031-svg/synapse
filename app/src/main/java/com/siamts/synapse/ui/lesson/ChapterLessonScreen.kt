@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -103,6 +104,7 @@ fun ChapterLessonScreen(
     modifier: Modifier = Modifier,
     subjectId: String? = null,
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var showSmartNotesDialog by remember { mutableStateOf(false) }
@@ -595,25 +597,52 @@ fun ChapterLessonScreen(
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        isSavingSmartNote = true
-                        viewModel.saveSmartNotes(
-                            title = "${smartNotes.title} - AI Smart Notes",
-                            content = smartNotes.fullMarkdown
-                        ) { success ->
-                            isSavingSmartNote = false
-                            saveFeedbackMessage = if (success) "✓ Successfully saved to Subject Notes!" else "✓ Note archived into Subject Notes!"
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
-                    shape = RoundedCornerShape(10.dp),
-                    enabled = !isSavingSmartNote
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isSavingSmartNote) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
-                    } else {
-                        Text(text = "💾 Save to My Notes", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    // Share with Friend Button
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = {
+                            com.siamts.synapse.util.ShareUtils.shareNote(
+                                context = context,
+                                title = "${smartNotes.title} - AI Smart Notes",
+                                content = smartNotes.fullMarkdown,
+                                subject = uiState.subjectName
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "📤", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Share", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Save to My Notes Button
+                    Button(
+                        onClick = {
+                            isSavingSmartNote = true
+                            viewModel.saveSmartNotes(
+                                title = "${smartNotes.title} - AI Smart Notes",
+                                content = smartNotes.fullMarkdown
+                            ) { success ->
+                                isSavingSmartNote = false
+                                saveFeedbackMessage = if (success) "✓ Successfully saved to Subject Notes!" else "✓ Note archived into Subject Notes!"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isSavingSmartNote
+                    ) {
+                        if (isSavingSmartNote) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                        } else {
+                            Text(text = "💾 Save", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             },

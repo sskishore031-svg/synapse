@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +72,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
     onGenerateNewNotesClick: (() -> Unit)? = null,
     onSettingsClick: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(0) } // 0: Saved Notes, 1: Downloaded Notes
     var searchQuery by remember { mutableStateOf("") }
     var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
@@ -356,24 +358,53 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                                        .clickable {
-                                                            selected3DNote = NoteItemDto(
-                                                                id = note.id.toIntOrNull() ?: note.title.hashCode(),
-                                                                title = note.title,
-                                                                content = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways.",
-                                                                category = if (note.isDownloaded) "DOWNLOADED" else "SAVED",
-                                                                subjectName = note.subjectTag,
-                                                                subjectIcon = note.subjectIcon,
-                                                                isSaved = true,
-                                                                isDownloaded = note.isDownloaded
-                                                            )
-                                                        }
-                                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    Text(text = "📖 Read in 3D", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                    // Share with Friend
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(8.dp))
+                                                            .clickable {
+                                                                val noteContent = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways."
+                                                                com.siamts.synapse.util.ShareUtils.shareNote(
+                                                                    context = context,
+                                                                    title = note.title,
+                                                                    content = noteContent,
+                                                                    subject = note.subjectTag,
+                                                                    category = if (note.isDownloaded) "Downloaded Notes" else "Saved Notes"
+                                                                )
+                                                            }
+                                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    ) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(text = "📤", fontSize = 10.sp)
+                                                            Spacer(modifier = Modifier.width(3.dp))
+                                                            Text(text = "Share", color = Color(0xFF0284C7), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                        }
+                                                    }
+
+                                                    // Read in 3D
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                                            .clickable {
+                                                                selected3DNote = NoteItemDto(
+                                                                    id = note.id.toIntOrNull() ?: note.title.hashCode(),
+                                                                    title = note.title,
+                                                                    content = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways.",
+                                                                    category = if (note.isDownloaded) "DOWNLOADED" else "SAVED",
+                                                                    subjectName = note.subjectTag,
+                                                                    subjectIcon = note.subjectIcon,
+                                                                    isSaved = true,
+                                                                    isDownloaded = note.isDownloaded
+                                                                )
+                                                            }
+                                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                                    ) {
+                                                        Text(text = "📖 Read in 3D", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                    }
                                                 }
 
                                                 if (note.isDownloaded) {

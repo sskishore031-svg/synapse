@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -89,6 +90,7 @@ fun MathematicsNotesContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -256,20 +258,52 @@ fun MathematicsNotesContent(
                             }
                         }
 
-                        // 5. Download Notes Button Box
+                        // 5. Download & Share Notes Buttons Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                    .clickable { onDownloadNotesClick() },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "📥 ", fontSize = 14.sp)
-                                    Text(text = "Download Notes", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .background(Color.White, RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                        .clickable { onDownloadNotesClick() },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "📥 ", fontSize = 14.sp)
+                                        Text(text = "Download", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            val notesText = buildString {
+                                                append(uiState.headline).append("\n\n")
+                                                uiState.noteItems.forEach { item ->
+                                                    append("• ").append(item.title).append(": ").append(item.subtitle).append("\n")
+                                                }
+                                                append("\nRemember: ").append(uiState.rememberBannerText)
+                                            }
+                                            com.siamts.synapse.util.ShareUtils.shareNote(
+                                                context = context,
+                                                title = uiState.headline,
+                                                content = notesText,
+                                                subject = "Mathematics",
+                                                category = "Chapter Notes"
+                                            )
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "📤 ", fontSize = 14.sp)
+                                        Text(text = "Share Notes", color = Color(0xFF0284C7), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }

@@ -32,6 +32,7 @@ import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
 import com.siamts.synapse.ui.notes.components.threeDTouchEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +87,7 @@ fun SavedNotesContent(
     onToggleSave: (Int) -> Unit = {},
     onToggleDownload: (Int) -> Unit = {},
 ) {
+    val context = LocalContext.current
     var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
 
     Box(
@@ -283,6 +285,37 @@ fun SavedNotesContent(
                                                         Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
                                                     }
 
+                                                    // Share with Friend Button
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                                            .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                                            .clickable {
+                                                                val noteContent = "${note.subtitle}\n\nKey Concepts & High-Yield Summary:\n• Core principle and definition: Comprehensive study notes for ${note.title}.\n• Detailed mathematical formulations, worked examples, and formulas.\n• High-yield takeaways and problem-solving steps."
+                                                                val subject = note.subtitle.split("·").firstOrNull()?.trim() ?: "Saved Notes"
+                                                                com.siamts.synapse.util.ShareUtils.shareNote(
+                                                                    context = context,
+                                                                    title = note.title,
+                                                                    content = noteContent,
+                                                                    subject = subject,
+                                                                    category = "Saved Notes"
+                                                                )
+                                                            }
+                                                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(text = "📤", fontSize = 11.sp)
+                                                            Spacer(modifier = Modifier.width(3.dp))
+                                                            Text(
+                                                                text = "Share",
+                                                                color = Color(0xFF0284C7),
+                                                                fontSize = 11.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                            )
+                                                        }
+                                                    }
+
                                                     Box(
                                                         modifier = Modifier
                                                             .background(Color.White, RoundedCornerShape(12.dp))
@@ -414,6 +447,37 @@ fun SavedNotesContent(
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
                                                         Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                    }
+
+                                                    // Share with Friend Button for Downloaded File
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                                            .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                                            .clickable {
+                                                                val noteContent = "${file.subtitle}\n\nOffline Cached Syllabus Notes:\n• Full offline curriculum study notes for ${file.title}.\n• Comprehensive worked examples, diagrams, formulas, and cheat sheet.\n• High-yield exam revision accessible completely offline."
+                                                                val subject = file.subtitle.split("·").firstOrNull()?.trim() ?: "Downloaded Notes"
+                                                                com.siamts.synapse.util.ShareUtils.shareNote(
+                                                                    context = context,
+                                                                    title = file.title,
+                                                                    content = noteContent,
+                                                                    subject = subject,
+                                                                    category = "Downloaded Notes"
+                                                                )
+                                                            }
+                                                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(text = "📤", fontSize = 11.sp)
+                                                            Spacer(modifier = Modifier.width(3.dp))
+                                                            Text(
+                                                                text = "Share",
+                                                                color = Color(0xFF0284C7),
+                                                                fontSize = 11.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                            )
+                                                        }
                                                     }
 
                                                     Box(

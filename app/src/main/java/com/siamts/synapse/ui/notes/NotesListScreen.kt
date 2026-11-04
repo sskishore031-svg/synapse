@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +60,7 @@ fun NotesListScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var noteToEdit by remember { mutableStateOf<NoteItemDto?>(null) }
@@ -217,6 +219,25 @@ fun NotesListScreen(
                                             }
 
                                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                // Share Note to Other Apps
+                                                IconButton(
+                                                    onClick = {
+                                                        com.siamts.synapse.util.ShareUtils.shareNote(
+                                                            context = context,
+                                                            title = note.title,
+                                                            content = note.content,
+                                                            subject = note.subjectName,
+                                                            category = note.category
+                                                        )
+                                                    },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "📤",
+                                                        fontSize = 14.sp
+                                                    )
+                                                }
+
                                                 // Toggle Save/Bookmark
                                                 IconButton(
                                                     onClick = { viewModel.toggleSave(note.id) },

@@ -248,6 +248,34 @@ fun ThreeDNoteViewerDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
+                                // 3D Share with Friend Pill
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(10.dp))
+                                        .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            com.siamts.synapse.util.ShareUtils.shareNote(
+                                                context = context,
+                                                title = note.title,
+                                                content = note.content,
+                                                subject = note.subjectName,
+                                                category = note.category
+                                            )
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "📤", fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Share",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0284C7)
+                                        )
+                                    }
+                                }
+
                                 // 3D Golden Bookmark Badge
                                 Box(
                                     modifier = Modifier
@@ -399,10 +427,10 @@ fun ThreeDNoteViewerDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Bottom 3D Actions
+                        // Bottom 3D Actions: Copy, Share with Friend, Done
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Copy Button
                             Box(
@@ -418,11 +446,45 @@ fun ThreeDNoteViewerDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "📋 Copy Note",
+                                    text = "📋 Copy",
                                     color = Color(0xFF1E293B),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
+                            }
+
+                            // Share with Friend Button
+                            Box(
+                                modifier = Modifier
+                                    .weight(1.3f)
+                                    .height(44.dp)
+                                    .background(
+                                        brush = Brush.horizontalGradient(
+                                            listOf(Color(0xFF0284C7), Color(0xFF0EA5E9), Color(0xFF06B6D4))
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable {
+                                        com.siamts.synapse.util.ShareUtils.shareNote(
+                                            context = context,
+                                            title = note.title,
+                                            content = note.content,
+                                            subject = note.subjectName,
+                                            category = note.category
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "📤", fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "Share Note",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
 
                             // Done / Return Button
@@ -440,7 +502,7 @@ fun ThreeDNoteViewerDialog(
                                         .fillMaxSize()
                                         .background(
                                             brush = Brush.horizontalGradient(
-                                                listOf(Color(0xFF2563EB), Color(0xFF7C3AED), Color(0xFF06B6D4))
+                                                listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
                                             ),
                                             shape = RoundedCornerShape(12.dp)
                                         ),

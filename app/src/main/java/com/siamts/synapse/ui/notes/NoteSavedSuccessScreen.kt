@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +73,7 @@ fun NoteSavedSuccessContent(
     onBackToLearningClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -306,6 +308,36 @@ fun NoteSavedSuccessContent(
                                             fontWeight = FontWeight.Bold,
                                         )
                                     }
+                                }
+                            }
+
+                            // Share with Friend Button
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        com.siamts.synapse.util.ShareUtils.shareNote(
+                                            context = context,
+                                            title = uiState.noteTitle.ifBlank { "Saved Notes" },
+                                            content = "${uiState.savedNoteCategory}\nTags: ${uiState.savedNoteTags}\n\nStudy Notes saved successfully in SYNAPSE AI Tutor.",
+                                            subject = uiState.savedNoteCategory,
+                                            category = "Saved Notes"
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "📤", fontSize = 14.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Share Note with Friend",
+                                        color = Color(0xFF0284C7),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
 
