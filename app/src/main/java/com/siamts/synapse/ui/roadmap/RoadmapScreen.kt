@@ -149,20 +149,7 @@ fun RoadmapContent(
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
-                            .clickable { },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "•••",
-                            color = TextSecondary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+                    Spacer(modifier = Modifier.size(48.dp))
                 }
             }
 
