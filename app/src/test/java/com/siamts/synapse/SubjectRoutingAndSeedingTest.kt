@@ -1,12 +1,18 @@
 package com.siamts.synapse
 
 import com.siamts.synapse.data.local.BaseCurriculumData
+import com.siamts.synapse.data.local.QuizDao
+import com.siamts.synapse.data.local.QuizLocalDatabase
+import com.siamts.synapse.data.local.QuizRecordEntity
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import com.siamts.synapse.ui.lesson.ChapterLessonViewModel
+import com.siamts.synapse.ui.quiz.QuizNavEvent
+import com.siamts.synapse.ui.quiz.QuizViewModel
 import com.siamts.synapse.ui.roadmap.RoadmapViewModel
 import com.siamts.synapse.ui.subjects.SubjectDetailViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -186,5 +192,64 @@ class SubjectRoutingAndSeedingTest {
         assertEquals(101, BaseCurriculumData.resolveSubjectNumericId("ext_bio"))
         assertEquals(102, BaseCurriculumData.resolveSubjectNumericId("history"))
         assertEquals(1, BaseCurriculumData.resolveSubjectNumericId("unknown_xyz"))
+    }
+
+    @Test
+    fun testQuizSubmissionFlowScoreCalculationAndDatabasePersistence() {
+        runBlocking {
+            val db = QuizLocalDatabase.getInstance(null)
+            val viewModel = QuizViewModel(
+                quizDao = db,
+                externalScope = CoroutineScope(Dispatchers.Unconfined)
+            )
+
+            // 1. Load Chapter Quiz for Quadratic Equations (chapterId = 4)
+            viewModel.loadChapterQuiz(4)
+            val state = viewModel.uiState.value
+            assertEquals(5, state.totalQuestions)
+            assertEquals("MATH", viewModel.currentSubjectId)
+            assertEquals("4", viewModel.currentChapterId)
+
+            // 2. Select option for question 1 ("A" is correct in BaseCurriculumData)
+            viewModel.selectOption("A")
+            assertEquals("A", viewModel.uiState.value.selectedOptionId)
+            assertEquals(0, viewModel.userSelections.value[0]) // Option index 0
+
+            // Advance to question 2
+            viewModel.nextQuestion()
+            assertEquals(2, viewModel.uiState.value.currentQuestionIndex)
+
+            // Select option for question 2 ("A" is correct in BaseCurriculumData)
+            viewModel.selectOption("A")
+            assertEquals("A", viewModel.uiState.value.selectedOptionId)
+            assertEquals(0, viewModel.userSelections.value[1]) // Option index 0
+
+            // 3. Submit quiz
+            var navEventCaptured: QuizNavEvent? = null
+            var callbackResultCaptured: com.siamts.synapse.data.model.QuizResultDataDto? = null
+
+            viewModel.submitQuiz { result ->
+                callbackResultCaptured = result
+            }
+
+            // Verify score calculation
+            assertNotNull(callbackResultCaptured)
+            val result = callbackResultCaptured!!
+            assertEquals(5, result.totalQuestions)
+            assertTrue("Score must be at least 2", result.score >= 2)
+            assertEquals(result.score, result.correctAnswers)
+            assertEquals(5 - result.score, result.incorrectAnswers)
+            assertEquals((result.score * 100) / 5, result.percentage)
+
+            // Verify local database persistence in 'quiz_records'
+            val records = db.getAllRecords()
+            assertTrue("Database must contain at least 1 record", records.isNotEmpty())
+            val latest = records.first()
+            assertEquals("MATH", latest.subjectId)
+            assertEquals("4", latest.chapterId)
+            assertEquals(result.score, latest.score)
+            assertEquals(5, latest.totalQuestions)
+            assertTrue("Timestamp must be recent", latest.completedAt > 0)
+        }
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,8 +55,22 @@ fun QuizScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     onQuizComplete: ((QuizResultDataDto?) -> Unit)? = null,
+    onNavigateToResult: ((subjectId: String, chapterId: String, score: Int, total: Int, resultDto: QuizResultDataDto?) -> Unit)? = null,
+    onNavigateToRoute: ((String) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel) {
+        viewModel.navEvent.collect { event ->
+            when (event) {
+                is QuizNavEvent.NavigateToResult -> {
+                    onNavigateToRoute?.invoke("quiz_result_screen/${event.subjectId}/${event.chapterId}/${event.score}/${event.total}")
+                    onNavigateToResult?.invoke(event.subjectId, event.chapterId, event.score, event.total, event.resultData)
+                    onQuizComplete?.invoke(event.resultData)
+                }
+            }
+        }
+    }
 
     val isLastQuestion = uiState.currentQuestionIndex >= uiState.totalQuestions
 
