@@ -131,6 +131,8 @@ import com.siamts.synapse.ui.notes.NotesHomeScreen
 import com.siamts.synapse.ui.notes.NotesHomeViewModel
 import com.siamts.synapse.ui.notes.NotesListScreen
 import com.siamts.synapse.ui.notes.NotesListViewModel
+import com.siamts.synapse.ui.subjects.SubjectDetailScreen
+import com.siamts.synapse.ui.subjects.SubjectDetailViewModel
 
 sealed class AppScreen {
     data object Splash : AppScreen()
@@ -210,6 +212,7 @@ sealed class AppScreen {
         override fun hashCode(): Int = initialFilter.hashCode()
     }
     data class NotesList(val type: String, val subjectId: Int? = null, val title: String = "Notes") : AppScreen()
+    data class SubjectDetail(val subjectId: String) : AppScreen()
     data object Settings : AppScreen()
 }
 
@@ -489,31 +492,10 @@ class MainActivity : ComponentActivity() {
 
                             AppScreen.SubjectSelection -> {
                                 val subjectSelectionViewModel: SubjectSelectionViewModel = viewModel()
-                                val roadmapViewModel: RoadmapViewModel = viewModel()
                                 SubjectSelectionScreen(
                                     viewModel = subjectSelectionViewModel,
                                     onSubjectClick = { subjectId ->
-                                        val idInt = subjectId.toIntOrNull() ?: when (subjectId.lowercase()) {
-                                            "mathematics", "math" -> 1
-                                            "computer science", "algorithms" -> 2
-                                            "data science" -> 3
-                                            "artificial intelligence", "ai" -> 4
-                                            "physics" -> 5
-                                            "chemistry" -> 6
-                                            "biology", "bio", "ext_bio" -> 101
-                                            "world history", "history", "ext_history" -> 102
-                                            "economics & finance", "economics", "finance", "ext_econ" -> 103
-                                            "environmental science", "ecology", "ext_env" -> 104
-                                            "computer networks", "networks", "ext_net" -> 105
-                                            "cyber security", "security", "ext_sec" -> 106
-                                            "psychology", "ext_psych" -> 107
-                                            "business management", "business", "management", "ext_biz" -> 108
-                                            "electrical engineering", "ee", "circuits", "ext_ee" -> 109
-                                            "astronomy & astrophysics", "astronomy", "astrophysics", "ext_astro" -> 110
-                                            else -> 4
-                                        }
-                                        roadmapViewModel.loadSubjectRoadmap(subjectId = idInt)
-                                        navigateTo(AppScreen.Roadmap)
+                                        navigateTo(AppScreen.SubjectDetail(subjectId))
                                     },
                                     onChapterClick = { chapterId ->
                                         navigateTo(AppScreen.DynamicChapterLesson(chapterId))
@@ -528,6 +510,37 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 4) {
                                             currentScreen = AppScreen.Profile
                                         }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding),
+                                )
+                            }
+
+                            is AppScreen.SubjectDetail -> {
+                                val subjectDetailViewModel: SubjectDetailViewModel = viewModel()
+                                val roadmapViewModel: RoadmapViewModel = viewModel()
+                                LaunchedEffect(screen.subjectId) {
+                                    subjectDetailViewModel.loadSubject(screen.subjectId)
+                                }
+                                SubjectDetailScreen(
+                                    subjectId = screen.subjectId,
+                                    viewModel = subjectDetailViewModel,
+                                    onBackClick = {
+                                        currentScreen = AppScreen.SubjectSelection
+                                    },
+                                    onChapterClick = { chapterId ->
+                                        navigateTo(AppScreen.DynamicChapterLesson(chapterId))
+                                    },
+                                    onQuizClick = { chapterId ->
+                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId))
+                                    },
+                                    onNotesClick = { subId, subName ->
+                                        navigateTo(AppScreen.NotesList(type = "ALL", subjectId = subId, title = "$subName Notes"))
+                                    },
+                                    onRoadmapClick = { numId ->
+                                        roadmapViewModel.loadSubjectRoadmap(subjectId = numId)
+                                        navigateTo(AppScreen.Roadmap)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1194,32 +1207,7 @@ class MainActivity : ComponentActivity() {
                                         currentScreen = AppScreen.NotificationsSettings
                                     },
                                     onReadNoteClick = { subjectName ->
-                                        when (subjectName) {
-                                            "Mathematics" -> {
-                                                roadmapViewModel.loadMathematicsRoadmap()
-                                                currentScreen = AppScreen.MathematicsNotes
-                                            }
-                                            "Computer Science" -> {
-                                                roadmapViewModel.loadComputerScienceRoadmap()
-                                                currentScreen = AppScreen.AlgorithmsLesson
-                                            }
-                                            "Data Science" -> {
-                                                roadmapViewModel.loadDataScienceRoadmap()
-                                                currentScreen = AppScreen.DataVisualizationLesson
-                                            }
-                                            "Physics" -> {
-                                                roadmapViewModel.loadPhysicsRoadmap()
-                                                currentScreen = AppScreen.WavesLesson
-                                            }
-                                            "Chemistry" -> {
-                                                roadmapViewModel.loadChemistryRoadmap()
-                                                currentScreen = AppScreen.ChemicalBondingLesson
-                                            }
-                                            else -> {
-                                                roadmapViewModel.loadArtificialIntelligenceRoadmap()
-                                                currentScreen = AppScreen.Lesson
-                                            }
-                                        }
+                                        navigateTo(AppScreen.SubjectDetail(subjectName))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1516,24 +1504,10 @@ class MainActivity : ComponentActivity() {
                                 HomeScreen(
                                     viewModel = homeViewModel,
                                     onSubjectClick = { slug ->
-                                        when (slug.lowercase()) {
-                                            "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
-                                            "physics" -> currentScreen = AppScreen.WavesLesson
-                                            "data-science" -> currentScreen = AppScreen.DataVisualizationLesson
-                                            "computer-science", "algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
-                                            "mathematics" -> currentScreen = AppScreen.QuadraticLesson
-                                            else -> currentScreen = AppScreen.SubjectSelection
-                                        }
+                                        navigateTo(AppScreen.SubjectDetail(slug))
                                     },
                                     onContinueLessonClick = { subjectSlug, _ ->
-                                        when (subjectSlug.lowercase()) {
-                                            "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
-                                            "physics" -> currentScreen = AppScreen.WavesLesson
-                                            "data-science" -> currentScreen = AppScreen.DataVisualizationLesson
-                                            "computer-science", "algorithms" -> currentScreen = AppScreen.AlgorithmsLesson
-                                            "mathematics" -> currentScreen = AppScreen.QuadraticLesson
-                                            else -> currentScreen = AppScreen.Lesson
-                                        }
+                                        navigateTo(AppScreen.SubjectDetail(subjectSlug))
                                     },
                                     onAiChatClick = {
                                         currentScreen = AppScreen.AiTutor

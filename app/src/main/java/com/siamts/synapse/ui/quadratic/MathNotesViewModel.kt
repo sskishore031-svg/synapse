@@ -1,6 +1,7 @@
 package com.siamts.synapse.ui.quadratic
 
 import androidx.lifecycle.ViewModel
+import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,14 +10,46 @@ import kotlinx.coroutines.flow.update
 /**
  * ViewModel managing Chapter Notes state for all subjects.
  */
-class MathNotesViewModel : ViewModel() {
+class MathNotesViewModel(
+    private val catalogRepo: SubjectCatalogRepository? = try {
+        SubjectCatalogRepository.getInstance()
+    } catch (_: Throwable) {
+        null
+    }
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MathNotesUiState())
     val uiState: StateFlow<MathNotesUiState> = _uiState.asStateFlow()
 
     fun loadSubjectNotes(subjectName: String) {
-        when (subjectName) {
-            "Computer Science" -> {
+        val trimmed = subjectName.trim()
+        val subject = catalogRepo?.getSubjectById(trimmed)
+
+        if (subject != null && subject.name !in listOf("Mathematics", "Computer Science", "Data Science", "Artificial Intelligence", "Physics", "Chemistry")) {
+            val items = subject.chapters.map { ch ->
+                NoteSummaryItem(
+                    id = ch.chapterOrder.toString(),
+                    title = ch.title,
+                    subtitle = ch.summary.ifBlank { "Core concepts and exam takeaways" }
+                )
+            }
+            val banner = subject.chapters.firstOrNull()?.coreFormulas?.firstOrNull()
+                ?: "Review core concepts and formulas thoroughly before beginning exercises."
+
+            _uiState.update {
+                it.copy(
+                    title = subject.name,
+                    progressPercent = 50,
+                    progressSubtext = "${subject.chapters.size} chapters available · ${subject.category}",
+                    noteItems = items,
+                    rememberBannerText = banner
+                )
+            }
+            return
+        }
+
+        when (trimmed) {
+            "Computer Science", "CS" -> {
                 _uiState.update {
                     it.copy(
                         title = "Computer Science",
@@ -32,7 +65,7 @@ class MathNotesViewModel : ViewModel() {
                     )
                 }
             }
-            "Data Science" -> {
+            "Data Science", "DS" -> {
                 _uiState.update {
                     it.copy(
                         title = "Data Science",
@@ -48,7 +81,7 @@ class MathNotesViewModel : ViewModel() {
                     )
                 }
             }
-            "Artificial Intelligence" -> {
+            "Artificial Intelligence", "AI" -> {
                 _uiState.update {
                     it.copy(
                         title = "Artificial Intelligence",
@@ -64,7 +97,7 @@ class MathNotesViewModel : ViewModel() {
                     )
                 }
             }
-            "Physics" -> {
+            "Physics", "PHY" -> {
                 _uiState.update {
                     it.copy(
                         title = "Physics",
@@ -80,7 +113,7 @@ class MathNotesViewModel : ViewModel() {
                     )
                 }
             }
-            "Chemistry" -> {
+            "Chemistry", "CHEM" -> {
                 _uiState.update {
                     it.copy(
                         title = "Chemistry",

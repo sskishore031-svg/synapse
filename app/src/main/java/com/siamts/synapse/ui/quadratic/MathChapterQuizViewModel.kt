@@ -1,6 +1,7 @@
 package com.siamts.synapse.ui.quadratic
 
 import androidx.lifecycle.ViewModel
+import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,14 +10,35 @@ import kotlinx.coroutines.flow.update
 /**
  * ViewModel managing Chapter Quiz state for all subjects.
  */
-class MathChapterQuizViewModel : ViewModel() {
+class MathChapterQuizViewModel(
+    private val catalogRepo: SubjectCatalogRepository? = try {
+        SubjectCatalogRepository.getInstance()
+    } catch (_: Throwable) {
+        null
+    }
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MathChapterQuizUiState())
     val uiState: StateFlow<MathChapterQuizUiState> = _uiState.asStateFlow()
 
     fun loadSubjectQuiz(subjectName: String) {
-        when (subjectName) {
-            "Computer Science" -> {
+        val trimmed = subjectName.trim()
+        val subject = catalogRepo?.getSubjectById(trimmed)
+
+        if (subject != null && subject.name !in listOf("Mathematics", "Computer Science", "Data Science", "Artificial Intelligence", "Physics", "Chemistry")) {
+            val topics = subject.chapters.map { it.title }
+            _uiState.update {
+                it.copy(
+                    title = subject.name,
+                    progressPercent = 100,
+                    quizTopics = if (topics.isNotEmpty()) topics else listOf("${subject.name} Fundamentals")
+                )
+            }
+            return
+        }
+
+        when (trimmed) {
+            "Computer Science", "CS" -> {
                 _uiState.update {
                     it.copy(
                         title = "Computer Science",
@@ -30,7 +52,7 @@ class MathChapterQuizViewModel : ViewModel() {
                     )
                 }
             }
-            "Data Science" -> {
+            "Data Science", "DS" -> {
                 _uiState.update {
                     it.copy(
                         title = "Data Science",
@@ -44,7 +66,7 @@ class MathChapterQuizViewModel : ViewModel() {
                     )
                 }
             }
-            "Artificial Intelligence" -> {
+            "Artificial Intelligence", "AI" -> {
                 _uiState.update {
                     it.copy(
                         title = "Artificial Intelligence",
@@ -58,7 +80,7 @@ class MathChapterQuizViewModel : ViewModel() {
                     )
                 }
             }
-            "Physics" -> {
+            "Physics", "PHY" -> {
                 _uiState.update {
                     it.copy(
                         title = "Physics",
@@ -72,7 +94,7 @@ class MathChapterQuizViewModel : ViewModel() {
                     )
                 }
             }
-            "Chemistry" -> {
+            "Chemistry", "CHEM" -> {
                 _uiState.update {
                     it.copy(
                         title = "Chemistry",

@@ -21,32 +21,26 @@ class ChaptersRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<SubjectChaptersResponse> {
-        // 1. If subjectId belongs to extended catalog (>= 100), retrieve locally
-        if (subjectId != null && subjectId >= 100) {
-            val local = catalogRepo?.getSubjectChapters(subjectId)
+        // Resolve subject numeric ID if only slug provided
+        val resolvedId = subjectId ?: subjectSlug?.let { catalogRepo?.resolveSubjectNumericId(it) }
+
+        // Try remote API first
+        try {
+            val response = api.getSubjectChapters(subjectId, subjectSlug, userId, email)
+            if (response.isSuccessful && response.body() != null) {
+                return Result.success(response.body()!!)
+            }
+        } catch (_: Exception) {
+            // Fallback to local catalog
+        }
+
+        // Local fallback for all subjects
+        if (resolvedId != null) {
+            val local = catalogRepo?.getSubjectChapters(resolvedId)
             if (local != null) return Result.success(local)
         }
 
-        // 2. Try remote API
-        return try {
-            val response = api.getSubjectChapters(subjectId, subjectSlug, userId, email)
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                // Fallback to local catalog if available
-                if (subjectId != null) {
-                    val local = catalogRepo?.getSubjectChapters(subjectId)
-                    if (local != null) return Result.success(local)
-                }
-                Result.failure(Exception("Failed to fetch chapters: ${response.code()} ${response.message()}"))
-            }
-        } catch (e: Exception) {
-            if (subjectId != null) {
-                val local = catalogRepo?.getSubjectChapters(subjectId)
-                if (local != null) return Result.success(local)
-            }
-            Result.failure(e)
-        }
+        return Result.failure(Exception("Failed to fetch chapters for subject $subjectId / $subjectSlug"))
     }
 
     override suspend fun getChapterLesson(
@@ -54,27 +48,21 @@ class ChaptersRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<ChapterDetailResponse> {
-        // 1. If chapterId belongs to extended catalog (>= 1000), retrieve locally
-        if (chapterId >= 1000) {
-            val local = catalogRepo?.getChapterLesson(chapterId)
-            if (local != null) return Result.success(local)
-        }
-
-        // 2. Try remote API
-        return try {
+        // Try remote API first
+        try {
             val response = api.getChapterLesson(chapterId, userId, email)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                val local = catalogRepo?.getChapterLesson(chapterId)
-                if (local != null) return Result.success(local)
-                Result.failure(Exception("Failed to load lesson: ${response.code()} ${response.message()}"))
+                return Result.success(response.body()!!)
             }
-        } catch (e: Exception) {
-            val local = catalogRepo?.getChapterLesson(chapterId)
-            if (local != null) return Result.success(local)
-            Result.failure(e)
+        } catch (_: Exception) {
+            // Fallback to local catalog
         }
+
+        // Local fallback for all chapters
+        val local = catalogRepo?.getChapterLesson(chapterId)
+        if (local != null) return Result.success(local)
+
+        return Result.failure(Exception("Failed to load lesson for chapter $chapterId"))
     }
 
     override suspend fun completeChapter(

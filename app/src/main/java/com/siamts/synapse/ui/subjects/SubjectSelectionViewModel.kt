@@ -28,7 +28,7 @@ class SubjectSelectionViewModel(
 
     private val baseSubjects = listOf(
         Subject(
-            id = "1",
+            id = "MATH",
             title = "Mathematics",
             iconSymbol = "∑",
             progressPercentage = 72,
@@ -42,7 +42,7 @@ class SubjectSelectionViewModel(
             )
         ),
         Subject(
-            id = "2",
+            id = "CS",
             title = "Computer Science",
             iconSymbol = "</>",
             progressPercentage = 84,
@@ -56,7 +56,7 @@ class SubjectSelectionViewModel(
             )
         ),
         Subject(
-            id = "3",
+            id = "DS",
             title = "Data Science",
             iconSymbol = "📈",
             progressPercentage = 58,
@@ -70,7 +70,7 @@ class SubjectSelectionViewModel(
             )
         ),
         Subject(
-            id = "4",
+            id = "AI",
             title = "Artificial Intelligence",
             iconSymbol = "🧠",
             progressPercentage = 80,
@@ -84,7 +84,7 @@ class SubjectSelectionViewModel(
             )
         ),
         Subject(
-            id = "5",
+            id = "PHY",
             title = "Physics",
             iconSymbol = "⚛",
             progressPercentage = 42,
@@ -98,7 +98,7 @@ class SubjectSelectionViewModel(
             )
         ),
         Subject(
-            id = "6",
+            id = "CHEM",
             title = "Chemistry",
             iconSymbol = "🧪",
             progressPercentage = 35,

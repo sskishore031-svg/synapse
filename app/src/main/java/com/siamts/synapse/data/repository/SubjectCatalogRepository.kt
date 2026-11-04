@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import com.google.gson.Gson
 import com.siamts.synapse.SynapseApplication
+import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.model.CatalogChapter
 import com.siamts.synapse.data.model.CatalogSubject
 import com.siamts.synapse.data.model.ChapterDetailDto
@@ -13,6 +14,7 @@ import com.siamts.synapse.data.model.ChapterLessonData
 import com.siamts.synapse.data.model.ExtendedCurriculumCatalog
 import com.siamts.synapse.data.model.HomeSubjectDto
 import com.siamts.synapse.data.model.LessonPartDto
+import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.data.model.QuizQuestionDto
 import com.siamts.synapse.data.model.QuizResultDataDto
 import com.siamts.synapse.data.model.SubjectChapterDto
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.InputStreamReader
+import java.util.Locale
 
 class SubjectCatalogRepository private constructor(context: Context) {
 
@@ -63,7 +66,17 @@ class SubjectCatalogRepository private constructor(context: Context) {
         return prefs.getStringSet(KEY_ADDED_SUBJECTS, emptySet()) ?: emptySet()
     }
 
+    /**
+     * Returns only the extended catalog subjects (10 subjects).
+     */
     fun getAllCatalogSubjects(): List<CatalogSubject> = _catalogSubjects.value
+
+    /**
+     * Returns all subjects across the entire curriculum (6 base + 10 extended).
+     */
+    fun getAllSubjects(): List<CatalogSubject> {
+        return BaseCurriculumData.subjects + _catalogSubjects.value
+    }
 
     fun getAddedSubjects(): List<CatalogSubject> {
         return _catalogSubjects.value.filter { it.isAdded }
@@ -97,16 +110,51 @@ class SubjectCatalogRepository private constructor(context: Context) {
         return _catalogSubjects.value.any { (it.id == subjectId || it.subjectId.toString() == subjectId) && it.isAdded }
     }
 
+    fun resolveSubjectNumericId(subjectId: String): Int? {
+        val trimmed = subjectId.trim().lowercase(Locale.ROOT)
+        return when (trimmed) {
+            "math", "maths", "mathematics", "algebra", "calculus", "1", "math_001" -> 1
+            "cs", "computer science", "algorithms", "data structures", "2" -> 2
+            "ds", "data science", "data analytics", "3" -> 3
+            "ai", "artificial intelligence", "ml", "deep learning", "4" -> 4
+            "phy", "physics", "waves", "5" -> 5
+            "chem", "chemistry", "bonding", "6" -> 6
+            "bio", "biology", "ext_bio", "101" -> 101
+            "history", "world history", "ext_history", "102" -> 102
+            "econ", "economics", "finance", "economics & finance", "ext_econ", "103" -> 103
+            "env", "environmental science", "ecology", "ext_env", "104" -> 104
+            "net", "networks", "computer networks", "ext_net", "105" -> 105
+            "sec", "security", "cyber security", "ext_sec", "106" -> 106
+            "psych", "psychology", "ext_psych", "107" -> 107
+            "biz", "business", "business management", "management", "ext_biz", "108" -> 108
+            "ee", "electrical engineering", "circuits", "ext_ee", "109" -> 109
+            "astro", "astronomy", "astronomy & astrophysics", "astrophysics", "ext_astro", "110" -> 110
+            else -> trimmed.toIntOrNull()
+        }
+    }
+
     fun getSubjectById(subjectId: String): CatalogSubject? {
-        return _catalogSubjects.value.firstOrNull { it.id == subjectId || it.subjectId.toString() == subjectId }
+        val trimmed = subjectId.trim()
+        val numId = resolveSubjectNumericId(trimmed)
+        if (numId != null) {
+            val byNum = getSubjectByNumericId(numId)
+            if (byNum != null) return byNum
+        }
+
+        return getAllSubjects().firstOrNull {
+            it.id.equals(trimmed, ignoreCase = true) ||
+            it.name.equals(trimmed, ignoreCase = true) ||
+            it.slug.equals(trimmed, ignoreCase = true) ||
+            it.subjectId.toString() == trimmed
+        }
     }
 
     fun getSubjectByNumericId(numericId: Int): CatalogSubject? {
-        return _catalogSubjects.value.firstOrNull { it.subjectId == numericId }
+        return getAllSubjects().firstOrNull { it.subjectId == numericId }
     }
 
     fun getChapterById(chapterId: Int): CatalogChapter? {
-        for (subj in _catalogSubjects.value) {
+        for (subj in getAllSubjects()) {
             val ch = subj.chapters.firstOrNull { it.chapterId == chapterId }
             if (ch != null) return ch
         }
@@ -154,7 +202,7 @@ class SubjectCatalogRepository private constructor(context: Context) {
 
     fun getChapterLesson(chapterId: Int): ChapterDetailResponse? {
         val chapter = getChapterById(chapterId) ?: return null
-        val parentSubject = _catalogSubjects.value.firstOrNull { subj ->
+        val parentSubject = getAllSubjects().firstOrNull { subj ->
             subj.chapters.any { it.chapterId == chapterId }
         } ?: return null
 
@@ -220,7 +268,7 @@ class SubjectCatalogRepository private constructor(context: Context) {
         }
 
         val percentage = (correctCount * 100) / total
-        val parentSubject = _catalogSubjects.value.firstOrNull { subj ->
+        val parentSubject = getAllSubjects().firstOrNull { subj ->
             subj.chapters.any { it.chapterId == chapterId }
         }
 
@@ -238,6 +286,61 @@ class SubjectCatalogRepository private constructor(context: Context) {
             attemptDate = "Today",
             passed = percentage >= 60
         )
+    }
+
+    /**
+     * Returns pre-seeded and catalog study notes ready for on-device display.
+     */
+    fun getAllStudyNotes(): List<NoteItemDto> {
+        val allNotes = BaseCurriculumData.seededNotes.toMutableList()
+        var noteCounter = 5000
+
+        for (sub in _catalogSubjects.value) {
+            for (ch in sub.chapters) {
+                noteCounter++
+                allNotes.add(
+                    NoteItemDto(
+                        id = noteCounter,
+                        userId = 1,
+                        subjectId = sub.subjectId,
+                        chapterId = ch.chapterId,
+                        title = "${ch.title} Notes",
+                        content = buildString {
+                            appendLine("## ${ch.title}")
+                            appendLine("**Subject:** ${sub.name} | **Category:** ${sub.category}")
+                            appendLine()
+                            appendLine("### Chapter Summary")
+                            appendLine(ch.summary)
+                            appendLine()
+                            if (ch.coreFormulas.isNotEmpty()) {
+                                appendLine("### Core Formulas & Principles")
+                                ch.coreFormulas.forEach { f -> appendLine("- `$f`") }
+                                appendLine()
+                            }
+                            if (ch.syllabus.isNotEmpty()) {
+                                appendLine("### Syllabus Topics")
+                                ch.syllabus.forEach { s -> appendLine("- $s") }
+                                appendLine()
+                            }
+                            appendLine("### Exam Takeaways")
+                            appendLine("1. Review core definitions and key formulas before attempting quizzes.")
+                            appendLine("2. Pay attention to distinction between foundational theory and practical applications.")
+                        },
+                        category = "SUBJECT",
+                        isSaved = true,
+                        isDownloaded = true,
+                        subjectName = sub.name,
+                        subjectSlug = sub.slug,
+                        subjectIcon = sub.iconSymbol,
+                        subjectColor = sub.colorHex,
+                        chapterTitle = ch.title,
+                        createdAt = "2026-11-04 10:00:00",
+                        updatedAt = "2026-11-04 10:00:00"
+                    )
+                )
+            }
+        }
+        return allNotes
     }
 
     companion object {

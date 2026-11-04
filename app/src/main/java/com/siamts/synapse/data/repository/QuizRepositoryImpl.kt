@@ -27,21 +27,21 @@ class QuizRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<QuizSubjectsResponse> {
-        val baseResult = try {
+        val remoteSubjects = try {
             val response = api.getQuizSubjects(userId, email)
             if (response.isSuccessful && response.body() != null) {
-                response.body()!!
-            } else null
+                response.body()!!.data?.subjects.orEmpty()
+            } else emptyList()
         } catch (_: Exception) {
-            null
+            emptyList()
         }
 
-        val baseSubjects = baseResult?.data?.subjects.orEmpty().toMutableList()
-        val addedCatalog = catalogRepo?.getAddedSubjects().orEmpty()
+        val subjectList = remoteSubjects.toMutableList()
+        val allLocalSubjects = catalogRepo?.getAllSubjects().orEmpty()
 
-        for (cSub in addedCatalog) {
-            if (baseSubjects.none { it.id == cSub.subjectId || it.name.equals(cSub.name, ignoreCase = true) }) {
-                baseSubjects.add(
+        for (cSub in allLocalSubjects) {
+            if (subjectList.none { it.id == cSub.subjectId || it.name.equals(cSub.name, ignoreCase = true) }) {
+                subjectList.add(
                     QuizSubjectItemDto(
                         id = cSub.subjectId,
                         name = cSub.name,
@@ -59,7 +59,7 @@ class QuizRepositoryImpl(
         return Result.success(
             QuizSubjectsResponse(
                 status = "success",
-                data = QuizSubjectsDataDto(subjects = baseSubjects)
+                data = QuizSubjectsDataDto(subjects = subjectList)
             )
         )
     }
@@ -70,42 +70,47 @@ class QuizRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<SubjectQuizzesResponse> {
-        if (subjectId != null && subjectId >= 100) {
-            val catalogSub = catalogRepo?.getSubjectByNumericId(subjectId)
-            if (catalogSub != null) {
-                val quizzes = catalogSub.chapters.map { ch ->
-                    SubjectQuizItemDto(
-                        chapterId = ch.chapterId,
-                        chapterOrder = ch.chapterOrder,
-                        chapterTitle = ch.title,
-                        quizTitle = "${ch.title} Quiz",
-                        subjectId = catalogSub.subjectId,
-                        subjectName = catalogSub.name,
-                        subjectSlug = catalogSub.slug,
-                        questionCount = ch.mcqs.size.coerceAtLeast(5),
-                        durationMinutes = 10,
-                        totalMarks = ch.mcqs.size * 10
-                    )
-                }
-                return Result.success(
-                    SubjectQuizzesResponse(
-                        status = "success",
-                        data = SubjectQuizzesDataDto(quizzes = quizzes)
-                    )
-                )
-            }
-        }
-
-        return try {
+        // Try remote first
+        try {
             val response = api.getSubjectQuizzes(subjectId, subjectSlug, userId, email)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Failed to fetch subject quizzes: ${response.code()} ${response.message()}"))
+                return Result.success(response.body()!!)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (_: Exception) {
+            // Fall through to local fallback
         }
+
+        // Local fallback for all subjects
+        val targetSubject = if (subjectId != null) {
+            catalogRepo?.getSubjectByNumericId(subjectId)
+        } else if (subjectSlug != null) {
+            catalogRepo?.getSubjectById(subjectSlug)
+        } else null
+
+        if (targetSubject != null) {
+            val quizzes = targetSubject.chapters.map { ch ->
+                SubjectQuizItemDto(
+                    chapterId = ch.chapterId,
+                    chapterOrder = ch.chapterOrder,
+                    chapterTitle = ch.title,
+                    quizTitle = "${ch.title} Quiz",
+                    subjectId = targetSubject.subjectId,
+                    subjectName = targetSubject.name,
+                    subjectSlug = targetSubject.slug,
+                    questionCount = ch.mcqs.size.coerceAtLeast(5),
+                    durationMinutes = 10,
+                    totalMarks = ch.mcqs.size * 10
+                )
+            }
+            return Result.success(
+                SubjectQuizzesResponse(
+                    status = "success",
+                    data = SubjectQuizzesDataDto(quizzes = quizzes)
+                )
+            )
+        }
+
+        return Result.failure(Exception("Subject not found for quiz retrieval"))
     }
 
     override suspend fun getQuizQuestions(
@@ -113,40 +118,41 @@ class QuizRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<QuizQuestionsResponse> {
-        // 1. If catalog chapter (>= 1000)
-        if (chapterId >= 1000) {
-            val mcqs = catalogRepo?.getChapterQuiz(chapterId)
-            val chapter = catalogRepo?.getChapterById(chapterId)
-            if (!mcqs.isNullOrEmpty() && chapter != null) {
-                return Result.success(
-                    QuizQuestionsResponse(
-                        status = "success",
-                        data = QuizQuestionsDataDto(
-                            quiz = QuizDataDto(
-                                title = "${chapter.title} Quiz",
-                                chapterId = chapterId,
-                                chapterTitle = chapter.title,
-                                chapterOrder = chapter.chapterOrder,
-                                totalQuestions = mcqs.size
-                            ),
-                            questions = mcqs
-                        )
-                    )
-                )
-            }
-        }
-
-        // 2. Try remote API
-        return try {
+        // 1. Try remote API
+        try {
             val response = api.getQuizQuestions(chapterId, userId, email)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Failed to fetch quiz questions: ${response.code()} ${response.message()}"))
+                val questions = response.body()!!.data?.questions.orEmpty()
+                if (questions.isNotEmpty()) {
+                    return Result.success(response.body()!!)
+                }
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (_: Exception) {
+            // Remote failed, proceed to local question bank
         }
+
+        // 2. Local question bank fallback (works for all chapters in all subjects)
+        val mcqs = catalogRepo?.getChapterQuiz(chapterId)
+        val chapter = catalogRepo?.getChapterById(chapterId)
+        if (!mcqs.isNullOrEmpty() && chapter != null) {
+            return Result.success(
+                QuizQuestionsResponse(
+                    status = "success",
+                    data = QuizQuestionsDataDto(
+                        quiz = QuizDataDto(
+                            title = "${chapter.title} Quiz",
+                            chapterId = chapterId,
+                            chapterTitle = chapter.title,
+                            chapterOrder = chapter.chapterOrder,
+                            totalQuestions = mcqs.size
+                        ),
+                        questions = mcqs
+                    )
+                )
+            )
+        }
+
+        return Result.failure(Exception("No quiz questions available for chapter $chapterId"))
     }
 
     override suspend fun submitQuiz(
@@ -155,46 +161,25 @@ class QuizRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<QuizSubmitResponse> {
-        // 1. If catalog chapter (>= 1000), evaluate locally
-        if (chapterId >= 1000) {
-            val localResult = catalogRepo?.submitLocalQuiz(chapterId, answers)
-            if (localResult != null) {
-                return Result.success(
-                    QuizSubmitResponse(
-                        status = "success",
-                        message = "Quiz evaluated on-device",
-                        data = localResult
-                    )
-                )
-            }
-        }
-
-        // 2. Try remote API
-        return try {
+        // Try remote submission first
+        try {
             val request = QuizSubmitRequest(chapterId = chapterId, answers = answers)
             val response = api.submitQuiz(chapterId = chapterId, userId = userId, email = email, request = request)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                // Fallback to local evaluation if available
-                val localResult = catalogRepo?.submitLocalQuiz(chapterId, answers)
-                Result.success(
-                    QuizSubmitResponse(
-                        status = "success",
-                        message = "Quiz evaluated on-device fallback",
-                        data = localResult
-                    )
-                )
+                return Result.success(response.body()!!)
             }
-        } catch (e: Exception) {
-            val localResult = catalogRepo?.submitLocalQuiz(chapterId, answers)
-            Result.success(
-                QuizSubmitResponse(
-                    status = "success",
-                    message = "Quiz evaluated offline",
-                    data = localResult
-                )
-            )
+        } catch (_: Exception) {
+            // Remote submission failed or offline; fall back to local grading
         }
+
+        // Offline on-device grading
+        val localResult = catalogRepo?.submitLocalQuiz(chapterId, answers)
+        return Result.success(
+            QuizSubmitResponse(
+                status = "success",
+                message = "Quiz evaluated on-device",
+                data = localResult
+            )
+        )
     }
 }

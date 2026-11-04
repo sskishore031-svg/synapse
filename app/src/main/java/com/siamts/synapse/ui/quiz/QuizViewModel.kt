@@ -195,14 +195,28 @@ class QuizViewModel(
 
     // Compatibility method
     fun loadSubjectQuiz(subjectName: String) {
-        val mappedChapterId = when (subjectName) {
-            "Mathematics" -> 4
-            "Computer Science" -> 8
-            "Data Science" -> 13
-            "Artificial Intelligence" -> 18
-            "Physics" -> 23
-            "Chemistry" -> 28
-            else -> 18
+        val catalog = try { com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstance() } catch (_: Throwable) { null }
+        val subject = catalog?.getSubjectById(subjectName)
+        val firstChapterId = subject?.chapters?.firstOrNull()?.chapterId
+
+        val mappedChapterId = firstChapterId ?: when (subjectName.trim().lowercase(java.util.Locale.ROOT)) {
+            "mathematics", "math", "1" -> 4
+            "computer science", "cs", "2" -> 8
+            "data science", "ds", "3" -> 13
+            "artificial intelligence", "ai", "4" -> 18
+            "physics", "phy", "5" -> 23
+            "chemistry", "chem", "6" -> 28
+            "biology", "bio", "ext_bio", "101" -> 1011
+            "world history", "history", "ext_history", "102" -> 1021
+            "economics & finance", "economics", "finance", "ext_econ", "103" -> 1031
+            "environmental science", "ecology", "ext_env", "104" -> 1041
+            "computer networks", "networks", "ext_net", "105" -> 1051
+            "cyber security", "security", "ext_sec", "106" -> 1061
+            "psychology", "ext_psych", "107" -> 1071
+            "business management", "business", "management", "ext_biz", "108" -> 1081
+            "electrical engineering", "ee", "circuits", "ext_ee", "109" -> 1091
+            "astronomy & astrophysics", "astronomy", "astrophysics", "ext_astro", "110" -> 1101
+            else -> 4
         }
         loadChapterQuiz(mappedChapterId)
     }

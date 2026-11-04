@@ -8,6 +8,7 @@ typealias LearnUiState = SubjectSelectionUiState
 
 /**
  * Top-level Learn Screen facade representing Tab 1 of SYNAPSE AI.
+ * Routes subject card clicks dynamically through subject ID (e.g. "MATH", "CS", "DS", "AI", "PHY", "CHEM").
  */
 @Composable
 fun LearnScreen(
@@ -16,12 +17,16 @@ fun LearnScreen(
     modifier: Modifier = Modifier,
     onSubjectClick: ((String) -> Unit)? = null,
     onChapterClick: ((Int) -> Unit)? = null,
+    onNavigateToRoute: ((String) -> Unit)? = null,
 ) {
     SubjectSelectionScreen(
         viewModel = viewModel,
         onTabSelect = onTabSelect,
         modifier = modifier,
-        onSubjectClick = onSubjectClick,
+        onSubjectClick = { subjectId ->
+            onNavigateToRoute?.invoke("subject_detail_screen/$subjectId")
+            onSubjectClick?.invoke(subjectId)
+        },
         onChapterClick = onChapterClick,
     )
 }
