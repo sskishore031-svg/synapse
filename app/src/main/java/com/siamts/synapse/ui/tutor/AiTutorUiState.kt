@@ -23,20 +23,16 @@ data class ChatMessage(
  */
 data class AiTutorUiState(
     val headerTag: String = "PERSONALIZED FOR STUDENT",
-    val tutorTitle: String = "SYNAPSE AI Tutor",
-    val tutorName: String = "SYNAPSE · Your personal AI companion",
+    val tutorTitle: String = "SYNAPSE AI",
+    val tutorName: String = "SYNAPSE · On-Device Neural Tutor",
     val isOnline: Boolean = true,
     val timeHeader: String = "TODAY",
     val messages: List<ChatMessage> = emptyList(),
     val aiThoughtStatus: String = "✨ SYNAPSE AI · Ready to help you learn",
-    val suggestedPrompts: List<String> = listOf(
-        "Explain this topic simply",
-        "Give me an example",
-        "What about its roots?",
-        "Create a quiz"
-    ),
+    val suggestedPrompts: List<String> = emptyList(),
     val inputQuery: String = "",
     val isGenerating: Boolean = false,
+    val currentlySpeakingMessageId: String? = null,
     // Retained for backward compatibility
     val userQuestion: String = "",
     val aiAnswerParagraph1: String = "",
