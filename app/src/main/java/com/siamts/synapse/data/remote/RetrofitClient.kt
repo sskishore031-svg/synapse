@@ -22,7 +22,7 @@ object RetrofitClient {
     const val PHYSICAL_DEVICE_BASE_URL = "http://172.23.176.100/Synapse_backend/"
 
     // Android Emulator loopback alias
-    const val EMULATOR_LOCAL_BASE_URL = "http://10.0.2.2/Synapse_backend/"
+    const val EMULATOR_LOCAL_BASE_URL = "http://172.23.176.100/Synapse_backend/"
 
     val isEmulator: Boolean
         get() = try {

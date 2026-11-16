@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,14 +52,14 @@ fun SubjectQuizSelectionScreen(
     subjectName: String,
     viewModel: SubjectQuizViewModel,
     onBackClick: () -> Unit,
-    onStartQuiz: (Int) -> Unit,
+    onStartQuiz: (chapterId: Int, subjectId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(subjectId) {
-        if (subjectId > 0 && uiState.subjectId != subjectId) {
-            viewModel.loadSubjectQuizzes(subjectId)
+    LaunchedEffect(subjectId, subjectName) {
+        if (uiState.quizzes.isEmpty() || uiState.subjectId != subjectId) {
+            viewModel.loadSubjectQuizzes(subjectId, subjectName)
         }
     }
 
@@ -132,18 +133,28 @@ fun SubjectQuizSelectionScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = BlueAccent)
                     }
+                } else if (uiState.quizzes.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No chapter quizzes found for this subject.",
+                            color = Color(0xFF64748B),
+                            fontSize = 14.sp
+                        )
+                    }
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(uiState.quizzes) { quiz ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onStartQuiz(quiz.chapterId) },
+                                    .clickable { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -164,7 +175,7 @@ fun SubjectQuizSelectionScreen(
                                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                         ) {
                                             Text(
-                                                text = "Chapter ${quiz.chapterOrder}",
+                                                text = "CHAPTER ${quiz.chapterOrder}",
                                                 color = BlueAccent,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold
@@ -190,7 +201,7 @@ fun SubjectQuizSelectionScreen(
                                     Spacer(modifier = Modifier.height(10.dp))
 
                                     Text(
-                                        text = quiz.quizTitle,
+                                        text = quiz.chapterTitle.ifBlank { quiz.quizTitle },
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
                                         color = Color(0xFF0F172A)
@@ -198,31 +209,17 @@ fun SubjectQuizSelectionScreen(
 
                                     Spacer(modifier = Modifier.height(6.dp))
 
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Text(
-                                            text = "⏱ ${quiz.durationMinutes} min",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                        Text(
-                                            text = "❓ ${quiz.questionCount} Questions",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                        Text(
-                                            text = "🎯 ${quiz.totalMarks} Marks",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                    }
+                                    Text(
+                                        text = "${quiz.questionCount.coerceAtLeast(5)} Questions • Multiple Choice",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF64748B)
+                                    )
 
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     Button(
-                                        onClick = { onStartQuiz(quiz.chapterId) },
+                                        onClick = { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                         modifier = Modifier.fillMaxWidth().height(42.dp),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (quiz.isAttempted) Color(0xFF1E293B) else BlueAccent
@@ -244,5 +241,44 @@ fun SubjectQuizSelectionScreen(
             }
         }
     }
+}
+
+@Composable
+fun SubjectQuizSelectionScreen(
+    subjectId: Int,
+    subjectName: String,
+    viewModel: SubjectQuizViewModel,
+    onBackClick: () -> Unit,
+    onStartQuiz: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SubjectQuizSelectionScreen(
+        subjectId = subjectId,
+        subjectName = subjectName,
+        viewModel = viewModel,
+        onBackClick = onBackClick,
+        onStartQuiz = { chapterId, _ -> onStartQuiz(chapterId) },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun SubjectQuizSelectionScreen(
+    subjectId: String,
+    subjectName: String,
+    viewModel: SubjectQuizViewModel,
+    onBackClick: () -> Unit,
+    onStartQuiz: (chapterId: Int, subjectId: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val numericId = subjectId.toIntOrNull() ?: 0
+    SubjectQuizSelectionScreen(
+        subjectId = numericId,
+        subjectName = subjectName,
+        viewModel = viewModel,
+        onBackClick = onBackClick,
+        onStartQuiz = onStartQuiz,
+        modifier = modifier
+    )
 }
 

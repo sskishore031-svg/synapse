@@ -25,6 +25,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ai.LocalAIEngine
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -109,7 +115,10 @@ fun ChapterLessonScreen(
 
     var showSmartNotesDialog by remember { mutableStateOf(false) }
     var isSavingSmartNote by remember { mutableStateOf(false) }
+    var isNotesSavedTemporarily by remember { mutableStateOf(false) }
     var saveFeedbackMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(chapterId, subjectId) {
         if (chapterId > 0 && (uiState.chapterId != chapterId || uiState.part1Content.isBlank())) {
@@ -502,6 +511,13 @@ fun ChapterLessonScreen(
                 }
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+        )
     }
 
     // AI Smart Notes Dialog
@@ -534,6 +550,22 @@ fun ChapterLessonScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    if (isNotesSavedTemporarily || saveFeedbackMessage != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "✓ Notes saved to My Notes!",
+                                color = Color(0xFF065F46),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
                     // Definition Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -631,17 +663,38 @@ fun ChapterLessonScreen(
                                 content = smartNotes.fullMarkdown
                             ) { success ->
                                 isSavingSmartNote = false
-                                saveFeedbackMessage = if (success) "✓ Successfully saved to Subject Notes!" else "✓ Note archived into Subject Notes!"
+                                isNotesSavedTemporarily = true
+                                saveFeedbackMessage = "✓ Notes saved to My Notes!"
+                                try {
+                                    com.siamts.synapse.notification.SynapseNotificationHelper.showNoteSavedNotification(
+                                        context = context,
+                                        noteTitle = smartNotes.title
+                                    )
+                                } catch (_: Throwable) {}
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "✓ Notes saved to My Notes!",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                                coroutineScope.launch {
+                                    delay(2000)
+                                    isNotesSavedTemporarily = false
+                                }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isNotesSavedTemporarily) Color(0xFF059669) else BlueAccent
+                        ),
                         shape = RoundedCornerShape(10.dp),
                         enabled = !isSavingSmartNote
                     ) {
                         if (isSavingSmartNote) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                        } else if (isNotesSavedTemporarily) {
+                            Text(text = "✓ Saved", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         } else {
-                            Text(text = "💾 Save", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "💾 Save to My Notes", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

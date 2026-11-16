@@ -142,6 +142,55 @@ class LocalAIEngine private constructor(context: Context?) {
         "hi", "hello", "hey", "vanakkam", "namaste", "hola", "greetings", "hii", "heyy", "yo"
     )
 
+    private val capabilityPhrases = setOf(
+        "what you can do", "what can you do", "what can u do", "what u can do",
+        "wat can u do", "wat you can do", "wat can you do", "how can you help",
+        "how can u help", "how do you help", "how does this help", "what do you do",
+        "what does it do", "what does this app do", "what does synapse do",
+        "what can synapse do", "what are your capabilities", "what are your features",
+        "what are the features", "what capabilities", "your capabilities",
+        "tell me what you can do", "tell me what u can do", "how to use",
+        "how to use this app", "how to use synapse", "how do i use this",
+        "how do i use synapse", "how to study", "help me", "help me study",
+        "help", "can you help me", "features", "app features", "capabilities",
+        "guide me", "what do you know", "what can you teach", "show features", "list features"
+    )
+
+    private val identityPhrases = setOf(
+        "who are you", "who r u", "who are u", "who r you", "what are you", "what r u",
+        "what is synapse ai", "what is synapse", "what is this app", "tell me about yourself",
+        "tell me about synapse", "tell me about synapse ai", "about yourself", "introduce yourself",
+        "are you chatgpt", "are u chatgpt", "are you chat gpt", "are you gpt",
+        "are you offline", "are u offline", "is this offline", "is synapse offline",
+        "how do you work", "how does this work", "how does synapse work",
+        "how does synapse ai work", "how you work", "who made you", "who created you",
+        "who built you", "who developed you", "what kind of ai are you"
+    )
+
+    private val gratitudeWords = setOf(
+        "thanks", "thank", "thx", "tq", "thankyou", "thanksalot",
+        "awesome", "great", "ok", "okay", "nice", "cool",
+        "perfect", "understood", "alright", "super", "well done",
+        "good job", "k", "kk"
+    )
+
+    private val gratitudePhrases = setOf(
+        "thank you", "thank u", "thanks a lot", "thank you so much",
+        "thank you very much", "thanks so much", "many thanks", "got it",
+        "got it thanks", "got it thank you", "ok thanks", "okay thanks",
+        "great thanks", "nice thanks", "understood thanks", "thanks a bunch"
+    )
+
+    private val greetingWords = setOf(
+        "hi", "hello", "hey", "gm", "gn", "ge", "ga", "yo", "sup",
+        "howdy", "hiya", "namaste", "vanakkam", "hola", "bonjour", "greetings", "hii", "heyy", "heya"
+    )
+
+    private val greetingPhrases = setOf(
+        "good morning", "good evening", "good afternoon", "good day", "good night",
+        "hey there", "hi there", "hello there"
+    )
+
     private val examplePrompts = setOf(
         "give an example", "give me an example", "show an example", "can you give an example",
         "example please", "another example", "practical example", "real life example"
@@ -344,25 +393,36 @@ class LocalAIEngine private constructor(context: Context?) {
             return buildFallbackResponse("")
         }
 
+        val normalized = normalizeQuery(query)
         val lowerQuery = query.lowercase(Locale.ROOT)
 
-        // 1. Intent Handler: Casual Greetings (ChatGPT-style short, natural greeting)
-        if (isGreetingQuery(lowerQuery)) {
-            return buildGreetingResponse(lowerQuery)
-        }
-
-        // 2. Intent Handler: Capabilities / Help queries
-        if (isCapabilitiesQuery(lowerQuery)) {
+        // 1. Intent A: Capabilities & Help ("what you can do", "what can you do", "features", "help me", "how to use")
+        if (isCapabilitiesQuery(normalized)) {
             return buildCapabilitiesResponse()
         }
 
-        // 3. Intent Handler: Topic Suggestion / Chapter Listing ("give me some maths topic", "suggest chemistry chapters")
+        // 2. Intent B: Identity & Persona ("who are you", "what is synapse ai", "how do you work", "are you chatgpt")
+        if (isIdentityQuery(normalized)) {
+            return buildIdentityResponse()
+        }
+
+        // 3. Intent C: Gratitude & Closing ("thank you", "thanks", "thx", "awesome", "great", "ok", "got it", "nice")
+        if (isGratitudeQuery(normalized)) {
+            return buildGratitudeResponse()
+        }
+
+        // 4. Intent D: Casual Greetings ("hi", "hello", "hey", "gm", "good morning", "yo")
+        if (isGreetingQuery(normalized)) {
+            return buildGreetingResponse(normalized)
+        }
+
+        // 5. Intent Handler: Topic Suggestion / Chapter Listing ("give me some maths topic", "suggest chemistry chapters")
         val topicSuggestionResp = checkTopicSuggestionIntent(lowerQuery)
         if (topicSuggestionResp != null) {
             return topicSuggestionResp
         }
 
-        // 4. Intent Handler: App Features & Navigation Guidance
+        // 6. Intent Handler: App Features & Navigation Guidance
         val appFeatureResp = checkAppFeatureQuery(lowerQuery)
         if (appFeatureResp != null) {
             return appFeatureResp
@@ -654,36 +714,187 @@ class LocalAIEngine private constructor(context: Context?) {
         }
     }
 
-    private fun isGreetingQuery(lowerQuery: String): Boolean {
-        val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
-        val tokens = cleaned.split("\\s+".toRegex())
-        if (tokens.size in 1..3 && greetings.contains(cleaned)) return true
+    private fun normalizeQuery(query: String): String {
+        return query.lowercase(Locale.ROOT)
+            .replace(Regex("[^a-z0-9\\s]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
 
-        for (g in greetings) {
-            if (cleaned == g || cleaned == "$g!" || cleaned.startsWith("$g ") || cleaned.endsWith(" $g")) {
+    private fun isCapabilitiesQuery(normalized: String): Boolean {
+        // Exclude technical domain topics (e.g. feature engineering, feature vector)
+        val technicalFeatureTerms = listOf(
+            "feature vector", "feature extraction", "feature selection",
+            "feature scaling", "feature engineering", "feature map"
+        )
+        if (technicalFeatureTerms.any { normalized.contains(it) }) {
+            return false
+        }
+
+        // Exclude direct concept questions starting with educational verbs (e.g., "explain quadratic equation")
+        val educationalActions = setOf("explain", "solve", "define", "derive", "calculate", "prove")
+        val words = normalized.split(" ").filter { it.isNotBlank() }
+        if (words.isNotEmpty() && words[0] in educationalActions && words.size > 2) {
+            return false
+        }
+        if (normalized.contains("can you explain") || normalized.contains("can you solve") || normalized.contains("can you tell me about")) {
+            return false
+        }
+
+        // Exact match against capability phrases
+        if (capabilityPhrases.contains(normalized)) {
+            return true
+        }
+
+        // Substring match for key phrases
+        for (phrase in capabilityPhrases) {
+            if (phrase.length >= 6 && normalized.contains(phrase)) {
                 return true
             }
         }
+
+        // Pattern matching: "what ... you/u do", "wat ... u/you do", "help me study"
+        val hasWhatOrWat = words.contains("what") || words.contains("wat")
+        val hasYouOrU = words.contains("you") || words.contains("u")
+        val hasDo = words.contains("do")
+        if (hasWhatOrWat && (words.contains("can") || words.contains("could")) && hasYouOrU && hasDo) {
+            return true
+        }
+        if (hasWhatOrWat && words.contains("you") && words.contains("can") && words.contains("do")) {
+            return true
+        }
+        if (hasWhatOrWat && words.contains("u") && words.contains("can") && words.contains("do")) {
+            return true
+        }
+        if (normalized.startsWith("how can you help") || normalized.startsWith("how can u help") || normalized.startsWith("how to use")) {
+            return true
+        }
+        if (words.contains("capabilities") || words.contains("capability")) {
+            return true
+        }
+        if (normalized == "features" || normalized.startsWith("features of") || normalized.contains("your features") || normalized.contains("app features") || normalized.contains("key features")) {
+            return true
+        }
+        if (words.size <= 3 && words.contains("help")) {
+            return true
+        }
+
         return false
     }
 
-    private fun buildGreetingResponse(lowerQuery: String): LocalAiResponse {
-        val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+    private fun buildCapabilitiesResponse(): LocalAiResponse {
+        return LocalAiResponse(
+            paragraph1 = "I'm SYNAPSE AI, your 100% offline, on-device learning companion! Here is how I can help you master your studies:",
+            paragraph2 = "• Concept Explanations: Ask me to explain topics, definitions, and formulas across Mathematics, Computer Science, AI, Physics, Chemistry, Biology, and 50+ subjects.\n" +
+                    "• Topic Discovery: Ask 'Give me some maths topics' or 'Suggest physics chapters' to explore structured roadmaps.\n" +
+                    "• Worked Examples: Request step-by-step problem breakdowns and core principles.\n" +
+                    "• Voice & Smart Study: Use the microphone to ask questions hands-free, take dynamic chapter quizzes, and generate AI revision notes—all completely offline!\n\n" +
+                    "What subject or topic would you like to explore first?",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
+    }
+
+    private fun isIdentityQuery(normalized: String): Boolean {
+        if (identityPhrases.contains(normalized)) {
+            return true
+        }
+
+        for (phrase in identityPhrases) {
+            if (phrase.length >= 6 && normalized.contains(phrase)) {
+                return true
+            }
+        }
+
+        val words = normalized.split(" ").filter { it.isNotBlank() }
+        if ((words.contains("who") || words.contains("what") || words.contains("wat")) && (words.contains("you") || words.contains("u")) && words.contains("are")) {
+            return true
+        }
+        if (words.contains("who") && (words.contains("are") || words.contains("r")) && (words.contains("you") || words.contains("u"))) {
+            return true
+        }
+        if (normalized.contains("who are you") || normalized.contains("who are u") || normalized.contains("who r u")) {
+            return true
+        }
+        if (normalized.contains("synapse ai") && (words.contains("what") || words.contains("who") || words.contains("about"))) {
+            return true
+        }
+        if (words.contains("chatgpt") || words.contains("gpt")) {
+            return true
+        }
+        if (normalized == "are you offline" || normalized == "are you online" || normalized == "is it offline" || normalized == "are u offline") {
+            return true
+        }
+        if (normalized.contains("how do you work") || normalized.contains("how does it work") || normalized.contains("how you work") || normalized.contains("how synapse works") || normalized.contains("how synapse work")) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun buildIdentityResponse(): LocalAiResponse {
+        return LocalAiResponse(
+            paragraph1 = "I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline directly on your phone. Unlike cloud-based bots, I use a local Retrieval-Augmented Generation (RAG) engine and a curated curriculum database to give you fast, accurate, zero-hallucination study help without needing an internet connection.",
+            paragraph2 = "",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
+    }
+
+    private fun isGratitudeQuery(normalized: String): Boolean {
+        if (gratitudePhrases.contains(normalized) || gratitudeWords.contains(normalized)) {
+            return true
+        }
+
+        val words = normalized.split(" ").filter { it.isNotBlank() }
+        if (words.isNotEmpty() && words.size <= 4) {
+            if (words.any { it in setOf("thanks", "thank", "thx", "tq") }) return true
+            if (words.all { it in gratitudeWords }) return true
+            if (normalized.startsWith("thank you") || normalized.startsWith("thank u") || normalized.startsWith("thanks")) return true
+            if (normalized == "got it" || normalized.startsWith("got it")) return true
+        }
+
+        return false
+    }
+
+    private fun buildGratitudeResponse(): LocalAiResponse {
+        return LocalAiResponse(
+            paragraph1 = "You're very welcome! Let me know whenever you want to dive into another topic, formula, or practice question.",
+            paragraph2 = "",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
+    }
+
+    private fun isGreetingQuery(normalized: String): Boolean {
+        if (greetingWords.contains(normalized) || greetingPhrases.contains(normalized)) {
+            return true
+        }
+
+        val words = normalized.split(" ").filter { it.isNotBlank() }
+        if (words.size in 1..3) {
+            if (words.first() in greetingWords) return true
+            if (words.any { it in greetingWords } && words.any { it in setOf("there", "synapse", "ai", "friend", "buddy", "tutor") }) {
+                return true
+            }
+            for (gp in greetingPhrases) {
+                if (normalized.contains(gp)) return true
+            }
+        }
+
+        return false
+    }
+
+    private fun buildGreetingResponse(normalized: String): LocalAiResponse {
         val replyText = when {
-            cleaned == "gm" || cleaned.contains("good morning") ->
-                "Good morning! What topic or subject are we learning today?"
-            cleaned == "gn" || cleaned.contains("good night") ->
+            normalized == "gn" || normalized.contains("good night") ->
                 "Good night! Rest well and keep learning tomorrow."
-            cleaned.contains("vanakkam") ->
+            normalized.contains("vanakkam") ->
                 "Vanakkam! How can I help you with your studies today?"
-            cleaned.contains("namaste") ->
+            normalized.contains("namaste") ->
                 "Namaste! How can I assist you with your learning today?"
-            cleaned.contains("good afternoon") ->
-                "Good afternoon! What topic or subject would you like to study today?"
-            cleaned.contains("good evening") ->
-                "Good evening! Ready to dive into your studies tonight?"
             else ->
-                "Hi! How can I help you with your studies today?"
+                "Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!"
         }
 
         return LocalAiResponse(
@@ -691,34 +902,6 @@ class LocalAIEngine private constructor(context: Context?) {
             paragraph2 = "",
             isGreeting = true,
             confidenceScore = 100.0
-        )
-    }
-
-    private fun isCapabilitiesQuery(lowerQuery: String): Boolean {
-        val q = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
-        return q.contains("what can you do") ||
-                q.contains("show subjects") ||
-                q.contains("list subjects") ||
-                q.contains("what subjects") ||
-                q.contains("help me") ||
-                q == "help" ||
-                q.contains("what do you know") ||
-                q.contains("capabilities")
-    }
-
-    private fun buildCapabilitiesResponse(): LocalAiResponse {
-        return LocalAiResponse(
-            paragraph1 = "I am your SYNAPSE AI on-device tutor. Here are the core subjects and topics I can help you master:",
-            paragraph2 = "• Mathematics (Quadratic Equations, Calculus, Linear Algebra, Probability, Geometry)\n" +
-                    "• Computer Science (Algorithms, Data Structures, Operating Systems, Computer Networks, SQL)\n" +
-                    "• Data Science (Data Visualization, Machine Learning Fundamentals, Model Evaluation)\n" +
-                    "• Artificial Intelligence (Neural Networks, Transformers, Deep Learning, RAG)\n" +
-                    "• Physics (Newton's Laws of Motion, Waves, Thermodynamics, Electromagnetism, Optics)\n" +
-                    "• Chemistry (Chemical Bonds, Acids & Bases, Periodic Table, Stoichiometry, Electrochemistry)\n" +
-                    "• Extended Academic Subjects (Biology, History, Geography, and more)\n\n" +
-                    "Feel free to ask any question, request examples, or explore problem solving steps!",
-            confidenceScore = 100.0,
-            isGreeting = false
         )
     }
 

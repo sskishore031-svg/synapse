@@ -5,9 +5,10 @@ import android.content.Context
 import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
+import com.siamts.synapse.notification.SynapseNotificationHelper
 
 /**
- * Main application class initializing application-level singletons such as [SessionManager], [LocalAIEngine], and [SubjectCatalogRepository].
+ * Main application class initializing application-level singletons such as [SessionManager], [LocalAIEngine], [SubjectCatalogRepository], and [SynapseNotificationHelper].
  */
 class SynapseApplication : Application() {
 
@@ -18,6 +19,9 @@ class SynapseApplication : Application() {
         LocalAIEngine.init(this)
         try {
             SubjectCatalogRepository.getInstance(this)
+        } catch (_: Throwable) {}
+        try {
+            SynapseNotificationHelper.createNotificationChannel(this)
         } catch (_: Throwable) {}
     }
 

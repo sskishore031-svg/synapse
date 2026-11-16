@@ -1,6 +1,15 @@
 package com.siamts.synapse.ui.profile
 
+import android.Manifest
+import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,25 +23,38 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.repository.UserPreferencesRepository
+import com.siamts.synapse.notification.StudyReminderScheduler
+import com.siamts.synapse.notification.SynapseNotificationHelper
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
@@ -40,6 +62,7 @@ import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import kotlinx.coroutines.launch
 
 @Composable
 fun NotificationsSettingsScreen(
@@ -48,10 +71,53 @@ fun NotificationsSettingsScreen(
     initialEnabled: Boolean = true,
     onToggleNotifications: (Boolean) -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val sessionManager = remember {
+        SessionManager.getInstanceOrNull() ?: SessionManager.init(context)
+    }
+    val userPreferencesRepo = remember {
+        UserPreferencesRepository.getInstance(context)
+    }
+
+    val persistedReminders by sessionManager.studyRemindersEnabledFlow.collectAsState(initial = true)
+    val persistedNotifications by sessionManager.notificationsEnabledFlow.collectAsState(initial = initialEnabled)
+    val formattedStudyTime by userPreferencesRepo.studyReminderFormattedTimeFlow.collectAsState(initial = "07:00 PM")
+    val currentStudyHour by userPreferencesRepo.studyReminderHourFlow.collectAsState(initial = 19)
+    val currentStudyMinute by userPreferencesRepo.studyReminderMinuteFlow.collectAsState(initial = 0)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            SynapseNotificationHelper.scheduleStudyReminders(context)
+            StudyReminderScheduler.scheduleDailyStudyReminder(context, currentStudyHour, currentStudyMinute)
+            coroutineScope.launch {
+                sessionManager.setStudyRemindersEnabled(true)
+                sessionManager.setNotificationsEnabled(true)
+                userPreferencesRepo.setStudyReminderEnabled(true)
+            }
+            val sent = SynapseNotificationHelper.showTestNotification(context)
+            if (sent) {
+                Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Please allow notification permission in Android Settings.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     var enableAll by remember { mutableStateOf(initialEnabled) }
     var studyReminders by remember { mutableStateOf(true) }
     var newContent by remember { mutableStateOf(true) }
     var achievements by remember { mutableStateOf(true) }
+
+    LaunchedEffect(persistedNotifications) {
+        enableAll = persistedNotifications
+    }
+    LaunchedEffect(persistedReminders) {
+        studyReminders = persistedReminders
+    }
 
     Box(
         modifier = modifier
@@ -125,9 +191,23 @@ fun NotificationsSettingsScreen(
                                     }
                                     Switch(
                                         checked = enableAll,
-                                        onCheckedChange = {
-                                            enableAll = it
-                                            onToggleNotifications(it)
+                                        onCheckedChange = { isChecked ->
+                                            enableAll = isChecked
+                                            onToggleNotifications(isChecked)
+                                            coroutineScope.launch {
+                                                sessionManager.setNotificationsEnabled(isChecked)
+                                            }
+                                            if (isChecked) {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                                ) {
+                                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                } else {
+                                                    SynapseNotificationHelper.scheduleStudyReminders(context)
+                                                }
+                                            } else {
+                                                SynapseNotificationHelper.cancelStudyReminders(context)
+                                            }
                                         },
                                         colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = BlueAccent)
                                     )
@@ -144,8 +224,80 @@ fun NotificationsSettingsScreen(
                                         subtitle = "Gentle prompts to keep your learning streak",
                                         checked = studyReminders && enableAll,
                                         enabled = enableAll,
-                                        onCheckedChange = { studyReminders = it }
+                                        onCheckedChange = { isChecked ->
+                                            studyReminders = isChecked
+                                            coroutineScope.launch {
+                                                sessionManager.setStudyRemindersEnabled(isChecked)
+                                                userPreferencesRepo.setStudyReminderEnabled(isChecked)
+                                            }
+                                            if (isChecked) {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                                ) {
+                                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                } else {
+                                                    SynapseNotificationHelper.scheduleStudyReminders(context)
+                                                    StudyReminderScheduler.scheduleDailyStudyReminder(context, currentStudyHour, currentStudyMinute)
+                                                }
+                                            } else {
+                                                SynapseNotificationHelper.cancelStudyReminders(context)
+                                                StudyReminderScheduler.cancelDailyStudyReminder(context)
+                                            }
+                                        }
                                     )
+
+                                    if (studyReminders && enableAll) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                                .clickable {
+                                                    TimePickerDialog(
+                                                        context,
+                                                        { _, selectedHour, selectedMinute ->
+                                                            coroutineScope.launch {
+                                                                userPreferencesRepo.setStudyReminderTime(selectedHour, selectedMinute)
+                                                                sessionManager.setStudyReminderTime(selectedHour, selectedMinute)
+                                                            }
+                                                            StudyReminderScheduler.scheduleDailyStudyReminder(context, selectedHour, selectedMinute)
+                                                            val newFormatted = UserPreferencesRepository.formatTime(selectedHour, selectedMinute)
+                                                            coroutineScope.launch {
+                                                                snackbarHostState.showSnackbar("⏰ Daily study reminder set for $newFormatted")
+                                                            }
+                                                            Toast.makeText(context, "⏰ Daily study reminder set for $newFormatted", Toast.LENGTH_SHORT).show()
+                                                        },
+                                                        currentStudyHour,
+                                                        currentStudyMinute,
+                                                        false
+                                                    ).show()
+                                                }
+                                                .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                                                .border(1.dp, BlueAccent.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(text = "⏰", fontSize = 18.sp)
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Column {
+                                                    Text(text = "Preferred Study Time", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                                                    Text(text = "Exact alarm & daily alert", fontSize = 10.sp, color = Color(0xFF64748B))
+                                                }
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(BlueAccent.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(text = formattedStudyTime, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = BlueAccent)
+                                                }
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(text = "✏️", fontSize = 12.sp)
+                                            }
+                                        }
+                                    }
 
                                     NotificationToggleRow(
                                         title = "New Chapters & Quizzes",
@@ -165,10 +317,49 @@ fun NotificationsSettingsScreen(
                                 }
                             }
                         }
+
+                        // Test Notification Action Button (For Viva Demo)
+                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
+                            Button(
+                                onClick = {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        val sent = SynapseNotificationHelper.showTestNotification(context)
+                                        if (sent) {
+                                            Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Unable to post notification. Check permissions.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                            ) {
+                                Text(
+                                    text = "⚡ Send Test Notification",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp)
+        )
     }
 }
 

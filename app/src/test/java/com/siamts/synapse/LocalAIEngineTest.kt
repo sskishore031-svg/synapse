@@ -62,13 +62,13 @@ class LocalAIEngineTest {
         for (query in casualGreetings) {
             val response = engine.generateResponse(query)
             assertTrue("Query '$query' should be detected as greeting", response.isGreeting)
-            assertEquals("Hi! How can I help you with your studies today?", response.paragraph1)
+            assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", response.paragraph1)
             assertTrue("Greeting should not dump long paragraphs", response.paragraph2.isBlank())
         }
 
         val gmResponse = engine.generateResponse("good morning")
         assertTrue(gmResponse.isGreeting)
-        assertEquals("Good morning! What topic or subject are we learning today?", gmResponse.paragraph1)
+        assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", gmResponse.paragraph1)
 
         val gnResponse = engine.generateResponse("good night")
         assertTrue(gnResponse.isGreeting)
@@ -77,6 +77,94 @@ class LocalAIEngineTest {
         val vanakkamResp = engine.generateResponse("vanakkam")
         assertTrue(vanakkamResp.isGreeting)
         assertTrue(vanakkamResp.paragraph1.contains("Vanakkam"))
+    }
+
+    @Test
+    fun testConversationalIntents_CapabilitiesAndHelp() {
+        val capabilityQueries = listOf(
+            "what you can do",
+            "what can you do?",
+            "wat can u do",
+            "help",
+            "help me",
+            "help me study",
+            "features",
+            "how to use",
+            "how can you help",
+            "what are your capabilities",
+            "tell me what you can do"
+        )
+        for (query in capabilityQueries) {
+            val response = engine.generateResponse(query)
+            assertFalse("Query '$query' is capability, not simple greeting", response.isGreeting)
+            assertEquals(100.0, response.confidenceScore, 0.001)
+            assertTrue(
+                "Query '$query' should return capabilities intro",
+                response.paragraph1.contains("100% offline, on-device learning companion")
+            )
+            assertTrue("Should contain Concept Explanations", response.paragraph2.contains("Concept Explanations"))
+            assertTrue("Should contain Topic Discovery", response.paragraph2.contains("Topic Discovery"))
+            assertTrue("Should contain Worked Examples", response.paragraph2.contains("Worked Examples"))
+            assertTrue("Should contain Voice & Smart Study", response.paragraph2.contains("Voice & Smart Study"))
+            assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
+        }
+    }
+
+    @Test
+    fun testConversationalIntents_IdentityAndPersona() {
+        val identityQueries = listOf(
+            "who are you",
+            "what is synapse ai",
+            "tell me about yourself",
+            "are you chatgpt",
+            "are you offline",
+            "how do you work"
+        )
+        for (query in identityQueries) {
+            val response = engine.generateResponse(query)
+            assertFalse("Query '$query' should not be greeting", response.isGreeting)
+            assertEquals(100.0, response.confidenceScore, 0.001)
+            assertTrue(
+                "Query '$query' should return identity description",
+                response.paragraph1.contains("I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline")
+            )
+            assertTrue(response.paragraph1.contains("zero-hallucination study help"))
+            assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
+        }
+    }
+
+    @Test
+    fun testConversationalIntents_GratitudeAndClosing() {
+        val gratitudeQueries = listOf(
+            "thanks",
+            "thank you",
+            "thx",
+            "awesome",
+            "great",
+            "ok",
+            "okay",
+            "got it",
+            "nice"
+        )
+        for (query in gratitudeQueries) {
+            val response = engine.generateResponse(query)
+            assertFalse("Query '$query' should not be greeting", response.isGreeting)
+            assertEquals(100.0, response.confidenceScore, 0.001)
+            assertEquals(
+                "You're very welcome! Let me know whenever you want to dive into another topic, formula, or practice question.",
+                response.paragraph1
+            )
+            assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
+        }
+    }
+
+    @Test
+    fun testEducationalQuery_QuadraticEquation_intact() {
+        val response = engine.generateResponse("explain quadratic equation")
+        assertFalse(response.isGreeting)
+        assertEquals("Mathematics", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("Quadratic") || response.paragraph1.contains("Algebra"))
+        assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
     }
 
     @Test
@@ -254,6 +342,6 @@ class LocalAIEngineTest {
         assertTrue("Last event must be Completed", events.last() is LocalAiStreamToken.Completed)
         val tokenEvents = events.filterIsInstance<LocalAiStreamToken.Token>()
         assertTrue("Must emit token events", tokenEvents.isNotEmpty())
-        assertEquals("Hi! How can I help you with your studies today?", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
+        assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
     }
 }

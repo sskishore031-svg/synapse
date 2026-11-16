@@ -63,10 +63,12 @@ fun SplashScreen(
         }
     }
 
-    // Auto-advancing timer transitions within 1.5 seconds without requiring any manual button tap
+    // Safety fallback to guarantee transition within 1.8 seconds
     LaunchedEffect(Unit) {
-        delay(1500L)
-        onSplashFinished(uiState.isAuthenticated)
+        delay(1800L)
+        if (!uiState.isNavigating) {
+            onSplashFinished(viewModel.uiState.value.isAuthenticated)
+        }
     }
 
     SplashContent(

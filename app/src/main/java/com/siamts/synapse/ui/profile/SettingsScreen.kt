@@ -1,6 +1,12 @@
 package com.siamts.synapse.ui.profile
 
+import android.Manifest
+import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -8,6 +14,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.core.content.ContextCompat
+import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.repository.UserPreferencesRepository
+import com.siamts.synapse.notification.StudyReminderScheduler
+import com.siamts.synapse.notification.SynapseNotificationHelper
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -107,11 +120,46 @@ fun SettingsScreen(
     val secondaryTextColor = if (isDark) TextSecondary else LightTextSecondary
     val sectionHeaderColor = if (isDark) CyanAccent else BlueAccent
 
+    val sessionManager = remember {
+        SessionManager.getInstanceOrNull() ?: SessionManager.init(context)
+    }
+    val userPreferencesRepo = remember {
+        UserPreferencesRepository.getInstance(context)
+    }
+    val persistedReminders by sessionManager.studyRemindersEnabledFlow.collectAsState(initial = true)
+    val formattedStudyTime by userPreferencesRepo.studyReminderFormattedTimeFlow.collectAsState(initial = "07:00 PM")
+    val currentStudyHour by userPreferencesRepo.studyReminderHourFlow.collectAsState(initial = 19)
+    val currentStudyMinute by userPreferencesRepo.studyReminderMinuteFlow.collectAsState(initial = 0)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            SynapseNotificationHelper.scheduleStudyReminders(context)
+            StudyReminderScheduler.scheduleDailyStudyReminder(context, currentStudyHour, currentStudyMinute)
+            coroutineScope.launch {
+                sessionManager.setStudyRemindersEnabled(true)
+                userPreferencesRepo.setStudyReminderEnabled(true)
+            }
+            val sent = SynapseNotificationHelper.showTestNotification(context)
+            if (sent) {
+                Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Please enable notification permission in Android Settings.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     var dailyReminderEnabled by remember { mutableStateOf(true) }
     var soundEffectsEnabled by remember { mutableStateOf(true) }
     var offlineSyncEnabled by remember { mutableStateOf(true) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showThemeModal by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(persistedReminders) {
+        dailyReminderEnabled = persistedReminders
+    }
 
     Box(
         modifier = modifier
@@ -296,12 +344,155 @@ fun SettingsScreen(
                         Column(modifier = Modifier.padding(14.dp)) {
                             SettingsToggleRow(
                                 title = "Daily Study Reminders",
-                                subtitle = "Receive daily focus prompts at 7:00 PM",
+                                subtitle = "Receive daily focus prompts for offline revision",
                                 checked = dailyReminderEnabled,
-                                onCheckedChange = { dailyReminderEnabled = it },
+                                onCheckedChange = { isChecked ->
+                                    dailyReminderEnabled = isChecked
+                                    coroutineScope.launch {
+                                        sessionManager.setStudyRemindersEnabled(isChecked)
+                                        userPreferencesRepo.setStudyReminderEnabled(isChecked)
+                                    }
+                                    if (isChecked) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                        ) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            SynapseNotificationHelper.scheduleStudyReminders(context)
+                                            StudyReminderScheduler.scheduleDailyStudyReminder(context, currentStudyHour, currentStudyMinute)
+                                        }
+                                    } else {
+                                        SynapseNotificationHelper.cancelStudyReminders(context)
+                                        StudyReminderScheduler.cancelDailyStudyReminder(context)
+                                    }
+                                },
                                 primaryTextColor = primaryTextColor,
                                 secondaryTextColor = secondaryTextColor
                             )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Interactive Preferred Study Time Row & Time Picker
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        TimePickerDialog(
+                                            context,
+                                            { _, selectedHour, selectedMinute ->
+                                                coroutineScope.launch {
+                                                    userPreferencesRepo.setStudyReminderTime(selectedHour, selectedMinute)
+                                                    sessionManager.setStudyReminderTime(selectedHour, selectedMinute)
+                                                }
+                                                if (dailyReminderEnabled) {
+                                                    StudyReminderScheduler.scheduleDailyStudyReminder(context, selectedHour, selectedMinute)
+                                                }
+                                                val newFormatted = UserPreferencesRepository.formatTime(selectedHour, selectedMinute)
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar("⏰ Daily study reminder set for $newFormatted")
+                                                }
+                                                Toast.makeText(context, "⏰ Daily study reminder set for $newFormatted", Toast.LENGTH_SHORT).show()
+                                            },
+                                            currentStudyHour,
+                                            currentStudyMinute,
+                                            false
+                                        ).show()
+                                    }
+                                    .background(
+                                        color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isDark) CyanAccent.copy(alpha = 0.3f) else BlueAccent.copy(alpha = 0.2f),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = "⏰", fontSize = 20.sp)
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "Preferred Study Time",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp,
+                                            color = primaryTextColor
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Exact alarm & daily alert",
+                                            fontSize = 11.sp,
+                                            color = secondaryTextColor
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                color = if (isDark) CyanAccent.copy(alpha = 0.15f) else BlueAccent.copy(alpha = 0.12f),
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = formattedStudyTime,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = if (isDark) CyanAccent else BlueAccent
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "✏️",
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Send Test Notification Button (for Viva Review Demo)
+                            Button(
+                                onClick = {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        val sent = SynapseNotificationHelper.showTestNotification(context)
+                                        if (sent) {
+                                            Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Unable to post notification. Please check permissions.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFEEF2FF)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (isDark) CyanAccent.copy(alpha = 0.5f) else BlueAccent.copy(alpha = 0.3f)
+                                )
+                            ) {
+                                Text(
+                                    text = "⚡ Send Test Notification",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (isDark) CyanAccent else BlueAccent
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(10.dp))
                             SettingsToggleRow(
                                 title = "Sound Effects & Haptics",
@@ -579,6 +770,13 @@ fun SettingsScreen(
                 }
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp)
+        )
     }
 }
 

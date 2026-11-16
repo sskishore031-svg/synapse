@@ -31,11 +31,34 @@ class ProfileViewModel(
 
     init {
         loadSessionAndFetchRemote()
+        observeSessionChanges()
+    }
+
+    private fun observeSessionChanges() {
+        viewModelScope.launch {
+            val manager = sessionManager ?: SessionManager.getInstanceOrNull()
+            manager?.sessionStateFlow?.collect { sessionState ->
+                if (sessionState is com.siamts.synapse.data.local.AuthSessionState.Authenticated) {
+                    val user = sessionState.user
+                    applyUserData(
+                        id = user.id,
+                        name = user.name.ifBlank { "Student" },
+                        email = user.email.ifBlank { "student@synapse.ai" },
+                        phone = user.phone ?: "+91 98765-43210",
+                        bio = user.bio ?: "Learning, exploring and building a better version of myself.",
+                        course = user.course ?: "B.Tech Computer Science · Year 3",
+                        preferredLanguage = user.preferredLanguage ?: "English",
+                        studyGoal = user.studyGoal ?: "25 min / day",
+                        photoUrl = user.photoUrl
+                    )
+                }
+            }
+        }
     }
 
     /**
      * Initializes UI state from local cached session first, then fetches
-     * live profile data from synapse_backend profile.php.
+     * live profile data from synapse_backend profile.php if session exists.
      */
     fun loadSessionAndFetchRemote() {
         viewModelScope.launch {
@@ -54,13 +77,15 @@ class ProfileViewModel(
                     studyGoal = cachedUser.studyGoal ?: "25 min / day",
                     photoUrl = cachedUser.photoUrl
                 )
-            }
 
-            // Fetch live student profile from MySQL via profile.php
-            fetchRemoteProfile(
-                userId = cachedUser?.id?.takeIf { it > 0 },
-                email = cachedUser?.email?.ifBlank { null }
-            )
+                // Only fetch remote profile if we have a concrete user ID or email
+                if (cachedUser.id > 0 || cachedUser.email.isNotBlank()) {
+                    fetchRemoteProfile(
+                        userId = cachedUser.id.takeIf { it > 0 },
+                        email = cachedUser.email.ifBlank { null }
+                    )
+                }
+            }
         }
     }
 
@@ -68,6 +93,9 @@ class ProfileViewModel(
      * Fetches real-time student profile from PHP backend.
      */
     fun fetchRemoteProfile(userId: Int? = null, email: String? = null) {
+        if (userId == null && email.isNullOrBlank()) {
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
@@ -233,12 +261,22 @@ class ProfileViewModel(
     }
 
     /**
-     * Updates notification preference in UI and syncs with profile.php.
+     * Updates notification preference in UI, persists locally, schedules reminders, and syncs with profile.php.
      */
     fun onToggleNotifications(enabled: Boolean) {
         _uiState.update { it.copy(notificationsEnabled = enabled) }
 
         viewModelScope.launch {
+            try {
+                sessionManager?.setNotificationsEnabled(enabled)
+                val appContext = SynapseApplication.getAppContext()
+                if (enabled) {
+                    com.siamts.synapse.notification.SynapseNotificationHelper.scheduleStudyReminders(appContext)
+                } else {
+                    com.siamts.synapse.notification.SynapseNotificationHelper.cancelStudyReminders(appContext)
+                }
+            } catch (_: Throwable) {}
+
             val currentId = _uiState.value.userId.takeIf { it > 0 }
             val request = ProfileUpdateRequest(
                 userId = currentId,
@@ -290,6 +328,7 @@ class ProfileViewModel(
         viewModelScope.launch {
             val manager = sessionManager ?: SessionManager.getInstanceOrNull()
             manager?.clearSession()
+            _uiState.update { ProfileUiState() }
             onLoggedOut()
         }
     }
@@ -329,12 +368,13 @@ class ProfileViewModel(
     }
 
     private fun applyRemoteProfile(profile: UserProfileDto) {
-        val initials = computeInitials(profile.name)
+        val effectiveName = profile.name.ifBlank { _uiState.value.userName }
+        val initials = computeInitials(effectiveName)
         val formattedPhoto = RetrofitClient.formatPhotoUrl(profile.photoUrl ?: profile.profilePhoto)
         _uiState.update { current ->
             current.copy(
-                userId = profile.id,
-                userName = profile.name.ifBlank { current.userName },
+                userId = if (profile.id > 0) profile.id else current.userId,
+                userName = effectiveName,
                 userInitials = initials,
                 userEmail = profile.email.ifBlank { current.userEmail },
                 userPhone = profile.phone ?: current.userPhone,
@@ -344,9 +384,9 @@ class ProfileViewModel(
                 achievementsCount = profile.achievementsCount ?: current.achievementsCount,
                 studyGoalText = profile.studyGoal ?: current.studyGoalText,
                 languageText = profile.preferredLanguage ?: current.languageText,
-                interests = profile.interests,
+                interests = if (profile.interests.isNotEmpty()) profile.interests else current.interests,
                 notificationsEnabled = profile.notificationsEnabled,
-                profilePhotoUri = formattedPhoto
+                profilePhotoUri = formattedPhoto ?: current.profilePhotoUri
             )
         }
     }
@@ -362,14 +402,15 @@ class ProfileViewModel(
         studyGoal: String,
         photoUrl: String?
     ) {
-        val initials = computeInitials(name)
+        val effectiveName = name.ifBlank { "Student" }
+        val initials = computeInitials(effectiveName)
         val formattedPhoto = RetrofitClient.formatPhotoUrl(photoUrl)
         _uiState.update { current ->
             current.copy(
                 userId = id,
-                userName = name,
+                userName = effectiveName,
                 userInitials = initials,
-                userEmail = email,
+                userEmail = email.ifBlank { current.userEmail },
                 userPhone = phone,
                 userBio = bio,
                 userDegree = course,
@@ -381,14 +422,12 @@ class ProfileViewModel(
     }
 
     private fun computeInitials(name: String): String {
-        return name.trim().split(" ").filter { it.isNotEmpty() }.let { parts ->
-            if (parts.size >= 2) {
-                "${parts.first().first()}${parts.last().first()}".uppercase()
-            } else if (parts.isNotEmpty() && parts.first().isNotEmpty()) {
-                parts.first().take(2).uppercase()
-            } else {
-                "S"
-            }
+        val parts = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        return when {
+            parts.size >= 2 -> "${parts.first().first()}${parts.last().first()}".uppercase()
+            parts.isNotEmpty() && parts.first().length >= 2 -> parts.first().take(2).uppercase()
+            parts.isNotEmpty() && parts.first().isNotEmpty() -> parts.first().take(1).uppercase()
+            else -> "ST"
         }
     }
 }

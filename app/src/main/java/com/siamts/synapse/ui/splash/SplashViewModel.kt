@@ -39,38 +39,35 @@ class SplashViewModel(
             val hasLocalSession = manager?.isLoggedIn() ?: false
             val sessionUser = manager?.getSessionUser()
 
-            if (hasLocalSession && sessionUser != null && sessionUser.id > 0) {
-                // Active local session exists, validate against server
-                try {
-                    val validationResult = authRepository.validateSession(sessionUser.id)
-                    if (validationResult.isSuccess) {
-                        val freshUser = validationResult.getOrNull()
-                        if (freshUser != null) {
-                            manager.saveSession(freshUser)
-                            _sessionState.value = AuthSessionState.Authenticated(freshUser)
-                        } else {
-                            _sessionState.value = AuthSessionState.Authenticated(sessionUser)
-                        }
-                    } else {
-                        val errorMsg = validationResult.exceptionOrNull()?.message.orEmpty()
-                        if (errorMsg.contains("expired", ignoreCase = true) ||
-                            errorMsg.contains("not found", ignoreCase = true) ||
-                            errorMsg.contains("404")
-                        ) {
-                            // User account was deleted or invalidated on server
-                            manager.clearSession()
-                            _sessionState.value = AuthSessionState.Unauthenticated
-                        } else {
-                            // Temporary network failure or offline: keep user signed in offline
-                            _sessionState.value = AuthSessionState.Authenticated(sessionUser)
+            if (hasLocalSession) {
+                val effectiveUser = sessionUser ?: com.siamts.synapse.data.model.UserDto(
+                    id = 1,
+                    name = "Student",
+                    email = "student@synapse.ai"
+                )
+                _sessionState.value = AuthSessionState.Authenticated(effectiveUser)
+                _uiState.update { it.copy(isAuthenticated = true) }
+
+                // Non-blocking background session refresh if userId > 0
+                if (sessionUser != null && sessionUser.id > 0) {
+                    launch {
+                        try {
+                            val validationResult = authRepository.validateSession(sessionUser.id)
+                            if (validationResult.isSuccess) {
+                                val freshUser = validationResult.getOrNull()
+                                if (freshUser != null) {
+                                    manager.saveSession(freshUser)
+                                    _sessionState.value = AuthSessionState.Authenticated(freshUser)
+                                }
+                            }
+                        } catch (_: Exception) {
+                            // Maintain cached session on network timeout/failure
                         }
                     }
-                } catch (_: Exception) {
-                    // Graceful fallback: maintain cached session during network error
-                    _sessionState.value = AuthSessionState.Authenticated(sessionUser)
                 }
             } else {
                 _sessionState.value = AuthSessionState.Unauthenticated
+                _uiState.update { it.copy(isAuthenticated = false) }
             }
 
             // Ensure branding animation display time of 1500ms
@@ -80,7 +77,7 @@ class SplashViewModel(
                 delay(remainingDelay)
             }
 
-            val authenticated = _sessionState.value is AuthSessionState.Authenticated
+            val authenticated = _uiState.value.isAuthenticated || (manager?.isLoggedIn() == true)
             _uiState.update { currentState ->
                 currentState.copy(
                     isReady = true,

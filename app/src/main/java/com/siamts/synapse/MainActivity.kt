@@ -1,11 +1,16 @@
 package com.siamts.synapse
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import com.siamts.synapse.data.local.BaseCurriculumData
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +22,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import com.siamts.synapse.notification.SynapseNotificationHelper
 import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2Screen
 import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2ViewModel
 import com.siamts.synapse.ui.algorithms.AlgorithmsLessonScreen
@@ -201,7 +211,7 @@ sealed class AppScreen {
     data class DynamicChapterLesson(val chapterId: Int, val subjectId: String? = null) : AppScreen()
     data object QuizHomeSelection : AppScreen()
     data class SubjectQuizSelection(val subjectId: Int, val subjectName: String) : AppScreen()
-    data class DynamicQuizAttempt(val chapterId: Int) : AppScreen()
+    data class DynamicQuizAttempt(val chapterId: Int, val subjectId: String = "") : AppScreen()
     data class DynamicQuizResults(
         val resultData: QuizResultDataDto,
         val questions: List<QuizQuestionDto> = emptyList(),
@@ -251,6 +261,48 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
 
+            val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    SynapseNotificationHelper.scheduleStudyReminders(context)
+                    val prefsRepo = com.siamts.synapse.data.repository.UserPreferencesRepository.getInstance(context)
+                    coroutineScope.launch {
+                        if (prefsRepo.isStudyReminderEnabled()) {
+                            val h = prefsRepo.getStudyReminderHour()
+                            val m = prefsRepo.getStudyReminderMinute()
+                            com.siamts.synapse.notification.StudyReminderScheduler.scheduleDailyStudyReminder(context, h, m)
+                        }
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                SynapseNotificationHelper.createNotificationChannel(context)
+                val prefsRepo = com.siamts.synapse.data.repository.UserPreferencesRepository.getInstance(context)
+                val isPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                } else true
+
+                if (isPermissionGranted) {
+                    SynapseNotificationHelper.scheduleStudyReminders(context)
+                    if (prefsRepo.isStudyReminderEnabled()) {
+                        val h = prefsRepo.getStudyReminderHour()
+                        val m = prefsRepo.getStudyReminderMinute()
+                        com.siamts.synapse.notification.StudyReminderScheduler.scheduleDailyStudyReminder(context, h, m)
+                    }
+                } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
+
             SYNAPSETheme(darkTheme = isDark) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -265,6 +317,22 @@ class MainActivity : ComponentActivity() {
                             screenBackStack.add(currentScreen)
                             currentScreen = newScreen
                         }
+                    }
+
+                    fun switchTab(tabScreen: AppScreen) {
+                        if (tabScreen == currentScreen) return
+                        screenBackStack.clear()
+                        if (tabScreen != AppScreen.Dashboard) {
+                            screenBackStack.add(AppScreen.Dashboard)
+                        }
+                        currentScreen = tabScreen
+                    }
+
+                    fun navigateToQuizResult(resultScreen: AppScreen.QuizResult) {
+                        while (screenBackStack.isNotEmpty() && screenBackStack.last() is AppScreen.DynamicQuizAttempt) {
+                            screenBackStack.removeAt(screenBackStack.size - 1)
+                        }
+                        currentScreen = resultScreen
                     }
 
                     fun navigateBack() {
@@ -294,7 +362,15 @@ class MainActivity : ComponentActivity() {
                                 is AppScreen.AiTutor -> AppScreen.Dashboard
                                 is AppScreen.QuizHomeSelection -> AppScreen.Dashboard
                                 is AppScreen.SubjectQuizSelection -> AppScreen.QuizHomeSelection
-                                is AppScreen.DynamicQuizAttempt -> AppScreen.QuizHomeSelection
+                                is AppScreen.DynamicQuizAttempt -> {
+                                    val sub = (currentScreen as AppScreen.DynamicQuizAttempt).subjectId
+                                    val sId = sub.toIntOrNull()
+                                    if (sId != null && sId > 0) {
+                                        AppScreen.SubjectQuizSelection(sId, "Subject $sId")
+                                    } else {
+                                        AppScreen.QuizHomeSelection
+                                    }
+                                }
                                 is AppScreen.DynamicQuizResults -> AppScreen.QuizHomeSelection
                                 is AppScreen.DynamicQuizReview -> AppScreen.QuizHomeSelection
                                 is AppScreen.QuizResult -> {
@@ -344,7 +420,7 @@ class MainActivity : ComponentActivity() {
                                 val chapId = parts[1]
                                 val score = parts[2].toIntOrNull() ?: 0
                                 val total = parts[3].toIntOrNull() ?: 5
-                                navigateTo(AppScreen.QuizResult(subId, chapId, score, total))
+                                navigateToQuizResult(AppScreen.QuizResult(subId, chapId, score, total))
                             }
                         } else if (route.startsWith("roadmap_screen/")) {
                             val subId = route.removePrefix("roadmap_screen/")
@@ -358,6 +434,21 @@ class MainActivity : ComponentActivity() {
                                 val chapId = parts[1].toIntOrNull() ?: 4
                                 navigateTo(AppScreen.DynamicChapterLesson(chapterId = chapId, subjectId = subId))
                             }
+                        } else if (route == "quiz_hub_screen" || route == "quiz_home" || route == "quiz") {
+                            navigateTo(AppScreen.QuizHomeSelection)
+                        } else if (route.startsWith("quiz_screen/") || route.startsWith("quiz/")) {
+                            val clean = if (route.startsWith("quiz_screen/")) route.removePrefix("quiz_screen/") else route.removePrefix("quiz/")
+                            val parts = clean.split("/")
+                            if (parts.size >= 2) {
+                                val subId = parts[0]
+                                val chapId = parts[1].toIntOrNull() ?: 1
+                                navigateTo(AppScreen.DynamicQuizAttempt(chapterId = chapId, subjectId = subId))
+                            } else {
+                                val chapId = parts.firstOrNull()?.toIntOrNull() ?: 1
+                                navigateTo(AppScreen.DynamicQuizAttempt(chapterId = chapId, subjectId = ""))
+                            }
+                        } else if (route == "add_subject_screen") {
+                            navigateTo(AppScreen.SubjectSelection)
                         }
                     }
 
@@ -410,6 +501,7 @@ class MainActivity : ComponentActivity() {
                                 LoginScreen(
                                     viewModel = loginViewModel,
                                     onLoginSuccess = {
+                                        screenBackStack.clear()
                                         currentScreen = AppScreen.Dashboard
                                     },
                                     onSignUpClick = {
@@ -479,28 +571,28 @@ class MainActivity : ComponentActivity() {
                                 DashboardScreen(
                                     viewModel = dashboardViewModel,
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onLearnTabClick = {
-                                        currentScreen = AppScreen.SubjectSelection
+                                        switchTab(AppScreen.SubjectSelection)
                                     },
                                     onBrainMapClick = {
-                                        currentScreen = AppScreen.BrainMap
+                                        navigateTo(AppScreen.BrainMap)
                                     },
                                     onFlashcardsClick = {
-                                        currentScreen = AppScreen.Flashcards
+                                        navigateTo(AppScreen.Flashcards)
                                     },
                                     onQuizTabClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        switchTab(AppScreen.QuizHomeSelection)
                                     },
                                     onNotesTabClick = {
-                                        currentScreen = AppScreen.NotesHome
+                                        switchTab(AppScreen.NotesHome)
                                     },
                                     onProfileTabClick = {
-                                        currentScreen = AppScreen.Profile
+                                        switchTab(AppScreen.Profile)
                                     },
                                     onNotificationClick = {
-                                        currentScreen = AppScreen.NotificationsSettings
+                                        navigateTo(AppScreen.NotificationsSettings)
                                     },
                                     onContinueLessonClick = { subjectSlug, _ ->
                                         when (subjectSlug.lowercase()) {
@@ -523,19 +615,15 @@ class MainActivity : ComponentActivity() {
                                 BrainMapScreen(
                                     viewModel = brainMapViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     onTabSelect = { tabIndex ->
-                                        if (tabIndex == 0) {
-                                            currentScreen = AppScreen.Dashboard
-                                        } else if (tabIndex == 1) {
-                                            currentScreen = AppScreen.SubjectSelection
-                                        } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizHomeSelection
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.NotesHome
-                                        } else if (tabIndex == 4) {
-                                            currentScreen = AppScreen.Profile
+                                        when (tabIndex) {
+                                            0 -> switchTab(AppScreen.Dashboard)
+                                            1 -> switchTab(AppScreen.SubjectSelection)
+                                            2 -> switchTab(AppScreen.QuizHomeSelection)
+                                            3 -> switchTab(AppScreen.NotesHome)
+                                            4 -> switchTab(AppScreen.Profile)
                                         }
                                     },
                                     modifier = Modifier
@@ -555,14 +643,12 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.DynamicChapterLesson(chapterId))
                                     },
                                     onTabSelect = { tabIndex ->
-                                        if (tabIndex == 0) {
-                                            currentScreen = AppScreen.Dashboard
-                                        } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizHomeSelection
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.NotesHome
-                                        } else if (tabIndex == 4) {
-                                            currentScreen = AppScreen.Profile
+                                        when (tabIndex) {
+                                            0 -> switchTab(AppScreen.Dashboard)
+                                            1 -> switchTab(AppScreen.SubjectSelection)
+                                            2 -> switchTab(AppScreen.QuizHomeSelection)
+                                            3 -> switchTab(AppScreen.NotesHome)
+                                            4 -> switchTab(AppScreen.Profile)
                                         }
                                     },
                                     modifier = Modifier
@@ -586,7 +672,7 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.DynamicChapterLesson(chapterId = chapterId, subjectId = screen.subjectId))
                                     },
                                     onQuizClick = { chapterId ->
-                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId))
+                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId = chapterId, subjectId = screen.subjectId))
                                     },
                                     onNotesClick = { subId, subName ->
                                         navigateTo(AppScreen.NotesList(type = "ALL", subjectId = subId, title = "$subName Notes"))
@@ -644,7 +730,7 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.DynamicChapterLesson(chapterId = targetId, subjectId = screen.subjectId))
                                     },
                                     onTakeQuiz = { targetId ->
-                                        navigateTo(AppScreen.DynamicQuizAttempt(targetId))
+                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId = targetId, subjectId = screen.subjectId ?: ""))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -657,19 +743,19 @@ class MainActivity : ComponentActivity() {
                                 QuadraticLessonScreen(
                                     viewModel = quadraticLessonViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(1))
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.QuadraticLessonPart2
+                                        navigateTo(AppScreen.QuadraticLessonPart2)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -682,19 +768,19 @@ class MainActivity : ComponentActivity() {
                                 QuadraticLessonPart2Screen(
                                     viewModel = quadraticLessonPart2ViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -714,16 +800,16 @@ class MainActivity : ComponentActivity() {
                                 MathematicsPracticeScreen(
                                     viewModel = mathPracticeViewModel,
                                     onViewSolutionsClick = {
-                                        currentScreen = AppScreen.MathematicsChapterQuiz
+                                        navigateTo(AppScreen.MathematicsChapterQuiz)
                                     },
                                     onLearnTabClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        switchTab(AppScreen.SubjectSelection)
                                     },
                                     onNotesTabClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        switchTab(AppScreen.NotesHome)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuadraticLessonPart2
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -743,22 +829,22 @@ class MainActivity : ComponentActivity() {
                                 MathematicsNotesScreen(
                                     viewModel = mathNotesViewModel,
                                     onDownloadNotesClick = {
-                                        currentScreen = AppScreen.NoteDownloadedSuccess
+                                        navigateTo(AppScreen.NoteDownloadedSuccess)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.QuadraticLessonPart2
+                                        popBackStack()
                                     },
                                     onLearnTabClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        switchTab(AppScreen.SubjectSelection)
                                     },
                                     onQuizTabClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        switchTab(AppScreen.QuizHomeSelection)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -778,19 +864,19 @@ class MainActivity : ComponentActivity() {
                                 MathematicsChapterQuizScreen(
                                     viewModel = mathChapterQuizViewModel,
                                     onStartQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(1))
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        popBackStack()
                                     },
                                     onLearnTabClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        switchTab(AppScreen.SubjectSelection)
                                     },
                                     onNotesTabClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        switchTab(AppScreen.NotesHome)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuadraticLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -803,19 +889,19 @@ class MainActivity : ComponentActivity() {
                                 AlgorithmsLessonScreen(
                                     viewModel = algorithmsLessonViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(2))
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.AlgorithmsLessonPart2
+                                        navigateTo(AppScreen.AlgorithmsLessonPart2)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -828,19 +914,19 @@ class MainActivity : ComponentActivity() {
                                 AlgorithmsLessonPart2Screen(
                                     viewModel = algorithmsLessonPart2ViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.AlgorithmsLesson
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.AlgorithmsLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -853,19 +939,19 @@ class MainActivity : ComponentActivity() {
                                 DataVisualizationLessonScreen(
                                     viewModel = dataVisViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(3))
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.DataVisualizationLessonPart2
+                                        navigateTo(AppScreen.DataVisualizationLessonPart2)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -878,19 +964,19 @@ class MainActivity : ComponentActivity() {
                                 DataVisualizationLessonPart2Screen(
                                     viewModel = dataVisPart2ViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.DataVisualizationLesson
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.DataVisualizationLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -903,19 +989,19 @@ class MainActivity : ComponentActivity() {
                                 WavesLessonScreen(
                                     viewModel = wavesViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(5))
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.WavesLessonPart2
+                                        navigateTo(AppScreen.WavesLessonPart2)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -928,19 +1014,19 @@ class MainActivity : ComponentActivity() {
                                 WavesLessonPart2Screen(
                                     viewModel = wavesPart2ViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.WavesLesson
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.WavesLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -953,19 +1039,19 @@ class MainActivity : ComponentActivity() {
                                 ChemicalBondingLessonScreen(
                                     viewModel = chemistryViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizIntro
+                                        navigateTo(AppScreen.DynamicQuizAttempt(6))
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.ChemicalBondingLessonPart2
+                                        navigateTo(AppScreen.ChemicalBondingLessonPart2)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -978,19 +1064,19 @@ class MainActivity : ComponentActivity() {
                                 ChemicalBondingLessonPart2Screen(
                                     viewModel = chemistryPart2ViewModel,
                                     onNotesClick = {
-                                        currentScreen = AppScreen.MathematicsNotes
+                                        navigateTo(AppScreen.MathematicsNotes)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNextClick = {
-                                        currentScreen = AppScreen.MathematicsPractice
+                                        navigateTo(AppScreen.MathematicsPractice)
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.ChemicalBondingLesson
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.ChemicalBondingLesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1003,23 +1089,25 @@ class MainActivity : ComponentActivity() {
                                 LessonScreen(
                                     viewModel = lessonViewModel,
                                     onNextClick = {
-                                        currentScreen = AppScreen.LessonPart2
+                                        navigateTo(AppScreen.LessonPart2)
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.DynamicQuizAttempt(lessonViewModel.uiState.value.chapterId)
+                                        navigateTo(AppScreen.DynamicQuizAttempt(lessonViewModel.uiState.value.chapterId))
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesList(
-                                            type = "subject",
-                                            subjectId = lessonViewModel.uiState.value.subjectId,
-                                            title = "${lessonViewModel.uiState.value.subjectTag} Notes"
+                                        navigateTo(
+                                            AppScreen.NotesList(
+                                                type = "subject",
+                                                subjectId = lessonViewModel.uiState.value.subjectId,
+                                                title = "${lessonViewModel.uiState.value.subjectTag} Notes"
+                                            )
                                         )
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Roadmap
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1032,23 +1120,25 @@ class MainActivity : ComponentActivity() {
                                 LessonPart2Screen(
                                     viewModel = lessonPart2ViewModel,
                                     onNextClick = {
-                                        currentScreen = AppScreen.DynamicQuizAttempt(lessonPart2ViewModel.uiState.value.chapterId)
+                                        navigateTo(AppScreen.DynamicQuizAttempt(lessonPart2ViewModel.uiState.value.chapterId))
                                     },
                                     onPreviousClick = {
-                                        currentScreen = AppScreen.Lesson
+                                        popBackStack()
                                     },
                                     onAskAiClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesList(
-                                            type = "subject",
-                                            subjectId = lessonPart2ViewModel.uiState.value.subjectId,
-                                            title = "${lessonPart2ViewModel.uiState.value.subjectTag} Notes"
+                                        navigateTo(
+                                            AppScreen.NotesList(
+                                                type = "subject",
+                                                subjectId = lessonPart2ViewModel.uiState.value.subjectId,
+                                                title = "${lessonPart2ViewModel.uiState.value.subjectTag} Notes"
+                                            )
                                         )
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Lesson
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1070,9 +1160,9 @@ class MainActivity : ComponentActivity() {
                                         } else if (tabIndex == 1) {
                                             currentScreen = AppScreen.SubjectSelection
                                         } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
+                                            currentScreen = AppScreen.QuizHomeSelection
                                         } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
+                                            currentScreen = AppScreen.NotesHome
                                         } else if (tabIndex == 4) {
                                             currentScreen = AppScreen.Profile
                                         }
@@ -1097,7 +1187,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToResult = { subId, chapId, score, total, _ ->
                                         val qList = quizViewModel.uiState.value.questions
                                         val uAnswers = quizViewModel.uiState.value.answersMap
-                                        navigateTo(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
+                                        navigateToQuizResult(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
                                     },
                                     onQuizComplete = { result ->
                                         val qList = quizViewModel.uiState.value.questions
@@ -1106,7 +1196,7 @@ class MainActivity : ComponentActivity() {
                                         val total = result?.totalQuestions ?: qList.size.coerceAtLeast(1)
                                         val subId = quizViewModel.currentSubjectId
                                         val chapId = quizViewModel.currentChapterId
-                                        navigateTo(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
+                                        navigateToQuizResult(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
                                     },
                                     onBackClick = {
                                         popBackStack()
@@ -1120,10 +1210,10 @@ class MainActivity : ComponentActivity() {
                             AppScreen.MixedQuiz -> {
                                 MixedQuizPreviewScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     onSubmitQuizClick = {
-                                        currentScreen = AppScreen.QuizResults
+                                        navigateTo(AppScreen.QuizResults)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1138,13 +1228,13 @@ class MainActivity : ComponentActivity() {
                                     score = 4,
                                     total = 5,
                                     onReviewAnswers = {
-                                        currentScreen = AppScreen.QuizReviewAnswers
+                                        navigateTo(AppScreen.QuizReviewAnswers)
                                     },
                                     onRetakeQuiz = {
                                         currentScreen = AppScreen.Quiz
                                     },
                                     onBackToRoadmap = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1155,13 +1245,13 @@ class MainActivity : ComponentActivity() {
                             AppScreen.QuizReviewAnswers -> {
                                 QuizReviewAnswersPreviewScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuizResults
+                                        popBackStack()
                                     },
                                     onRetryQuizClick = {
                                         currentScreen = AppScreen.Quiz
                                     },
                                     onDashboardClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        switchTab(AppScreen.Dashboard)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1174,26 +1264,22 @@ class MainActivity : ComponentActivity() {
                                 NotesGeneratorScreen(
                                     viewModel = notesGeneratorViewModel,
                                     onOpenSavedNotes = {
-                                        currentScreen = AppScreen.NoteSavedSuccess
+                                        navigateTo(AppScreen.NoteSavedSuccess)
                                     },
                                     onDownloadNotes = {
-                                        currentScreen = AppScreen.NoteDownloadedSuccess
+                                        navigateTo(AppScreen.NoteDownloadedSuccess)
                                     },
                                     onTabSelect = { tabIndex ->
-                                        if (tabIndex == 0) {
-                                            currentScreen = AppScreen.Dashboard
-                                        } else if (tabIndex == 1) {
-                                            currentScreen = AppScreen.SubjectSelection
-                                        } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
-                                        } else if (tabIndex == 4) {
-                                            currentScreen = AppScreen.Profile
+                                        when (tabIndex) {
+                                            0 -> switchTab(AppScreen.Dashboard)
+                                            1 -> switchTab(AppScreen.SubjectSelection)
+                                            2 -> switchTab(AppScreen.QuizHomeSelection)
+                                            3 -> switchTab(AppScreen.NotesHome)
+                                            4 -> switchTab(AppScreen.Profile)
                                         }
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1206,10 +1292,10 @@ class MainActivity : ComponentActivity() {
                                 NoteSavedSuccessScreen(
                                     viewModel = noteSuccessViewModel,
                                     onViewSavedNotesClick = {
-                                        currentScreen = AppScreen.MixedSavedNotes
+                                        navigateTo(AppScreen.MixedSavedNotes)
                                     },
                                     onBackToLearningClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1222,10 +1308,10 @@ class MainActivity : ComponentActivity() {
                                 NoteDownloadedSuccessScreen(
                                     viewModel = noteSuccessViewModel,
                                     onOpenDownloadedNotesClick = {
-                                        currentScreen = AppScreen.MixedSavedNotes
+                                        navigateTo(AppScreen.MixedSavedNotes)
                                     },
                                     onBackToLearningClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1238,19 +1324,15 @@ class MainActivity : ComponentActivity() {
                                 SavedNotesScreen(
                                     viewModel = savedNotesViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.NotesGenerator
+                                        popBackStack()
                                     },
                                     onTabSelect = { tabIndex ->
-                                        if (tabIndex == 0) {
-                                            currentScreen = AppScreen.Dashboard
-                                        } else if (tabIndex == 1) {
-                                            currentScreen = AppScreen.SubjectSelection
-                                        } else if (tabIndex == 2) {
-                                            currentScreen = AppScreen.QuizIntro
-                                        } else if (tabIndex == 3) {
-                                            currentScreen = AppScreen.MixedSavedNotes
-                                        } else if (tabIndex == 4) {
-                                            currentScreen = AppScreen.Profile
+                                        when (tabIndex) {
+                                            0 -> switchTab(AppScreen.Dashboard)
+                                            1 -> switchTab(AppScreen.SubjectSelection)
+                                            2 -> switchTab(AppScreen.QuizHomeSelection)
+                                            3 -> switchTab(AppScreen.NotesHome)
+                                            4 -> switchTab(AppScreen.Profile)
                                         }
                                     },
                                     modifier = Modifier
@@ -1262,13 +1344,13 @@ class MainActivity : ComponentActivity() {
                             AppScreen.MixedSavedNotes -> {
                                 MixedSavedDownloadedNotesPreviewScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     onGenerateNewNotesClick = {
-                                        currentScreen = AppScreen.NotesGenerator
+                                        navigateTo(AppScreen.NotesGenerator)
                                     },
                                     onSettingsClick = {
-                                        currentScreen = AppScreen.NotificationsSettings
+                                        navigateTo(AppScreen.NotificationsSettings)
                                     },
                                     onReadNoteClick = { subjectName ->
                                         navigateTo(AppScreen.SubjectDetail(subjectName))
@@ -1292,10 +1374,11 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.Settings)
                                     },
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     onLogoutClick = {
                                         profileViewModel.logout {
+                                            screenBackStack.clear()
                                             currentScreen = AppScreen.Login
                                         }
                                     },
@@ -1327,14 +1410,11 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.ProgressAnalytics)
                                     },
                                     onTabSelect = { tabIndex ->
-                                        if (tabIndex == 0) {
-                                            navigateTo(AppScreen.Dashboard)
-                                        } else if (tabIndex == 1) {
-                                            navigateTo(AppScreen.SubjectSelection)
-                                        } else if (tabIndex == 2) {
-                                            navigateTo(AppScreen.QuizHomeSelection)
-                                        } else if (tabIndex == 3) {
-                                            navigateTo(AppScreen.NotesHome)
+                                        when (tabIndex) {
+                                            0 -> switchTab(AppScreen.Dashboard)
+                                            1 -> switchTab(AppScreen.SubjectSelection)
+                                            2 -> switchTab(AppScreen.QuizHomeSelection)
+                                            3 -> switchTab(AppScreen.NotesHome)
                                         }
                                     },
                                     modifier = Modifier
@@ -1355,7 +1435,7 @@ class MainActivity : ComponentActivity() {
                                     isSaving = profileUiState.isUpdating,
                                     errorMessage = profileUiState.errorMessage,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     onSaveChangesClick = { newName, newEmail, newPhone, newBio, newPhotoUri, removePhoto ->
                                         profileViewModel.updateProfile(
@@ -1367,7 +1447,7 @@ class MainActivity : ComponentActivity() {
                                             removePhoto = removePhoto,
                                             onComplete = { success ->
                                                 if (success) {
-                                                    currentScreen = AppScreen.Profile
+                                                    popBackStack()
                                                 }
                                             }
                                         )
@@ -1384,7 +1464,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.Achievements -> {
                                 AchievementsScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1400,7 +1480,7 @@ class MainActivity : ComponentActivity() {
                                         profileViewModel.updateStudyGoal(newGoal)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1416,7 +1496,7 @@ class MainActivity : ComponentActivity() {
                                         profileViewModel.updatePreferredLanguage(newLang)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1432,7 +1512,7 @@ class MainActivity : ComponentActivity() {
                                         profileViewModel.onToggleNotifications(enabled)
                                     },
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1443,7 +1523,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.HelpSupport -> {
                                 HelpSupportScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1454,7 +1534,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.AboutSynapse -> {
                                 AboutSynapseScreen(
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     onWhatsNewClick = {
                                         navigateTo(AppScreen.WhatsNew)
@@ -1485,7 +1565,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.WhatsNew -> {
                                 WhatsNewScreen(
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1496,7 +1576,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.TermsOfService -> {
                                 TermsOfServiceScreen(
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1507,7 +1587,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.PrivacyPolicy -> {
                                 PrivacyPolicyScreen(
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1518,7 +1598,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.OpenSourceLicenses -> {
                                 OpenSourceLicensesScreen(
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1529,7 +1609,7 @@ class MainActivity : ComponentActivity() {
                             AppScreen.ProgressAnalytics -> {
                                 ProgressAnalyticsScreen(
                                     onBackClick = {
-                                        currentScreen = AppScreen.Profile
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1542,7 +1622,7 @@ class MainActivity : ComponentActivity() {
                                 FlashcardsScreen(
                                     viewModel = flashcardsViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1555,7 +1635,7 @@ class MainActivity : ComponentActivity() {
                                 AiTutorScreen(
                                     viewModel = aiTutorViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1574,22 +1654,22 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.SubjectDetail(subjectSlug))
                                     },
                                     onAiChatClick = {
-                                        currentScreen = AppScreen.AiTutor
+                                        navigateTo(AppScreen.AiTutor)
                                     },
                                     onFlashcardsClick = {
-                                        currentScreen = AppScreen.Flashcards
+                                        navigateTo(AppScreen.Flashcards)
                                     },
                                     onQuizClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        switchTab(AppScreen.QuizHomeSelection)
                                     },
                                     onNotesClick = {
-                                        currentScreen = AppScreen.NotesHome
+                                        switchTab(AppScreen.NotesHome)
                                     },
                                     onProfileClick = {
-                                        currentScreen = AppScreen.Profile
+                                        switchTab(AppScreen.Profile)
                                     },
                                     onBrainMapClick = {
-                                        currentScreen = AppScreen.BrainMap
+                                        navigateTo(AppScreen.BrainMap)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1602,10 +1682,10 @@ class MainActivity : ComponentActivity() {
                                 QuizHomeSelectionScreen(
                                     viewModel = quizHomeViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.Dashboard
+                                        popBackStack()
                                     },
                                     onSelectSubject = { subId, subName ->
-                                        currentScreen = AppScreen.SubjectQuizSelection(subId, subName)
+                                        navigateTo(AppScreen.SubjectQuizSelection(subId, subName))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1620,10 +1700,10 @@ class MainActivity : ComponentActivity() {
                                     subjectName = screen.subjectName,
                                     viewModel = subjectQuizViewModel,
                                     onBackClick = {
-                                        currentScreen = AppScreen.QuizHomeSelection
+                                        popBackStack()
                                     },
-                                    onStartQuiz = { chapterId ->
-                                        currentScreen = AppScreen.DynamicQuizAttempt(chapterId)
+                                    onStartQuiz = { chapterId, subId ->
+                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId = chapterId, subjectId = subId))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1633,18 +1713,21 @@ class MainActivity : ComponentActivity() {
 
                             is AppScreen.DynamicQuizAttempt -> {
                                 val quizViewModel: QuizViewModel = viewModel()
-                                LaunchedEffect(screen.chapterId) {
-                                    quizViewModel.loadChapterQuiz(screen.chapterId)
+                                LaunchedEffect(screen.chapterId, screen.subjectId) {
+                                    quizViewModel.loadChapterQuiz(chapterId = screen.chapterId, subjectId = screen.subjectId)
                                 }
                                 QuizScreen(
                                     viewModel = quizViewModel,
                                     onBackClick = {
                                         popBackStack()
                                     },
+                                    onRetryClick = {
+                                        quizViewModel.loadChapterQuiz(chapterId = screen.chapterId, subjectId = screen.subjectId)
+                                    },
                                     onNavigateToResult = { subId, chapId, score, total, _ ->
                                         val qList = quizViewModel.uiState.value.questions
                                         val uAnswers = quizViewModel.uiState.value.answersMap
-                                        navigateTo(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
+                                        navigateToQuizResult(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
                                     },
                                     onQuizComplete = { result ->
                                         val qList = quizViewModel.uiState.value.questions
@@ -1653,7 +1736,7 @@ class MainActivity : ComponentActivity() {
                                         val total = result?.totalQuestions ?: qList.size.coerceAtLeast(1)
                                         val subId = quizViewModel.currentSubjectId
                                         val chapId = quizViewModel.currentChapterId
-                                        navigateTo(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
+                                        navigateToQuizResult(AppScreen.QuizResult(subId, chapId, score, total, qList, uAnswers))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1691,10 +1774,10 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onRetakeQuiz = {
                                         val chapInt = screen.chapterId.toIntOrNull() ?: 4
-                                        navigateTo(AppScreen.DynamicQuizAttempt(chapInt))
+                                        currentScreen = AppScreen.DynamicQuizAttempt(chapterId = chapInt, subjectId = screen.subjectId)
                                     },
                                     onBackToRoadmap = {
-                                        navigateTo(AppScreen.Roadmap(screen.subjectId))
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1710,10 +1793,10 @@ class MainActivity : ComponentActivity() {
                                 QuizResultsScreen(
                                     viewModel = quizResultsViewModel,
                                     onHomeClick = {
-                                        navigateTo(AppScreen.QuizHomeSelection)
+                                        switchTab(AppScreen.Dashboard)
                                     },
                                     onBackClick = {
-                                        navigateTo(AppScreen.QuizHomeSelection)
+                                        popBackStack()
                                     },
                                     onReviewAnswersClick = {
                                         navigateTo(AppScreen.DynamicQuizReview(screen.resultData, screen.questions, screen.userAnswers))
@@ -1730,13 +1813,13 @@ class MainActivity : ComponentActivity() {
                                     questions = screen.questions,
                                     userAnswers = screen.userAnswers,
                                     onRetakeQuizClick = {
-                                        navigateTo(AppScreen.DynamicQuizAttempt(screen.resultData.chapterId))
+                                        currentScreen = AppScreen.DynamicQuizAttempt(screen.resultData.chapterId)
                                     },
                                     onBackToChaptersClick = {
-                                        navigateTo(AppScreen.QuizHomeSelection)
+                                        popBackStack()
                                     },
                                     onBackClick = {
-                                        navigateBack()
+                                        popBackStack()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1782,6 +1865,7 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = { navigateBack() },
                                     onLogoutClick = {
                                         profileViewModel.logout {
+                                            screenBackStack.clear()
                                             currentScreen = AppScreen.Login
                                         }
                                     },

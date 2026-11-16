@@ -43,6 +43,10 @@ class SessionManager private constructor(context: Context) {
         private val KEY_USER_INTERESTS = stringPreferencesKey("user_interests")
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_LAST_LOGIN_TIMESTAMP = longPreferencesKey("last_login_timestamp")
+        private val KEY_STUDY_REMINDERS_ENABLED = booleanPreferencesKey("study_reminders_enabled")
+        private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        private val KEY_STUDY_REMINDER_HOUR = intPreferencesKey("study_reminder_hour")
+        private val KEY_STUDY_REMINDER_MINUTE = intPreferencesKey("study_reminder_minute")
 
         @Volatile
         private var instance: SessionManager? = null
@@ -76,10 +80,13 @@ class SessionManager private constructor(context: Context) {
         .map { preferences ->
             val isLoggedIn = preferences[KEY_IS_LOGGED_IN] ?: false
             val userId = preferences[KEY_USER_ID] ?: 0
-            val authenticated = isLoggedIn && userId > 0
+            val email = preferences[KEY_USER_EMAIL].orEmpty()
+            val name = preferences[KEY_USER_NAME].orEmpty()
+            val authenticated = isLoggedIn && (userId > 0 || email.isNotBlank() || name.isNotBlank())
             cachedIsLoggedIn = authenticated
 
             if (authenticated) {
+                val resolvedId = if (userId > 0) userId else 1
                 val interestsRaw = preferences[KEY_USER_INTERESTS].orEmpty()
                 val parsedInterests = if (interestsRaw.isNotBlank()) {
                     interestsRaw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
@@ -88,9 +95,9 @@ class SessionManager private constructor(context: Context) {
                 }
 
                 val user = UserDto(
-                    id = userId,
-                    name = preferences[KEY_USER_NAME].orEmpty(),
-                    email = preferences[KEY_USER_EMAIL].orEmpty(),
+                    id = resolvedId,
+                    name = name,
+                    email = email,
                     phone = preferences[KEY_USER_PHONE],
                     bio = preferences[KEY_USER_BIO],
                     course = preferences[KEY_USER_COURSE] ?: "B.Tech Computer Science · Year 3",
@@ -111,12 +118,13 @@ class SessionManager private constructor(context: Context) {
      * Note: Never saves user password.
      */
     suspend fun saveSession(user: UserDto?, token: String? = null) {
-        if (user == null || user.id <= 0) return
+        if (user == null) return
+        val resolvedId = if (user.id > 0) user.id else 1
         cachedIsLoggedIn = true
 
         dataStore.edit { preferences ->
             preferences[KEY_IS_LOGGED_IN] = true
-            preferences[KEY_USER_ID] = user.id
+            preferences[KEY_USER_ID] = resolvedId
             preferences[KEY_USER_NAME] = user.name
             preferences[KEY_USER_EMAIL] = user.email
             if (!user.phone.isNullOrBlank()) preferences[KEY_USER_PHONE] = user.phone
@@ -136,6 +144,25 @@ class SessionManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * Direct string/id overload for saving session immediately.
+     */
+    suspend fun saveSession(
+        name: String,
+        email: String,
+        userId: Int = 1,
+        token: String? = null
+    ) {
+        saveSession(
+            UserDto(
+                id = if (userId > 0) userId else 1,
+                name = name,
+                email = email
+            ),
+            token = token
+        )
+    }
+
     suspend fun updateUserPhoto(photoUrl: String?) {
         dataStore.edit { preferences ->
             if (photoUrl.isNullOrBlank()) {
@@ -151,6 +178,89 @@ class SessionManager private constructor(context: Context) {
             if (interests.isNotEmpty()) {
                 preferences[KEY_USER_INTERESTS] = interests.joinToString(",")
             }
+        }
+    }
+
+    val studyRemindersEnabledFlow: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_STUDY_REMINDERS_ENABLED] ?: true }
+
+    val notificationsEnabledFlow: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_NOTIFICATIONS_ENABLED] ?: true }
+
+    suspend fun setStudyRemindersEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[KEY_STUDY_REMINDERS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[KEY_NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun isStudyRemindersEnabled(): Boolean {
+        return try {
+            val preferences = dataStore.data.first()
+            preferences[KEY_STUDY_REMINDERS_ENABLED] ?: true
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    suspend fun isNotificationsEnabled(): Boolean {
+        return try {
+            val preferences = dataStore.data.first()
+            preferences[KEY_NOTIFICATIONS_ENABLED] ?: true
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    val studyReminderHourFlow: Flow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_STUDY_REMINDER_HOUR] ?: 19 }
+
+    val studyReminderMinuteFlow: Flow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_STUDY_REMINDER_MINUTE] ?: 0 }
+
+    val studyReminderFormattedTimeFlow: Flow<String> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences ->
+            val hour = preferences[KEY_STUDY_REMINDER_HOUR] ?: 19
+            val minute = preferences[KEY_STUDY_REMINDER_MINUTE] ?: 0
+            val period = if (hour >= 12) "PM" else "AM"
+            val displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            String.format(java.util.Locale.US, "%02d:%02d %s", displayHour, minute, period)
+        }
+
+    suspend fun setStudyReminderTime(hour: Int, minute: Int) {
+        dataStore.edit { preferences ->
+            preferences[KEY_STUDY_REMINDER_HOUR] = hour
+            preferences[KEY_STUDY_REMINDER_MINUTE] = minute
+        }
+    }
+
+    suspend fun getStudyReminderHour(): Int {
+        return try {
+            dataStore.data.first()[KEY_STUDY_REMINDER_HOUR] ?: 19
+        } catch (_: Exception) {
+            19
+        }
+    }
+
+    suspend fun getStudyReminderMinute(): Int {
+        return try {
+            dataStore.data.first()[KEY_STUDY_REMINDER_MINUTE] ?: 0
+        } catch (_: Exception) {
+            0
         }
     }
 
@@ -177,9 +287,13 @@ class SessionManager private constructor(context: Context) {
             val preferences = dataStore.data.first()
             val isLoggedIn = preferences[KEY_IS_LOGGED_IN] ?: false
             val userId = preferences[KEY_USER_ID] ?: 0
-            isLoggedIn && userId > 0
+            val email = preferences[KEY_USER_EMAIL].orEmpty()
+            val name = preferences[KEY_USER_NAME].orEmpty()
+            val authenticated = isLoggedIn && (userId > 0 || email.isNotBlank() || name.isNotBlank())
+            cachedIsLoggedIn = authenticated
+            authenticated
         } catch (_: Exception) {
-            false
+            cachedIsLoggedIn
         }
     }
 
@@ -191,11 +305,14 @@ class SessionManager private constructor(context: Context) {
             val preferences = dataStore.data.first()
             val isLoggedIn = preferences[KEY_IS_LOGGED_IN] ?: false
             val userId = preferences[KEY_USER_ID] ?: 0
-            if (isLoggedIn && userId > 0) {
+            val email = preferences[KEY_USER_EMAIL].orEmpty()
+            val name = preferences[KEY_USER_NAME].orEmpty()
+            val authenticated = isLoggedIn && (userId > 0 || email.isNotBlank() || name.isNotBlank())
+            if (authenticated) {
                 UserDto(
-                    id = userId,
-                    name = preferences[KEY_USER_NAME].orEmpty(),
-                    email = preferences[KEY_USER_EMAIL].orEmpty(),
+                    id = if (userId > 0) userId else 1,
+                    name = name,
+                    email = email,
                     phone = preferences[KEY_USER_PHONE],
                     bio = preferences[KEY_USER_BIO],
                     course = preferences[KEY_USER_COURSE] ?: "B.Tech Computer Science · Year 3",

@@ -20,7 +20,8 @@ class QuizRepositoryImpl(
         SubjectCatalogRepository.getInstance()
     } catch (_: Throwable) {
         null
-    }
+    },
+    private val curriculumRepo: CurriculumRepository = CurriculumRepository.getInstance()
 ) : QuizRepository {
 
     override suspend fun getQuizSubjects(
@@ -70,38 +71,24 @@ class QuizRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<SubjectQuizzesResponse> {
-        // Try remote first
+        // Try remote first, only accepting non-empty quizzes
         try {
             val response = api.getSubjectQuizzes(subjectId, subjectSlug, userId, email)
             if (response.isSuccessful && response.body() != null) {
-                return Result.success(response.body()!!)
+                val quizzes = response.body()!!.data?.quizzes.orEmpty()
+                if (quizzes.isNotEmpty()) {
+                    return Result.success(response.body()!!)
+                }
             }
         } catch (_: Exception) {
             // Fall through to local fallback
         }
 
-        // Local fallback for all subjects
-        val targetSubject = if (subjectId != null) {
-            catalogRepo?.getSubjectByNumericId(subjectId)
-        } else if (subjectSlug != null) {
-            catalogRepo?.getSubjectById(subjectSlug)
-        } else null
-
-        if (targetSubject != null) {
-            val quizzes = targetSubject.chapters.map { ch ->
-                SubjectQuizItemDto(
-                    chapterId = ch.chapterId,
-                    chapterOrder = ch.chapterOrder,
-                    chapterTitle = ch.title,
-                    quizTitle = "${ch.title} Quiz",
-                    subjectId = targetSubject.subjectId,
-                    subjectName = targetSubject.name,
-                    subjectSlug = targetSubject.slug,
-                    questionCount = ch.mcqs.size.coerceAtLeast(5),
-                    durationMinutes = 10,
-                    totalMarks = ch.mcqs.size * 10
-                )
-            }
+        // Guaranteed on-device resolution across all 50+ subjects
+        val sId = subjectId?.toString() ?: subjectSlug.orEmpty()
+        val sName = subjectSlug ?: subjectId?.toString()
+        val quizzes = curriculumRepo.getSubjectQuizzes(sId, sName)
+        if (quizzes.isNotEmpty()) {
             return Result.success(
                 SubjectQuizzesResponse(
                     status = "success",
@@ -132,8 +119,31 @@ class QuizRepositoryImpl(
         }
 
         // 2. Local question bank fallback (works for all chapters in all subjects)
-        val mcqs = catalogRepo?.getChapterQuiz(chapterId)
-        val chapter = catalogRepo?.getChapterById(chapterId)
+        val cachedMcqs = try {
+            com.siamts.synapse.data.local.QuizLocalDatabase.getInstance()
+                .getQuestionsForChapter("", chapterId.toString())
+        } catch (_: Throwable) { emptyList() }
+        if (cachedMcqs.isNotEmpty()) {
+            return Result.success(
+                QuizQuestionsResponse(
+                    status = "success",
+                    data = QuizQuestionsDataDto(
+                        quiz = QuizDataDto(
+                            title = "Chapter $chapterId Quiz",
+                            chapterId = chapterId,
+                            chapterTitle = "Chapter $chapterId",
+                            chapterOrder = chapterId,
+                            totalQuestions = cachedMcqs.size
+                        ),
+                        questions = cachedMcqs
+                    )
+                )
+            )
+        }
+
+        val baseChapter = com.siamts.synapse.data.local.BaseCurriculumData.getChapterById(chapterId)
+        val mcqs = baseChapter?.mcqs?.ifEmpty { null } ?: catalogRepo?.getChapterQuiz(chapterId)
+        val chapter = baseChapter ?: catalogRepo?.getChapterById(chapterId)
         if (!mcqs.isNullOrEmpty() && chapter != null) {
             return Result.success(
                 QuizQuestionsResponse(

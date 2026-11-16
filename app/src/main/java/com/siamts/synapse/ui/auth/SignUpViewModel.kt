@@ -93,6 +93,8 @@ class SignUpViewModel(
                 val manager = sessionManager ?: SessionManager.getInstanceOrNull()
                 if (user != null) {
                     manager?.saveSession(user, token)
+                } else {
+                    manager?.saveSession(name = name, email = email, token = token)
                 }
 
                 _uiState.update {

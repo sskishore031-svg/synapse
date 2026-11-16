@@ -64,8 +64,8 @@ import java.io.FileOutputStream
 
 @Composable
 fun PersonalInfoScreen(
-    initialName: String = "Kishore",
-    initialEmail: String = "kishore@gmail.com",
+    initialName: String = "Student",
+    initialEmail: String = "student@synapse.ai",
     initialPhone: String = "+91 98765-43210",
     initialBio: String = "Learning, exploring and building a better version of myself.",
     initialPhotoUri: String? = null,
@@ -427,8 +427,8 @@ fun PersonalInfoScreen(
  */
 @Composable
 fun PersonalInfoScreen(
-    initialName: String = "Kishore",
-    initialEmail: String = "kishore@gmail.com",
+    initialName: String = "Student",
+    initialEmail: String = "student@synapse.ai",
     initialPhone: String = "+91 98765-43210",
     initialBio: String = "Learning, exploring and building a better version of myself.",
     initialPhotoUri: String? = null,

@@ -4,6 +4,7 @@ import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.QuizDao
 import com.siamts.synapse.data.local.QuizLocalDatabase
 import com.siamts.synapse.data.local.QuizRecordEntity
+import com.siamts.synapse.data.repository.CurriculumRepository
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import com.siamts.synapse.ui.lesson.ChapterLessonViewModel
 import com.siamts.synapse.ui.quiz.QuizNavEvent
@@ -250,6 +251,61 @@ class SubjectRoutingAndSeedingTest {
             assertEquals(result.score, latest.score)
             assertEquals(5, latest.totalQuestions)
             assertTrue("Timestamp must be recent", latest.completedAt > 0)
+        }
+    }
+
+    @Test
+    fun testCurriculumRepositoryNormalizesSubjectIdentifiersCorrectly() {
+        assertEquals("math", CurriculumRepository.normalizeSubjectId("MATH"))
+        assertEquals("mathematics", CurriculumRepository.normalizeSubjectId("Mathematics"))
+        assertEquals("cloud computing", CurriculumRepository.normalizeSubjectId("Cloud%20Computing"))
+        assertEquals("ext_ai", CurriculumRepository.normalizeSubjectId("  ext_ai  "))
+    }
+
+    @Test
+    fun testCurriculumRepositoryGuaranteesNonEmptyChaptersAndQuizzes() {
+        runBlocking {
+            val repo = CurriculumRepository()
+
+            // 1. Check known base curriculum subject (Mathematics)
+            val mathChapters = repo.getChaptersForSubject("MATH", "Mathematics")
+            assertTrue("Mathematics chapters must not be empty", mathChapters.isNotEmpty())
+            assertTrue("Mathematics must have at least 3 chapters", mathChapters.size >= 3)
+            assertEquals("Quadratic Equations", mathChapters.first().title)
+
+            val mathQuizzes = repo.getSubjectQuizzes("MATH", "Mathematics")
+            assertTrue("Mathematics quizzes must not be empty", mathQuizzes.isNotEmpty())
+            assertTrue("Quiz question count must be at least 5", mathQuizzes.first().questionCount >= 5)
+
+            // 2. Check completely unknown / arbitrary subject - dynamic generation fallback
+            val dynamicChapters = repo.getChaptersForSubject("unknown_subject_99", "Quantum Machine Learning")
+            assertTrue("Dynamic chapters must never be empty", dynamicChapters.isNotEmpty())
+            assertEquals("Must generate exactly 3 fallback chapters", 3, dynamicChapters.size)
+            assertTrue("Generated title must contain subject name", dynamicChapters.first().title.contains("Quantum Machine Learning") || dynamicChapters.first().title.contains("Fundamentals"))
+
+            val dynamicQuizzes = repo.getSubjectQuizzes("unknown_subject_99", "Quantum Machine Learning")
+            assertTrue("Dynamic quizzes must never be empty", dynamicQuizzes.isNotEmpty())
+            assertEquals(3, dynamicQuizzes.size)
+            assertEquals(5, dynamicQuizzes.first().questionCount)
+        }
+    }
+
+    @Test
+    fun testQuizViewModelDynamicallyResolvesAllSubjectNames() {
+        runBlocking {
+            val db = QuizLocalDatabase.getInstance(null)
+            val viewModel = QuizViewModel(
+                quizDao = db,
+                externalScope = CoroutineScope(Dispatchers.Unconfined)
+            )
+
+            // Test loading via subject name
+            viewModel.loadSubjectQuiz("Computer Science")
+            assertEquals("CS", viewModel.currentSubjectId)
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertTrue("CS quiz questions must not be empty", state.questions.isNotEmpty())
+            assertTrue(state.topicTag.contains("COMPUTER SCIENCE"))
         }
     }
 }

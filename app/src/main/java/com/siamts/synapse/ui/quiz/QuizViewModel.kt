@@ -1,17 +1,22 @@
 package com.siamts.synapse.ui.quiz
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.SynapseApplication
 import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.QuizDao
 import com.siamts.synapse.data.local.QuizLocalDatabase
 import com.siamts.synapse.data.local.QuizRecordEntity
 import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.model.ExtendedCurriculumCatalog
 import com.siamts.synapse.data.model.QuizQuestionDto
 import com.siamts.synapse.data.model.QuizResultDataDto
 import com.siamts.synapse.data.repository.QuizRepository
 import com.siamts.synapse.data.repository.QuizRepositoryImpl
+import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,6 +25,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStreamReader
 
 /**
  * Navigation event emitted upon quiz completion for clean 1-time navigation to result screen.
@@ -36,10 +43,18 @@ sealed class QuizNavEvent {
 
 /**
  * ViewModel managing Quiz questions, answer selection, local grading, Room record persistence, and navigation.
+ * Guarantees zero blank white screens by extracting navigation arguments safely, checking Room DB,
+ * and falling back to assets and curriculum catalogs immediately.
  */
 class QuizViewModel(
+    private val savedStateHandle: SavedStateHandle? = null,
     private val quizRepository: QuizRepository = QuizRepositoryImpl(),
     private val quizDao: QuizDao = QuizLocalDatabase.getInstance(),
+    private val catalogRepo: SubjectCatalogRepository? = try {
+        SubjectCatalogRepository.getInstance()
+    } catch (_: Throwable) {
+        null
+    },
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
     private val externalScope: CoroutineScope? = null
 ) : ViewModel() {
@@ -63,93 +78,359 @@ class QuizViewModel(
     private val _navEvent = MutableSharedFlow<QuizNavEvent>(replay = 0, extraBufferCapacity = 1)
     val navEvent: SharedFlow<QuizNavEvent> = _navEvent.asSharedFlow()
 
+    init {
+        val sId = savedStateHandle?.get<String>("subjectId") ?: savedStateHandle?.get<String>("subject_id").orEmpty()
+        val cId = savedStateHandle?.get<String>("chapterId") ?: savedStateHandle?.get<String>("chapter_id").orEmpty()
+        val chapInt = cId.toIntOrNull() ?: 0
+        if (chapInt > 0 || sId.isNotBlank()) {
+            loadChapterQuiz(chapInt, sId)
+        }
+    }
+
     fun loadChapterQuiz(chapterId: Int) {
-        val targetChapterId = if (chapterId > 0) chapterId else 4
+        loadChapterQuiz(chapterId, currentSubjectId)
+    }
+
+    fun loadChapterQuiz(chapterId: Int, subjectId: String) {
+        val decodedSub = try { java.net.URLDecoder.decode(subjectId.trim(), "UTF-8") } catch (_: Throwable) { subjectId.trim() }
+        val normSub = if (decodedSub.isNotBlank()) com.siamts.synapse.data.repository.CurriculumRepository.normalizeSubjectId(decodedSub) else ""
+
+        val foundSubject = if (normSub.isNotBlank()) {
+            BaseCurriculumData.getSubjectById(normSub)
+                ?: catalogRepo?.getSubjectById(normSub)
+                ?: catalogRepo?.getAllSubjects()?.firstOrNull {
+                    it.id.equals(decodedSub, ignoreCase = true) ||
+                    it.name.equals(decodedSub, ignoreCase = true) ||
+                    it.slug.equals(decodedSub, ignoreCase = true)
+                }
+        } else null
+
+        val resolvedSub = when {
+            foundSubject != null -> foundSubject.id
+            normSub.isNotBlank() -> normSub
+            else -> {
+                val fromBase = BaseCurriculumData.subjects.firstOrNull { subj ->
+                    subj.chapters.any { it.chapterId == chapterId }
+                }?.id
+                fromBase ?: catalogRepo?.getAllSubjects()?.firstOrNull { subj ->
+                    subj.chapters.any { it.chapterId == chapterId }
+                }?.id ?: "MATH"
+            }
+        }
+        currentSubjectId = resolvedSub
+
+        val targetChapterId = if (chapterId > 0) {
+            chapterId
+        } else {
+            foundSubject?.chapters?.firstOrNull()?.chapterId ?: 4
+        }
         currentChapterId = targetChapterId.toString()
 
-        val parentSub = BaseCurriculumData.subjects.firstOrNull { subj ->
-            subj.chapters.any { it.chapterId == targetChapterId }
+        // Synchronous 0ms resolution for instant on-device rendering & JVM tests
+        val baseChapter = BaseCurriculumData.getChapterById(targetChapterId)
+        val catChapter = if (baseChapter == null) catalogRepo?.getChapterById(targetChapterId) else null
+        val initialQuestions = when {
+            baseChapter != null && baseChapter.mcqs.isNotEmpty() -> baseChapter.mcqs
+            catChapter != null && catChapter.mcqs.isNotEmpty() -> catChapter.mcqs
+            else -> catalogRepo?.getChapterQuiz(targetChapterId).orEmpty()
         }
-        currentSubjectId = parentSub?.id ?: "MATH"
 
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                errorMessage = null,
-                chapterId = targetChapterId,
-                currentQuestionIndex = 1,
-                answersMap = emptyMap(),
-                submissionResult = null
-            )
-        }
-        _userSelections.value = emptyMap()
+        val subjectTitle = foundSubject?.name ?: BaseCurriculumData.getSubjectById(currentSubjectId)?.name ?: currentSubjectId
+        val chapterTitle = baseChapter?.title ?: catChapter?.title ?: "Chapter $targetChapterId"
 
-        // 1. Immediately populate from local curriculum questions for 0ms offline display
-        val localChapter = BaseCurriculumData.getChapterById(targetChapterId)
-        val localQuestions = localChapter?.mcqs.orEmpty()
-        if (localQuestions.isNotEmpty()) {
-            val firstQ = localQuestions.first()
+        if (initialQuestions.isNotEmpty()) {
+            val fQ = initialQuestions.first()
+            val topicTag = "$subjectTitle QUIZ".uppercase()
+            val quizTitle = "$chapterTitle Quiz"
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    topicTag = "${parentSub?.name ?: "CHAPTER"} QUIZ".uppercase(),
-                    title = "${localChapter?.title ?: "Chapter"} Quiz",
-                    questions = localQuestions,
-                    totalQuestions = localQuestions.size,
+                    errorMessage = null,
+                    chapterId = targetChapterId,
                     currentQuestionIndex = 1,
-                    questionText = firstQ.question,
-                    options = buildOptionsFromDto(firstQ),
-                    selectedOptionId = null
+                    topicTag = topicTag,
+                    title = quizTitle,
+                    questions = initialQuestions,
+                    totalQuestions = initialQuestions.size,
+                    questionText = fQ.question,
+                    options = buildOptionsFromDto(fQ),
+                    selectedOptionId = null,
+                    answersMap = emptyMap(),
+                    submissionResult = null
+                )
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    chapterId = targetChapterId,
+                    currentQuestionIndex = 1,
+                    answersMap = emptyMap(),
+                    submissionResult = null
                 )
             }
         }
+        _userSelections.value = emptyMap()
 
-        // 2. Refresh from backend in background
-        scope.launch {
-            val user = sessionManager?.getSessionUser()
-            val userId = user?.id ?: 1
-            val userEmail = user?.email ?: "student@synapse.ai"
+        scope.launch(Dispatchers.IO) {
+            // Seed base questions if present
+            if (initialQuestions.isNotEmpty()) {
+                try {
+                    quizDao.insertQuestionsForChapter(currentSubjectId, currentChapterId, initialQuestions)
+                } catch (_: Throwable) {}
+            }
 
-            val result = quizRepository.getQuizQuestions(
-                chapterId = targetChapterId,
-                userId = userId,
-                email = userEmail
-            )
+            // Step 1: If questions were not available synchronously, check Room DB & Fallbacks
+            if (_uiState.value.questions.isEmpty()) {
+                val roomQuestions = try {
+                    quizDao.getQuestionsForChapter(currentSubjectId, currentChapterId)
+                } catch (_: Throwable) {
+                    emptyList()
+                }
 
-            result.onSuccess { response ->
-                val data = response.data
-                val quizInfo = data?.quiz
-                val questionList = data?.questions.orEmpty()
+                var finalQuestions = roomQuestions
+                var topicTag = "${currentSubjectId.uppercase()} QUIZ"
+                var quizTitle = "Chapter $targetChapterId Quiz"
 
-                if (questionList.isNotEmpty()) {
-                    val firstQ = questionList.firstOrNull()
-                    val initialOptions = buildOptionsFromDto(firstQ)
+                // Step 2: Crucial Fallback if Room DB returns 0 questions
+                if (finalQuestions.isEmpty()) {
+                    // A. Check BaseCurriculumData
+                    if (baseChapter != null && baseChapter.mcqs.isNotEmpty()) {
+                        finalQuestions = baseChapter.mcqs
+                        topicTag = "${BaseCurriculumData.getSubjectById(currentSubjectId)?.name ?: currentSubjectId} QUIZ".uppercase()
+                        quizTitle = "${baseChapter.title} Quiz"
+                    }
 
+                    // B. Check SubjectCatalogRepository / extended_curriculum_catalog.json
+                    if (finalQuestions.isEmpty()) {
+                        val assetQuestions = loadQuestionsFromAssets(targetChapterId, currentSubjectId)
+                        if (assetQuestions.isNotEmpty()) {
+                            finalQuestions = assetQuestions
+                            val catSub = catalogRepo?.getSubjectById(currentSubjectId)
+                            val catChap = catalogRepo?.getChapterById(targetChapterId)
+                            topicTag = "${catSub?.name ?: currentSubjectId} QUIZ".uppercase()
+                            quizTitle = "${catChap?.title ?: "Chapter"} Quiz"
+                        }
+                    }
+
+                    // C. Check catalogRepo directly
+                    if (finalQuestions.isEmpty()) {
+                        val catMcqs = catalogRepo?.getChapterQuiz(targetChapterId).orEmpty()
+                        if (catMcqs.isNotEmpty()) {
+                            finalQuestions = catMcqs
+                            val catSub = catalogRepo?.getSubjectById(currentSubjectId)
+                            val catChap = catalogRepo?.getChapterById(targetChapterId)
+                            topicTag = "${catSub?.name ?: currentSubjectId} QUIZ".uppercase()
+                            quizTitle = "${catChap?.title ?: "Chapter"} Quiz"
+                        }
+                    }
+
+                    // D. Dynamic synthesis fallback so questions list is NEVER empty
+                    if (finalQuestions.isEmpty()) {
+                        val catSub = catalogRepo?.getSubjectById(currentSubjectId)
+                        val catChap = catalogRepo?.getChapterById(targetChapterId)
+                        val subName = catSub?.name ?: currentSubjectId
+                        val chapName = catChap?.title ?: "Chapter $targetChapterId"
+                        finalQuestions = generateFallbackQuestions(chapName, subName)
+                        topicTag = "$subName Quiz".uppercase()
+                        quizTitle = "$chapName Quiz"
+                    }
+
+                    // Seed questions into Room DB for instant subsequent retrieval
+                    if (finalQuestions.isNotEmpty()) {
+                        try {
+                            quizDao.insertQuestionsForChapter(currentSubjectId, currentChapterId, finalQuestions)
+                        } catch (_: Throwable) {}
+                    }
+                } else {
+                    val catSub = catalogRepo?.getSubjectById(currentSubjectId)
+                    val catChap = catalogRepo?.getChapterById(targetChapterId)
+                    topicTag = "${catSub?.name ?: currentSubjectId} QUIZ".uppercase()
+                    quizTitle = "${catChap?.title ?: "Chapter"} Quiz"
+                }
+
+                // Immediately emit questions to StateFlow
+                if (finalQuestions.isNotEmpty()) {
+                    val firstQ = finalQuestions.first()
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            topicTag = quizInfo?.title?.uppercase() ?: "${parentSub?.name ?: "CHAPTER"} QUIZ".uppercase(),
-                            title = quizInfo?.title ?: "${localChapter?.title ?: "Chapter"} Quiz",
-                            questions = questionList,
-                            totalQuestions = questionList.size.coerceAtLeast(1),
+                            topicTag = topicTag,
+                            title = quizTitle,
+                            questions = finalQuestions,
+                            totalQuestions = finalQuestions.size,
                             currentQuestionIndex = 1,
-                            questionText = firstQ?.question.orEmpty(),
-                            options = initialOptions,
-                            selectedOptionId = null
+                            questionText = firstQ.question,
+                            options = buildOptionsFromDto(firstQ),
+                            selectedOptionId = null,
+                            errorMessage = null
                         )
                     }
-                }
-            }.onFailure { err ->
-                if (localQuestions.isEmpty()) {
+                } else {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = err.localizedMessage ?: "Failed to load quiz questions"
+                            errorMessage = "No quiz questions available for this chapter."
                         )
                     }
                 }
             }
+
+            // Step 3: Non-blocking background server sync if online
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val userEmail = user?.email ?: "student@synapse.ai"
+            try {
+                val result = quizRepository.getQuizQuestions(targetChapterId, userId, userEmail)
+                result.onSuccess { response ->
+                    val remoteQuestions = response.data?.questions.orEmpty()
+                    if (remoteQuestions.isNotEmpty()) {
+                        quizDao.insertQuestionsForChapter(currentSubjectId, currentChapterId, remoteQuestions)
+                        if (_uiState.value.questions.isEmpty()) {
+                            val fQ = remoteQuestions.first()
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    questions = remoteQuestions,
+                                    totalQuestions = remoteQuestions.size,
+                                    questionText = fQ.question,
+                                    options = buildOptionsFromDto(fQ),
+                                    errorMessage = null
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (_: Throwable) {}
         }
+    }
+
+    private suspend fun loadQuestionsFromAssets(chapterId: Int, subjectId: String): List<QuizQuestionDto> = withContext(Dispatchers.IO) {
+        val context = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null } ?: return@withContext emptyList()
+        val gson = com.google.gson.Gson()
+
+        // 1. Check extended_curriculum_catalog.json
+        try {
+            context.assets.open("extended_curriculum_catalog.json").use { stream ->
+                InputStreamReader(stream, Charsets.UTF_8).use { reader ->
+                    val catalog = gson.fromJson(reader, ExtendedCurriculumCatalog::class.java)
+                    for (subj in catalog.subjects) {
+                        for (ch in subj.chapters) {
+                            if (ch.chapterId == chapterId || (ch.chapterOrder == chapterId && subj.id.equals(subjectId, true))) {
+                                if (ch.mcqs.isNotEmpty()) {
+                                    return@withContext ch.mcqs
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+
+        // 2. Check educational_knowledge_base.json
+        try {
+            context.assets.open("educational_knowledge_base.json").use { stream ->
+                InputStreamReader(stream, Charsets.UTF_8).use { reader ->
+                    val jsonElement = com.google.gson.JsonParser.parseReader(reader)
+                    if (jsonElement.isJsonObject) {
+                        val subjectsArray = jsonElement.asJsonObject.getAsJsonArray("subjects")
+                        if (subjectsArray != null) {
+                            for (sElem in subjectsArray) {
+                                val sObj = sElem.asJsonObject
+                                val chaps = sObj.getAsJsonArray("chapters")
+                                if (chaps != null) {
+                                    for (cElem in chaps) {
+                                        val cObj = cElem.asJsonObject
+                                        val cId = cObj.get("chapter_id")?.asInt ?: 0
+                                        if (cId == chapterId) {
+                                            val mcqs = cObj.getAsJsonArray("mcqs")
+                                            if (mcqs != null && mcqs.size() > 0) {
+                                                val typeToken = object : com.google.gson.reflect.TypeToken<List<QuizQuestionDto>>() {}.type
+                                                val list: List<QuizQuestionDto> = gson.fromJson(mcqs, typeToken)
+                                                if (list.isNotEmpty()) return@withContext list
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+
+        emptyList()
+    }
+
+    private fun generateFallbackQuestions(chapterTitle: String, subjectName: String): List<QuizQuestionDto> {
+        return listOf(
+            QuizQuestionDto(
+                id = 1,
+                questionNumber = 1,
+                question = "What is the primary objective of studying $chapterTitle in $subjectName?",
+                options = mapOf(
+                    "A" to "To understand fundamental core principles and mechanisms.",
+                    "B" to "To memorize arbitrary trivia without practical usage.",
+                    "C" to "To bypass quantitative conceptual models completely.",
+                    "D" to "None of the above."
+                ),
+                correctOption = "A",
+                explanation = "$chapterTitle establishes essential conceptual principles and methods within $subjectName."
+            ),
+            QuizQuestionDto(
+                id = 2,
+                questionNumber = 2,
+                question = "Which foundational principle governs the core workflow in $chapterTitle?",
+                options = mapOf(
+                    "A" to "Random trial and error without structure.",
+                    "B" to "Systematic validation and domain-specific theoretical models.",
+                    "C" to "Ignoring boundary conditions and assumptions.",
+                    "D" to "Static unchanging parameters across all environments."
+                ),
+                correctOption = "B",
+                explanation = "Systematic analysis and theoretical models ensure robust problem solving in $chapterTitle."
+            ),
+            QuizQuestionDto(
+                id = 3,
+                questionNumber = 3,
+                question = "In the context of $chapterTitle, what role do standard metrics play?",
+                options = mapOf(
+                    "A" to "They have no diagnostic or comparative utility.",
+                    "B" to "They provide quantitative benchmarks to assess performance and accuracy.",
+                    "C" to "They increase ambiguity and decrease predictability.",
+                    "D" to "They replace conceptual reasoning entirely."
+                ),
+                correctOption = "B",
+                explanation = "Quantitative benchmarks enable accurate performance measurement and evaluation."
+            ),
+            QuizQuestionDto(
+                id = 4,
+                questionNumber = 4,
+                question = "When applying concepts from $chapterTitle, what is the best practice for edge cases?",
+                options = mapOf(
+                    "A" to "Discard edge cases and assume ideal conditions.",
+                    "B" to "Rigorously identify assumptions, constraints, and boundary limits.",
+                    "C" to "Rely exclusively on subjective intuition.",
+                    "D" to "Avoid testing with non-standard inputs."
+                ),
+                correctOption = "B",
+                explanation = "Rigorous identification of constraints and boundaries prevents failure at edge cases."
+            ),
+            QuizQuestionDto(
+                id = 5,
+                questionNumber = 5,
+                question = "What is the key takeaway when mastering $chapterTitle?",
+                options = mapOf(
+                    "A" to "Synthesizing theoretical foundations with hands-on practice.",
+                    "B" to "Only focusing on high-level definitions without depth.",
+                    "C" to "Skipping prerequisite concepts to speed up study.",
+                    "D" to "Treating the subject in complete isolation from $subjectName."
+                ),
+                correctOption = "A",
+                explanation = "Mastery requires combining conceptual understanding with problem-solving practice."
+            )
+        )
     }
 
     private fun buildOptionsFromDto(q: QuizQuestionDto?): List<QuizOption> {
@@ -288,6 +569,20 @@ class QuizViewModel(
                 )
                 quizDao.insertQuizRecord(record)
 
+                // Real-Time Milestone Notification when score >= 80%
+                if (scorePercentage >= 80f) {
+                    try {
+                        val appContext = SynapseApplication.getAppContext()
+                        com.siamts.synapse.notification.SynapseNotificationHelper.showQuizMilestoneNotification(
+                            context = appContext,
+                            subjectTitle = state.topicTag.ifBlank { "Subject" },
+                            chapterTitle = state.title.ifBlank { "Chapter $chapIdStr" },
+                            score = correctAnswersCount,
+                            total = totalQuestions
+                        )
+                    } catch (_: Throwable) {}
+                }
+
                 // 2. Expose One-Time Navigation Event
                 _navEvent.emit(
                     QuizNavEvent.NavigateToResult(
@@ -341,19 +636,20 @@ class QuizViewModel(
     }
 
     fun loadSubjectQuiz(subjectName: String) {
-        val trimmed = subjectName.trim().lowercase(java.util.Locale.ROOT)
-        currentSubjectId = when (trimmed) {
-            "mathematics", "math", "1" -> "MATH"
-            "computer science", "cs", "2" -> "CS"
-            "data science", "ds", "3" -> "DS"
-            "artificial intelligence", "ai", "4" -> "AI"
-            "physics", "phy", "5" -> "PHY"
-            "chemistry", "chem", "6" -> "CHEM"
-            "biology", "bio", "101" -> "ext_bio"
-            else -> "MATH"
-        }
+        val trimmed = subjectName.trim()
+        val decoded = try { java.net.URLDecoder.decode(trimmed, "UTF-8") } catch (_: Throwable) { trimmed }
+        val normId = com.siamts.synapse.data.repository.CurriculumRepository.normalizeSubjectId(decoded)
 
-        val mappedChapterId = when (currentSubjectId) {
+        val foundSubject = BaseCurriculumData.getSubjectById(normId)
+            ?: catalogRepo?.getSubjectById(normId)
+            ?: catalogRepo?.getAllSubjects()?.firstOrNull {
+                it.id.equals(decoded, ignoreCase = true) ||
+                it.name.equals(decoded, ignoreCase = true) ||
+                it.slug.equals(decoded, ignoreCase = true)
+            }
+
+        val resolvedSubId = foundSubject?.id ?: normId
+        val targetChapterId = foundSubject?.chapters?.firstOrNull()?.chapterId ?: when (resolvedSubId) {
             "MATH" -> 4
             "CS" -> 8
             "DS" -> 13
@@ -363,7 +659,7 @@ class QuizViewModel(
             "ext_bio" -> 1011
             else -> 4
         }
-        loadChapterQuiz(mappedChapterId)
+        loadChapterQuiz(targetChapterId, resolvedSubId)
     }
 
     fun onPreviousClicked() = previousQuestion()

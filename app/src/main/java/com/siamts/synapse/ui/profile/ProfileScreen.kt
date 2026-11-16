@@ -287,8 +287,16 @@ fun ProfileContent(
                                                     contentScale = ContentScale.Crop,
                                                 )
                                             } else {
+                                                val initials = uiState.userInitials.ifBlank {
+                                                    val parts = uiState.userName.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+                                                    when {
+                                                        parts.size >= 2 -> "${parts.first().first()}${parts.last().first()}".uppercase()
+                                                        parts.isNotEmpty() -> parts.first().take(2).uppercase()
+                                                        else -> "ST"
+                                                    }
+                                                }
                                                 Text(
-                                                    text = uiState.userInitials,
+                                                    text = initials,
                                                     color = Color(0xFF3730A3),
                                                     fontSize = 18.sp,
                                                     fontWeight = FontWeight.Bold,
@@ -307,7 +315,7 @@ fun ProfileContent(
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = uiState.userDegree,
+                                                text = uiState.userEmail,
                                                 color = Color(0xFF64748B),
                                                 fontSize = 12.sp,
                                             )

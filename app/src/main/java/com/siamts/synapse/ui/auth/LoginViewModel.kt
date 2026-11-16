@@ -65,6 +65,10 @@ class LoginViewModel(
                 val manager = sessionManager ?: SessionManager.getInstanceOrNull()
                 if (user != null) {
                     manager?.saveSession(user, token)
+                } else {
+                    val fallbackName = identifier.substringBefore("@").replaceFirstChar { it.uppercase() }
+                    val fallbackEmail = if (identifier.contains("@")) identifier else "$identifier@synapse.ai"
+                    manager?.saveSession(name = fallbackName, email = fallbackEmail, token = token)
                 }
 
                 _uiState.update {

@@ -21,8 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +62,7 @@ fun QuizScreen(
     onQuizComplete: ((QuizResultDataDto?) -> Unit)? = null,
     onNavigateToResult: ((subjectId: String, chapterId: String, score: Int, total: Int, resultDto: QuizResultDataDto?) -> Unit)? = null,
     onNavigateToRoute: ((String) -> Unit)? = null,
+    onRetryClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -74,21 +80,29 @@ fun QuizScreen(
 
     val isLastQuestion = uiState.currentQuestionIndex >= uiState.totalQuestions
 
-    QuizContent(
-        uiState = uiState,
-        onOptionSelect = { viewModel.onOptionSelected(it) },
-        onNextClick = {
-            if (isLastQuestion) {
-                viewModel.submitQuiz { result ->
-                    onQuizComplete?.invoke(result)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        QuizContent(
+            uiState = uiState,
+            onOptionSelect = { viewModel.onOptionSelected(it) },
+            onNextClick = {
+                if (isLastQuestion) {
+                    viewModel.submitQuiz { result ->
+                        onQuizComplete?.invoke(result)
+                    }
+                } else {
+                    viewModel.nextQuestion()
                 }
-            } else {
-                viewModel.nextQuestion()
-            }
-        },
-        onBackClick = onBackClick,
-        modifier = modifier,
-    )
+            },
+            onBackClick = onBackClick,
+            onRetryClick = {
+                onRetryClick?.invoke() ?: viewModel.loadChapterQuiz(uiState.chapterId, viewModel.currentSubjectId)
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @Composable
@@ -98,6 +112,7 @@ fun QuizContent(
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onRetryClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -177,59 +192,146 @@ fun QuizContent(
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
-                ) {
-                    // Scrollable Area
-                    Column(
+                if (uiState.isLoading) {
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // 1. Question Progress & Timer Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
+                            CircularProgressIndicator(
+                                color = BlueAccent,
+                                modifier = Modifier.size(46.dp),
+                                strokeWidth = 3.5.dp
+                            )
+                            Spacer(modifier = Modifier.height(18.dp))
+                            Text(
+                                text = "Loading Chapter Quiz...",
+                                color = Color(0xFF0F172A),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Retrieving chapter questions and verified options",
+                                color = Color(0xFF64748B),
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else if (uiState.questions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "📚", fontSize = 42.sp)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "Ready to Generate Quiz",
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = uiState.errorMessage ?: "Tap below to assemble on-device curriculum MCQs for this chapter.",
+                                    color = Color(0xFF64748B),
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Button(
+                                    onClick = { onRetryClick?.invoke() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.height(44.dp)
                                 ) {
                                     Text(
-                                        text = "Question ${uiState.currentQuestionIndex} of ${uiState.totalQuestions}",
-                                        color = Color(0xFF0F172A),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        text = "⚡ Retry / Generate Quiz",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "⏱ ", fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                    ) {
+                        // Scrollable Area
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // 1. Question Progress & Timer Box
+                            val totalQ = uiState.totalQuestions.coerceAtLeast(1)
+                            val currentQ = uiState.currentQuestionIndex.coerceIn(1, totalQ)
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
                                         Text(
-                                            text = uiState.timerText,
-                                            color = BlueAccent,
+                                            text = "Question $currentQ of $totalQ",
+                                            color = Color(0xFF0F172A),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(text = "⏱ ", fontSize = 12.sp)
+                                            Text(
+                                                text = uiState.timerText,
+                                                color = BlueAccent,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                        }
                                     }
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    LinearProgressIndicator(
+                                        progress = { (currentQ.toFloat() / totalQ).coerceIn(0f, 1f) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(6.dp),
+                                        color = BlueAccent,
+                                        trackColor = Color(0xFFE2E8F0),
+                                    )
                                 }
-
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                LinearProgressIndicator(
-                                    progress = { uiState.currentQuestionIndex.toFloat() / uiState.totalQuestions },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
-                                )
                             }
-                        }
 
                         // 2. Question Header Box
                         DashedBorderBox(
@@ -426,6 +528,7 @@ fun QuizContent(
             }
         }
     }
+}
 }
 
 @Preview(showBackground = true, showSystemUi = true)
