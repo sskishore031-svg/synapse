@@ -6,6 +6,7 @@ package com.siamts.synapse.ui.auth
 data class SignUpUiState(
     val name: String = "",
     val email: String = "",
+    val phone: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val isPasswordVisible: Boolean = false,

@@ -24,8 +24,14 @@ class SignUpViewModel(
     private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
+    private val gmailRegex = Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOption.IGNORE_CASE)
+
     fun onNameChanged(name: String) {
         _uiState.update { it.copy(name = name, errorMessage = null) }
+    }
+
+    fun onPhoneChanged(phone: String) {
+        _uiState.update { it.copy(phone = phone, errorMessage = null) }
     }
 
     fun onEmailChanged(email: String) {
@@ -51,6 +57,7 @@ class SignUpViewModel(
     fun onSignUpClick(onSignUpSuccess: () -> Unit) {
         val name = _uiState.value.name.trim()
         val email = _uiState.value.email.trim()
+        val phone = _uiState.value.phone.trim()
         val password = _uiState.value.password
         val confirmPassword = _uiState.value.confirmPassword
 
@@ -59,9 +66,13 @@ class SignUpViewModel(
             return
         }
 
-        val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-        if (email.isEmpty() || !emailRegex.matches(email)) {
-            _uiState.update { it.copy(errorMessage = "Please enter a valid email address.") }
+        if (phone.isEmpty() || phone.length != 10 || !phone.all { it.isDigit() }) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid 10-digit phone number.") }
+            return
+        }
+
+        if (email.isEmpty() || !gmailRegex.matches(email)) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid @gmail.com address") }
             return
         }
 
@@ -82,8 +93,19 @@ class SignUpViewModel(
                 name = name,
                 email = email,
                 password = password,
-                confirmPassword = confirmPassword
+                confirmPassword = confirmPassword,
+                phone = phone
             )
+
+            // Cache in local SQLite users table
+            try {
+                com.siamts.synapse.data.local.QuizLocalDatabase.getUserDao().insertOrUpdateUser(
+                    name = name,
+                    email = email,
+                    phone = phone
+                )
+            } catch (_: Throwable) {}
+
             if (result.isSuccess) {
                 val response = result.getOrNull()
                 val user = response?.user
@@ -92,9 +114,10 @@ class SignUpViewModel(
                 // Persist session into DataStore Preferences
                 val manager = sessionManager ?: SessionManager.getInstanceOrNull()
                 if (user != null) {
-                    manager?.saveSession(user, token)
+                    val userWithPhone = if (user.phone.isNullOrBlank()) user.copy(phone = phone) else user
+                    manager?.saveSession(userWithPhone, token)
                 } else {
-                    manager?.saveSession(name = name, email = email, token = token)
+                    manager?.saveSession(name = name, email = email, phone = phone, token = token)
                 }
 
                 _uiState.update {

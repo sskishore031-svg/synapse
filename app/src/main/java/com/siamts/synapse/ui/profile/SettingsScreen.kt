@@ -750,24 +750,27 @@ fun SettingsScreen(
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
-                title = { Text(text = "Confirm Logout", fontWeight = FontWeight.Bold) },
-                text = { Text("Are you sure you want to log out of your Synapse AI account?") },
+                title = { Text(text = "Confirm Logout", fontWeight = FontWeight.Bold, color = primaryTextColor) },
+                text = { Text(text = "Are you sure you want to log out of your SYNAPSE AI account?", color = secondaryTextColor, fontSize = 14.sp) },
                 confirmButton = {
                     Button(
                         onClick = {
                             showLogoutDialog = false
                             onLogoutClick()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Logout", color = Color.White)
+                        Text("Yes, Logout", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancel")
+                        Text("Cancel", color = secondaryTextColor, fontWeight = FontWeight.Medium)
                     }
-                }
+                },
+                containerColor = cardBgColor,
+                shape = RoundedCornerShape(16.dp)
             )
         }
 

@@ -17,12 +17,14 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
     private val inMemoryQuestions = java.util.concurrent.ConcurrentHashMap<String, List<com.siamts.synapse.data.model.QuizQuestionDto>>()
     private val inMemoryChapters = CopyOnWriteArrayList<ChapterEntity>()
+    private val inMemoryTasks = CopyOnWriteArrayList<LearningTaskEntity>()
+    private val inMemoryUsers = CopyOnWriteArrayList<com.siamts.synapse.data.model.UserDto>()
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -62,11 +64,36 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             )
             """.trimIndent()
         )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS learning_plan_tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL,
+                duration TEXT NOT NULL,
+                is_completed INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                phone TEXT,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("CREATE TABLE IF NOT EXISTS chapter_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id TEXT NOT NULL, chapter_id TEXT NOT NULL, question_json TEXT NOT NULL)")
         db.execSQL("CREATE TABLE IF NOT EXISTS subject_chapters (id TEXT PRIMARY KEY, subject_id TEXT NOT NULL, chapter_order INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT, question_count INTEGER NOT NULL, estimated_minutes INTEGER NOT NULL, total_marks INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS learning_plan_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, category TEXT NOT NULL, duration TEXT NOT NULL, is_completed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT, created_at INTEGER NOT NULL)")
     }
 
     override suspend fun insertQuizRecord(record: QuizRecordEntity): Long = withContext(Dispatchers.IO) {
@@ -352,9 +379,215 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         }
     }
 
+    // =========================================================================
+    // LearningTaskDao Implementation ('learning_plan_tasks')
+    // =========================================================================
+
+    override suspend fun getAllTasks(): List<LearningTaskEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryTasks.toList()
+        }
+
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "learning_plan_tasks",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "id DESC"
+            )
+            val list = mutableListOf<LearningTaskEntity>()
+            cursor.use { c ->
+                val idCol = c.getColumnIndex("id")
+                val titleCol = c.getColumnIndex("title")
+                val catCol = c.getColumnIndex("category")
+                val durCol = c.getColumnIndex("duration")
+                val compCol = c.getColumnIndex("is_completed")
+                val dateCol = c.getColumnIndex("created_at")
+
+                while (c.moveToNext()) {
+                    list.add(
+                        LearningTaskEntity(
+                            id = if (idCol >= 0) c.getLong(idCol) else 0L,
+                            title = if (titleCol >= 0) c.getString(titleCol) else "",
+                            category = if (catCol >= 0) c.getString(catCol) else "Lesson",
+                            duration = if (durCol >= 0) c.getString(durCol) else "15 min",
+                            isCompleted = if (compCol >= 0) c.getInt(compCol) == 1 else false,
+                            createdAt = if (dateCol >= 0) c.getLong(dateCol) else System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+            list
+        } catch (_: Throwable) {
+            inMemoryTasks.toList()
+        }
+    }
+
+    override suspend fun insertTask(task: LearningTaskEntity): Long = withContext(Dispatchers.IO) {
+        val assignedId = System.currentTimeMillis()
+        val taskWithId = task.copy(id = if (task.id > 0) task.id else assignedId)
+        inMemoryTasks.add(taskWithId)
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("title", task.title)
+                    put("category", task.category)
+                    put("duration", task.duration)
+                    put("is_completed", if (task.isCompleted) 1 else 0)
+                    put("created_at", task.createdAt)
+                }
+                return@withContext db.insert("learning_plan_tasks", null, values)
+            } catch (_: Throwable) {
+                return@withContext assignedId
+            }
+        }
+        assignedId
+    }
+
+    override suspend fun updateTaskCompletion(taskId: Long, isCompleted: Boolean) = withContext(Dispatchers.IO) {
+        for (i in inMemoryTasks.indices) {
+            if (inMemoryTasks[i].id == taskId) {
+                inMemoryTasks[i] = inMemoryTasks[i].copy(isCompleted = isCompleted)
+                break
+            }
+        }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("is_completed", if (isCompleted) 1 else 0)
+                }
+                db.update("learning_plan_tasks", values, "id = ?", arrayOf(taskId.toString()))
+            } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun deleteTask(taskId: Long) = withContext(Dispatchers.IO) {
+        inMemoryTasks.removeAll { it.id == taskId }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("learning_plan_tasks", "id = ?", arrayOf(taskId.toString()))
+            } catch (_: Throwable) {}
+        }
+    }
+
+    // =========================================================================
+    // UserDao Implementation ('users')
+    // =========================================================================
+
+    override suspend fun insertOrUpdateUser(name: String, email: String, phone: String?): Long = withContext(Dispatchers.IO) {
+        val assignedId = System.currentTimeMillis()
+        inMemoryUsers.removeAll { it.email.equals(email, ignoreCase = true) }
+        inMemoryUsers.add(
+            com.siamts.synapse.data.model.UserDto(
+                id = assignedId.toInt(),
+                name = name,
+                email = email,
+                phone = phone
+            )
+        )
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("name", name)
+                    put("email", email)
+                    put("phone", phone)
+                    put("created_at", System.currentTimeMillis())
+                }
+                return@withContext db.insertWithOnConflict("users", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            } catch (_: Throwable) {
+                return@withContext assignedId
+            }
+        }
+        assignedId
+    }
+
+    override suspend fun getUserByEmail(email: String): com.siamts.synapse.data.model.UserDto? = withContext(Dispatchers.IO) {
+        val inMem = inMemoryUsers.firstOrNull { it.email.equals(email, ignoreCase = true) }
+        if (inMem != null) return@withContext inMem
+
+        if (hasAndroidContext) {
+            try {
+                val db = readableDatabase
+                val cursor = db.query(
+                    "users",
+                    null,
+                    "email = ?",
+                    arrayOf(email.trim()),
+                    null,
+                    null,
+                    null,
+                    "1"
+                )
+                cursor.use { c ->
+                    if (c.moveToFirst()) {
+                        val idCol = c.getColumnIndex("id")
+                        val nameCol = c.getColumnIndex("name")
+                        val emailCol = c.getColumnIndex("email")
+                        val phoneCol = c.getColumnIndex("phone")
+                        return@withContext com.siamts.synapse.data.model.UserDto(
+                            id = if (idCol >= 0) c.getInt(idCol) else 1,
+                            name = if (nameCol >= 0) c.getString(nameCol) else "",
+                            email = if (emailCol >= 0) c.getString(emailCol) else email,
+                            phone = if (phoneCol >= 0) c.getString(phoneCol) else null
+                        )
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+        null
+    }
+
+    override suspend fun getUserById(userId: Int): com.siamts.synapse.data.model.UserDto? = withContext(Dispatchers.IO) {
+        val inMem = inMemoryUsers.firstOrNull { it.id == userId }
+        if (inMem != null) return@withContext inMem
+
+        if (hasAndroidContext) {
+            try {
+                val db = readableDatabase
+                val cursor = db.query(
+                    "users",
+                    null,
+                    "id = ?",
+                    arrayOf(userId.toString()),
+                    null,
+                    null,
+                    null,
+                    "1"
+                )
+                cursor.use { c ->
+                    if (c.moveToFirst()) {
+                        val idCol = c.getColumnIndex("id")
+                        val nameCol = c.getColumnIndex("name")
+                        val emailCol = c.getColumnIndex("email")
+                        val phoneCol = c.getColumnIndex("phone")
+                        return@withContext com.siamts.synapse.data.model.UserDto(
+                            id = if (idCol >= 0) c.getInt(idCol) else userId,
+                            name = if (nameCol >= 0) c.getString(nameCol) else "",
+                            email = if (emailCol >= 0) c.getString(emailCol) else "",
+                            phone = if (phoneCol >= 0) c.getString(phoneCol) else null
+                        )
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+        null
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null
@@ -366,6 +599,18 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         }
 
         fun getChapterDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): ChapterDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getLearningTaskDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): LearningTaskDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getUserDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): UserDao {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
             }

@@ -34,10 +34,14 @@ class AuthViewModel(
             initialValue = AuthSessionState.Loading
         ) ?: MutableStateFlow(AuthSessionState.Unauthenticated).asStateFlow()
 
-    private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    private val gmailRegex = Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOption.IGNORE_CASE)
 
     fun onNameChanged(name: String) {
         _uiState.update { it.copy(name = name, errorMessage = null) }
+    }
+
+    fun onPhoneChanged(phone: String) {
+        _uiState.update { it.copy(phone = phone, errorMessage = null) }
     }
 
     fun onEmailChanged(email: String) {
@@ -76,6 +80,11 @@ class AuthViewModel(
 
         if (trimmedIdentifier.isEmpty()) {
             _uiState.update { it.copy(errorMessage = "Please enter your email or user ID.") }
+            return
+        }
+
+        if (trimmedIdentifier.contains("@") && !gmailRegex.matches(trimmedIdentifier)) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid @gmail.com address") }
             return
         }
 
@@ -135,20 +144,27 @@ class AuthViewModel(
     fun onSignup(
         name: String = _uiState.value.name,
         email: String = _uiState.value.email,
+        phone: String = _uiState.value.phone,
         password: String = _uiState.value.password,
         confirmPassword: String = _uiState.value.confirmPassword,
         onSuccess: () -> Unit = {}
     ) {
         val trimmedName = name.trim()
         val trimmedEmail = email.trim()
+        val trimmedPhone = phone.trim()
 
         if (trimmedName.isEmpty()) {
             _uiState.update { it.copy(errorMessage = "Please enter your full name.") }
             return
         }
 
-        if (trimmedEmail.isEmpty() || !emailRegex.matches(trimmedEmail)) {
-            _uiState.update { it.copy(errorMessage = "Please enter a valid email address.") }
+        if (trimmedPhone.isEmpty() || trimmedPhone.length != 10 || !trimmedPhone.all { it.isDigit() }) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid 10-digit phone number.") }
+            return
+        }
+
+        if (trimmedEmail.isEmpty() || !gmailRegex.matches(trimmedEmail)) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid @gmail.com address") }
             return
         }
 
@@ -175,8 +191,18 @@ class AuthViewModel(
                 name = trimmedName,
                 email = trimmedEmail,
                 password = password,
-                confirmPassword = confirmPassword
+                confirmPassword = confirmPassword,
+                phone = trimmedPhone
             )
+
+            // Cache in local SQLite users table
+            try {
+                com.siamts.synapse.data.local.QuizLocalDatabase.getUserDao().insertOrUpdateUser(
+                    name = trimmedName,
+                    email = trimmedEmail,
+                    phone = trimmedPhone
+                )
+            } catch (_: Throwable) {}
 
             if (result.isSuccess) {
                 val response = result.getOrNull()
@@ -186,7 +212,10 @@ class AuthViewModel(
                 // Persist session into DataStore Preferences
                 val manager = sessionManager ?: SessionManager.getInstanceOrNull()
                 if (user != null) {
-                    manager?.saveSession(user, token)
+                    val userWithPhone = if (user.phone.isNullOrBlank()) user.copy(phone = trimmedPhone) else user
+                    manager?.saveSession(userWithPhone, token)
+                } else {
+                    manager?.saveSession(name = trimmedName, email = trimmedEmail, phone = trimmedPhone, token = token)
                 }
 
                 _uiState.update {
@@ -216,10 +245,11 @@ class AuthViewModel(
     fun onRegister(
         name: String = _uiState.value.name,
         email: String = _uiState.value.email,
+        phone: String = _uiState.value.phone,
         password: String = _uiState.value.password,
         confirmPassword: String = _uiState.value.confirmPassword,
         onSuccess: () -> Unit = {}
-    ) = onSignup(name, email, password, confirmPassword, onSuccess)
+    ) = onSignup(name, email, phone, password, confirmPassword, onSuccess)
 
     /**
      * Clears user session and resets UI state upon logout.

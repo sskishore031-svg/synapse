@@ -22,6 +22,8 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    private val gmailRegex = Regex("^[A-Za-z0-9._%+-]+@gmail\\.com$", RegexOption.IGNORE_CASE)
+
     fun onEmailOrPhoneChanged(input: String) {
         _uiState.update { it.copy(emailOrPhone = input, errorMessage = null) }
     }
@@ -44,6 +46,11 @@ class LoginViewModel(
 
         if (identifier.isEmpty()) {
             _uiState.update { it.copy(errorMessage = "Please enter your email or user ID.") }
+            return
+        }
+
+        if (identifier.contains("@") && !gmailRegex.matches(identifier)) {
+            _uiState.update { it.copy(errorMessage = "Please enter a valid @gmail.com address") }
             return
         }
 

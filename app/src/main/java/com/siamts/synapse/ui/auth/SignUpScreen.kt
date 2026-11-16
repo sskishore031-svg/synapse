@@ -69,6 +69,7 @@ fun SignupScreen(
     SignupContent(
         name = uiState.name,
         email = uiState.email,
+        phone = uiState.phone,
         password = uiState.password,
         confirmPassword = uiState.confirmPassword,
         isPasswordVisible = uiState.isPasswordVisible,
@@ -76,6 +77,7 @@ fun SignupScreen(
         errorMessage = uiState.errorMessage,
         successMessage = uiState.successMessage,
         onNameChange = { viewModel.onNameChanged(it) },
+        onPhoneChange = { viewModel.onPhoneChanged(it) },
         onEmailChange = { viewModel.onEmailChanged(it) },
         onPasswordChange = { viewModel.onPasswordChanged(it) },
         onConfirmPasswordChange = { viewModel.onConfirmPasswordChanged(it) },
@@ -101,6 +103,7 @@ fun SignupScreen(
     SignupContent(
         name = uiState.name,
         email = uiState.email,
+        phone = uiState.phone,
         password = uiState.password,
         confirmPassword = uiState.confirmPassword,
         isPasswordVisible = uiState.isPasswordVisible,
@@ -108,6 +111,7 @@ fun SignupScreen(
         errorMessage = uiState.errorMessage,
         successMessage = uiState.successMessage,
         onNameChange = { viewModel.onNameChanged(it) },
+        onPhoneChange = { viewModel.onPhoneChanged(it) },
         onEmailChange = { viewModel.onEmailChanged(it) },
         onPasswordChange = { viewModel.onPasswordChanged(it) },
         onConfirmPasswordChange = { viewModel.onConfirmPasswordChanged(it) },
@@ -154,6 +158,7 @@ fun SignUpScreen(
 fun SignupContent(
     name: String,
     email: String,
+    phone: String = "",
     password: String,
     confirmPassword: String,
     isPasswordVisible: Boolean,
@@ -161,6 +166,7 @@ fun SignupContent(
     errorMessage: String?,
     successMessage: String?,
     onNameChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit = {},
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
@@ -300,6 +306,55 @@ fun SignupContent(
                                 trailingIcon = {
                                     Text(
                                         text = "👤",
+                                        fontSize = 16.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    // Phone Number Field
+                    DashedBorderBox(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = 6.dp
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Phone Number",
+                                color = Color(0xFF1E293B),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            OutlinedTextField(
+                                value = phone,
+                                onValueChange = { input ->
+                                    val digitsOnly = input.filter { it.isDigit() }.take(10)
+                                    onPhoneChange(digitsOnly)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                placeholder = {
+                                    Text(
+                                        text = "10-digit mobile number",
+                                        color = Color(0xFF94A3B8),
+                                        fontSize = 13.sp
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = BlueAccent,
+                                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                                    focusedContainerColor = Color.White,
+                                    unfocusedContainerColor = Color.White,
+                                    focusedTextColor = Color(0xFF0F172A),
+                                    unfocusedTextColor = Color(0xFF0F172A),
+                                ),
+                                singleLine = true,
+                                trailingIcon = {
+                                    Text(
+                                        text = "📞",
                                         fontSize = 16.sp,
                                         color = Color(0xFF64748B)
                                     )
@@ -578,6 +633,7 @@ fun SignupScreenPreview() {
         SignupContent(
             name = "Tharun Kishore",
             email = "kishore@gmail.com",
+            phone = "9876543210",
             password = "password123",
             confirmPassword = "password123",
             isPasswordVisible = false,
@@ -585,6 +641,7 @@ fun SignupScreenPreview() {
             errorMessage = null,
             successMessage = null,
             onNameChange = {},
+            onPhoneChange = {},
             onEmailChange = {},
             onPasswordChange = {},
             onConfirmPasswordChange = {},

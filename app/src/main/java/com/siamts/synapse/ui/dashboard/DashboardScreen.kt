@@ -17,12 +17,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -115,6 +124,15 @@ fun DashboardScreen(
         onProfileClick = {
             onProfileTabClick?.invoke()
         },
+        onAddTask = { title, cat, dur ->
+            viewModel.addLearningTask(title, cat, dur)
+        },
+        onToggleTask = { id, completed ->
+            viewModel.toggleTaskCompletion(id, completed)
+        },
+        onDeleteTask = { id ->
+            viewModel.deleteLearningTask(id)
+        },
         modifier = modifier,
     )
 }
@@ -129,8 +147,12 @@ fun DashboardContent(
     onBrainMapClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
     onProfileClick: (() -> Unit)? = null,
+    onAddTask: (title: String, category: String, duration: String) -> Unit = { _, _, _ -> },
+    onToggleTask: (id: String, completed: Boolean) -> Unit = { _, _ -> },
+    onDeleteTask: (id: String) -> Unit = {},
 ) {
     val isDark = LocalThemeIsDark.current
+    var showAddTaskDialog by remember { mutableStateOf(false) }
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
@@ -211,7 +233,7 @@ fun DashboardContent(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = uiState.userName.firstOrNull()?.uppercase() ?: "K",
+                                    text = uiState.userName.trim().firstOrNull()?.uppercase() ?: "S",
                                     color = Color(0xFF0284C7),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -223,7 +245,7 @@ fun DashboardContent(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Direct FRIDAY AI Chat Query Input Bar
+                // Direct SYNAPSE AI Chat Query Input Bar
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -243,7 +265,7 @@ fun DashboardContent(
                             Text(text = "✨", fontSize = 16.sp)
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Ask FRIDAY AI anything...",
+                                text = "Ask SYNAPSE AI anything...",
                                 color = TextMuted,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
@@ -458,55 +480,131 @@ fun DashboardContent(
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
-                                    Text(
-                                        text = uiState.todayPlanTotalTime,
-                                        color = Color(0xFF64748B),
-                                        fontSize = 12.sp,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = uiState.todayPlanTotalTime,
+                                            color = Color(0xFF64748B),
+                                            fontSize = 12.sp,
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                .clickable { showAddTaskDialog = true }
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = "+ Add",
+                                                color = BlueAccent,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    uiState.todayPlanItems.forEach { item ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable { onPlanItemClick(item.id) }
-                                                .padding(vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
+                                if (uiState.todayPlanItems.isEmpty()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(text = "📝", fontSize = 28.sp)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "No learning tasks planned for today.",
+                                            color = Color(0xFF64748B),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Create custom tasks to track your daily study goals.",
+                                            color = Color(0xFF94A3B8),
+                                            fontSize = 11.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Button(
+                                            onClick = { showAddTaskDialog = true },
+                                            colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier.height(38.dp)
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(36.dp)
-                                                    .background(Color(0xFFEFF6FF), CircleShape),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Text(text = item.iconEmoji, fontSize = 16.sp)
-                                            }
-
-                                            Spacer(modifier = Modifier.width(12.dp))
-
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    text = item.title,
-                                                    color = Color(0xFF0F172A),
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                )
-                                                Text(
-                                                    text = "${item.category} · ${item.duration}",
-                                                    color = Color(0xFF64748B),
-                                                    fontSize = 12.sp,
-                                                )
-                                            }
-
                                             Text(
-                                                text = "›",
-                                                color = Color(0xFF94A3B8),
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold,
+                                                text = "+ Add Today's Plan",
+                                                color = Color.White,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold
                                             )
+                                        }
+                                    }
+                                } else {
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        uiState.todayPlanItems.forEach { item ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(
+                                                        color = if (item.isCompleted) Color(0xFFF1F5F9) else Color(0xFFF8FAFC),
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    )
+                                                    .padding(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // Checkbox to mark complete
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .background(
+                                                            color = if (item.isCompleted) Color(0xFF10B981) else Color.White,
+                                                            shape = CircleShape
+                                                        )
+                                                        .border(
+                                                            width = 1.5.dp,
+                                                            color = if (item.isCompleted) Color(0xFF10B981) else Color(0xFFCBD5E1),
+                                                            shape = CircleShape
+                                                        )
+                                                        .clickable { onToggleTask(item.id, !item.isCompleted) },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (item.isCompleted) {
+                                                        Text(text = "✓", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.width(10.dp))
+
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clickable { onToggleTask(item.id, !item.isCompleted) }
+                                                ) {
+                                                    Text(
+                                                        text = item.title,
+                                                        color = if (item.isCompleted) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        textDecoration = if (item.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Text(
+                                                        text = "${item.category} • ${item.duration}",
+                                                        color = Color(0xFF64748B),
+                                                        fontSize = 11.sp
+                                                    )
+                                                }
+
+                                                // Delete task button
+                                                IconButton(
+                                                    onClick = { onDeleteTask(item.id) },
+                                                    modifier = Modifier.size(28.dp)
+                                                ) {
+                                                    Text(text = "✕", color = Color(0xFF94A3B8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -631,7 +729,7 @@ fun DashboardContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "🤖 ", fontSize = 14.sp)
                         Text(
-                            text = "Chat with FRIDAY",
+                            text = "Chat with SYNAPSE",
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -680,6 +778,117 @@ fun DashboardContent(
                 }
             }
         }
+    }
+
+    if (showAddTaskDialog) {
+        var newTaskTitle by remember { mutableStateOf("") }
+        var selectedCategory by remember { mutableStateOf("Lesson") }
+        var selectedDuration by remember { mutableStateOf("15 min") }
+
+        AlertDialog(
+            onDismissRequest = { showAddTaskDialog = false },
+            title = {
+                Text(
+                    text = "Add Learning Plan Task",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Task Title",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                    OutlinedTextField(
+                        value = newTaskTitle,
+                        onValueChange = { newTaskTitle = it },
+                        placeholder = { Text("e.g. Master Linear Algebra", fontSize = 13.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    Text(
+                        text = "Task Type",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Lesson", "Quiz", "Revision").forEach { cat ->
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = if (selectedCategory == cat) BlueAccent else Color(0xFFF1F5F9),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { selectedCategory = cat }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = cat,
+                                    color = if (selectedCategory == cat) Color.White else Color(0xFF334155),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "Estimated Duration",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("10 min", "15 min", "25 min", "45 min").forEach { dur ->
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        color = if (selectedDuration == dur) Color(0xFF0F172A) else Color(0xFFF1F5F9),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { selectedDuration = dur }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = dur,
+                                    color = if (selectedDuration == dur) Color.White else Color(0xFF334155),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newTaskTitle.isNotBlank()) {
+                            onAddTask(newTaskTitle, selectedCategory, selectedDuration)
+                            showAddTaskDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Add Task", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddTaskDialog = false }) {
+                    Text("Cancel", color = Color(0xFF64748B))
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 

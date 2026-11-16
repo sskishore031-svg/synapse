@@ -55,7 +55,7 @@ class AuthViewModelValidationTest {
 
     @Test
     fun testEmptyLoginPassword_setsErrorMessage() {
-        viewModel.onLogin(email = "test@example.com", password = "")
+        viewModel.onLogin(email = "test@gmail.com", password = "")
         val state = viewModel.uiState.value
         assertEquals("Please enter your password.", state.errorMessage)
         assertFalse(state.isLoading)
@@ -63,7 +63,7 @@ class AuthViewModelValidationTest {
 
     @Test
     fun testEmptyRegisterName_setsErrorMessage() {
-        viewModel.onRegister(name = "", email = "test@example.com", password = "password123", confirmPassword = "password123")
+        viewModel.onRegister(name = "", email = "test@gmail.com", password = "password123", confirmPassword = "password123", phone = "9876543210")
         val state = viewModel.uiState.value
         assertEquals("Please enter your full name.", state.errorMessage)
         assertFalse(state.isLoading)
@@ -71,15 +71,31 @@ class AuthViewModelValidationTest {
 
     @Test
     fun testInvalidEmail_setsErrorMessage() {
-        viewModel.onRegister(name = "John Doe", email = "invalid-email-format", password = "password123", confirmPassword = "password123")
+        viewModel.onRegister(name = "John Doe", email = "invalid-email-format", password = "password123", confirmPassword = "password123", phone = "9876543210")
         val state = viewModel.uiState.value
-        assertEquals("Please enter a valid email address.", state.errorMessage)
+        assertEquals("Please enter a valid @gmail.com address", state.errorMessage)
+        assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun testNonGmail_setsErrorMessage() {
+        viewModel.onRegister(name = "John Doe", email = "test@yahoo.com", password = "password123", confirmPassword = "password123", phone = "9876543210")
+        val state = viewModel.uiState.value
+        assertEquals("Please enter a valid @gmail.com address", state.errorMessage)
+        assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun testInvalidPhone_setsErrorMessage() {
+        viewModel.onRegister(name = "John Doe", email = "test@gmail.com", password = "password123", confirmPassword = "password123", phone = "123")
+        val state = viewModel.uiState.value
+        assertEquals("Please enter a valid 10-digit phone number.", state.errorMessage)
         assertFalse(state.isLoading)
     }
 
     @Test
     fun testShortPassword_setsErrorMessage() {
-        viewModel.onRegister(name = "John Doe", email = "test@example.com", password = "123", confirmPassword = "123")
+        viewModel.onRegister(name = "John Doe", email = "test@gmail.com", password = "123", confirmPassword = "123", phone = "9876543210")
         val state = viewModel.uiState.value
         assertEquals("Password must be at least 6 characters long.", state.errorMessage)
         assertFalse(state.isLoading)
@@ -87,7 +103,7 @@ class AuthViewModelValidationTest {
 
     @Test
     fun testPasswordMismatch_setsErrorMessage() {
-        viewModel.onRegister(name = "John Doe", email = "test@example.com", password = "password123", confirmPassword = "mismatch123")
+        viewModel.onRegister(name = "John Doe", email = "test@gmail.com", password = "password123", confirmPassword = "mismatch123", phone = "9876543210")
         val state = viewModel.uiState.value
         assertEquals("Password and Confirm Password do not match.", state.errorMessage)
         assertFalse(state.isLoading)

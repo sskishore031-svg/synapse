@@ -8,6 +8,7 @@ import com.siamts.synapse.data.model.UserDto
 data class AuthUiState(
     val name: String = "",
     val email: String = "",
+    val phone: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val isPasswordVisible: Boolean = false,

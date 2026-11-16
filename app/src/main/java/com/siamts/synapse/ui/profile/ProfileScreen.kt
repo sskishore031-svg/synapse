@@ -18,14 +18,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -126,6 +133,7 @@ fun ProfileContent(
     onBackClick: (() -> Unit)? = null,
 ) {
     val isDark = LocalThemeIsDark.current
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
@@ -474,7 +482,7 @@ fun ProfileContent(
                                     .height(46.dp)
                                     .background(Color.White, RoundedCornerShape(12.dp))
                                     .border(1.dp, Color(0xFFFEE2E2), RoundedCornerShape(12.dp))
-                                    .clickable { onLogoutClick() },
+                                    .clickable { showLogoutDialog = true },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -573,6 +581,45 @@ fun ProfileContent(
                     }
                 }
             }
+        }
+
+        if (showLogoutDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutDialog = false },
+                title = {
+                    Text(
+                        text = "Confirm Logout",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Are you sure you want to log out of your SYNAPSE AI account?",
+                        color = Color(0xFF334155),
+                        fontSize = 14.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showLogoutDialog = false
+                            onLogoutClick()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Yes, Logout", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showLogoutDialog = false }) {
+                        Text("Cancel", color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }

@@ -47,6 +47,8 @@ class SessionManager private constructor(context: Context) {
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_STUDY_REMINDER_HOUR = intPreferencesKey("study_reminder_hour")
         private val KEY_STUDY_REMINDER_MINUTE = intPreferencesKey("study_reminder_minute")
+        private val KEY_STUDY_STREAK = intPreferencesKey("study_streak_days")
+        private val KEY_LAST_ACTIVE_DATE = stringPreferencesKey("last_active_date")
 
         @Volatile
         private var instance: SessionManager? = null
@@ -151,16 +153,55 @@ class SessionManager private constructor(context: Context) {
         name: String,
         email: String,
         userId: Int = 1,
+        phone: String? = null,
         token: String? = null
     ) {
         saveSession(
             UserDto(
                 id = if (userId > 0) userId else 1,
                 name = name,
-                email = email
+                email = email,
+                phone = phone
             ),
             token = token
         )
+    }
+
+    val userNameFlow: Flow<String> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_USER_NAME].orEmpty() }
+
+    val studyStreakFlow: Flow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> preferences[KEY_STUDY_STREAK] ?: 1 }
+
+    suspend fun recordActiveStudyDay(): Int {
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        val yesterday = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(
+            java.util.Date(System.currentTimeMillis() - 86400000L)
+        )
+        var streak = 1
+        dataStore.edit { preferences ->
+            val lastDate = preferences[KEY_LAST_ACTIVE_DATE].orEmpty()
+            val currentStreak = preferences[KEY_STUDY_STREAK] ?: 0
+            streak = when (lastDate) {
+                today -> if (currentStreak > 0) currentStreak else 1
+                yesterday -> currentStreak + 1
+                else -> 1
+            }
+            preferences[KEY_LAST_ACTIVE_DATE] = today
+            preferences[KEY_STUDY_STREAK] = streak
+        }
+        return streak
+    }
+
+    suspend fun getStudyStreak(): Int {
+        return try {
+            val prefs = dataStore.data.first()
+            prefs[KEY_STUDY_STREAK] ?: 1
+        } catch (_: Exception) {
+            1
+        }
     }
 
     suspend fun updateUserPhoto(photoUrl: String?) {
