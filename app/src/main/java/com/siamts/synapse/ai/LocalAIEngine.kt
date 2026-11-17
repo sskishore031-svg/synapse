@@ -1074,46 +1074,101 @@ class LocalAIEngine private constructor(context: Context?) {
         chunk: KnowledgeChunk
     ): Double {
         var score = 0.0
+        var matchedConceptTokens = 0
 
+        // Filter and stem query tokens
+        val validTokens = tokens
+            .map { it.lowercase(Locale.ROOT).trim() }
+            .filter { it.isNotBlank() && !stopWords.contains(it) }
+
+        if (validTokens.isEmpty()) return 0.0
+
+        val conceptTokens = validTokens.filter { !genericSubjectWords.contains(it) }
+        val subjectTokens = validTokens.filter { genericSubjectWords.contains(it) }
+
+        // Normalization & Stemming of Chunk Fields
         val normTopic = chunk.topic.lowercase(Locale.ROOT)
         val normChapter = chunk.chapter.lowercase(Locale.ROOT)
         val normSubject = chunk.subject.lowercase(Locale.ROOT)
-        val queryWords = cleanQuery.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }.toSet()
-
-        if (cleanQuery.contains(normTopic)) score += 30.0
-        if (cleanQuery.contains(normChapter)) score += 20.0
-        if (cleanQuery.contains(normSubject)) score += 15.0
-
-        for (kw in chunk.keywords) {
-            val normKw = kw.lowercase(Locale.ROOT).trim()
-            if (normKw.contains(" ")) {
-                if (cleanQuery.contains(normKw)) {
-                    score += 15.0
-                }
-            } else if (queryWords.contains(normKw)) {
-                score += if (normKw.length >= 3) 8.0 else 5.0
-            }
-
-            for (token in tokens) {
-                if (token == normKw) {
-                    score += 5.0
-                } else if (normKw.length >= 4 && token.length >= 4 && (normKw.startsWith(token) || token.startsWith(normKw))) {
-                    score += 2.0
-                }
-            }
-        }
-
-        val topicTokens = tokenize(normTopic)
-        for (token in tokens) {
-            if (topicTokens.contains(token)) {
-                score += 6.0
-            }
-        }
-
+        val normDef = chunk.definition.lowercase(Locale.ROOT)
         val normContent = chunk.content.lowercase(Locale.ROOT)
-        for (token in tokens) {
-            if (normContent.contains(token)) {
-                score += 1.0
+        val normFormula = chunk.formulaOrCoreRule.lowercase(Locale.ROOT)
+
+        val titleRawTokens = (tokenize(normChapter) + tokenize(normTopic)).map { it.lowercase(Locale.ROOT) }
+        val titleStems = titleRawTokens.map { stem(it) }.toSet()
+        val titleWordsSet = titleRawTokens.toSet()
+
+        val kwPhrases = chunk.keywords.map { it.lowercase(Locale.ROOT).trim() }.toSet()
+        val kwStems = kwPhrases.flatMap { tokenize(it) }.map { stem(it) }.toSet()
+
+        val bodyRawTokens = (tokenize(normDef) + tokenize(normContent) + tokenize(normFormula)).map { it.lowercase(Locale.ROOT) }
+        val bodyStems = bodyRawTokens.map { stem(it) }.toSet()
+
+        // 1. Specific Concept & Title Matching + Stemming
+        for (token in conceptTokens) {
+            val tokenStem = stem(token)
+            var tokenMatched = false
+
+            // Chapter Title / Topic Name Match: +15 points per matched token
+            val matchedTitle = titleWordsSet.contains(token) || titleStems.contains(tokenStem) ||
+                    normTopic.contains(token) || normChapter.contains(token) ||
+                    normTopic.contains(tokenStem) || normChapter.contains(tokenStem)
+            if (matchedTitle) {
+                score += 15.0
+                tokenMatched = true
+            }
+
+            // Keywords / Tags Match: +10 points per matched token
+            val matchedKeyword = kwPhrases.contains(token) || kwPhrases.contains(tokenStem) ||
+                    kwStems.contains(tokenStem) || kwPhrases.any { it.contains(token) || it.contains(tokenStem) }
+            if (matchedKeyword) {
+                score += 10.0
+                tokenMatched = true
+            }
+
+            // Definition / Content Body Match: +3 points per matched token
+            val matchedBody = bodyStems.contains(tokenStem) || normDef.contains(token) ||
+                    normContent.contains(token) || normFormula.contains(token) ||
+                    normDef.contains(tokenStem) || normContent.contains(tokenStem)
+            if (matchedBody) {
+                score += 3.0
+                tokenMatched = true
+            }
+
+            if (tokenMatched) {
+                matchedConceptTokens++
+            }
+        }
+
+        // Multi-word phrase bonus (e.g. "wave mechanics", "newton's laws", "f = ma", "eigenvalues")
+        for (kw in kwPhrases) {
+            if (kw.length >= 4 && cleanQuery.contains(kw) && !genericSubjectWords.contains(kw)) {
+                score += 15.0
+                matchedConceptTokens++
+            }
+        }
+        if (normTopic.length >= 4 && cleanQuery.contains(normTopic)) {
+            score += 20.0
+            matchedConceptTokens++
+        }
+
+        // 2. Generic Subject Name Match (+1 point tie-breaker ONLY when combined with a concept match)
+        if (matchedConceptTokens > 0) {
+            val chunkSubjectStem = stem(normSubject)
+            for (subToken in subjectTokens) {
+                val subTokenStem = stem(subToken)
+                if (normSubject == subToken || chunkSubjectStem == subTokenStem || normSubject.contains(subToken)) {
+                    score += 1.0 // Tie-breaker only!
+                    break
+                }
+            }
+        } else if (conceptTokens.isEmpty() && subjectTokens.isNotEmpty()) {
+            // If user only asked about subject with no concept (e.g. "physics"): modest base score
+            for (subToken in subjectTokens) {
+                if (normSubject.contains(subToken)) {
+                    score += 5.0
+                    break
+                }
             }
         }
 
@@ -1260,25 +1315,76 @@ class LocalAIEngine private constructor(context: Context?) {
         return null
     }
 
-    private fun buildFallbackResponse(query: String): LocalAiResponse {
-        val querySnippet = if (query.isNotBlank()) " for \"$query\"" else ""
-        val paragraph1 = "I couldn't find a direct match$querySnippet in my on-device knowledge base."
-        val paragraph2 = "I can help you explore concepts across our core academic subjects:\n\n" +
-                "• Mathematics (Quadratic Equations, Calculus, Linear Algebra, Probability)\n" +
-                "• Computer Science (Algorithms, Data Structures, Operating Systems, Networks, SQL)\n" +
-                "• Data Science (Data Visualization, Machine Learning Fundamentals)\n" +
-                "• Artificial Intelligence (Neural Networks, Transformers & RAG)\n" +
-                "• Physics (Waves, Newton's Laws of Motion, Thermodynamics, Electromagnetism)\n" +
-                "• Chemistry (Chemical Bonds, Acids and Bases, Periodic Table, Stoichiometry)\n" +
-                "• Biology, History, and Geography\n\n" +
-                "Try asking: 'Give me some maths topic', 'Suggest chemistry chapters', 'Explain photosynthesis', or 'What is Newton's second law?'"
+    /**
+     * Builds structured academic guidance for open-ended or unfamiliar questions without ever showing an error.
+     */
+    private fun buildAcademicGuidanceResponse(query: String, tokens: List<String> = emptyList()): LocalAiResponse {
+        val cleanTopic = query
+            .replace(Regex("(?i)^(what is|explain|tell me about|how does|what are|define|how do|why is|why do|can you explain)\\s+"), "")
+            .replace(Regex("[^a-zA-Z0-9\\s]"), " ")
+            .trim()
+
+        if (cleanTopic.length > 2 && tokens.isNotEmpty()) {
+            val capitalizedTopic = cleanTopic.split(Regex("\\s+"))
+                .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+
+            val p1 = "📘 **Academic Exploration: $capitalizedTopic**\n\n" +
+                    "$capitalizedTopic is an important concept in university-level studies. In higher education curricula, mastering this concept equips students with rigorous conceptual grounding, mathematical logic, and analytical problem-solving methodologies."
+            val p2 = "⚡ **Core Study Framework & Key Principles:**\n\n" +
+                    "• **Theoretical Foundations:** Review the primary definitions, governing laws, and underlying assumptions for $capitalizedTopic.\n" +
+                    "• **Analytical Derivations:** Break down complex multi-step problems, verify boundary conditions, and analyze tradeoffs.\n" +
+                    "• **Real-World Application:** Relate theoretical equations to modern scientific and engineering implementations.\n\n" +
+                    "💡 *Study Suggestion:* Ask me *\"Give me a worked example of $capitalizedTopic\"*, *\"Explain $capitalizedTopic step-by-step\"*, or *\"Generate smart notes for $capitalizedTopic\"*!"
+
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = p2,
+                matchedSubject = "University Curriculum",
+                matchedChapter = capitalizedTopic,
+                matchedTopic = capitalizedTopic,
+                confidenceScore = 75.0,
+                isGreeting = false
+            )
+        }
+
+        val p1 = "🎓 **SYNAPSE AI University Study Companion**\n\n" +
+                "I am your 100% on-device academic tutor, equipped with an extensive university curriculum spanning over 50 academic subjects—including Mathematics, Computer Science, AI, Physics, Chemistry, and Engineering."
+        val p2 = "⚡ **Here is How We Can Study Right Now:**\n\n" +
+                "• **Master Specific Concepts:** Ask e.g. *\"Explain Eigenvalues\"*, *\"What is a B-Tree?\"*, *\"Derive Quadratic Formula\"*, or *\"How does Backpropagation work?\"*\n" +
+                "• **Resolve Study Doubts:** Ask me any problem or question you are stuck on for an immediate step-by-step breakdown.\n" +
+                "• **Explore Course Syllabi:** Ask *\"Suggest Mathematics topics\"* or *\"What can I learn in Computer Science?\"*\n" +
+                "• **High-Yield Smart Notes:** Ask me to generate revision notes and formula cheat-sheets for any chapter.\n\n" +
+                "Which subject or concept would you like to explore?"
 
         return LocalAiResponse(
-            paragraph1 = paragraph1,
-            paragraph2 = paragraph2,
-            confidenceScore = 0.0,
+            paragraph1 = p1,
+            paragraph2 = p2,
+            confidenceScore = 60.0,
             isGreeting = false
         )
+    }
+
+    /**
+     * Retrieves the most relevant local curriculum knowledge chunks for a given query,
+     * formatted as a clean context block for On-Device Small Language Model (SLM) prompting.
+     */
+    fun retrieveContext(userQuery: String): String? {
+        val clean = userQuery.lowercase(Locale.ROOT)
+        val tokens = tokenize(clean)
+        if (tokens.isEmpty()) return null
+
+        val scored = synchronized(chunks) {
+            chunks.map { chunk ->
+                Pair(computeRelevanceScore(clean, tokens, chunk), chunk)
+            }
+        }
+
+        val topChunks = scored.filter { it.first >= 4.0 }.sortedByDescending { it.first }.take(2)
+        if (topChunks.isEmpty()) return null
+
+        return topChunks.joinToString("\n\n---\n\n") { (_, c) ->
+            "Subject: ${c.subject}\nChapter: ${c.chapter}\nTopic: ${c.topic}\nDefinition: ${c.definition}\nRule/Formula: ${c.formulaOrCoreRule}\nContent: ${c.content}"
+        }
     }
 
     /**
@@ -1291,12 +1397,15 @@ class LocalAIEngine private constructor(context: Context?) {
     fun generateSmartNotes(chapterTitle: String, subjectName: String, lessonText: String? = null): SmartNotesResult {
         val lowerChapter = chapterTitle.lowercase(Locale.ROOT)
         val chapterTokens = tokenize(lowerChapter)
+        val chapterStems = chapterTokens.map { stem(it) }.toSet()
 
         val matchedChunk = synchronized(chunks) {
             chunks.firstOrNull { c ->
-                (c.chapter.isNotBlank() && (lowerChapter.contains(c.chapter.lowercase(Locale.ROOT)) || c.chapter.lowercase(Locale.ROOT).contains(lowerChapter))) ||
-                (c.topic.isNotBlank() && (lowerChapter.contains(c.topic.lowercase(Locale.ROOT)) || c.topic.lowercase(Locale.ROOT).contains(lowerChapter))) ||
-                c.keywords.any { kw -> chapterTokens.contains(kw.lowercase(Locale.ROOT)) }
+                val normCh = c.chapter.lowercase(Locale.ROOT)
+                val normTop = c.topic.lowercase(Locale.ROOT)
+                (normCh.isNotBlank() && (lowerChapter.contains(normCh) || normCh.contains(lowerChapter) || stem(normCh) == stem(lowerChapter))) ||
+                (normTop.isNotBlank() && (lowerChapter.contains(normTop) || normTop.contains(lowerChapter) || stem(normTop) == stem(lowerChapter))) ||
+                c.keywords.any { kw -> chapterTokens.contains(kw.lowercase(Locale.ROOT)) || chapterStems.contains(stem(kw)) }
             }
         }
 
