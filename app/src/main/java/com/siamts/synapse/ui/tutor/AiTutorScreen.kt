@@ -105,6 +105,10 @@ import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.tutor.components.AiMessageCanvas
+import com.siamts.synapse.ui.tutor.components.ChatHistoryBottomSheet
+import com.siamts.synapse.ui.tutor.components.HandsFreeVoiceDock
+import com.siamts.synapse.ui.tutor.components.WelcomeHeroEmblem
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -488,7 +492,7 @@ fun AiTutorContent(
                 ) {
                     if (uiState.messages.isEmpty()) {
                         // Empty Chat State: Centered Fresh Welcome Screen (Requirement 11)
-                        EmptyChatWelcomeEmblem(
+                        WelcomeHeroEmblem(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth(),
@@ -512,7 +516,7 @@ fun AiTutorContent(
                                         onOpenNotes = onOpenNotes
                                     )
                                 } else {
-                                    AiMessageBubble(
+                                    AiMessageCanvas(
                                         message = message,
                                         isGenerating = uiState.isGenerating && message == uiState.messages.lastOrNull { !it.isUser },
                                         isSpeaking = uiState.currentlySpeakingMessageId == message.id,
@@ -556,83 +560,11 @@ fun AiTutorContent(
                             .imePadding()
                     ) {
                         if (isLockedMic) {
-                            // Locked Hands-Free Recording Dock (Emerald lock, wave pulse, Cancel & Send)
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(28.dp))
-                                    .background(if (isDark) Color(0xFF061A14) else Color(0xFFECFDF5))
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = Color(0xFF10B981).copy(alpha = 0.6f),
-                                        shape = RoundedCornerShape(28.dp)
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    // Cancel Button
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .clickable { onCancelLockedRecording() }
-                                            .padding(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = "Cancel Recording",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "Cancel",
-                                            color = Color(0xFFEF4444),
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-
-                                    // Lock Indicator & Recording Timer
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Lock,
-                                            contentDescription = "Locked Hands-free",
-                                            tint = Color(0xFF10B981),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        NeuralWaveTypingIndicator()
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = formatTimer(holdTimerSeconds),
-                                            color = Color(0xFF10B981),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-
-                                    // Send Spoken Query Button
-                                    Box(
-                                        modifier = Modifier
-                                            .size(38.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF10B981))
-                                            .clickable { onSendLockedRecording() },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.Send,
-                                            contentDescription = "Send Voice Query",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            }
+                            HandsFreeVoiceDock(
+                                timerSeconds = holdTimerSeconds,
+                                onCancel = onCancelLockedRecording,
+                                onSend = onSendLockedRecording
+                            )
                         } else {
                             // Ultra-Clean Chat Input Bar (minHeight = 48.dp, multi-line 4 max, 0 cursor clipping)
                             Box(
@@ -809,92 +741,7 @@ fun AiTutorContent(
     }
 }
 
-/**
- * Centered minimal welcome screen shown when the chat is empty (Requirement 11).
- * Displays Title "Welcome to SYNAPSE AI", Subtitle, and clickable subject chips.
- */
-@Composable
-private fun EmptyChatWelcomeEmblem(
-    modifier: Modifier = Modifier,
-    onSubjectClick: (String) -> Unit
-) {
-    val isDark = LocalThemeIsDark.current
 
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Glowing Neural Emblem
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(CyanGlow.copy(alpha = 0.8f), PurpleAccent.copy(alpha = 0.6f), Color.Transparent)
-                    ),
-                    shape = CircleShape
-                )
-                .border(2.dp, CyanGlow, CircleShape)
-                .padding(14.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            BrainGraphic(modifier = Modifier.fillMaxSize())
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "Welcome to SYNAPSE AI",
-            color = if (isDark) TextPrimary else Color(0xFF0F172A),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.5.sp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Your smart study friend for clear concepts, instant quizzes, and revision notes. What shall we learn today?",
-            color = Color(0xFF94A3B8),
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Clickable capability chips
-        val subjects = listOf("Mathematics", "Computer Science", "Artificial Intelligence", "Physics", "Chemistry", "Data Science")
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            subjects.chunked(2).forEach { rowSubjects ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rowSubjects.forEach { subj ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isDark) Color(0xFF131C38) else Color.White)
-                                .border(1.dp, if (isDark) Color(0xFF1E2B58) else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
-                                .clickable { onSubjectClick(subj) }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = subj,
-                                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 /**
  * Modern User Message Bubble (Vibrant Cyan-to-Violet gradient pill aligned right).
@@ -1029,412 +876,7 @@ private fun SavedNoteInteractiveCard(
     }
 }
 
-/**
- * Minimalist ChatGPT-Grade AI Response Bubble (Direct Dark Canvas - Zero Cramped Box Borders).
- * Renders AI replies with generous 16dp horizontal padding, 22sp comfortable line height,
- * and a sleek minimalist icon row (TTS Listen, Copy, emerald Save Note bookmark, Elaborate).
- */
-@Composable
-private fun AiMessageBubble(
-    message: ChatMessage,
-    isGenerating: Boolean,
-    isSpeaking: Boolean,
-    onCopyClick: () -> Unit,
-    onSpeakClick: () -> Unit,
-    onSaveNote: () -> Unit,
-    onElaborate: () -> Unit,
-) {
-    val isDark = LocalThemeIsDark.current
-    val textColor = if (isDark) TextPrimary else Color(0xFF0F172A)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 6.dp)
-    ) {
-        // AI Header row: Avatar + Title + Subject Badge
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .background(
-                            brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
-                            shape = CircleShape
-                        )
-                        .padding(4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    BrainGraphic(modifier = Modifier.fillMaxSize())
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = "SYNAPSE AI",
-                    color = if (isDark) CyanGlow else BlueAccent,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
-
-                if (!message.matchedSubject.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "${message.matchedSubject}${if (message.matchedTopic != null) " · " + message.matchedTopic else ""}",
-                            color = Color(0xFF64748B),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            if (isGenerating) {
-                NeuralWaveTypingIndicator()
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Direct-on-Canvas Text Content with 22.sp line height
-        if (message.text.isEmpty()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 4.dp)
-            ) {
-                Text(
-                    text = "SYNAPSE AI is thinking",
-                    color = Color(0xFF64748B),
-                    fontSize = 13.sp,
-                    fontStyle = FontStyle.Italic
-                )
-                NeuralWaveTypingIndicator()
-            }
-        } else {
-            FormattedAiText(text = message.text, textColor = textColor)
-
-            if (!message.paragraph2.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                FormattedAiText(text = message.paragraph2, textColor = textColor)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Minimalist Icon-Only Action Row (20.dp icons, zero text wrapping)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = message.timeAgo,
-                color = Color(0xFF64748B),
-                fontSize = 11.sp
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 1. Male Voice TTS Listen
-                IconButton(
-                    onClick = onSpeakClick,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isSpeaking) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
-                        contentDescription = if (isSpeaking) "Stop Speaking" else "Listen Aloud",
-                        tint = if (isSpeaking) Color(0xFF10B981) else Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // 2. Copy Text
-                IconButton(
-                    onClick = onCopyClick,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ContentCopy,
-                        contentDescription = "Copy Response",
-                        tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // 3. Save Note (Turns emerald BookmarkAdded once saved!)
-                IconButton(
-                    onClick = onSaveNote,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = if (message.isSaved) Icons.Rounded.BookmarkAdded else Icons.Rounded.BookmarkAdd,
-                        contentDescription = "Save Note",
-                        tint = if (message.isSaved) Color(0xFF10B981) else Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // 4. Elaborate (if concept answer)
-                if (message.isConceptAnswer) {
-                    IconButton(
-                        onClick = onElaborate,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = "Elaborate in detail",
-                            tint = if (isDark) CyanGlow else BlueAccent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Persistent Chat History Bottom Sheet Modal (Requirement 10).
- * Displays past chat sessions stored in SQLite with selection & deletion.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChatHistoryBottomSheet(
-    sessions: List<ChatSessionEntity>,
-    currentSessionId: String,
-    onSelectSession: (String) -> Unit,
-    onDeleteSession: (String) -> Unit,
-    onNewChat: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val isDark = LocalThemeIsDark.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = if (isDark) Color(0xFF0C132C) else Color.White,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .padding(bottom = 32.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Chat History",
-                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF))
-                        .clickable {
-                            onNewChat()
-                            onDismiss()
-                        }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = "New",
-                            tint = if (isDark) CyanGlow else BlueAccent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "New Chat",
-                            color = if (isDark) CyanGlow else BlueAccent,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (sessions.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No saved chat sessions yet.\nAsk SYNAPSE AI a study question to get started!",
-                        color = Color(0xFF64748B),
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(sessions, key = { it.sessionId }) { session ->
-                        val isCurrent = session.sessionId == currentSessionId
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(
-                                    if (isCurrent) {
-                                        if (isDark) Color(0xFF162544) else Color(0xFFDBEAFE)
-                                    } else {
-                                        if (isDark) Color(0xFF0F172A) else Color(0xFFF1F5F9)
-                                    }
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isCurrent) CyanGlow.copy(alpha = 0.5f) else Color.Transparent,
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                                .clickable {
-                                    onSelectSession(session.sessionId)
-                                    onDismiss()
-                                }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ChatBubbleOutline,
-                                    contentDescription = null,
-                                    tint = if (isCurrent) CyanGlow else Color(0xFF94A3B8),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = session.title,
-                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
-                                        fontSize = 14.sp,
-                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = formatTimeAgo(session.updatedAt),
-                                        color = Color(0xFF64748B),
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
-
-                            IconButton(
-                                onClick = { onDeleteSession(session.sessionId) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.DeleteOutline,
-                                    contentDescription = "Delete Session",
-                                    tint = Color(0xFFEF4444).copy(alpha = 0.7f),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Formats Markdown bold headers, bullet items, and regular text cleanly with comfortable 22.sp line height.
- */
-@Composable
-private fun FormattedAiText(text: String, textColor: Color) {
-    val lines = text.split("\n")
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        lines.forEach { line ->
-            val trimmed = line.trim()
-            when {
-                trimmed.startsWith("**") && trimmed.endsWith("**") -> {
-                    val cleanHeader = trimmed.removeSurrounding("**")
-                    Text(
-                        text = cleanHeader,
-                        color = textColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 22.sp
-                    )
-                }
-                trimmed.startsWith("• ") || trimmed.startsWith("- ") -> {
-                    val bulletText = trimmed.removePrefix("• ").removePrefix("- ")
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "•", color = CyanAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = bulletText,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-                trimmed.startsWith("1. ") || trimmed.startsWith("2. ") || trimmed.startsWith("3. ") ||
-                trimmed.startsWith("4. ") || trimmed.startsWith("5. ") || trimmed.startsWith("6. ") ||
-                trimmed.startsWith("7. ") || trimmed.startsWith("8. ") || trimmed.startsWith("9. ") -> {
-                    val prefix = trimmed.take(3)
-                    val numText = trimmed.drop(3)
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(text = prefix, color = CyanAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = numText,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-                else -> {
-                    if (trimmed.isNotBlank()) {
-                        Text(
-                            text = line,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 /**
  * Animated 4-bar neural wave indicator (ChatGPT/Gemini style thinking waveform).
@@ -1524,25 +966,13 @@ fun PulsingDotsIndicator(modifier: Modifier = Modifier) {
     NeuralWaveTypingIndicator(modifier = modifier)
 }
 
-private fun formatTimeAgo(timestamp: Long): String {
-    val diff = (System.currentTimeMillis() - timestamp).coerceAtLeast(0L)
-    val minutes = diff / (1000 * 60)
-    val hours = minutes / 60
-    val days = hours / 24
-    return when {
-        minutes < 1 -> "Just now"
-        minutes < 60 -> "$minutes min ago"
-        hours < 24 -> "$hours hr ago"
-        days == 1L -> "Yesterday"
-        else -> "$days days ago"
-    }
-}
-
 private fun formatTimer(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return String.format(Locale.ROOT, "%02d:%02d", m, s)
 }
+
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
