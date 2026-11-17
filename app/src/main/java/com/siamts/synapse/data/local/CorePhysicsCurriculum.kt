@@ -407,13 +407,13 @@ object CorePhysicsCurriculum {
                 KnowledgeChunk(
                     chunkId = "PHYS_CH4_001",
                     subject = "Physics",
-                    chapter = "Oscillations & Wave Mechanics",
-                    topic = "Simple Harmonic Motion, Damping, Resonance and Wave Mechanics",
-                    keywords = listOf("SHM", "oscillations", "harmonic motion", "damping", "resonance", "quality factor", "wave equation", "Doppler effect"),
-                    definition = "Oscillations describe motion around equilibrium governed by Hooke's restoring forces. Wave mechanics analyzes propagation through elastic media, energy transport, resonance, and Doppler frequency shifts.",
-                    formulaOrCoreRule = "omega_0 = sqrt(k/m). d^2x/dt^2 + 2*gamma*dx/dt + omega_0^2*x = 0. Q = omega_0/(2*gamma). v = sqrt(T/mu). f_obs = f_s*((v +/- v_o)/(v -/+ v_s)).",
-                    workedExample = "For m=2kg, k=800N/m, b=8N.s/m: omega_0=20 rad/s, gamma=2 s^(-1), damped frequency omega_d = sqrt(400 - 4) = 19.90 rad/s, Q = 20/(2*2) = 5.0.",
-                    content = "Critical damping provides the fastest non-oscillatory return to equilibrium. The Doppler effect shifts frequencies due to source/observer motion, applied in radar, sonar, and astrophysics."
+                    chapter = "Waves, Oscillations & Wave Mechanics",
+                    topic = "Waves, Oscillations & Wave Mechanics",
+                    keywords = listOf("wave", "waves", "wavelength", "frequency", "amplitude", "transverse", "longitudinal", "sound", "oscillation", "oscillations", "v = f lambda", "harmonic motion", "resonance", "doppler effect", "shm"),
+                    definition = "A wave is a disturbance or oscillation that transfers energy through space or a medium without permanent displacement of matter. Wave mechanics formalizes propagation through elastic media, energy transport, and Doppler frequency shifts.",
+                    formulaOrCoreRule = "v = f * lambda. T = 1 / f. omega = 2 * pi * f. omega_0 = sqrt(k / m). Wave equation: d^2y/dx^2 = (1 / v^2) * d^2y/dt^2. Doppler shift: f_obs = f_s * ((v +/- v_o) / (v -/+ v_s)).",
+                    workedExample = "For concert pitch A4 (f = 440 Hz) in air at 20°C (v = 343 m/s): lambda = 343 / 440 = 0.78 m, period T = 1 / 440 = 2.27 ms. Transverse waves oscillate perpendicularly; longitudinal waves oscillate parallel.",
+                    content = "Transverse waves include light and electromagnetic waves. Longitudinal waves include sound waves traveling in air at 343 m/s. Wave velocity depends on medium elasticity and density: v = sqrt(T / mu) on strings or v = sqrt(B / rho) in bulk fluids."
                 )
             )
         )
