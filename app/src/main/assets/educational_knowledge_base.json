@@ -26,8 +26,6 @@
           "chapter": "Algebra",
           "topic": "Quadratic Equations",
           "keywords": [
-            "maths topic",
-            "maths",
             "quadratic equation",
             "quadratic formula",
             "roots",
@@ -290,8 +288,6 @@
           "chapter": "Algorithms",
           "topic": "Algorithm Analysis & Big-O Notation",
           "keywords": [
-            "cs topic",
-            "computer science",
             "algorithms",
             "big o",
             "time complexity",
@@ -822,8 +818,6 @@
           "chapter": "Neural Networks",
           "topic": "Artificial Neural Networks and Deep Learning",
           "keywords": [
-            "artificial intelligence",
-            "ai topic",
             "neural network",
             "neural networks",
             "perceptron",
@@ -1070,15 +1064,17 @@
           "chapter": "Mechanics",
           "topic": "Newton's Laws of Motion & Mechanics",
           "keywords": [
-            "physics",
-            "physics topic",
-            "newton's laws",
+            "newton",
+            "newton law",
             "newtons laws",
-            "f = ma",
+            "newton's laws",
+            "classical mechanics",
             "force",
             "mass",
             "acceleration",
-            "inertia"
+            "f = ma",
+            "inertia",
+            "momentum"
           ],
           "definition": "Newton's laws of motion are three physical laws establishing relationships between physical forces and body acceleration in classical mechanics.",
           "formula": "1st Law: Inertia. 2nd Law: F_net = m * a. 3rd Law: Action = -Reaction (F_AB = -F_BA). Kinetic Energy: KE = (1/2) * m * v^2.",
@@ -1087,21 +1083,27 @@
         },
         {
           "chunk_id": "PHYS_002",
-          "chapter": "Waves",
-          "topic": "Waves, Frequency & Sound Mechanics",
+          "chapter": "Waves, Oscillations & Wave Mechanics",
+          "topic": "Waves, Oscillations & Wave Mechanics",
           "keywords": [
+            "wave",
             "waves",
-            "sound",
-            "frequency",
             "wavelength",
+            "frequency",
             "amplitude",
+            "transverse",
+            "longitudinal",
+            "sound",
+            "oscillation",
+            "oscillations",
             "v = f lambda",
+            "wave mechanics",
             "doppler effect"
           ],
-          "definition": "A wave is an oscillating disturbance that propagates through space or a material medium, transporting energy without permanently transporting matter.",
-          "formula": "Wave Equation: v = f * lambda (Speed = frequency * wavelength). Period: T = 1 / f. Sound speed in air at 20 deg C is ~343 m/s.",
-          "worked_example": "A musical pitch at 440 Hz (Concert A) traveling at 343 m/s in air has a wavelength lambda = 343 / 440 = 0.78 meters.",
-          "content": "Sound is a longitudinal mechanical pressure wave requiring a medium, whereas light is a transverse electromagnetic wave capable of traveling through vacuum."
+          "definition": "A wave is a disturbance or oscillation that transfers energy through space or a medium without permanent displacement of matter.",
+          "formula": "Wave speed: v = f * lambda. Time period: T = 1 / f. Angular frequency: omega = 2 * pi * f. Wave number: k = 2 * pi / lambda.",
+          "worked_example": "Transverse waves include light and electromagnetic waves. Longitudinal waves include sound waves in air at 343 m/s. For a 440 Hz sound wave in air: lambda = 343 / 440 = 0.78 meters.",
+          "content": "Waves are categorized into Transverse waves (oscillations perpendicular to propagation direction, e.g. light and electromagnetic waves) and Longitudinal waves (oscillations parallel to propagation direction, e.g. acoustic sound waves in air at 343 m/s). Mechanical waves require an elastic material medium, while electromagnetic waves propagate across vacuum."
         },
         {
           "chunk_id": "PHYS_003",
@@ -1204,22 +1206,31 @@
         {
           "chunk_id": "PHYS_CH4_001",
           "subject": "Physics",
-          "chapter": "Oscillations & Wave Mechanics",
-          "topic": "Simple Harmonic Motion, Damping, Resonance and Wave Mechanics",
+          "chapter": "Waves, Oscillations & Wave Mechanics",
+          "topic": "Waves, Oscillations & Wave Mechanics",
           "keywords": [
-            "SHM",
+            "wave",
+            "waves",
+            "wavelength",
+            "frequency",
+            "amplitude",
+            "transverse",
+            "longitudinal",
+            "sound",
+            "oscillation",
             "oscillations",
+            "v = f lambda",
             "harmonic motion",
-            "damping",
             "resonance",
-            "quality factor",
-            "wave equation",
-            "Doppler effect"
+            "doppler effect",
+            "shm"
           ],
-          "definition": "Oscillations describe motion around equilibrium governed by Hooke's restoring forces. Wave mechanics analyzes propagation through elastic media, energy transport, resonance, and Doppler frequency shifts.",
+          "definition": "A wave is a disturbance or oscillation that transfers energy through space or a medium without permanent displacement of matter. Wave mechanics formalizes propagation through elastic media, energy transport, and Doppler frequency shifts.",
           "formula": "omega_0 = sqrt(k/m). d^2x/dt^2 + 2*gamma*dx/dt + omega_0^2*x = 0. Q = omega_0/(2*gamma). v = sqrt(T/mu). f_obs = f_s*((v +/- v_o)/(v -/+ v_s)).",
           "worked_example": "For m=2kg, k=800N/m, b=8N.s/m: omega_0=20 rad/s, gamma=2 s^(-1), damped frequency omega_d = sqrt(400 - 4) = 19.90 rad/s, Q = 20/(2*2) = 5.0.",
-          "content": "Critical damping provides the fastest non-oscillatory return to equilibrium. The Doppler effect shifts frequencies due to source/observer motion, applied in radar, sonar, and astrophysics."
+          "content": "Transverse waves include light and electromagnetic waves. Longitudinal waves include sound waves traveling in air at 343 m/s. Wave velocity depends on medium elasticity and density: v = sqrt(T / mu) on strings or v = sqrt(B / rho) in bulk fluids.",
+          "formulaOrCoreRule": "v = f * lambda. T = 1 / f. omega = 2 * pi * f. omega_0 = sqrt(k / m). Wave equation: d^2y/dx^2 = (1 / v^2) * d^2y/dt^2. Doppler shift: f_obs = f_s * ((v +/- v_o) / (v -/+ v_s)).",
+          "workedExample": "For concert pitch A4 (f = 440 Hz) in air at 20°C (v = 343 m/s): lambda = 343 / 440 = 0.78 m, period T = 1 / 440 = 2.27 ms. Transverse waves oscillate perpendicularly; longitudinal waves oscillate parallel."
         },
         {
           "chunk_id": "PHYS_CH5_001",
