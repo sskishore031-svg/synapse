@@ -11,7 +11,7 @@ class SlmInferenceEngineTest {
 
     @Test
     fun testSystemPrompt_matchesRequirement() {
-        assertTrue(SlmInferenceEngine.SYSTEM_PROMPT.contains("You are SYNAPSE AI, an intelligent offline college study companion"))
+        assertTrue(SlmInferenceEngine.SYSTEM_PROMPT.contains("You are SYNAPSE AI, an intelligent college study companion"))
         assertTrue(SlmInferenceEngine.SYSTEM_PROMPT.contains("50+ university subjects"))
         assertTrue(SlmInferenceEngine.SYSTEM_PROMPT.contains("Be clear, encouraging, accurate, and concise."))
     }

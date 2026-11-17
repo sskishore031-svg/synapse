@@ -185,8 +185,9 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private val outOfScopePhrases = setOf(
         "can you eat", "do you eat", "what do you eat", "will you eat", "are you eating", "eat food",
-        "who is rajini", "who is rajinikanth", "who is kamal", "rajini", "rajinikanth",
-        "kamal haasan", "actor", "actress", "movie", "movies", "cinema", "box office", "song", "songs",
+        "who is rajini", "who is rajinikanth", "who is kamal", "rajini", "rajinikanth", "kamal",
+        "kamal haasan", "vijay", "thalapathy", "ajith", "thala", "suriya", "dhanush", "simbu",
+        "sivakarthikeyan", "sk", "actor", "actress", "movie", "movies", "cinema", "box office", "song", "songs",
         "cricket", "ipl", "football", "match score", "politics", "politician", "minister",
         "recipe", "food", "cook", "cooking", "restaurant", "hotel", "taste", "delicious",
         "girlfriend", "boyfriend", "marry me", "do you love me", "love you", "joke", "jokes", "weather", "horoscope"
@@ -533,6 +534,12 @@ class LocalAIEngine private constructor(context: Context?) {
         // 8. Intent H: Casual Greetings ("hi", "hello", "hey", "gm", "good morning", "vanakkam", "namaste", "yo")
         if (isGreetingQuery(normalized)) {
             return buildGreetingResponse(normalized)
+        }
+
+        // 8B. Intent: Everyday Small Talk ("you are awesome", "i am bored", "motivate me", "who made you")
+        val smallTalkResp = checkSmallTalkIntent(normalized)
+        if (smallTalkResp != null) {
+            return smallTalkResp
         }
 
         // 9. Intent Handler: Topic Suggestion / Chapter Listing ("give me some maths topic", "suggest chemistry chapters")
@@ -909,12 +916,8 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildCapabilitiesResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "I'm SYNAPSE AI, your 100% offline, on-device learning companion! Here is how I can help you master your studies:",
-            paragraph2 = "• Concept Explanations: Ask me to explain topics, definitions, and formulas across Mathematics, Computer Science, AI, Physics, Chemistry, Biology, and 50+ subjects.\n" +
-                    "• Topic Discovery: Ask 'Give me some maths topics' or 'Suggest physics chapters' to explore structured roadmaps.\n" +
-                    "• Worked Examples: Request step-by-step problem breakdowns and core principles.\n" +
-                    "• Voice & Smart Study: Use the microphone to ask questions hands-free, take dynamic chapter quizzes, and generate AI revision notes—all completely offline!\n\n" +
-                    "What subject or topic would you like to explore first?",
+            paragraph1 = "I'm your study friend here to make learning easy! I can give you clear study notes, test you with interactive quizzes, explain any subject concept step-by-step, and clear your exam doubts whenever you need.",
+            paragraph2 = "",
             confidenceScore = 100.0,
             isGreeting = false
         )
@@ -944,8 +947,8 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildWellBeingResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "I'm doing great and fully charged to help you learn! How is your study session going today?",
-            paragraph2 = "Whether you want to explore advanced university concepts, clear exam doubts, derive equations, or take an auto-graded quiz—I'm right here with you offline. Which subject or topic are we tackling next?",
+            paragraph1 = "I'm doing great and feeling energized! How's your study session going today?",
+            paragraph2 = "Whether you want to explore advanced university concepts, clear exam doubts, derive equations, or take an auto-graded quiz—I'm right here with you. Which subject or topic are we tackling next?",
             confidenceScore = 100.0,
             isGreeting = true
         )
@@ -1010,11 +1013,39 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildIdentityResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline directly on your phone with zero-hallucination study help. I help you master 50+ university subjects across Engineering, Science, and Humanities with offline RAG reasoning, interactive quizzes, smart revision notes, and two-way voice chat. Ask me any study doubt, or tell me to launch a quiz or save notes!",
+            paragraph1 = "I am SYNAPSE AI, your friendly study companion! I help you master 50+ university subjects across Engineering, Science, and Humanities with clear concept explanations, interactive quizzes, and smart revision notes. Ask me any study doubt, or tell me to launch a quiz or save notes!",
             paragraph2 = "",
             confidenceScore = 100.0,
             isGreeting = false
         )
+    }
+
+    private fun checkSmallTalkIntent(normalized: String): LocalAiResponse? {
+        val reply = when {
+            normalized.contains("you are awesome") || normalized.contains("you are great") || normalized.contains("youre awesome") || normalized.contains("you are cool") ->
+                "Thank you so much! You're awesome for putting in the effort to study. Let's keep it going!"
+            normalized.contains("i am bored") || normalized.contains("im bored") || normalized == "bored" ->
+                "How about a quick 3-minute quiz or learning a fascinating fact in science or tech? Pick a subject and let's make it fun!"
+            normalized.contains("stressed about exams") || normalized.contains("i am stressed") || normalized.contains("im stressed") || normalized.contains("exam stress") || normalized == "stressed" ->
+                "Take a deep breath! You've got this. Let's break your revision down into bite-sized 10-minute topics so you feel confident and in control."
+            normalized.contains("motivate me") || normalized.contains("give me motivation") || normalized.contains("motivation") ->
+                "Every expert was once a beginner who refused to quit. Focus on mastering just one concept right now—progress adds up fast!"
+            normalized.contains("who made you") || normalized.contains("who created you") || normalized.contains("who built you") ->
+                "I was built by the SYNAPSE AI team to be your personal university study companion and learning buddy!"
+            normalized.contains("are you smart") || normalized.contains("how smart are you") ->
+                "I know 50+ college subjects inside and out, but my favorite thing is helping you become the smartest person in the room!"
+            normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
+                "Hey friend! Great to see you. What subject shall we dive into today?"
+            else -> null
+        }
+        return reply?.let {
+            LocalAiResponse(
+                paragraph1 = it,
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = false
+            )
+        }
     }
 
     fun isOutOfScopeQuery(normalized: String): Boolean {
@@ -1047,7 +1078,42 @@ class LocalAIEngine private constructor(context: Context?) {
                 clean.contains("deep dive") || clean.contains("deepdive") ||
                 clean.contains("step by step") || clean.contains("step-by-step") ||
                 clean.contains("more detail") || clean.contains("more details") ||
-                clean.contains("explain in detail")
+                clean.contains("explain in detail") || clean.contains("explain more") ||
+                clean.contains("break it down") || clean.contains("didnt understand") ||
+                clean.contains("didn't understand") || clean.contains("dont understand") ||
+                clean.contains("don't understand")
+    }
+
+    fun isShortenQuery(normalized: String): Boolean {
+        val clean = normalized.lowercase(Locale.ROOT)
+        return clean.contains("reply shortly") || clean.contains("make it short") ||
+                clean.contains("short answer") || clean.contains("briefly") ||
+                clean.contains("summarize") || clean.contains("in short") ||
+                clean.contains("give me summary") || clean.contains("make it brief") ||
+                clean.contains("explain briefly") || clean.contains("quick summary") ||
+                clean.contains("crisp summary") || clean.contains("short notes") ||
+                clean == "short" || clean == "brief"
+    }
+
+    fun buildShortenedResponse(chunk: KnowledgeChunk): LocalAiResponse {
+        val def = if (chunk.definition.isNotBlank()) chunk.definition else chunk.content.substringBefore(".") + "."
+        val formula = if (chunk.formulaOrCoreRule.isNotBlank()) chunk.formulaOrCoreRule else "Core principle in ${chunk.subject}."
+        val example = if (chunk.workedExample.isNotBlank()) chunk.workedExample.substringBefore(".") + "." else "Applied in ${chunk.chapter}."
+
+        val p1 = "📘 **${chunk.topic}** (${chunk.subject})\n$def"
+        val p2 = "1. **Core Principle & Formula:** $formula\n" +
+                "2. **Quick Takeaway:** $example\n" +
+                "3. **Exam Focus:** Key concept in ${chunk.chapter}."
+
+        return LocalAiResponse(
+            paragraph1 = p1,
+            paragraph2 = p2,
+            matchedSubject = chunk.subject,
+            matchedChapter = chunk.chapter,
+            matchedTopic = chunk.topic,
+            confidenceScore = 98.0,
+            isFollowUp = true
+        )
     }
 
     private fun isDoubtAssistanceQuery(normalized: String): Boolean {
@@ -1187,12 +1253,20 @@ class LocalAIEngine private constructor(context: Context?) {
         val replyText = when {
             normalized == "gn" || normalized.contains("good night") ->
                 "Good night! Rest well and keep learning tomorrow."
+            normalized.contains("good morning") || normalized == "gm" ->
+                "Good morning! Ready to learn something exciting today? What subject are we tackling?"
+            normalized.contains("good afternoon") ->
+                "Good afternoon! Hope you're having a productive day. What subject shall we explore?"
+            normalized.contains("good evening") ->
+                "Good evening! Let's do some focused study tonight. What can I help you understand?"
             normalized.contains("vanakkam") ->
                 "Vanakkam! How can I help you with your studies today?"
             normalized.contains("namaste") ->
                 "Namaste! How can I assist you with your learning today?"
+            normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
+                "Hey friend! Great to see you. What subject shall we dive into today?"
             else ->
-                "Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!"
+                "Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!"
         }
 
         return LocalAiResponse(
@@ -1205,6 +1279,8 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun isFollowUpQuery(lowerQuery: String): Boolean {
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+        if (isShortenQuery(cleaned)) return true
+        if (isElaborationQuery(cleaned)) return true
         if (examplePrompts.any { cleaned.contains(it) }) return true
         if (elaboratePrompts.any { cleaned.contains(it) }) return true
         if (solvePrompts.any { cleaned.contains(it) }) return true
@@ -1222,6 +1298,10 @@ class LocalAIEngine private constructor(context: Context?) {
         chunk: KnowledgeChunk
     ): LocalAiResponse {
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+
+        if (isShortenQuery(cleaned)) {
+            return buildShortenedResponse(chunk)
+        }
 
         if (isElaborationQuery(cleaned) || elaboratePrompts.any { cleaned.contains(it) } || cleaned == "elaborate") {
             return buildEducationalResponse(chunk, 100.0, isElaborated = true, isFollowUp = true)
@@ -1778,7 +1858,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "That falls outside my academic and app scope. I'm SYNAPSE AI—built specifically to help you master your college subjects, solve study doubts, take quizzes, and organize revision notes!"
+            "Sorry, that's not relatable to our studies or app! Ask me any subject concept, quiz, or study note instead."
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

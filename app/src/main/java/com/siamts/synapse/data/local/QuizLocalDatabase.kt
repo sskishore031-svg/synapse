@@ -17,7 +17,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
@@ -26,6 +26,8 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemoryTasks = CopyOnWriteArrayList<LearningTaskEntity>()
     private val inMemoryUsers = CopyOnWriteArrayList<com.siamts.synapse.data.model.UserDto>()
     private val inMemoryNotes = CopyOnWriteArrayList<NoteEntity>()
+    private val inMemorySessions = CopyOnWriteArrayList<ChatSessionEntity>()
+    private val inMemoryChatMessages = java.util.concurrent.ConcurrentHashMap<String, List<ChatMessageEntity>>()
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -133,6 +135,38 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             )
             """.trimIndent()
         )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                sender_name TEXT NOT NULL,
+                text TEXT NOT NULL,
+                time_ago TEXT NOT NULL,
+                is_user INTEGER NOT NULL,
+                paragraph2 TEXT,
+                matched_subject TEXT,
+                matched_chapter TEXT,
+                matched_topic TEXT,
+                is_concept_answer INTEGER NOT NULL DEFAULT 0,
+                is_saved_note_card INTEGER NOT NULL DEFAULT 0,
+                saved_note_title TEXT,
+                action_command TEXT,
+                timestamp INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -172,6 +206,9 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             db.execSQL("CREATE TABLE IF NOT EXISTS subject_chapters (id TEXT PRIMARY KEY, subject_id TEXT NOT NULL, chapter_order INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT, question_count INTEGER NOT NULL, estimated_minutes INTEGER NOT NULL, total_marks INTEGER NOT NULL)")
             db.execSQL("CREATE TABLE IF NOT EXISTS learning_plan_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, category TEXT NOT NULL, duration TEXT NOT NULL, is_completed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
             db.execSQL("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT, created_at INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS study_notes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, subject_id TEXT, chapter_id INTEGER, title TEXT NOT NULL, content TEXT NOT NULL, category TEXT NOT NULL, created_at INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS chat_sessions (session_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, title TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS chat_messages (id TEXT PRIMARY KEY, session_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time_ago TEXT NOT NULL, is_user INTEGER NOT NULL, paragraph2 TEXT, matched_subject TEXT, matched_chapter TEXT, matched_topic TEXT, is_concept_answer INTEGER NOT NULL DEFAULT 0, is_saved_note_card INTEGER NOT NULL DEFAULT 0, saved_note_title TEXT, action_command TEXT, timestamp INTEGER NOT NULL)")
         } catch (_: Throwable) {
             // Fallback to destructive migration: drop and recreate cleanly
             try {
@@ -896,6 +933,221 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         1
     }
 
+    // --- ChatDao Implementation ---
+
+    override suspend fun insertOrUpdateSession(session: ChatSessionEntity) = withContext(Dispatchers.IO) {
+        val existingIndex = inMemorySessions.indexOfFirst { it.sessionId == session.sessionId }
+        if (existingIndex >= 0) {
+            inMemorySessions[existingIndex] = session
+        } else {
+            inMemorySessions.add(0, session)
+        }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("session_id", session.sessionId)
+                    put("user_id", session.userId)
+                    put("title", session.title)
+                    put("created_at", session.createdAt)
+                    put("updated_at", session.updatedAt)
+                }
+                db.insertWithOnConflict("chat_sessions", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun getAllSessions(userId: Int): List<ChatSessionEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemorySessions.filter { it.userId == userId }.sortedByDescending { it.updatedAt }
+        }
+
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "chat_sessions",
+                null,
+                "user_id = ?",
+                arrayOf(userId.toString()),
+                null,
+                null,
+                "updated_at DESC"
+            )
+            val list = mutableListOf<ChatSessionEntity>()
+            cursor.use {
+                while (it.moveToNext()) {
+                    list.add(
+                        ChatSessionEntity(
+                            sessionId = it.getString(it.getColumnIndexOrThrow("session_id")),
+                            userId = it.getInt(it.getColumnIndexOrThrow("user_id")),
+                            title = it.getString(it.getColumnIndexOrThrow("title")),
+                            createdAt = it.getLong(it.getColumnIndexOrThrow("created_at")),
+                            updatedAt = it.getLong(it.getColumnIndexOrThrow("updated_at"))
+                        )
+                    )
+                }
+            }
+            if (list.isNotEmpty()) return@withContext list
+        } catch (_: Throwable) {}
+        inMemorySessions.filter { it.userId == userId }.sortedByDescending { it.updatedAt }
+    }
+
+    override suspend fun getSessionById(sessionId: String): ChatSessionEntity? = withContext(Dispatchers.IO) {
+        if (hasAndroidContext) {
+            try {
+                val db = readableDatabase
+                val cursor = db.query(
+                    "chat_sessions",
+                    null,
+                    "session_id = ?",
+                    arrayOf(sessionId),
+                    null,
+                    null,
+                    null,
+                    "1"
+                )
+                cursor.use {
+                    if (it.moveToFirst()) {
+                        return@withContext ChatSessionEntity(
+                            sessionId = it.getString(it.getColumnIndexOrThrow("session_id")),
+                            userId = it.getInt(it.getColumnIndexOrThrow("user_id")),
+                            title = it.getString(it.getColumnIndexOrThrow("title")),
+                            createdAt = it.getLong(it.getColumnIndexOrThrow("created_at")),
+                            updatedAt = it.getLong(it.getColumnIndexOrThrow("updated_at"))
+                        )
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+        inMemorySessions.find { it.sessionId == sessionId }
+    }
+
+    override suspend fun updateSessionTitle(sessionId: String, title: String, updatedAt: Long) = withContext(Dispatchers.IO) {
+        val existing = inMemorySessions.find { it.sessionId == sessionId }
+        if (existing != null) {
+            val updated = existing.copy(title = title, updatedAt = updatedAt)
+            val idx = inMemorySessions.indexOf(existing)
+            if (idx >= 0) inMemorySessions[idx] = updated
+        }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("title", title)
+                    put("updated_at", updatedAt)
+                }
+                db.update("chat_sessions", values, "session_id = ?", arrayOf(sessionId))
+            } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun deleteSession(sessionId: String) = withContext(Dispatchers.IO) {
+        inMemorySessions.removeAll { it.sessionId == sessionId }
+        inMemoryChatMessages.remove(sessionId)
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("chat_sessions", "session_id = ?", arrayOf(sessionId))
+                db.delete("chat_messages", "session_id = ?", arrayOf(sessionId))
+            } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun saveMessages(sessionId: String, messages: List<ChatMessageEntity>) = withContext(Dispatchers.IO) {
+        inMemoryChatMessages[sessionId] = messages
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.beginTransaction()
+                try {
+                    db.delete("chat_messages", "session_id = ?", arrayOf(sessionId))
+                    for (msg in messages) {
+                        val values = ContentValues().apply {
+                            put("id", msg.id)
+                            put("session_id", sessionId)
+                            put("sender_name", msg.senderName)
+                            put("text", msg.text)
+                            put("time_ago", msg.timeAgo)
+                            put("is_user", if (msg.isUser) 1 else 0)
+                            put("paragraph2", msg.paragraph2)
+                            put("matched_subject", msg.matchedSubject)
+                            put("matched_chapter", msg.matchedChapter)
+                            put("matched_topic", msg.matchedTopic)
+                            put("is_concept_answer", if (msg.isConceptAnswer) 1 else 0)
+                            put("is_saved_note_card", if (msg.isSavedNoteCard) 1 else 0)
+                            put("saved_note_title", msg.savedNoteTitle)
+                            put("action_command", msg.actionCommand)
+                            put("timestamp", msg.timestamp)
+                        }
+                        db.insertWithOnConflict("chat_messages", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+                    }
+                    db.setTransactionSuccessful()
+                } finally {
+                    db.endTransaction()
+                }
+            } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun getMessagesForSession(sessionId: String): List<ChatMessageEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryChatMessages[sessionId].orEmpty()
+        }
+
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "chat_messages",
+                null,
+                "session_id = ?",
+                arrayOf(sessionId),
+                null,
+                null,
+                "timestamp ASC"
+            )
+            val list = mutableListOf<ChatMessageEntity>()
+            cursor.use {
+                while (it.moveToNext()) {
+                    list.add(
+                        ChatMessageEntity(
+                            id = it.getString(it.getColumnIndexOrThrow("id")),
+                            sessionId = sessionId,
+                            senderName = it.getString(it.getColumnIndexOrThrow("sender_name")),
+                            text = it.getString(it.getColumnIndexOrThrow("text")),
+                            timeAgo = it.getString(it.getColumnIndexOrThrow("time_ago")),
+                            isUser = it.getInt(it.getColumnIndexOrThrow("is_user")) == 1,
+                            paragraph2 = it.getString(it.getColumnIndexOrThrow("paragraph2")),
+                            matchedSubject = it.getString(it.getColumnIndexOrThrow("matched_subject")),
+                            matchedChapter = it.getString(it.getColumnIndexOrThrow("matched_chapter")),
+                            matchedTopic = it.getString(it.getColumnIndexOrThrow("matched_topic")),
+                            isConceptAnswer = it.getInt(it.getColumnIndexOrThrow("is_concept_answer")) == 1,
+                            isSavedNoteCard = it.getInt(it.getColumnIndexOrThrow("is_saved_note_card")) == 1,
+                            savedNoteTitle = it.getString(it.getColumnIndexOrThrow("saved_note_title")),
+                            actionCommand = it.getString(it.getColumnIndexOrThrow("action_command")),
+                            timestamp = it.getLong(it.getColumnIndexOrThrow("timestamp"))
+                        )
+                    )
+                }
+            }
+            if (list.isNotEmpty()) return@withContext list
+        } catch (_: Throwable) {}
+        inMemoryChatMessages[sessionId].orEmpty()
+    }
+
+    override suspend fun deleteMessagesForSession(sessionId: String) = withContext(Dispatchers.IO) {
+        inMemoryChatMessages.remove(sessionId)
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("chat_messages", "session_id = ?", arrayOf(sessionId))
+            } catch (_: Throwable) {}
+        }
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
         private const val DATABASE_VERSION = 5
@@ -928,6 +1180,12 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         }
 
         fun getUserDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): UserDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getChatDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): ChatDao {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
             }

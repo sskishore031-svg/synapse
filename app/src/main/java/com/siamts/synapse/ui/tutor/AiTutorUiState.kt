@@ -19,6 +19,7 @@ data class ChatMessage(
     val isSavedNoteCard: Boolean = false,
     val savedNoteTitle: String? = null,
     val actionCommand: String? = null,
+    val isSaved: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
 

@@ -8,6 +8,7 @@ import com.siamts.synapse.ai.LocalAiStreamToken
 import com.siamts.synapse.ai.SlmInferenceEngine
 import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.data.local.AiChatStorage
+import com.siamts.synapse.data.local.ChatSessionEntity
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
@@ -50,6 +51,7 @@ class AiTutorViewModel(
     val actionEvent: SharedFlow<AiUiAction> = _actionEvent.asSharedFlow()
 
     private var currentUserId: Int = 1
+    private var currentSessionId: String = UUID.randomUUID().toString()
     private var streamingJob: Job? = null
     private var voiceAssistant: VoiceAssistantManager? = null
 
@@ -66,15 +68,20 @@ class AiTutorViewModel(
 
             _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${studentName.uppercase()}") }
 
-            // 1. Check local session persistence
-            val localSavedMessages = chatStorage?.loadMessages(currentUserId).orEmpty()
-            if (localSavedMessages.isNotEmpty()) {
-                val lastUser = localSavedMessages.lastOrNull { it.isUser }
-                val lastAi = localSavedMessages.lastOrNull { !it.isUser }
+            // 1. Check persistent SQLite chat sessions
+            val savedSessions = chatStorage?.loadSessions(currentUserId).orEmpty()
+            if (savedSessions.isNotEmpty()) {
+                val latestSession = savedSessions.first()
+                currentSessionId = latestSession.sessionId
+                val sessionMessages = chatStorage?.loadSessionMessages(currentSessionId).orEmpty()
+                val lastUser = sessionMessages.lastOrNull { it.isUser }
+                val lastAi = sessionMessages.lastOrNull { !it.isUser }
 
                 _uiState.update {
                     it.copy(
-                        messages = localSavedMessages,
+                        currentSessionId = currentSessionId,
+                        chatSessions = savedSessions,
+                        messages = sessionMessages,
                         userQuestion = lastUser?.text ?: it.userQuestion,
                         aiAnswerParagraph1 = lastAi?.text ?: it.aiAnswerParagraph1,
                         aiAnswerParagraph2 = lastAi?.paragraph2 ?: it.aiAnswerParagraph2,
@@ -84,7 +91,35 @@ class AiTutorViewModel(
                 return@launch
             }
 
-            // 2. Query remote backend history; if empty, leave empty so minimal welcome emblem displays cleanly
+            // 2. Check legacy local storage and migrate to initial session if present
+            val legacySavedMessages = chatStorage?.loadMessages(currentUserId).orEmpty()
+            if (legacySavedMessages.isNotEmpty()) {
+                val firstTitle = legacySavedMessages.firstOrNull { it.isUser }?.text?.take(35) ?: "Study Session"
+                val initialSession = ChatSessionEntity(
+                    sessionId = currentSessionId,
+                    userId = currentUserId,
+                    title = firstTitle,
+                    updatedAt = System.currentTimeMillis()
+                )
+                chatStorage?.saveSession(initialSession, legacySavedMessages)
+                val lastUser = legacySavedMessages.lastOrNull { it.isUser }
+                val lastAi = legacySavedMessages.lastOrNull { !it.isUser }
+
+                _uiState.update {
+                    it.copy(
+                        currentSessionId = currentSessionId,
+                        chatSessions = listOf(initialSession),
+                        messages = legacySavedMessages,
+                        userQuestion = lastUser?.text ?: it.userQuestion,
+                        aiAnswerParagraph1 = lastAi?.text ?: it.aiAnswerParagraph1,
+                        aiAnswerParagraph2 = lastAi?.paragraph2 ?: it.aiAnswerParagraph2,
+                        aiThoughtStatus = "✨ SYNAPSE AI · Ready to continue your conversation"
+                    )
+                }
+                return@launch
+            }
+
+            // 3. Query remote backend history; if empty, leave empty so minimal welcome emblem displays cleanly
             val historyResult = repository.getHistory(userId = currentUserId, email = email)
             historyResult.onSuccess { response ->
                 val msgs = response.data?.messages.orEmpty()
@@ -100,15 +135,181 @@ class AiTutorViewModel(
                             isUser = dto.senderType == "user"
                         )
                     }
-                    _uiState.update { it.copy(messages = converted) }
-                    chatStorage?.saveMessages(currentUserId, converted)
+                    val initialSession = ChatSessionEntity(
+                        sessionId = currentSessionId,
+                        userId = currentUserId,
+                        title = converted.firstOrNull { it.isUser }?.text?.take(35) ?: "Study Session",
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    chatStorage?.saveSession(initialSession, converted)
+                    _uiState.update {
+                        it.copy(
+                            currentSessionId = currentSessionId,
+                            chatSessions = listOf(initialSession),
+                            messages = converted
+                        )
+                    }
                 } else {
-                    _uiState.update { it.copy(messages = emptyList()) }
+                    _uiState.update {
+                        it.copy(
+                            currentSessionId = currentSessionId,
+                            chatSessions = emptyList<ChatSessionEntity>(),
+                            messages = emptyList<ChatMessage>()
+                        )
+                    }
                 }
             }.onFailure {
-                _uiState.update { it.copy(messages = emptyList()) }
+                _uiState.update {
+                    it.copy(
+                        currentSessionId = currentSessionId,
+                        chatSessions = emptyList<ChatSessionEntity>(),
+                        messages = emptyList<ChatMessage>()
+                    )
+                }
             }
         }
+    }
+
+    private fun persistCurrentSession(messages: List<ChatMessage>) {
+        if (messages.isEmpty()) return
+        val rawTitle = messages.firstOrNull { it.isUser }?.text?.take(35) ?: "Study Session"
+        val session = ChatSessionEntity(
+            sessionId = currentSessionId,
+            userId = currentUserId,
+            title = rawTitle,
+            updatedAt = System.currentTimeMillis()
+        )
+        scope.launch(Dispatchers.IO) {
+            chatStorage?.saveSession(session, messages)
+            val updatedSessions = chatStorage?.loadSessions(currentUserId).orEmpty()
+            _uiState.update { it.copy(chatSessions = updatedSessions) }
+        }
+    }
+
+    /**
+     * Starts a fresh empty conversation session with a new UUID without deleting past chats.
+     */
+    fun onNewChat() {
+        streamingJob?.cancel()
+        localAiEngine.resetContext()
+        voiceAssistant?.stopSpeaking()
+        currentSessionId = UUID.randomUUID().toString()
+        _uiState.update {
+            it.copy(
+                currentSessionId = currentSessionId,
+                messages = emptyList(),
+                inputQuery = "",
+                userQuestion = "",
+                aiAnswerParagraph1 = "",
+                aiAnswerParagraph2 = "",
+                aiThoughtStatus = "✨ SYNAPSE AI · New session started. Ready for your questions!",
+                isGenerating = false,
+                currentlySpeakingMessageId = null,
+                isHistorySheetVisible = false
+            )
+        }
+    }
+
+    /**
+     * Restores full past message history of a selected session into the chat canvas.
+     */
+    fun onSelectSession(sessionId: String) {
+        if (sessionId == currentSessionId && _uiState.value.messages.isNotEmpty()) {
+            _uiState.update { it.copy(isHistorySheetVisible = false) }
+            return
+        }
+        streamingJob?.cancel()
+        voiceAssistant?.stopSpeaking()
+        currentSessionId = sessionId
+        scope.launch {
+            val sessionMsgs = chatStorage?.loadSessionMessages(sessionId).orEmpty()
+            val lastUser = sessionMsgs.lastOrNull { it.isUser }
+            val lastAi = sessionMsgs.lastOrNull { !it.isUser }
+            _uiState.update {
+                it.copy(
+                    currentSessionId = sessionId,
+                    messages = sessionMsgs,
+                    userQuestion = lastUser?.text ?: "",
+                    aiAnswerParagraph1 = lastAi?.text ?: "",
+                    aiAnswerParagraph2 = lastAi?.paragraph2 ?: "",
+                    isGenerating = false,
+                    currentlySpeakingMessageId = null,
+                    isHistorySheetVisible = false,
+                    aiThoughtStatus = "✨ SYNAPSE AI · Resumed conversation"
+                )
+            }
+        }
+    }
+
+    /**
+     * Deletes a past chat session from SQLite.
+     */
+    fun onDeleteSession(sessionId: String) {
+        scope.launch {
+            chatStorage?.deleteSession(sessionId)
+            val updatedSessions = chatStorage?.loadSessions(currentUserId).orEmpty()
+            _uiState.update { it.copy(chatSessions = updatedSessions) }
+            if (currentSessionId == sessionId) {
+                if (updatedSessions.isNotEmpty()) {
+                    onSelectSession(updatedSessions.first().sessionId)
+                } else {
+                    onNewChat()
+                }
+            }
+        }
+    }
+
+    fun toggleHistorySheet(visible: Boolean? = null) {
+        _uiState.update { it.copy(isHistorySheetVisible = visible ?: !it.isHistorySheetVisible) }
+    }
+
+    fun onHoldRecordingStart() {
+        _uiState.update {
+            it.copy(
+                isHoldRecording = true,
+                isRecordingLocked = false,
+                recordingDurationSeconds = 0,
+                recordedSpokenText = ""
+            )
+        }
+    }
+
+    fun onHoldRecordingLock() {
+        _uiState.update { it.copy(isRecordingLocked = true) }
+    }
+
+    fun onHoldRecordingCancel() {
+        _uiState.update {
+            it.copy(
+                isHoldRecording = false,
+                isRecordingLocked = false,
+                recordingDurationSeconds = 0,
+                recordedSpokenText = ""
+            )
+        }
+    }
+
+    fun onHoldRecordingSpeechUpdated(text: String) {
+        _uiState.update { it.copy(recordedSpokenText = text) }
+    }
+
+    fun onHoldRecordingSubmit(spokenText: String? = null) {
+        val finalText = (spokenText ?: _uiState.value.recordedSpokenText).trim()
+        _uiState.update {
+            it.copy(
+                isHoldRecording = false,
+                isRecordingLocked = false,
+                recordingDurationSeconds = 0,
+                recordedSpokenText = ""
+            )
+        }
+        if (finalText.isNotBlank()) {
+            onSendMessage(finalText)
+        }
+    }
+
+    fun onHoldRecordingTimerTick() {
+        _uiState.update { it.copy(recordingDurationSeconds = it.recordingDurationSeconds + 1) }
     }
 
     fun onInputQueryChanged(query: String) {
@@ -139,7 +340,8 @@ class AiTutorViewModel(
                 isUser = true
             )
             val lastAi = _uiState.value.messages.lastOrNull { !it.isUser && !it.isSavedNoteCard && it.text.isNotBlank() }
-            val noteTitle = "${lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Study Note"} - AI Revision Summary"
+            val rawTopic = lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Study Concept"
+            val noteTitle = "$rawTopic - AI Revision Summary"
             val noteContent = buildString {
                 appendLine("# $noteTitle")
                 if (!lastAi?.matchedSubject.isNullOrBlank()) {
@@ -167,25 +369,31 @@ class AiTutorViewModel(
                 )
             }
 
+            val updatedPrior = _uiState.value.messages.map {
+                if (lastAi != null && it.id == lastAi.id) it.copy(isSaved = true) else it
+            }
+
             val confirmMsg = ChatMessage(
                 id = UUID.randomUUID().toString(),
                 senderName = "SYNAPSE AI",
-                text = "✓ Saved to Notes! Your revision summary for **$noteTitle** is now stored offline and synced to your study notes.",
+                text = "Done! I've saved crisp study notes for **$rawTopic** to your Notes tab.",
                 timeAgo = "Just now",
                 isUser = false,
                 isSavedNoteCard = true,
                 savedNoteTitle = noteTitle
             )
 
+            val newMessages = updatedPrior + userMsg + confirmMsg
+
             _uiState.update {
                 it.copy(
-                    messages = it.messages + userMsg + confirmMsg,
+                    messages = newMessages,
                     userQuestion = query,
                     isGenerating = false,
                     aiThoughtStatus = "✓ Note Saved Successfully"
                 )
             }
-            chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+            persistCurrentSession(newMessages)
             return
         }
 
@@ -216,6 +424,7 @@ class AiTutorViewModel(
                 )
             }
             chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+            persistCurrentSession(_uiState.value.messages)
             scope.launch {
                 _actionEvent.emit(AiUiAction.NavigateToQuiz(subId, subName))
             }
@@ -249,6 +458,7 @@ class AiTutorViewModel(
                 )
             }
             chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+            persistCurrentSession(_uiState.value.messages)
             scope.launch {
                 _actionEvent.emit(AiUiAction.NavigateToSubject(subId, subName))
             }
@@ -281,6 +491,7 @@ class AiTutorViewModel(
                 )
             }
             chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+            persistCurrentSession(_uiState.value.messages)
             scope.launch {
                 _actionEvent.emit(AiUiAction.NavigateToNotes)
             }
@@ -323,6 +534,7 @@ class AiTutorViewModel(
                     )
                 }
                 chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+                persistCurrentSession(_uiState.value.messages)
                 _actionEvent.emit(AiUiAction.ShowProgressSummary(topicsDone, avgScore, streak))
             }
             return
@@ -354,6 +566,7 @@ class AiTutorViewModel(
                 )
             }
             chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+            persistCurrentSession(_uiState.value.messages)
             scope.launch {
                 _actionEvent.emit(AiUiAction.NavigateToProfile)
             }
@@ -443,6 +656,7 @@ class AiTutorViewModel(
                     }
 
                     chatStorage?.saveMessages(currentUserId, finalizedMessages)
+                    persistCurrentSession(finalizedMessages)
 
                     try {
                         val user = sessionManager?.getSessionUser()
@@ -484,7 +698,7 @@ class AiTutorViewModel(
                             localResponse.isGreeting -> "✨ SYNAPSE AI · Ready to explore subjects with you"
                             localResponse.isTopicSuggestion -> "✨ SYNAPSE AI · Curriculum Guide (${localResponse.matchedSubject ?: "Catalog"})"
                             localResponse.isFollowUp -> "✨ SYNAPSE AI · Context Follow-up (${localResponse.matchedTopic})"
-                            localResponse.matchedTopic != null -> "✨ SYNAPSE AI · On-Device (${localResponse.matchedSubject} · ${localResponse.matchedChapter})"
+                            localResponse.matchedTopic != null -> "✨ SYNAPSE AI · ${localResponse.matchedSubject} · ${localResponse.matchedChapter}"
                             else -> "✨ SYNAPSE AI · Knowledge Companion"
                         }
 
@@ -517,6 +731,7 @@ class AiTutorViewModel(
 
                         // Save conversation history to local storage
                         chatStorage?.saveMessages(currentUserId, finalizedMessages)
+                        persistCurrentSession(finalizedMessages)
 
                         // Async remote sync
                         try {
@@ -524,7 +739,7 @@ class AiTutorViewModel(
                             val email = user?.email ?: "student@synapse.ai"
                             repository.askQuestion(question = query, userId = currentUserId, email = email)
                         } catch (_: Exception) {
-                            // Offline fallback handled on-device
+                            // Local fallback handled on-device
                         }
                     }
                 }
@@ -533,26 +748,10 @@ class AiTutorViewModel(
     }
 
     /**
-     * Clears the current chat session completely, returning to the centered clean welcome emblem.
+     * Clears the active chat session by starting a fresh one without deleting past sessions.
      */
     fun onClearChat() {
-        streamingJob?.cancel()
-        chatStorage?.clearMessages(currentUserId)
-        localAiEngine.resetContext()
-        voiceAssistant?.stopSpeaking()
-
-        _uiState.update {
-            it.copy(
-                messages = emptyList(),
-                inputQuery = "",
-                userQuestion = "",
-                aiAnswerParagraph1 = "",
-                aiAnswerParagraph2 = "",
-                aiThoughtStatus = "✨ SYNAPSE AI · New session started. Ready for your questions!",
-                isGenerating = false,
-                currentlySpeakingMessageId = null
-            )
-        }
+        onNewChat()
     }
 
     fun onPromptClicked(prompt: String) {
@@ -591,6 +790,7 @@ class AiTutorViewModel(
         val newMessages = _uiState.value.messages + userMsg + aiMsg
         _uiState.update { it.copy(messages = newMessages) }
         chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
     }
 
     /**
@@ -614,7 +814,8 @@ class AiTutorViewModel(
     }
 
     fun onSaveNoteClicked(message: ChatMessage) {
-        val title = "${message.matchedTopic ?: message.matchedChapter ?: "Study Note"} - AI Revision Summary"
+        val rawTopic = message.matchedTopic ?: message.matchedChapter ?: "Study Concept"
+        val title = "$rawTopic - AI Revision Summary"
         val content = buildString {
             appendLine("# $title")
             if (!message.matchedSubject.isNullOrBlank()) {
@@ -643,18 +844,23 @@ class AiTutorViewModel(
             )
         }
 
+        val updatedMessages = _uiState.value.messages.map {
+            if (it.id == message.id) it.copy(isSaved = true) else it
+        }
+
         val confirmMsg = ChatMessage(
             id = UUID.randomUUID().toString(),
             senderName = "SYNAPSE AI",
-            text = "✓ Saved to Notes! Your revision summary for **$title** is now stored offline and synced to your study notes.",
+            text = "Done! I've saved crisp study notes for **$rawTopic** to your Notes tab.",
             timeAgo = "Just now",
             isUser = false,
             isSavedNoteCard = true,
             savedNoteTitle = title
         )
 
-        _uiState.update { it.copy(messages = it.messages + confirmMsg) }
-        chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
+        val newMessages = updatedMessages + confirmMsg
+        _uiState.update { it.copy(messages = newMessages) }
+        persistCurrentSession(newMessages)
     }
 
     fun onElaborateClicked(message: ChatMessage) {
@@ -669,7 +875,10 @@ class AiTutorViewModel(
                 lower.contains("save note") || lower.contains("save this note") ||
                 lower.contains("save to notes") || lower.contains("save this to notes") ||
                 lower.contains("note this down") || lower.contains("make a note") ||
-                lower.startsWith("save notes")
+                lower.contains("make notes") || lower.contains("take notes") ||
+                lower.contains("take note") || lower.contains("save notes") ||
+                lower.startsWith("save notes") || lower.startsWith("take notes") ||
+                lower.contains("notes from this") || lower.contains("notes from what you explained")
     }
 
     private fun isQuizActionQuery(q: String): Boolean {

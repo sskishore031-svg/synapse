@@ -7,12 +7,15 @@ import com.siamts.synapse.SynapseApplication
 import com.siamts.synapse.ui.tutor.ChatMessage
 
 /**
- * Local storage manager for persisting ongoing AI conversation history across sessions.
+ * Local storage manager for persisting ongoing AI conversation sessions and message history.
+ * Delegates to [ChatDao] for SQLite persistent session history, while maintaining
+ * fast in-memory and SharedPreferences fallbacks.
  */
 class AiChatStorage(private val context: Context) {
 
     private val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
+    private val chatDao: ChatDao get() = SynapseDatabase.getChatDao(context)
 
     fun saveMessages(userId: Int, messages: List<ChatMessage>) {
         try {
@@ -35,6 +38,37 @@ class AiChatStorage(private val context: Context) {
 
     fun clearMessages(userId: Int) {
         prefs.edit().remove(KEY_MESSAGES_PREFIX + userId).apply()
+    }
+
+    suspend fun saveSession(session: ChatSessionEntity, messages: List<ChatMessage>) {
+        try {
+            chatDao.insertOrUpdateSession(session)
+            val entities = messages.map { ChatMessageEntity.fromChatMessage(session.sessionId, it) }
+            chatDao.saveMessages(session.sessionId, entities)
+            saveMessages(session.userId, messages)
+        } catch (_: Exception) {}
+    }
+
+    suspend fun loadSessions(userId: Int): List<ChatSessionEntity> {
+        return try {
+            chatDao.getAllSessions(userId)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun loadSessionMessages(sessionId: String): List<ChatMessage> {
+        return try {
+            chatDao.getMessagesForSession(sessionId).map { it.toChatMessage() }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun deleteSession(sessionId: String) {
+        try {
+            chatDao.deleteSession(sessionId)
+        } catch (_: Exception) {}
     }
 
     companion object {
@@ -60,4 +94,3 @@ class AiChatStorage(private val context: Context) {
         }
     }
 }
-

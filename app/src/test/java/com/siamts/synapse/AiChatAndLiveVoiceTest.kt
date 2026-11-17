@@ -119,7 +119,7 @@ class AiChatAndLiveVoiceTest {
 
         val savedCard = viewModel.uiState.value.messages.firstOrNull { it.isSavedNoteCard }
         assertNotNull(savedCard)
-        assertTrue(savedCard!!.text.contains("Saved to Notes"))
+        assertTrue(savedCard!!.text.contains("saved crisp study notes") || savedCard.text.contains("Notes tab"))
     }
 
     @Test

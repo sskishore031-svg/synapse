@@ -64,6 +64,8 @@ class VoiceAssistantManager(
     val isLiveActive: StateFlow<Boolean> = _isLiveActive.asStateFlow()
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var dictationRecognizer: SpeechRecognizer? = null
+    private var lastDictatedText = ""
     private var textToSpeech: TextToSpeech? = null
     private var isTtsReady = false
     private var activeUtteranceId: String? = null
@@ -434,10 +436,110 @@ class VoiceAssistantManager(
     }
 
     /**
+     * Starts single-turn speech dictation (for WhatsApp-style hold-to-talk or tap-to-dictate).
+     */
+    fun startDictation(
+        onPartial: (String) -> Unit,
+        onComplete: (String) -> Unit
+    ) {
+        stopSpeaking()
+        stopLiveSession()
+        mainHandler.post {
+            try {
+                if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+                    onComplete("")
+                    return@post
+                }
+                try {
+                    dictationRecognizer?.cancel()
+                    dictationRecognizer?.destroy()
+                } catch (_: Exception) {}
+                lastDictatedText = ""
+
+                dictationRecognizer = SpeechRecognizer.createSpeechRecognizer(context.applicationContext).apply {
+                    setRecognitionListener(object : RecognitionListener {
+                        override fun onReadyForSpeech(params: Bundle?) {}
+                        override fun onBeginningOfSpeech() {}
+                        override fun onRmsChanged(rmsdB: Float) {
+                            val normalized = ((rmsdB + 2f) / 12f).coerceIn(0f, 1f)
+                            _audioLevel.value = normalized
+                        }
+                        override fun onBufferReceived(buffer: ByteArray?) {}
+                        override fun onEndOfSpeech() {
+                            _audioLevel.value = 0f
+                        }
+                        override fun onError(error: Int) {
+                            _audioLevel.value = 0f
+                            onComplete(lastDictatedText)
+                        }
+                        override fun onResults(results: Bundle?) {
+                            _audioLevel.value = 0f
+                            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                            val text = matches?.firstOrNull()?.trim() ?: lastDictatedText
+                            lastDictatedText = text
+                            onComplete(text)
+                        }
+                        override fun onPartialResults(partialResults: Bundle?) {
+                            val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                            if (partial.isNotBlank()) {
+                                lastDictatedText = partial
+                                onPartial(partial)
+                            }
+                        }
+                        override fun onEvent(eventType: Int, params: Bundle?) {}
+                    })
+                }
+
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag())
+                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 3000L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
+                }
+                dictationRecognizer?.startListening(intent)
+            } catch (e: Exception) {
+                Log.e(tag, "Dictation start error", e)
+                onComplete("")
+            }
+        }
+    }
+
+    /**
+     * Stops dictation and returns the accumulated speech text.
+     */
+    fun stopDictationAndGet(): String {
+        mainHandler.post {
+            try {
+                dictationRecognizer?.stopListening()
+            } catch (_: Exception) {}
+        }
+        return lastDictatedText
+    }
+
+    /**
+     * Cancels dictation immediately without triggering results.
+     */
+    fun cancelDictation() {
+        mainHandler.post {
+            try {
+                dictationRecognizer?.cancel()
+                dictationRecognizer?.destroy()
+                dictationRecognizer = null
+            } catch (_: Exception) {}
+            lastDictatedText = ""
+            _audioLevel.value = 0f
+        }
+    }
+
+    /**
      * Fully releases audio resources to prevent leaks.
      */
     fun destroy() {
         stopLiveSession()
+        cancelDictation()
         mainHandler.post {
             try {
                 speechRecognizer?.destroy()

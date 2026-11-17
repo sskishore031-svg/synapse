@@ -30,7 +30,7 @@ class SlmInferenceEngine private constructor(private val context: Context?) {
         private const val TAG = "SlmInferenceEngine"
 
         const val SYSTEM_PROMPT =
-            "You are SYNAPSE AI, an intelligent offline college study companion built into the SYNAPSE AI Android app. " +
+            "You are SYNAPSE AI, an intelligent college study companion built into the SYNAPSE AI Android app. " +
             "You help students with 50+ university subjects, advanced concepts, exam doubts, quizzes, and smart notes. " +
             "Be clear, encouraging, accurate, and concise."
 

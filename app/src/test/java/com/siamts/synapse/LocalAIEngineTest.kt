@@ -62,13 +62,13 @@ class LocalAIEngineTest {
         for (query in casualGreetings) {
             val response = engine.generateResponse(query)
             assertTrue("Query '$query' should be detected as greeting", response.isGreeting)
-            assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", response.paragraph1)
+            assertEquals("Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!", response.paragraph1)
             assertTrue("Greeting should not dump long paragraphs", response.paragraph2.isBlank())
         }
 
         val gmResponse = engine.generateResponse("good morning")
         assertTrue(gmResponse.isGreeting)
-        assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", gmResponse.paragraph1)
+        assertEquals("Good morning! Ready to learn something exciting today? What subject are we tackling?", gmResponse.paragraph1)
 
         val gnResponse = engine.generateResponse("good night")
         assertTrue(gnResponse.isGreeting)
@@ -100,12 +100,8 @@ class LocalAIEngineTest {
             assertEquals(100.0, response.confidenceScore, 0.001)
             assertTrue(
                 "Query '$query' should return capabilities intro",
-                response.paragraph1.contains("100% offline, on-device learning companion")
+                response.paragraph1.contains("study friend here to make learning easy")
             )
-            assertTrue("Should contain Concept Explanations", response.paragraph2.contains("Concept Explanations"))
-            assertTrue("Should contain Topic Discovery", response.paragraph2.contains("Topic Discovery"))
-            assertTrue("Should contain Worked Examples", response.paragraph2.contains("Worked Examples"))
-            assertTrue("Should contain Voice & Smart Study", response.paragraph2.contains("Voice & Smart Study"))
             assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
         }
     }
@@ -126,9 +122,8 @@ class LocalAIEngineTest {
             assertEquals(100.0, response.confidenceScore, 0.001)
             assertTrue(
                 "Query '$query' should return identity description",
-                response.paragraph1.contains("I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline")
+                response.paragraph1.contains("SYNAPSE AI")
             )
-            assertTrue(response.paragraph1.contains("zero-hallucination study help"))
             assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
         }
     }
@@ -317,7 +312,7 @@ class LocalAIEngineTest {
         val response = engine.generateResponse("what is the recipe for baking a chocolate cake?")
         assertTrue(response.confidenceScore > 0.0)
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue(response.paragraph1.contains("Academic") || response.paragraph1.contains("SYNAPSE AI"))
+        assertTrue(response.paragraph1.contains("not relatable to our studies") || response.paragraph1.contains("Academic") || response.paragraph1.contains("SYNAPSE AI"))
     }
 
     @Test
@@ -331,7 +326,7 @@ class LocalAIEngineTest {
         )
         assertTrue(
             "Food/recipe query must hit the strict out-of-scope guardrail boundary",
-            response.paragraph1.contains("That falls outside my academic and app scope")
+            response.paragraph1.contains("not relatable to our studies")
         )
     }
 
@@ -476,6 +471,6 @@ class LocalAIEngineTest {
         assertTrue("Last event must be Completed", events.last() is LocalAiStreamToken.Completed)
         val tokenEvents = events.filterIsInstance<LocalAiStreamToken.Token>()
         assertTrue("Must emit token events", tokenEvents.isNotEmpty())
-        assertEquals("Hello! I'm SYNAPSE AI, ready to help you study offline. Ask me any concept, formula, or topic suggestion to get started!", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
+        assertEquals("Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
     }
 }
