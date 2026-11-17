@@ -1,5 +1,6 @@
-package com.siamts.synapse.ui.tutor
+﻿package com.siamts.synapse.ui.tutor
 
+import com.siamts.synapse.data.local.ChatSessionEntity
 import java.util.UUID
 
 /**
@@ -41,7 +42,7 @@ sealed class AiUiAction {
 data class AiTutorUiState(
     val headerTag: String = "PERSONALIZED FOR STUDENT",
     val tutorTitle: String = "SYNAPSE AI",
-    val tutorName: String = "SYNAPSE · On-Device Neural Tutor",
+    val tutorName: String = "SYNAPSE · Neural Study Companion",
     val isOnline: Boolean = true,
     val timeHeader: String = "TODAY",
     val messages: List<ChatMessage> = emptyList(),
@@ -50,6 +51,13 @@ data class AiTutorUiState(
     val inputQuery: String = "",
     val isGenerating: Boolean = false,
     val currentlySpeakingMessageId: String? = null,
+    val currentSessionId: String = "",
+    val chatSessions: List<ChatSessionEntity> = emptyList(),
+    val isHistorySheetVisible: Boolean = false,
+    val isHoldRecording: Boolean = false,
+    val isRecordingLocked: Boolean = false,
+    val recordingDurationSeconds: Int = 0,
+    val recordedSpokenText: String = "",
     // Retained for backward compatibility
     val userQuestion: String = "",
     val aiAnswerParagraph1: String = "",
