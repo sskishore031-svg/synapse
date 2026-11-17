@@ -210,6 +210,18 @@ class NotesRepositoryImpl(
         )
     }
 
+    override suspend fun saveNote(
+        title: String,
+        content: String,
+        subjectId: Int?,
+        chapterId: Int?,
+        category: String?,
+        userId: Int?,
+        email: String?
+    ): Result<GenericNoteActionResponse> {
+        return createNote(title, content, subjectId, chapterId, category, userId, email)
+    }
+
     override suspend fun updateNote(
         noteId: Int,
         title: String,

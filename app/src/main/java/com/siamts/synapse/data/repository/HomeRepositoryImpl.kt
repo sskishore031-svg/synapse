@@ -34,7 +34,7 @@ class HomeRepositoryImpl(
                     }
                 }
 
-                // First attempt: /auth/home.php
+                // Fetch /auth/home.php with fallback to /home.php
                 val response = try {
                     homeApi.getHomeDashboard(userId = targetUserId, email = targetEmail)
                 } catch (e: Exception) {
@@ -57,6 +57,21 @@ class HomeRepositoryImpl(
                 }
             } catch (e: Exception) {
                 return@withContext Result.failure(e)
+            }
+        }
+
+    override suspend fun getDashboardStats(userId: Int?, email: String?): Result<HomeDashboardData> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = homeApi.getDashboard(userId = userId, email = email)
+                val data = response.body()?.data
+                if (response.isSuccessful && data != null) {
+                    Result.success(data)
+                } else {
+                    getHomeDashboard(userId, email)
+                }
+            } catch (_: Exception) {
+                getHomeDashboard(userId, email)
             }
         }
 }

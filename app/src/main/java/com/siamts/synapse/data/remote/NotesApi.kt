@@ -36,6 +36,13 @@ interface NotesApi {
         @Body request: CreateNoteRequest
     ): Response<GenericNoteActionResponse>
 
+    @POST("auth/notes.php?action=save")
+    suspend fun saveNote(
+        @Query("user_id") userId: Int? = null,
+        @Query("email") email: String? = null,
+        @Body request: CreateNoteRequest
+    ): Response<GenericNoteActionResponse>
+
     @POST("auth/notes.php?action=update")
     suspend fun updateNote(
         @Query("user_id") userId: Int? = null,

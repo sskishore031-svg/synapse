@@ -35,11 +35,17 @@ data class UserProfileDto(
     @SerializedName("phone")
     val phone: String? = null,
 
+    @SerializedName("phone_number")
+    val phoneNumber: String? = null,
+
     @SerializedName("bio")
     val bio: String? = null,
 
     @SerializedName("course")
     val course: String? = null,
+
+    @SerializedName("year")
+    val year: String? = null,
 
     @SerializedName("preferred_language")
     val preferredLanguage: String? = null,
@@ -85,11 +91,17 @@ data class ProfileUpdateRequest(
     @SerializedName("phone")
     val phone: String? = null,
 
+    @SerializedName("phone_number")
+    val phoneNumber: String? = null,
+
     @SerializedName("bio")
     val bio: String? = null,
 
     @SerializedName("course")
     val course: String? = null,
+
+    @SerializedName("year")
+    val year: String? = null,
 
     @SerializedName("preferred_language")
     val preferredLanguage: String? = null,

@@ -134,7 +134,15 @@ data class QuizSubmitRequest(
     @SerializedName("chapter_id")
     val chapterId: Int,
     @SerializedName("answers")
-    val answers: Map<String, String> // question_id -> selected_option
+    val answers: Map<String, String> = emptyMap(),
+    @SerializedName("score")
+    val score: Int? = null,
+    @SerializedName("total_questions")
+    val totalQuestions: Int? = null,
+    @SerializedName("subject_id")
+    val subjectId: String? = null,
+    @SerializedName("user_id")
+    val userId: Int? = null
 )
 
 data class QuizSubmitResponse(

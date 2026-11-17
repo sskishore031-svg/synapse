@@ -17,4 +17,5 @@ interface ChapterDao {
         part2Application: String,
         examTip: String
     )
+    suspend fun markChapterCompleted(chapterId: Int)
 }

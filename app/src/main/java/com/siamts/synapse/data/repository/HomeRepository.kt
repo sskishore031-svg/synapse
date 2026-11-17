@@ -7,5 +7,6 @@ import com.siamts.synapse.data.model.HomeDashboardData
  */
 interface HomeRepository {
     suspend fun getHomeDashboard(userId: Int? = null, email: String? = null): Result<HomeDashboardData>
+    suspend fun getDashboardStats(userId: Int? = null, email: String? = null): Result<HomeDashboardData>
 }
 

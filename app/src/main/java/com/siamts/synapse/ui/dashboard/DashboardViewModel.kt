@@ -32,7 +32,8 @@ class DashboardViewModel(
     private val chapterDao: ChapterDao = QuizLocalDatabase.getChapterDao(),
     private val quizDao: QuizDao = QuizLocalDatabase.getInstance(),
     private val learningTaskDao: LearningTaskDao = QuizLocalDatabase.getLearningTaskDao(),
-    private val catalogRepo: SubjectCatalogRepository? = try { SubjectCatalogRepository.getInstance() } catch (_: Throwable) { null }
+    private val catalogRepo: SubjectCatalogRepository? = try { SubjectCatalogRepository.getInstance() } catch (_: Throwable) { null },
+    private val learningPlanApi: com.siamts.synapse.data.remote.LearningPlanApi = com.siamts.synapse.data.remote.RetrofitClient.learningPlanApi
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -165,6 +166,20 @@ class DashboardViewModel(
             )
             learningTaskDao.insertTask(entity)
             loadLocalStatsAndTasks()
+
+            // Dual-Sync: Call POST learning_plan.php
+            try {
+                val user = sessionManager?.getSessionUser()
+                learningPlanApi.addLearningTask(
+                    title = title.trim(),
+                    category = category.trim().ifBlank { "Lesson" },
+                    duration = duration.trim().ifBlank { "15 min" },
+                    userId = user?.id,
+                    email = user?.email
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("DashboardViewModel", "Remote addLearningTask failed", e)
+            }
         }
     }
 
@@ -173,6 +188,19 @@ class DashboardViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             learningTaskDao.updateTaskCompletion(taskId, isCompleted)
             loadLocalStatsAndTasks()
+
+            // Dual-Sync: Call POST learning_plan.php?action=toggle
+            try {
+                val user = sessionManager?.getSessionUser()
+                learningPlanApi.toggleLearningTask(
+                    taskId = taskId,
+                    isCompleted = if (isCompleted) 1 else 0,
+                    userId = user?.id,
+                    email = user?.email
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("DashboardViewModel", "Remote toggleLearningTask failed", e)
+            }
         }
     }
 
@@ -181,6 +209,18 @@ class DashboardViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             learningTaskDao.deleteTask(taskId)
             loadLocalStatsAndTasks()
+
+            // Dual-Sync: Call POST learning_plan.php?action=delete
+            try {
+                val user = sessionManager?.getSessionUser()
+                learningPlanApi.deleteLearningTask(
+                    taskId = taskId,
+                    userId = user?.id,
+                    email = user?.email
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("DashboardViewModel", "Remote deleteLearningTask failed", e)
+            }
         }
     }
 

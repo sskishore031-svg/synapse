@@ -21,5 +21,11 @@ interface HomeApi {
         @Query("user_id") userId: Int? = null,
         @Query("email") email: String? = null
     ): Response<HomeDashboardResponse>
+
+    @GET("auth/dashboard.php")
+    suspend fun getDashboard(
+        @Query("user_id") userId: Int? = null,
+        @Query("email") email: String? = null
+    ): Response<HomeDashboardResponse>
 }
 

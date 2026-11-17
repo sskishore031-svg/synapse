@@ -34,5 +34,14 @@ interface ChaptersApi {
         @Field("user_id") userId: Int? = null,
         @Field("email") email: String? = null
     ): Response<ChapterCompleteResponse>
+
+    @FormUrlEncoded
+    @POST("auth/chapters.php?action=mark_completed")
+    suspend fun markChapterCompleted(
+        @Field("chapter_id") chapterId: Int,
+        @Field("subject_id") subjectId: String? = null,
+        @Field("user_id") userId: Int? = null,
+        @Field("email") email: String? = null
+    ): Response<ChapterCompleteResponse>
 }
 

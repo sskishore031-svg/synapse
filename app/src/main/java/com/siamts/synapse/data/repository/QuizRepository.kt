@@ -31,5 +31,14 @@ interface QuizRepository {
         userId: Int? = null,
         email: String? = null
     ): Result<QuizSubmitResponse>
+
+    suspend fun submitQuizResult(
+        chapterId: Int,
+        subjectId: String,
+        score: Int,
+        totalQuestions: Int,
+        userId: Int? = null,
+        email: String? = null
+    ): Result<QuizSubmitResponse>
 }
 

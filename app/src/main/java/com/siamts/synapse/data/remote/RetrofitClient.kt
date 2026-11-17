@@ -16,7 +16,8 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // Public Ngrok Base URL for mobile & emulator tunneling (captures all live traffic in ngrok)
-    const val NGROK_BASE_URL = "https://bakery-shallot-repeater.ngrok-free.dev/Synapse_backend/"
+    const val BASE_URL = "https://bakery-shallot-repeater.ngrok-free.dev/Synapse_backend/auth/"
+    const val NGROK_BASE_URL = BASE_URL
 
     // Host PC LAN IP accessible by physical mobile devices on the same local network
     const val PHYSICAL_DEVICE_BASE_URL = "http://172.23.176.100/Synapse_backend/"
@@ -84,14 +85,50 @@ object RetrofitClient {
     @Volatile
     private var notificationsApiInstance: NotificationsApi? = null
 
+    @Volatile
+    private var subjectsApiInstance: SubjectsApi? = null
+
+    @Volatile
+    private var learningPlanApiInstance: LearningPlanApi? = null
+
     private val headerInterceptor by lazy {
         Interceptor { chain ->
-            val request = chain.request().newBuilder()
+            val originalRequest = chain.request()
+            val originalUrl = originalRequest.url.toString()
+
+            // Normalize URL to always target /Synapse_backend/auth/<endpoint>.php without duplicates
+            val cleanedUrl = when {
+                originalUrl.contains("/auth/auth/") -> originalUrl.replace("/auth/auth/", "/auth/")
+                !originalUrl.contains("/auth/") && originalUrl.contains("/Synapse_backend/") ->
+                    originalUrl.replace("/Synapse_backend/", "/Synapse_backend/auth/")
+                else -> originalUrl
+            }
+
+            val token = runCatching {
+                com.siamts.synapse.data.local.SessionManager.getInstanceOrNull()?.getAuthTokenCached()
+            }.getOrNull()
+
+            val requestBuilder = originalRequest.newBuilder()
+                .url(cleanedUrl)
                 .header("ngrok-skip-browser-warning", "true")
-                .header("User-Agent", "Synapse-AI-Android/1.0")
+                .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .build()
-            chain.proceed(request)
+                .header("User-Agent", "Synapse-AI-Android/1.0")
+
+            if (!token.isNullOrBlank()) {
+                requestBuilder.header("Authorization", "Bearer $token")
+            }
+
+            val request = requestBuilder.build()
+            try {
+                android.util.Log.d("RetrofitClient", "--> ${request.method} ${request.url}")
+            } catch (_: Throwable) {}
+
+            val response = chain.proceed(request)
+            try {
+                android.util.Log.d("RetrofitClient", "<-- ${response.code} ${request.url}")
+            } catch (_: Throwable) {}
+            response
         }
     }
 
@@ -153,6 +190,12 @@ object RetrofitClient {
 
     val notificationsApi: NotificationsApi
         get() = getOrCreateNotificationsApi()
+
+    val subjectsApi: SubjectsApi
+        get() = getOrCreateSubjectsApi()
+
+    val learningPlanApi: LearningPlanApi
+        get() = getOrCreateLearningPlanApi()
 
     private fun getOrCreateApi(): AuthApi {
         return apiInstance ?: synchronized(this) {
@@ -258,6 +301,22 @@ object RetrofitClient {
         }
     }
 
+    private fun getOrCreateSubjectsApi(): SubjectsApi {
+        return subjectsApiInstance ?: synchronized(this) {
+            subjectsApiInstance ?: buildRetrofit(currentBaseUrl).create(SubjectsApi::class.java).also {
+                subjectsApiInstance = it
+            }
+        }
+    }
+
+    private fun getOrCreateLearningPlanApi(): LearningPlanApi {
+        return learningPlanApiInstance ?: synchronized(this) {
+            learningPlanApiInstance ?: buildRetrofit(currentBaseUrl).create(LearningPlanApi::class.java).also {
+                learningPlanApiInstance = it
+            }
+        }
+    }
+
     private fun buildRetrofit(url: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(url)
@@ -287,6 +346,8 @@ object RetrofitClient {
                 aiTutorApiInstance = buildRetrofit(formatted).create(AiTutorApi::class.java)
                 achievementsApiInstance = buildRetrofit(formatted).create(AchievementsApi::class.java)
                 notificationsApiInstance = buildRetrofit(formatted).create(NotificationsApi::class.java)
+                subjectsApiInstance = buildRetrofit(formatted).create(SubjectsApi::class.java)
+                learningPlanApiInstance = buildRetrofit(formatted).create(LearningPlanApi::class.java)
             }
         }
     }

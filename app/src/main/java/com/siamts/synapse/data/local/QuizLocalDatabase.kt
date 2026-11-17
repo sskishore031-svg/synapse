@@ -526,6 +526,24 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         } catch (_: Throwable) {}
     }
 
+    override suspend fun markChapterCompleted(chapterId: Int): Unit = withContext(Dispatchers.IO) {
+        val cidStr = chapterId.toString()
+        synchronized(inMemoryChapters) {
+            val idx = inMemoryChapters.indexOfFirst { it.id == cidStr }
+            if (idx >= 0) {
+                inMemoryChapters[idx] = inMemoryChapters[idx].copy(isAttempted = true)
+            }
+        }
+        if (!hasAndroidContext) return@withContext
+        try {
+            val db = writableDatabase
+            val values = ContentValues().apply {
+                put("is_attempted", 1)
+            }
+            db.update("subject_chapters", values, "id = ?", arrayOf(cidStr))
+        } catch (_: Throwable) {}
+    }
+
     // =========================================================================
     // LearningTaskDao Implementation ('learning_plan_tasks')
     // =========================================================================

@@ -41,5 +41,10 @@ interface QuizApi {
         @Query("email") email: String? = null,
         @Body request: QuizSubmitRequest
     ): Response<QuizSubmitResponse>
+
+    @POST("auth/quiz.php?action=submit")
+    suspend fun submitQuizResult(
+        @Body request: QuizSubmitRequest
+    ): Response<QuizSubmitResponse>
 }
 

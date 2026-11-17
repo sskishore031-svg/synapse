@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.data.local.AuthSessionState
 import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.repository.CurriculumRepository
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ class SubjectSelectionViewModel(
     } catch (_: Throwable) {
         null
     },
-    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
+    private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
+    private val curriculumRepo: CurriculumRepository = CurriculumRepository.getInstance()
 ) : ViewModel() {
 
     private val baseSubjects = BaseCurriculumData.subjects.map { catalogSub ->
@@ -214,15 +216,26 @@ class SubjectSelectionViewModel(
 
     fun toggleSubjectInCatalog(subjectId: String) {
         val repo = catalogRepo ?: return
-        if (repo.isSubjectAdded(subjectId)) {
-            repo.removeSubject(subjectId)
-        } else {
+        val willAdd = !repo.isSubjectAdded(subjectId)
+        if (willAdd) {
             repo.addSubject(subjectId)
+        } else {
+            repo.removeSubject(subjectId)
+        }
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            if (willAdd) {
+                curriculumRepo.addSubjectToUser(subjectId, user?.id, user?.email)
+            }
         }
     }
 
     fun addSubjectFromCatalog(subjectId: String) {
         catalogRepo?.addSubject(subjectId)
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            curriculumRepo.addSubjectToUser(subjectId, user?.id, user?.email)
+        }
     }
 
     fun onSubjectClicked(subjectId: String) {

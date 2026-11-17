@@ -625,9 +625,11 @@ class QuizViewModel(
                 val userEmail = user?.email ?: "student@synapse.ai"
                 val stringAnswers = state.answersMap.mapKeys { it.key.toString() }
 
-                quizRepository.submitQuiz(
+                quizRepository.submitQuizResult(
                     chapterId = targetChapterId,
-                    answers = stringAnswers,
+                    subjectId = subId,
+                    score = correctAnswersCount,
+                    totalQuestions = totalQuestions,
                     userId = userId,
                     email = userEmail
                 )

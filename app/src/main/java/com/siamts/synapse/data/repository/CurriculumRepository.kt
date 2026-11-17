@@ -29,8 +29,66 @@ class CurriculumRepository(
     private val context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null },
     private val chapterDao: ChapterDao = QuizLocalDatabase.getChapterDao(context),
     private val quizDao: QuizDao = QuizLocalDatabase.getInstance(context),
-    private val catalogRepo: SubjectCatalogRepository? = try { SubjectCatalogRepository.getInstance() } catch (_: Throwable) { null }
+    private val catalogRepo: SubjectCatalogRepository? = try { SubjectCatalogRepository.getInstance() } catch (_: Throwable) { null },
+    private val chaptersApi: com.siamts.synapse.data.remote.ChaptersApi = com.siamts.synapse.data.remote.RetrofitClient.chaptersApi,
+    private val subjectsApi: com.siamts.synapse.data.remote.SubjectsApi = com.siamts.synapse.data.remote.RetrofitClient.subjectsApi
 ) {
+
+    suspend fun markChapterCompleted(
+        chapterId: Int,
+        subjectId: String? = null,
+        userId: Int? = null,
+        email: String? = null
+    ): Result<com.siamts.synapse.data.model.ChapterCompleteResponse> = withContext(Dispatchers.IO) {
+        // 1. Dual-Sync: Update local Room DB
+        try {
+            chapterDao.markChapterCompleted(chapterId)
+        } catch (_: Throwable) {}
+
+        // 2. Dual-Sync: Remote call to chapters.php (POST /Synapse_backend/auth/chapters.php)
+        try {
+            val response = chaptersApi.markChapterCompleted(
+                chapterId = chapterId,
+                subjectId = subjectId,
+                userId = userId,
+                email = email
+            )
+            if (response.isSuccessful && response.body() != null) {
+                return@withContext Result.success(response.body()!!)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CurriculumRepo", "Remote markChapterCompleted failed", e)
+        }
+
+        Result.success(com.siamts.synapse.data.model.ChapterCompleteResponse(status = "success", message = "Chapter marked complete locally"))
+    }
+
+    suspend fun addSubjectToUser(
+        subjectId: String,
+        userId: Int? = null,
+        email: String? = null
+    ): Result<com.siamts.synapse.data.remote.SubjectActionResponse> = withContext(Dispatchers.IO) {
+        // 1. Dual-Sync: Update local catalog and Room DB
+        try {
+            catalogRepo?.addSubject(subjectId)
+        } catch (_: Throwable) {}
+
+        // 2. Dual-Sync: Remote call to subjects.php (POST /Synapse_backend/auth/subjects.php)
+        try {
+            val response = subjectsApi.addSubject(
+                subjectId = subjectId,
+                userId = userId,
+                email = email
+            )
+            if (response.isSuccessful && response.body() != null) {
+                return@withContext Result.success(response.body()!!)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CurriculumRepo", "Remote addSubject failed", e)
+        }
+
+        Result.success(com.siamts.synapse.data.remote.SubjectActionResponse(status = "success", message = "Subject added locally", subjectId = subjectId, isAdded = true))
+    }
 
     private val gson = Gson()
 

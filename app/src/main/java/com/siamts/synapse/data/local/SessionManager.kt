@@ -29,6 +29,9 @@ class SessionManager private constructor(context: Context) {
     @Volatile
     private var cachedIsLoggedIn: Boolean = false
 
+    @Volatile
+    private var cachedAuthToken: String? = null
+
     companion object {
         private val KEY_IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
         private val KEY_USER_ID = intPreferencesKey("user_id")
@@ -84,6 +87,10 @@ class SessionManager private constructor(context: Context) {
             val userId = preferences[KEY_USER_ID] ?: 0
             val email = preferences[KEY_USER_EMAIL].orEmpty()
             val name = preferences[KEY_USER_NAME].orEmpty()
+            val token = preferences[KEY_AUTH_TOKEN]
+            if (!token.isNullOrBlank()) {
+                cachedAuthToken = token
+            }
             val authenticated = isLoggedIn && (userId > 0 || email.isNotBlank() || name.isNotBlank())
             cachedIsLoggedIn = authenticated
 
@@ -310,8 +317,25 @@ class SessionManager private constructor(context: Context) {
      */
     suspend fun clearSession() {
         cachedIsLoggedIn = false
+        cachedAuthToken = null
         dataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+
+    fun getAuthTokenCached(): String? = cachedAuthToken
+
+    suspend fun getAuthToken(): String? {
+        return try {
+            val token = dataStore.data.first()[KEY_AUTH_TOKEN]
+            if (!token.isNullOrBlank()) {
+                cachedAuthToken = token
+                token
+            } else {
+                cachedAuthToken
+            }
+        } catch (_: Exception) {
+            cachedAuthToken
         }
     }
 
@@ -330,6 +354,10 @@ class SessionManager private constructor(context: Context) {
             val userId = preferences[KEY_USER_ID] ?: 0
             val email = preferences[KEY_USER_EMAIL].orEmpty()
             val name = preferences[KEY_USER_NAME].orEmpty()
+            val token = preferences[KEY_AUTH_TOKEN]
+            if (!token.isNullOrBlank()) {
+                cachedAuthToken = token
+            }
             val authenticated = isLoggedIn && (userId > 0 || email.isNotBlank() || name.isNotBlank())
             cachedIsLoggedIn = authenticated
             authenticated

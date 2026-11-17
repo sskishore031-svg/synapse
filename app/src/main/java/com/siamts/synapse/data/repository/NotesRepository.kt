@@ -28,6 +28,16 @@ interface NotesRepository {
         email: String? = null
     ): Result<GenericNoteActionResponse>
 
+    suspend fun saveNote(
+        title: String,
+        content: String,
+        subjectId: Int? = null,
+        chapterId: Int? = null,
+        category: String? = null,
+        userId: Int? = null,
+        email: String? = null
+    ): Result<GenericNoteActionResponse>
+
     suspend fun updateNote(
         noteId: Int,
         title: String,
