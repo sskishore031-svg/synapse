@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.io.InputStreamReader
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Knowledge chunk representing an educational concept across subjects.
@@ -144,23 +145,40 @@ class LocalAIEngine private constructor(context: Context?) {
         "data"
     )
 
+    private val stemCache = ConcurrentHashMap<String, String>()
+    private val tokenCache = ConcurrentHashMap<String, List<String>>()
+
+    /**
+     * Clears cached tokenized queries and stemmed word mappings.
+     */
+    fun clearCaches() {
+        stemCache.clear()
+        tokenCache.clear()
+    }
+
     /**
      * Stems common English plural and inflectional suffixes for robust RAG concept matching:
      * e.g., "waves" -> "wave", "equations" -> "equation", "matrices" -> "matrix", "laws" -> "law".
+     * Caches results in [stemCache] for high-throughput sub-5ms semantic retrieval.
      */
     fun stem(word: String): String {
-        val w = word.lowercase(Locale.ROOT).trim()
-        if (w.length <= 2) return w
-        return when {
-            w == "matrices" -> "matrix"
-            w == "indices" -> "index"
-            w == "vertices" -> "vertex"
-            w.endsWith("ics") -> w // Preserves physics, mechanics, optics, robotics, mathematics
-            w.endsWith("ies") && w.length > 4 -> w.dropLast(3) + "y"
-            w.endsWith("ves") && w.length > 4 -> w.dropLast(1) // waves -> wave, derivatives -> derivative
-            w.endsWith("shes") || w.endsWith("ches") || w.endsWith("sses") || w.endsWith("xes") || w.endsWith("zes") -> w.dropLast(2)
-            w.endsWith("s") && !w.endsWith("ss") && !w.endsWith("us") && !w.endsWith("is") && w.length > 3 -> w.dropLast(1) // equations -> equation, laws -> law, algorithms -> algorithm
-            else -> w
+        return stemCache.getOrPut(word) {
+            val w = word.lowercase(Locale.ROOT).trim()
+            if (w.length <= 2) {
+                w
+            } else {
+                when {
+                    w == "matrices" -> "matrix"
+                    w == "indices" -> "index"
+                    w == "vertices" -> "vertex"
+                    w.endsWith("ics") -> w // Preserves physics, mechanics, optics, robotics, mathematics
+                    w.endsWith("ies") && w.length > 4 -> w.dropLast(3) + "y"
+                    w.endsWith("ves") && w.length > 4 -> w.dropLast(1) // waves -> wave, derivatives -> derivative
+                    w.endsWith("shes") || w.endsWith("ches") || w.endsWith("sses") || w.endsWith("xes") || w.endsWith("zes") -> w.dropLast(2)
+                    w.endsWith("s") && !w.endsWith("ss") && !w.endsWith("us") && !w.endsWith("is") && w.length > 3 -> w.dropLast(1) // equations -> equation, laws -> law, algorithms -> algorithm
+                    else -> w
+                }
+            }
         }
     }
 
@@ -389,6 +407,7 @@ class LocalAIEngine private constructor(context: Context?) {
      */
     fun loadFromJson(jsonString: String) {
         try {
+            clearCaches()
             parseKnowledgeBase(jsonString)
         } catch (e: Throwable) {
             logE(TAG, "Error loading dataset from JSON string: ${e.message}", e)
@@ -1397,10 +1416,12 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun tokenize(text: String): List<String> {
-        val cleaned = text.replace(Regex("[^a-zA-Z0-9\\s]"), " ")
-        return cleaned.split("\\s+".toRegex())
-            .map { it.trim() }
-            .filter { it.length > 1 && !stopWords.contains(it) }
+        return tokenCache.getOrPut(text) {
+            val cleaned = text.replace(Regex("[^a-zA-Z0-9\\s]"), " ")
+            cleaned.split("\\s+".toRegex())
+                .map { it.trim() }
+                .filter { it.length > 1 && !stopWords.contains(it) }
+        }
     }
 
     private fun computeRelevanceScore(
