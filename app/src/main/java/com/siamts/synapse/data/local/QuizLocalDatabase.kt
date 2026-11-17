@@ -17,7 +17,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao, LearningTaskDao, UserDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
@@ -25,6 +25,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemoryChapters = CopyOnWriteArrayList<ChapterEntity>()
     private val inMemoryTasks = CopyOnWriteArrayList<LearningTaskEntity>()
     private val inMemoryUsers = CopyOnWriteArrayList<com.siamts.synapse.data.model.UserDto>()
+    private val inMemoryNotes = CopyOnWriteArrayList<NoteEntity>()
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -114,6 +115,20 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 phone TEXT,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS study_notes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                subject_id TEXT,
+                chapter_id INTEGER,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                category TEXT NOT NULL,
                 created_at INTEGER NOT NULL
             )
             """.trimIndent()
@@ -750,6 +765,137 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         null
     }
 
+    // --- NotesDao Implementation ---
+    override suspend fun insertNote(note: NoteEntity): Long = withContext(Dispatchers.IO) {
+        val assignedId = if (note.id > 0) note.id else System.currentTimeMillis()
+        val noteWithId = note.copy(id = assignedId)
+        inMemoryNotes.add(0, noteWithId)
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("user_id", note.userId)
+                    put("subject_id", note.subjectId)
+                    put("chapter_id", note.chapterId)
+                    put("title", note.title)
+                    put("content", note.content)
+                    put("category", note.category)
+                    put("created_at", note.createdAt)
+                }
+                val rowId = db.insertWithOnConflict("study_notes", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+                return@withContext if (rowId > 0) rowId else assignedId
+            } catch (_: Throwable) {
+                return@withContext assignedId
+            }
+        }
+        assignedId
+    }
+
+    override suspend fun getAllNotes(userId: Int): List<NoteEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryNotes.filter { it.userId == userId || userId == 1 }
+        }
+
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "study_notes",
+                null,
+                "user_id = ? OR user_id = 1",
+                arrayOf(userId.toString()),
+                null,
+                null,
+                "created_at DESC"
+            )
+            val list = mutableListOf<NoteEntity>()
+            cursor.use { c ->
+                val idCol = c.getColumnIndex("id")
+                val uidCol = c.getColumnIndex("user_id")
+                val subCol = c.getColumnIndex("subject_id")
+                val chapCol = c.getColumnIndex("chapter_id")
+                val titleCol = c.getColumnIndex("title")
+                val contentCol = c.getColumnIndex("content")
+                val catCol = c.getColumnIndex("category")
+                val dateCol = c.getColumnIndex("created_at")
+
+                while (c.moveToNext()) {
+                    list.add(
+                        NoteEntity(
+                            id = if (idCol >= 0) c.getLong(idCol) else 0L,
+                            userId = if (uidCol >= 0) c.getInt(uidCol) else userId,
+                            subjectId = if (subCol >= 0) c.getString(subCol) else null,
+                            chapterId = if (chapCol >= 0 && !c.isNull(chapCol)) c.getInt(chapCol) else null,
+                            title = if (titleCol >= 0) c.getString(titleCol) else "",
+                            content = if (contentCol >= 0) c.getString(contentCol) else "",
+                            category = if (catCol >= 0) c.getString(catCol) else "COMMON",
+                            createdAt = if (dateCol >= 0) c.getLong(dateCol) else System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+            if (list.isNotEmpty()) return@withContext list
+        } catch (_: Throwable) {}
+
+        inMemoryNotes.filter { it.userId == userId || userId == 1 }
+    }
+
+    override suspend fun getNotesBySubject(userId: Int, subjectId: String): List<NoteEntity> = withContext(Dispatchers.IO) {
+        getAllNotes(userId).filter { it.subjectId.equals(subjectId, ignoreCase = true) }
+    }
+
+    override suspend fun getNoteById(noteId: Long): NoteEntity? = withContext(Dispatchers.IO) {
+        if (hasAndroidContext) {
+            try {
+                val db = readableDatabase
+                val cursor = db.query(
+                    "study_notes",
+                    null,
+                    "id = ?",
+                    arrayOf(noteId.toString()),
+                    null,
+                    null,
+                    null
+                )
+                cursor.use { c ->
+                    if (c.moveToFirst()) {
+                        val idCol = c.getColumnIndex("id")
+                        val uidCol = c.getColumnIndex("user_id")
+                        val subCol = c.getColumnIndex("subject_id")
+                        val chapCol = c.getColumnIndex("chapter_id")
+                        val titleCol = c.getColumnIndex("title")
+                        val contentCol = c.getColumnIndex("content")
+                        val catCol = c.getColumnIndex("category")
+                        val dateCol = c.getColumnIndex("created_at")
+
+                        return@withContext NoteEntity(
+                            id = if (idCol >= 0) c.getLong(idCol) else noteId,
+                            userId = if (uidCol >= 0) c.getInt(uidCol) else 1,
+                            subjectId = if (subCol >= 0) c.getString(subCol) else null,
+                            chapterId = if (chapCol >= 0 && !c.isNull(chapCol)) c.getInt(chapCol) else null,
+                            title = if (titleCol >= 0) c.getString(titleCol) else "",
+                            content = if (contentCol >= 0) c.getString(contentCol) else "",
+                            category = if (catCol >= 0) c.getString(catCol) else "COMMON",
+                            createdAt = if (dateCol >= 0) c.getLong(dateCol) else System.currentTimeMillis()
+                        )
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+        inMemoryNotes.find { it.id == noteId }
+    }
+
+    override suspend fun deleteNote(noteId: Long): Int = withContext(Dispatchers.IO) {
+        inMemoryNotes.removeIf { it.id == noteId }
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                return@withContext db.delete("study_notes", "id = ?", arrayOf(noteId.toString()))
+            } catch (_: Throwable) {}
+        }
+        1
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
         private const val DATABASE_VERSION = 5
@@ -758,6 +904,12 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         private var INSTANCE: QuizLocalDatabase? = null
 
         fun getInstance(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): QuizDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getNotesDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): NotesDao {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
             }

@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,6 +89,11 @@ import kotlinx.coroutines.launch
 fun AiTutorScreen(
     viewModel: AiTutorViewModel,
     onBackClick: () -> Unit,
+    onNavigateToQuiz: ((subjectId: String?, subjectName: String?) -> Unit)? = null,
+    onNavigateToSubject: ((subjectId: String) -> Unit)? = null,
+    onNavigateToNotes: (() -> Unit)? = null,
+    onNavigateToProfile: (() -> Unit)? = null,
+    onNavigateToProgress: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -101,6 +107,35 @@ fun AiTutorScreen(
     val isLiveActive by voiceAssistant.isLiveActive.collectAsState()
 
     var showLiveVoiceOverlay by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.actionEvent.collect { action ->
+            when (action) {
+                is AiUiAction.NavigateToQuiz -> {
+                    onNavigateToQuiz?.invoke(action.subjectId, action.subjectName)
+                }
+                is AiUiAction.NavigateToSubject -> {
+                    onNavigateToSubject?.invoke(action.subjectId)
+                }
+                is AiUiAction.NavigateToNotes -> {
+                    onNavigateToNotes?.invoke()
+                }
+                is AiUiAction.NavigateToProfile -> {
+                    onNavigateToProfile?.invoke()
+                }
+                is AiUiAction.NavigateToProgress -> {
+                    onNavigateToProgress?.invoke()
+                }
+                is AiUiAction.ShowProgressSummary -> {
+                    Toast.makeText(
+                        context,
+                        "Progress: ${action.topicsDone} topics mastered · ${action.avgScore}% avg · ${action.streak} day streak",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -129,6 +164,15 @@ fun AiTutorScreen(
             onPromptClick = { viewModel.onPromptClicked(it) },
             onSpeakMessage = { messageId, text ->
                 viewModel.toggleSpeakMessage(messageId, text, context)
+            },
+            onSaveNote = { message ->
+                viewModel.onSaveNoteClicked(message)
+            },
+            onElaborate = { message ->
+                viewModel.onElaborateClicked(message)
+            },
+            onOpenNotes = {
+                onNavigateToNotes?.invoke()
             },
             onMicClick = {
                 val hasPermission = ContextCompat.checkSelfPermission(
@@ -172,6 +216,9 @@ fun AiTutorContent(
     onClearChat: () -> Unit = {},
     onPromptClick: (String) -> Unit,
     onSpeakMessage: (messageId: String, text: String) -> Unit = { _, _ -> },
+    onSaveNote: (ChatMessage) -> Unit = {},
+    onElaborate: (ChatMessage) -> Unit = {},
+    onOpenNotes: () -> Unit = {},
     onMicClick: () -> Unit = {},
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -188,7 +235,7 @@ fun AiTutorContent(
     }
     val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF8FAFC)
     val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
-    val inputCardBgColor = if (isDark) Color(0xFF131C38) else Color.White
+    val inputCardBgColor = if (isDark) Color(0xFF0D1322) else Color.White
     val inputTextColor = if (isDark) TextPrimary else LightTextPrimary
     val borderColor = if (isDark) Color(0xFF1E2B58) else Color(0xFFE2E8F0)
 
@@ -209,7 +256,7 @@ fun AiTutorContent(
             .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top Header Bar
+            // Top Header Bar (Glowing Emblem + Live Offline Badge + Sleek New Chat Pill)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -231,19 +278,41 @@ fun AiTutorContent(
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = uiState.headerTag,
-                            color = if (isDark) CyanGlow else BlueAccent,
-                            fontSize = 11.sp,
+                            text = "SYNAPSE AI",
+                            color = headerTextColor,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp,
+                            letterSpacing = 1.sp,
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = uiState.tutorTitle,
-                            color = headerTextColor,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(
+                                    color = if (isDark) Color(0xFF0D1E28) else Color(0xFFECFDF5),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color(0xFFA7F3D0),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color(0xFF10B981), CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "OFFLINE NEURAL CORE",
+                                color = if (isDark) CyanGlow else Color(0xFF059669),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                            )
+                        }
                     }
 
                     // New Chat / Clear Chat action button
@@ -255,7 +324,7 @@ fun AiTutorContent(
                             )
                             .border(
                                 1.dp,
-                                if (isDark) Color(0xFF2A3660) else Color(0xFFBFDBFE),
+                                if (isDark) CyanGlow.copy(alpha = 0.5f) else Color(0xFFBFDBFE),
                                 RoundedCornerShape(16.dp)
                             )
                             .clickable { onClearChat() }
@@ -336,6 +405,11 @@ fun AiTutorContent(
                             items(items = uiState.messages, key = { it.id }) { message ->
                                 if (message.isUser) {
                                     UserMessageBubble(message = message)
+                                } else if (message.isSavedNoteCard) {
+                                    SavedNoteInteractiveCard(
+                                        message = message,
+                                        onOpenNotes = onOpenNotes
+                                    )
                                 } else {
                                     AiMessageBubble(
                                         message = message,
@@ -359,7 +433,9 @@ fun AiTutorContent(
                                                 message.text
                                             }
                                             onSpeakMessage(message.id, fullText)
-                                        }
+                                        },
+                                        onSaveNote = { onSaveNote(message) },
+                                        onElaborate = { onElaborate(message) }
                                     )
                                 }
                             }
@@ -373,15 +449,23 @@ fun AiTutorContent(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Ultra-Clean Chat Input Bar Box (Zero Default Bottom Suggestion Chips)
+                    // Ultra-Clean Chat Input Bar Box (Floating Neural Glass Dock)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .imePadding()
                     ) {
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 6.dp
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(28.dp))
+                                .background(inputCardBgColor)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isDark) CyanGlow.copy(alpha = 0.35f) else Color(0xFFCBD5E1),
+                                    shape = RoundedCornerShape(28.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -394,7 +478,7 @@ fun AiTutorContent(
                                     onValueChange = onQueryChange,
                                     placeholder = {
                                         Text(
-                                            text = if (uiState.isGenerating) "SYNAPSE AI is thinking..." else "Ask anything...",
+                                            text = if (uiState.isGenerating) "SYNAPSE AI is thinking..." else "Ask anything or say 'save note'...",
                                             color = Color(0xFF94A3B8),
                                             fontSize = 14.sp,
                                         )
@@ -402,45 +486,48 @@ fun AiTutorContent(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(24.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = borderColor,
-                                        focusedContainerColor = inputCardBgColor,
-                                        unfocusedContainerColor = inputCardBgColor,
+                                        focusedBorderColor = Color.Transparent,
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
                                         focusedTextColor = inputTextColor,
                                         unfocusedTextColor = inputTextColor,
                                     ),
                                     singleLine = true,
-                                    trailingIcon = {
-                                        // Animated Live Voice Mic Launcher
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(end = 4.dp)
-                                                .size(36.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFF2563EB).copy(alpha = 0.12f))
-                                                .clickable { onMicClick() },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(text = "🎙️", fontSize = 18.sp)
-                                        }
-                                    }
                                 )
+
+                                // Animated Live Voice Mic Launcher
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                listOf(CyanGlow.copy(alpha = 0.25f), Color(0xFF2563EB).copy(alpha = 0.15f))
+                                            )
+                                        )
+                                        .border(1.dp, CyanGlow.copy(alpha = 0.4f), CircleShape)
+                                        .clickable { onMicClick() },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = "🎙️", fontSize = 18.sp)
+                                }
 
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 // Send Button (Instant 0ms clear & send)
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
+                                        .size(42.dp)
                                         .clip(CircleShape)
                                         .background(
                                             brush = if (canSend) {
-                                                Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent))
+                                                Brush.horizontalGradient(listOf(Color(0xFF00F0FF), Color(0xFF8B5CF6)))
                                             } else {
                                                 Brush.horizontalGradient(
                                                     listOf(
-                                                        Color(0xFF94A3B8).copy(alpha = 0.45f),
-                                                        Color(0xFFCBD5E1).copy(alpha = 0.45f)
+                                                        Color(0xFF94A3B8).copy(alpha = 0.35f),
+                                                        Color(0xFFCBD5E1).copy(alpha = 0.35f)
                                                     )
                                                 )
                                             }
@@ -450,7 +537,7 @@ fun AiTutorContent(
                                 ) {
                                     Text(
                                         text = "↑",
-                                        color = Color.White.copy(alpha = if (canSend) 1f else 0.6f),
+                                        color = Color.White.copy(alpha = if (canSend) 1f else 0.5f),
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -558,7 +645,7 @@ private fun EmptyChatWelcomeEmblem(
 }
 
 /**
- * Modern User Message Bubble (Sleek asymmetric gradient pill aligned right).
+ * Modern User Message Bubble (Vibrant Cyan-to-Violet gradient pill aligned right).
  */
 @Composable
 private fun UserMessageBubble(message: ChatMessage) {
@@ -572,7 +659,7 @@ private fun UserMessageBubble(message: ChatMessage) {
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 4.dp))
                 .background(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+                        colors = listOf(Color(0xFF00F0FF), Color(0xFF8B5CF6))
                     )
                 )
                 .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -582,7 +669,7 @@ private fun UserMessageBubble(message: ChatMessage) {
                 color = Color.White,
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.SemiBold
             )
         }
 
@@ -598,8 +685,101 @@ private fun UserMessageBubble(message: ChatMessage) {
 }
 
 /**
- * ChatGPT / Gemini Grade Full-Width AI Response Card with glowing avatar, formatted markdown,
- * and copy / read-aloud icon actions.
+ * Interactive Saved Note Confirmation Card.
+ * Tapping navigates the student directly to Notes.
+ */
+@Composable
+private fun SavedNoteInteractiveCard(
+    message: ChatMessage,
+    onOpenNotes: () -> Unit,
+) {
+    val isDark = LocalThemeIsDark.current
+    val emeraldGlow = Color(0xFF10B981)
+    val cardBg = if (isDark) Color(0xFF091F18) else Color(0xFFECFDF5)
+    val borderColor = if (isDark) Color(0xFF059669).copy(alpha = 0.6f) else Color(0xFFA7F3D0)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(cardBg)
+            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+            .clickable { onOpenNotes() }
+            .padding(14.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(emeraldGlow.copy(alpha = 0.15f))
+                        .border(1.dp, emeraldGlow.copy(alpha = 0.5f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "✓", color = emeraldGlow, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = "Saved to Notes",
+                        color = emeraldGlow,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = message.savedNoteTitle ?: message.text.ifBlank { "Tap to view in Notes" },
+                        color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(emeraldGlow.copy(alpha = 0.2f))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Tap to View",
+                        color = emeraldGlow,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "→",
+                        color = emeraldGlow,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * ChatGPT / Gemini Grade Full-Width AI Response Card (Obsidian Glass + Cyan/Violet Tint)
+ * with glowing avatar, formatted markdown, and inline action chips (Listen, Copy, Save Note, Elaborate).
  */
 @Composable
 private fun AiMessageBubble(
@@ -607,11 +787,13 @@ private fun AiMessageBubble(
     isGenerating: Boolean,
     isSpeaking: Boolean,
     onCopyClick: () -> Unit,
-    onSpeakClick: () -> Unit
+    onSpeakClick: () -> Unit,
+    onSaveNote: () -> Unit,
+    onElaborate: () -> Unit,
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) Color(0xFF0F172A) else Color.White
-    val cardBorder = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0)
+    val cardBg = if (isDark) Color(0xFF0D1322) else Color.White
+    val cardBorder = if (isDark) Color(0xFF00F0FF).copy(alpha = 0.25f) else Color(0xFFE2E8F0)
     val textColor = if (isDark) TextPrimary else Color(0xFF0F172A)
 
     Column(
@@ -673,7 +855,7 @@ private fun AiMessageBubble(
             }
 
             if (isGenerating) {
-                PulsingDotsIndicator()
+                NeuralWaveTypingIndicator()
             }
         }
 
@@ -683,7 +865,7 @@ private fun AiMessageBubble(
         if (message.text.isEmpty()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 4.dp)
             ) {
                 Text(
@@ -692,7 +874,7 @@ private fun AiMessageBubble(
                     fontSize = 13.sp,
                     fontStyle = FontStyle.Italic
                 )
-                PulsingDotsIndicator()
+                NeuralWaveTypingIndicator()
             }
         } else {
             FormattedAiText(text = message.text, textColor = textColor)
@@ -705,7 +887,7 @@ private fun AiMessageBubble(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Action Toolbar (Timestamp on left, Copy & Read Aloud on right)
+        // Action Toolbar (Timestamp on left, Action Chips on right)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -717,29 +899,11 @@ private fun AiMessageBubble(
                 fontSize = 11.sp
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Copy Action Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
-                        .clickable { onCopyClick() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "📋", fontSize = 11.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Copy",
-                            color = Color(0xFF64748B),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                // Read Aloud / Speak Action Button
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Listen / Stop Button
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -756,13 +920,95 @@ private fun AiMessageBubble(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = if (isSpeaking) "⏹" else "🔊", fontSize = 11.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = if (isSpeaking) "Stop" else "Listen",
                             color = if (isSpeaking) Color(0xFF10B981) else Color(0xFF64748B),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+                }
+
+                // Copy Action Button
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
+                        .clickable { onCopyClick() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "📋", fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = "Copy",
+                            color = Color(0xFF64748B),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Save Note Action Button
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
+                        .clickable { onSaveNote() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "📝", fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = "Save Note",
+                            color = Color(0xFF64748B),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Elaborate Action Chip (Visible only on concept answers)
+                if (message.isConceptAnswer) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    listOf(
+                                        CyanGlow.copy(alpha = 0.15f),
+                                        PurpleAccent.copy(alpha = 0.15f)
+                                    )
+                                )
+                            )
+                            .border(
+                                width = 1.dp,
+                                brush = Brush.horizontalGradient(
+                                    listOf(
+                                        CyanGlow.copy(alpha = 0.5f),
+                                        PurpleAccent.copy(alpha = 0.5f)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onElaborate() }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "✨", fontSize = 11.sp)
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Elaborate",
+                                color = if (isDark) CyanGlow else BlueAccent,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
@@ -817,60 +1063,91 @@ private fun FormattedAiText(text: String, textColor: Color) {
 }
 
 /**
- * Pulsing typing animation indicator for ChatGPT-style thinking and streaming state.
+ * Animated 4-bar neural wave indicator (ChatGPT/Gemini style thinking waveform).
  */
 @Composable
-fun PulsingDotsIndicator(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val dotAlpha1 by infiniteTransition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
+fun NeuralWaveTypingIndicator(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "neuralWave")
+
+    val height1 by infiniteTransition.animateFloat(
+        initialValue = 4f,
+        targetValue = 18f,
         animationSpec = infiniteRepeatable(
-            animation = tween(550, easing = LinearEasing),
+            animation = tween(420, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "dot1"
+        label = "wave1"
     )
-    val dotAlpha2 by infiniteTransition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
+    val height2 by infiniteTransition.animateFloat(
+        initialValue = 16f,
+        targetValue = 6f,
         animationSpec = infiniteRepeatable(
-            animation = tween(550, delayMillis = 180, easing = LinearEasing),
+            animation = tween(480, delayMillis = 80, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "dot2"
+        label = "wave2"
     )
-    val dotAlpha3 by infiniteTransition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
+    val height3 by infiniteTransition.animateFloat(
+        initialValue = 6f,
+        targetValue = 20f,
         animationSpec = infiniteRepeatable(
-            animation = tween(550, delayMillis = 360, easing = LinearEasing),
+            animation = tween(390, delayMillis = 160, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "dot3"
+        label = "wave3"
+    )
+    val height4 by infiniteTransition.animateFloat(
+        initialValue = 14f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(450, delayMillis = 240, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "wave4"
     )
 
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier.height(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
-                .background(BlueAccent.copy(alpha = dotAlpha1), CircleShape)
+                .width(3.dp)
+                .height(height1.dp)
+                .clip(RoundedCornerShape(1.5.dp))
+                .background(Color(0xFF00F0FF))
         )
         Box(
             modifier = Modifier
-                .size(6.dp)
-                .background(PurpleAccent.copy(alpha = dotAlpha2), CircleShape)
+                .width(3.dp)
+                .height(height2.dp)
+                .clip(RoundedCornerShape(1.5.dp))
+                .background(Color(0xFF38BDF8))
         )
         Box(
             modifier = Modifier
-                .size(6.dp)
-                .background(CyanGlow.copy(alpha = dotAlpha3), CircleShape)
+                .width(3.dp)
+                .height(height3.dp)
+                .clip(RoundedCornerShape(1.5.dp))
+                .background(Color(0xFF818CF8))
+        )
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(height4.dp)
+                .clip(RoundedCornerShape(1.5.dp))
+                .background(Color(0xFFA855F7))
         )
     }
+}
+
+/**
+ * Pulsing typing animation indicator for backward compatibility.
+ */
+@Composable
+fun PulsingDotsIndicator(modifier: Modifier = Modifier) {
+    NeuralWaveTypingIndicator(modifier = modifier)
 }
 
 @Preview(showBackground = true, showSystemUi = true)

@@ -3398,6 +3398,149 @@
           "content": "A comprehensive university overview of Observational Cosmology & The Big Bang within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
         }
       ]
+    },
+    {
+      "subject": "Quantitative Aptitude & Reasoning",
+      "overview": "Rigorous college placement, GATE, and competitive aptitude covering logical deduction, probability, and quantitative problem-solving.",
+      "topics": [
+        "Syllogisms & Deductive Logic",
+        "Permutations, Combinations & Probability",
+        "Time, Speed, Distance & Work",
+        "Data Interpretation & Quantitative Analysis"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "APT_001",
+          "subject": "Quantitative Aptitude & Reasoning",
+          "chapter": "Logical Reasoning",
+          "topic": "Syllogisms & Deductive Logic",
+          "keywords": [
+            "syllogism",
+            "syllogisms",
+            "deductive logic",
+            "venn diagram",
+            "venn diagrams",
+            "premise",
+            "premises",
+            "conclusion",
+            "conclusions",
+            "aptitude",
+            "reasoning",
+            "logical reasoning",
+            "valid conclusion"
+          ],
+          "definition": "A syllogism is a form of deductive reasoning where a conclusion is drawn from two or more given premises assumed to be true.",
+          "formula": "Categorical Syllogisms: All A are B, Some B are C. Valid conclusions are tested via intersecting Venn diagram sets.",
+          "worked_example": "Given: 'All engineers are problem-solvers' and 'Some problem-solvers are coders'. Conclusion: 'Some coders may be engineers', but not necessarily all. Venn overlapping verifies certainty vs possibility.",
+          "content": "Syllogism evaluation requires testing Universal Affirmative (A: All), Universal Negative (E: No), Particular Affirmative (I: Some), and Particular Negative (O: Some not). The Venn diagram method constructs minimum overlap representations to determine strictly valid conclusions versus merely possible ones."
+        },
+        {
+          "chunk_id": "APT_002",
+          "subject": "Quantitative Aptitude & Reasoning",
+          "chapter": "Combinatorics",
+          "topic": "Permutations, Combinations & Probability",
+          "keywords": [
+            "permutation",
+            "permutations",
+            "combination",
+            "combinations",
+            "probability",
+            "npr",
+            "ncr",
+            "factorial",
+            "counting principle",
+            "aptitude",
+            "quantitative"
+          ],
+          "definition": "Permutations determine ordered arrangements of items, while combinations determine unordered selections from a finite set.",
+          "formula": "Permutations: P(n, r) = n! / (n - r)!. Combinations: C(n, r) = n! / (r! * (n - r)!). Probability: P(E) = n(E) / n(S).",
+          "worked_example": "Choosing 3 committee members out of 8 candidates: C(8, 3) = (8 * 7 * 6) / (3 * 2 * 1) = 56 combinations. Arranging 3 distinct roles (President, Secretary, Treasurer): P(8, 3) = 8 * 7 * 6 = 336 permutations.",
+          "content": "The Fundamental Counting Principle states that if one event occurs in m ways and a second independent event in n ways, both occur in m * n ways. Complementary probability (P(A') = 1 - P(A)) simplifies 'at least one' problems."
+        },
+        {
+          "chunk_id": "APT_003",
+          "subject": "Quantitative Aptitude & Reasoning",
+          "chapter": "Arithmetic Aptitude",
+          "topic": "Time, Speed, Distance & Work Efficiency",
+          "keywords": [
+            "time and work",
+            "time and distance",
+            "speed and distance",
+            "relative speed",
+            "work efficiency",
+            "efficiency",
+            "train problems",
+            "average speed",
+            "aptitude"
+          ],
+          "definition": "Time, speed, and distance formulate physical motion, while work problems model collective task completion rates.",
+          "formula": "Speed = Distance / Time. Average speed for round trip: v_avg = 2*v1*v2 / (v1 + v2). Combined work: (1/A) + (1/B) = (1/T_together).",
+          "worked_example": "If Person A finishes a project in 10 days and B in 15 days, their daily work rate is (1/10) + (1/15) = (3 + 2)/30 = 5/30 = 1/6. Working together, they complete the project in 6 days.",
+          "content": "Relative speed: when two objects travel in opposite directions, relative speed is s1 + s2; when traveling in the same direction, relative speed is |s1 - s2|. Unit conversions use 1 km/h = 5/18 m/s."
+        }
+      ]
+    },
+    {
+      "subject": "Electronics & VLSI Design",
+      "overview": "Undergraduate semiconductor theory, CMOS technology, digital integrated circuit design, and signal processing.",
+      "topics": [
+        "CMOS Inverter & Digital Integrated Circuits",
+        "Semiconductor Physics & MOSFET Operation",
+        "Signals & Systems: Fourier & Laplace Transforms"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "VLSI_001",
+          "subject": "Electronics & VLSI Design",
+          "chapter": "Digital VLSI",
+          "topic": "CMOS Inverter & Digital Integrated Circuits",
+          "keywords": [
+            "cmos",
+            "vlsi",
+            "inverter",
+            "cmos inverter",
+            "mosfet",
+            "pmos",
+            "nmos",
+            "pull up",
+            "pull down",
+            "propagation delay",
+            "dynamic power",
+            "static power",
+            "noise margin",
+            "alpha c v2 f",
+            "integrated circuit",
+            "ic"
+          ],
+          "definition": "A CMOS inverter consists of complementary PMOS pull-up and NMOS pull-down transistors that produce an inverted logic output with near-zero static power dissipation.",
+          "formula": "Dynamic power: P_dyn = alpha * C_L * V_DD^2 * f. Propagation delay: t_pd = (t_pHL + t_pLH) / 2.",
+          "worked_example": "For a CMOS gate operating at V_DD = 1.2V with load C_L = 10fF, switching activity alpha = 0.1, and clock frequency f = 2 GHz: P_dyn = 0.1 * 10e-15 * (1.2)^2 * 2e9 = 2.88 microWatts.",
+          "content": "In CMOS logic, when the input is HIGH (1), the NMOS transistor conducts to ground while the PMOS is OFF, pulling the output LOW (0). When the input is LOW (0), PMOS conducts to V_DD while NMOS is OFF, pulling the output HIGH (1). This complementary architecture eliminates direct DC current path between supply and ground during steady states."
+        },
+        {
+          "chunk_id": "VLSI_002",
+          "subject": "Electronics & VLSI Design",
+          "chapter": "Signals & Systems",
+          "topic": "Signals & Systems: Fourier & Laplace Transforms",
+          "keywords": [
+            "signals and systems",
+            "signal",
+            "signals",
+            "fourier transform",
+            "laplace transform",
+            "convolution",
+            "z transform",
+            "lti systems",
+            "impulse response",
+            "frequency response",
+            "transfer function"
+          ],
+          "definition": "Signals and systems mathematically model continuous and discrete information processing through Linear Time-Invariant (LTI) systems.",
+          "formula": "Convolution: y(t) = x(t) * h(t) = integral(x(tau) * h(t - tau) dtau). Laplace: X(s) = integral(x(t) * e^(-st) dt). Transfer function: H(s) = Y(s) / X(s).",
+          "worked_example": "For an LTI system with impulse response h(t) = e^(-2t)u(t) and input x(t) = e^(-3t)u(t), the output in Laplace s-domain is Y(s) = H(s)X(s) = 1 / ((s + 2)(s + 3)). Partial fraction expansion yields y(t) = (e^(-2t) - e^(-3t))u(t).",
+          "content": "LTI systems are completely characterized by their impulse response h(t). In the frequency domain, convolution in time maps to straightforward multiplication (Y(omega) = X(omega) * H(omega)), enabling filter design, bandwidth optimization, and stability analysis using poles and zeros on the complex s-plane."
+        }
+      ]
     }
   ]
 }

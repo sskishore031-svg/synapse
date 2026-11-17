@@ -2,8 +2,13 @@ package com.siamts.synapse
 
 import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.ui.tutor.AiTutorViewModel
+import com.siamts.synapse.ui.tutor.AiUiAction
+import com.siamts.synapse.ui.tutor.ChatMessage
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -66,5 +71,73 @@ class AiChatAndLiveVoiceTest {
         // Chat should be completely empty to show minimal centered welcome emblem
         assertTrue(viewModel.uiState.value.messages.isEmpty())
         assertEquals("", viewModel.uiState.value.inputQuery)
+    }
+
+    @Test
+    fun testAgenticCommand_startMathematicsQuiz() {
+        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val viewModel = AiTutorViewModel(externalScope = testScope)
+
+        viewModel.onSendMessage("start mathematics quiz")
+
+        val actionMsg = viewModel.uiState.value.messages.firstOrNull { it.actionCommand == "NAVIGATE_QUIZ" }
+        assertNotNull(actionMsg)
+        assertTrue(actionMsg!!.text.contains("Mathematics Quiz"))
+    }
+
+    @Test
+    fun testAgenticCommand_openComputerScience() {
+        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val viewModel = AiTutorViewModel(externalScope = testScope)
+
+        viewModel.onSendMessage("open computer science")
+
+        val actionMsg = viewModel.uiState.value.messages.firstOrNull { it.actionCommand == "NAVIGATE_SUBJECT" }
+        assertNotNull(actionMsg)
+        assertTrue(actionMsg!!.text.contains("Computer Science"))
+    }
+
+    @Test
+    fun testAgenticCommand_openNotes() {
+        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val viewModel = AiTutorViewModel(externalScope = testScope)
+
+        viewModel.onSendMessage("show my notes")
+
+        val actionMsg = viewModel.uiState.value.messages.firstOrNull { it.actionCommand == "NAVIGATE_NOTES" }
+        assertNotNull(actionMsg)
+        assertTrue(actionMsg!!.text.contains("Saved Study Notes"))
+    }
+
+    @Test
+    fun testAgenticCommand_saveNote_generatesSavedNoteCard() {
+        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val viewModel = AiTutorViewModel(externalScope = testScope)
+
+        // Directly invoke command to save note
+        viewModel.onSendMessage("save this as a note")
+
+        val savedCard = viewModel.uiState.value.messages.firstOrNull { it.isSavedNoteCard }
+        assertNotNull(savedCard)
+        assertTrue(savedCard!!.text.contains("Saved to Notes"))
+    }
+
+    @Test
+    fun testOnSaveNoteClicked_directAction() {
+        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        val viewModel = AiTutorViewModel(externalScope = testScope)
+
+        val conceptMessage = ChatMessage(
+            text = "Waves & Oscillations are rhythmic disturbances transferring energy through space-time.",
+            paragraph2 = "Core equation: v = f * lambda. Example: Sound waves in air.",
+            isUser = false,
+            matchedTopic = "Waves & Oscillations"
+        )
+
+        viewModel.onSaveNoteClicked(conceptMessage)
+
+        val savedCard = viewModel.uiState.value.messages.firstOrNull { it.isSavedNoteCard }
+        assertNotNull(savedCard)
+        assertEquals("Waves & Oscillations - AI Revision Summary", savedCard!!.savedNoteTitle)
     }
 }

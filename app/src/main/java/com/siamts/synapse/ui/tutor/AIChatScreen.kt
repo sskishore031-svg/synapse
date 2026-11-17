@@ -12,12 +12,21 @@ typealias AIChatScreenViewModel = AiTutorViewModel
 fun AIChatScreen(
     viewModel: AiTutorViewModel,
     onBackClick: () -> Unit,
+    onNavigateToQuiz: ((subjectId: String?, subjectName: String?) -> Unit)? = null,
+    onNavigateToSubject: ((subjectId: String) -> Unit)? = null,
+    onNavigateToNotes: (() -> Unit)? = null,
+    onNavigateToProfile: (() -> Unit)? = null,
+    onNavigateToProgress: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AiTutorScreen(
         viewModel = viewModel,
         onBackClick = onBackClick,
+        onNavigateToQuiz = onNavigateToQuiz,
+        onNavigateToSubject = onNavigateToSubject,
+        onNavigateToNotes = onNavigateToNotes,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToProgress = onNavigateToProgress,
         modifier = modifier,
     )
 }
-

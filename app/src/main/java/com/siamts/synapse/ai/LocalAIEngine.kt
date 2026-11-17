@@ -183,10 +183,22 @@ class LocalAIEngine private constructor(context: Context?) {
         "guide me", "what do you know", "what can you teach", "show features", "list features"
     )
 
+    private val outOfScopePhrases = setOf(
+        "can you eat", "do you eat", "what do you eat", "will you eat", "are you eating", "eat food",
+        "who is rajini", "who is rajinikanth", "who is kamal", "rajini", "rajinikanth",
+        "kamal haasan", "actor", "actress", "movie", "movies", "cinema", "box office", "song", "songs",
+        "cricket", "ipl", "football", "match score", "politics", "politician", "minister",
+        "recipe", "food", "cook", "cooking", "restaurant", "hotel", "taste", "delicious",
+        "girlfriend", "boyfriend", "marry me", "do you love me", "love you", "joke", "jokes", "weather", "horoscope"
+    )
+
     private val identityPhrases = setOf(
         "who are you", "who r u", "who are u", "who r you", "what are you", "what r u",
         "what is your name", "whats your name", "what s your name", "whats ur name", "what is ur name",
         "tell me your name", "your name", "name please",
+        "nee yaru", "neenga yaru", "un peru enna", "unga peru enna", "un per enna", "unga per enna",
+        "nee yar", "neenga yar", "yaaru nee", "yaar nee", "yaaru neenga", "yaar neenga",
+        "unnala enna panna mudiyum", "epdi work aagum", "epdi work pannuva",
         "what is synapse ai", "what is synapse", "what is this app", "tell me about yourself",
         "tell me about synapse", "tell me about synapse ai", "about yourself", "introduce yourself",
         "are you chatgpt", "are u chatgpt", "are you chat gpt", "are you gpt",
@@ -478,6 +490,11 @@ class LocalAIEngine private constructor(context: Context?) {
         val normalized = normalizeQuery(query)
         val lowerQuery = query.lowercase(Locale.ROOT)
 
+        // 0. Strict Out-of-Scope Guardrail (Fast Check)
+        if (isOutOfScopeQuery(normalized)) {
+            return buildOutOfScopeResponse()
+        }
+
         // 1. Intent A: Casual / Well-Being Greetings ("how are you", "how are you doing", "how r u", "whats up")
         if (isWellBeingQuery(normalized)) {
             return buildWellBeingResponse()
@@ -583,9 +600,11 @@ class LocalAIEngine private constructor(context: Context?) {
 
         val bestMatch = scoredChunks.maxByOrNull { it.first }
         val bestScore = bestMatch?.first ?: 0.0
+        val tokenCount = tokens.size.coerceAtLeast(1)
+        val normalizedScore = (bestScore / (tokenCount * 25.0)).coerceIn(0.0, 1.0)
 
-        if (bestMatch != null && bestScore >= 5.0) {
-            val response = buildEducationalResponse(bestMatch.second, bestScore)
+        if (bestMatch != null && bestScore >= 12.0 && normalizedScore >= 0.25) {
+            val response = buildEducationalResponse(bestMatch.second, bestScore, isElaborated = isElaborationQuery(normalized))
             recordTurn(userQuery, bestMatch.second)
             return response
         }
@@ -600,33 +619,37 @@ class LocalAIEngine private constructor(context: Context?) {
                 }
             }
             val contextBest = contextScored.maxByOrNull { it.first }
-            if (contextBest != null && contextBest.first >= 5.0) {
-                val resp = buildEducationalResponse(contextBest.second, contextBest.first)
+            if (contextBest != null && contextBest.first >= 12.0) {
+                val resp = buildEducationalResponse(contextBest.second, contextBest.first, isElaborated = isElaborationQuery(normalized))
                 recordTurn(userQuery, contextBest.second)
                 return resp
             }
         }
 
-        // 15. On-Device Generative Reasoning Synthesizer
-        val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
-        if (generativeResp != null) {
-            recordTurn(
-                query,
-                KnowledgeChunk(
-                    chunkId = "gen_${System.currentTimeMillis()}",
-                    subject = generativeResp.matchedSubject.orEmpty(),
-                    chapter = generativeResp.matchedChapter.orEmpty(),
-                    topic = generativeResp.matchedTopic.orEmpty(),
-                    definition = generativeResp.paragraph1,
-                    formulaOrCoreRule = generativeResp.paragraph2,
-                    content = "${generativeResp.paragraph1}\n\n${generativeResp.paragraph2}"
+        // 15. Check if query is an academic inquiry for curriculum / syllabus / college concepts
+        val academicInquiryWords = setOf("syllabus", "curriculum", "study", "exam", "college", "university", "engineering", "degree", "course", "major")
+        if (tokens.any { it in academicInquiryWords } || academicInquiryWords.any { normalized.contains(it) }) {
+            val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
+            if (generativeResp != null) {
+                recordTurn(
+                    query,
+                    KnowledgeChunk(
+                        chunkId = "gen_${System.currentTimeMillis()}",
+                        subject = generativeResp.matchedSubject.orEmpty(),
+                        chapter = generativeResp.matchedChapter.orEmpty(),
+                        topic = generativeResp.matchedTopic.orEmpty(),
+                        definition = generativeResp.paragraph1,
+                        formulaOrCoreRule = generativeResp.paragraph2,
+                        content = "${generativeResp.paragraph1}\n\n${generativeResp.paragraph2}"
+                    )
                 )
-            )
-            return generativeResp
+                return generativeResp
+            }
+            return buildAcademicGuidanceResponse(query, tokens)
         }
 
-        // 16. Academic Guidance & Synthesizer for open-ended / unfamiliar concepts (Zero "Couldn't Find Match" Fallbacks)
-        return buildAcademicGuidanceResponse(query, tokens)
+        // 16. Strict Out-of-Scope Guardrail (Minimum Similarity Threshold — Zero Random Hallucinations)
+        return buildOutOfScopeResponse()
     }
 
     /**
@@ -931,6 +954,14 @@ class LocalAIEngine private constructor(context: Context?) {
     private fun isIdentityQuery(normalized: String): Boolean {
         if (normalized.contains("capabilit")) return false
 
+        val tanglishPatterns = setOf(
+            "nee yaru", "neenga yaru", "un peru enna", "unga peru enna",
+            "un per enna", "unga per enna", "nee yar", "neenga yar",
+            "yaaru nee", "yaar nee", "yaaru neenga", "yaar neenga",
+            "unnala enna panna mudiyum", "epdi work aagum", "epdi work pannuva"
+        )
+        if (tanglishPatterns.any { normalized.contains(it) }) return true
+
         val nameQueries = setOf(
             "what is your name", "whats your name", "what s your name", "whats ur name",
             "what is ur name", "tell me your name", "your name", "name please",
@@ -979,11 +1010,44 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildIdentityResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline directly on your phone. Unlike cloud-based bots, I use a local Retrieval-Augmented Generation (RAG) engine and a curated curriculum database to give you fast, accurate, zero-hallucination study help without needing an internet connection.",
-            paragraph2 = "I combine an on-device Small Language Model (SLM) with a local Retrieval-Augmented Generation (RAG) knowledge engine across 50+ university subjects to help you master concepts, solve doubts, and generate smart notes.",
+            paragraph1 = "I am SYNAPSE AI, an on-device intelligent tutor designed to run 100% offline directly on your phone with zero-hallucination study help. I help you master 50+ university subjects across Engineering, Science, and Humanities with offline RAG reasoning, interactive quizzes, smart revision notes, and two-way voice chat. Ask me any study doubt, or tell me to launch a quiz or save notes!",
+            paragraph2 = "",
             confidenceScore = 100.0,
             isGreeting = false
         )
+    }
+
+    fun isOutOfScopeQuery(normalized: String): Boolean {
+        for (phrase in outOfScopePhrases) {
+            if (normalized == phrase || normalized.startsWith("$phrase ") || normalized.endsWith(" $phrase") || normalized.contains(" $phrase ") || normalized.contains(phrase)) {
+                if (phrase == "food" && (normalized.contains("food chain") || normalized.contains("food web") || normalized.contains("nutrition"))) {
+                    continue
+                }
+                if (phrase == "match" && (normalized.contains("pattern match") || normalized.contains("string match"))) {
+                    continue
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    fun buildOutOfScopeResponse(): LocalAiResponse {
+        return LocalAiResponse(
+            paragraph1 = OUT_OF_SCOPE_RESPONSE,
+            paragraph2 = "",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
+    }
+
+    fun isElaborationQuery(normalized: String): Boolean {
+        val clean = normalized.lowercase(Locale.ROOT)
+        return clean.contains("elaborate") || clean.contains("in detail") ||
+                clean.contains("deep dive") || clean.contains("deepdive") ||
+                clean.contains("step by step") || clean.contains("step-by-step") ||
+                clean.contains("more detail") || clean.contains("more details") ||
+                clean.contains("explain in detail")
     }
 
     private fun isDoubtAssistanceQuery(normalized: String): Boolean {
@@ -1158,6 +1222,10 @@ class LocalAIEngine private constructor(context: Context?) {
         chunk: KnowledgeChunk
     ): LocalAiResponse {
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+
+        if (isElaborationQuery(cleaned) || elaboratePrompts.any { cleaned.contains(it) } || cleaned == "elaborate") {
+            return buildEducationalResponse(chunk, 100.0, isElaborated = true, isFollowUp = true)
+        }
 
         if (examplePrompts.any { cleaned.contains(it) } || cleaned.contains("example")) {
             val exampleText = if (chunk.workedExample.isNotBlank()) {
@@ -1364,8 +1432,14 @@ class LocalAIEngine private constructor(context: Context?) {
 
     /**
      * Builds structured conceptual explanation with clear Definition, Formula / Core Principle, and Key Example.
+     * Defaults to concise (3-5 lines max) unless elaboration is explicitly requested.
      */
-    private fun buildEducationalResponse(chunk: KnowledgeChunk, score: Double): LocalAiResponse {
+    fun buildEducationalResponse(
+        chunk: KnowledgeChunk,
+        score: Double,
+        isElaborated: Boolean = false,
+        isFollowUp: Boolean = false
+    ): LocalAiResponse {
         val definitionText = if (chunk.definition.isNotBlank()) {
             chunk.definition.trim()
         } else {
@@ -1386,18 +1460,43 @@ class LocalAIEngine private constructor(context: Context?) {
             generateTopicExample(chunk)
         }
 
-        val paragraph1 = "📘 **Concept & Definition** (${chunk.subject} · ${chunk.chapter})\n\n$definitionText"
-        val paragraph2 = "⚡ **Formula / Core Principle**\n\n$formulaText\n\n💡 **Key Example & Practical Takeaway**\n\n$exampleText\n\n💡 *Topic: ${chunk.topic}*"
+        return if (isElaborated) {
+            val p1 = "🔍 **In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
+                    "**1. Theoretical Foundations & Mechanism:**\n" +
+                    "${chunk.content}\n\n" +
+                    "**2. Mathematical Formulations & Derivations:**\n" +
+                    formulaText
+            val p2 = "**3. Comprehensive Practical Application:**\n" +
+                    "$exampleText\n\n" +
+                    "**4. High-Yield Exam Takeaway:**\n" +
+                    "Mastering ${chunk.topic} requires remembering key governing assumptions, units, and boundary conditions."
 
-        return LocalAiResponse(
-            paragraph1 = paragraph1,
-            paragraph2 = paragraph2,
-            matchedSubject = chunk.subject,
-            matchedChapter = chunk.chapter,
-            matchedTopic = chunk.topic,
-            confidenceScore = score,
-            isGreeting = false
-        )
+            LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = p2,
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = score,
+                isGreeting = false,
+                isFollowUp = isFollowUp
+            )
+        } else {
+            // Concise-by-default (3-5 lines max: 1-sentence definition + key formula/rule + 1 quick example)
+            val p1 = "📘 **Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText"
+            val p2 = "⚡ **Formula / Core Principle:** $formulaText\n💡 **Key Example & Practical Takeaway:** $exampleText"
+
+            LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = p2,
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = score,
+                isGreeting = false,
+                isFollowUp = isFollowUp
+            )
+        }
     }
 
     /**
@@ -1678,6 +1777,9 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     companion object {
+        const val OUT_OF_SCOPE_RESPONSE =
+            "That falls outside my academic and app scope. I'm SYNAPSE AI—built specifically to help you master your college subjects, solve study doubts, take quizzes, and organize revision notes!"
+
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5
 

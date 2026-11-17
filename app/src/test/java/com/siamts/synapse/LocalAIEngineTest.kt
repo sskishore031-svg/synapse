@@ -330,9 +330,34 @@ class LocalAIEngineTest {
             response.paragraph1.contains("couldn't find a direct match")
         )
         assertTrue(
-            "Fallback response should offer helpful academic guidance",
-            response.paragraph2.contains("Principles") || response.paragraph2.contains("Mathematics") || response.paragraph2.contains("Academic")
+            "Food/recipe query must hit the strict out-of-scope guardrail boundary",
+            response.paragraph1.contains("That falls outside my academic and app scope")
         )
+    }
+
+    @Test
+    fun testOutOfScopeGuardrail_canYouEat_returnsBoundaryResponse() {
+        val response = engine.generateResponse("can you eat??")
+        assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, response.paragraph1)
+    }
+
+    @Test
+    fun testOutOfScopeGuardrail_whoIsRajini_returnsBoundaryResponse() {
+        val response = engine.generateResponse("who is rajini")
+        assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, response.paragraph1)
+    }
+
+    @Test
+    fun testTanglishIdentity_neeYaru_returnsConciseIntro() {
+        val response = engine.generateResponse("nee yaru?")
+        assertTrue(response.paragraph1.contains("I am SYNAPSE AI"))
+        assertTrue(response.paragraph1.contains("50+ university subjects"))
+    }
+
+    @Test
+    fun testTanglishIdentity_unPeruEnna_returnsConciseIntro() {
+        val response = engine.generateResponse("un peru enna")
+        assertTrue(response.paragraph1.contains("I am SYNAPSE AI"))
     }
 
     @Test

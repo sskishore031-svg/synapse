@@ -7,7 +7,7 @@ import java.util.UUID
  */
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
-    val senderName: String,
+    val senderName: String = "SYNAPSE AI",
     val text: String,
     val timeAgo: String = "Just now",
     val isUser: Boolean,
@@ -15,8 +15,24 @@ data class ChatMessage(
     val matchedSubject: String? = null,
     val matchedChapter: String? = null,
     val matchedTopic: String? = null,
+    val isConceptAnswer: Boolean = false,
+    val isSavedNoteCard: Boolean = false,
+    val savedNoteTitle: String? = null,
+    val actionCommand: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
+
+/**
+ * Sealed UI actions dispatched by the Agentic Task Execution Engine.
+ */
+sealed class AiUiAction {
+    data class NavigateToQuiz(val subjectId: String? = null, val subjectName: String? = null) : AiUiAction()
+    data class NavigateToSubject(val subjectId: String, val subjectName: String? = null) : AiUiAction()
+    data object NavigateToNotes : AiUiAction()
+    data object NavigateToProfile : AiUiAction()
+    data object NavigateToProgress : AiUiAction()
+    data class ShowProgressSummary(val topicsDone: Int, val avgScore: Int, val streak: Int) : AiUiAction()
+}
 
 /**
  * UI State for SYNAPSE AI Tutor Chat Screen following MVVM architecture with multi-turn chat support.

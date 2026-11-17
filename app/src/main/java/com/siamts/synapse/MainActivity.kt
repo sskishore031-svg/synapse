@@ -1637,6 +1637,26 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = {
                                         popBackStack()
                                     },
+                                    onNavigateToQuiz = { subjectId, subjectName ->
+                                        val sId = subjectId?.toIntOrNull()
+                                        if (sId != null && !subjectName.isNullOrBlank()) {
+                                            navigateTo(AppScreen.SubjectQuizSelection(sId, subjectName))
+                                        } else {
+                                            navigateTo(AppScreen.QuizHomeSelection)
+                                        }
+                                    },
+                                    onNavigateToSubject = { subjectId ->
+                                        navigateTo(AppScreen.Roadmap(subjectId))
+                                    },
+                                    onNavigateToNotes = {
+                                        navigateTo(AppScreen.NotesHome())
+                                    },
+                                    onNavigateToProfile = {
+                                        navigateTo(AppScreen.Profile)
+                                    },
+                                    onNavigateToProgress = {
+                                        navigateTo(AppScreen.ProgressAnalytics)
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),

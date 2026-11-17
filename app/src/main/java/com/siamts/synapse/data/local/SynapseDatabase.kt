@@ -36,6 +36,10 @@ object SynapseDatabase {
         return QuizLocalDatabase.getUserDao(context)
     }
 
+    fun getNotesDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): NotesDao {
+        return QuizLocalDatabase.getNotesDao(context)
+    }
+
     /**
      * Runs a fast background seeder on Dispatchers.IO that populates all subjects,
      * 8+ chapters per subject, lesson contents, and chapter-linked quizzes on startup

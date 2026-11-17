@@ -189,6 +189,23 @@ class NotesRepositoryImpl(
             localNotesCache.add(0, newNote)
         }
 
+        // Persist to local SQLite NotesDao
+        try {
+            val notesDao = com.siamts.synapse.data.local.SynapseDatabase.getNotesDao()
+            notesDao.insertNote(
+                com.siamts.synapse.data.local.NoteEntity(
+                    id = newId.toLong(),
+                    userId = userId ?: 1,
+                    subjectId = targetSubject?.slug ?: subjectId?.toString() ?: "general",
+                    chapterId = chapterId,
+                    title = title,
+                    content = content,
+                    category = category ?: "COMMON",
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+        } catch (_: Throwable) {}
+
         try {
             val request = CreateNoteRequest(
                 title = title,
