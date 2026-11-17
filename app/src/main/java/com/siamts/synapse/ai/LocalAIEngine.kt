@@ -193,6 +193,38 @@ class LocalAIEngine private constructor(context: Context?) {
         "who built you", "who developed you", "what kind of ai are you"
     )
 
+    private val wellBeingPhrases = setOf(
+        "how are you", "how are u", "how r you", "how r u",
+        "how are you doing", "how are u doing", "how r u doing", "how do you do",
+        "how is it going", "hows it going", "how s it going", "how are things",
+        "hope you are well", "hope you re well", "what's up", "whats up",
+        "what s up", "wassup", "sup", "are you okay", "are you ok",
+        "how have you been"
+    )
+
+    private val doubtPhrases = setOf(
+        "i have some doubts", "i have a doubt", "i want some doubts", "i have doubts",
+        "have some doubts", "have a doubt", "clear my doubt", "clear my doubts",
+        "help me with my doubts", "help with doubts", "i want some doubts for my subjects",
+        "i have doubts for my subjects", "subject doubts", "doubts in subjects",
+        "clear doubts", "doubt clarification", "solve my doubts", "solve my doubt"
+    )
+
+    private val subjectCatalogPhrases = setOf(
+        "how many subjects have you", "how many subjects do you have", "how many subjects are there",
+        "how many subjects", "how many subject", "what subjects are available", "what subjects do you have",
+        "what subjects do you know", "what subjects can you teach", "which subjects are available",
+        "which subjects do you have", "list all subjects", "list subjects", "show subjects",
+        "show all subjects", "all subjects", "available subjects", "subjects catalog",
+        "curriculum catalog", "what are the subjects", "tell me all subjects", "tell me the subjects"
+    )
+
+    private val howItWorksPhrases = setOf(
+        "how should you to work", "how should you work", "how you should work",
+        "how should i use you", "how should you operate", "how to work",
+        "how should you be working"
+    )
+
     private val gratitudeWords = setOf(
         "thanks", "thank", "thx", "tq", "thankyou", "thanksalot",
         "awesome", "great", "ok", "okay", "nice", "cool",
