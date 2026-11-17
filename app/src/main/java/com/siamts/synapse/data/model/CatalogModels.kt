@@ -31,9 +31,10 @@ data class CatalogChapter(
     @SerializedName("syllabus") val syllabus: List<String> = emptyList(),
     @SerializedName("core_formulas") val coreFormulas: List<String> = emptyList(),
     @SerializedName("part1_title") val part1Title: String = "",
-    @SerializedName("part1_content") val part1Content: String = "",
+    @SerializedName(value = "part1_content", alternate = ["part1_concept"]) val part1Content: String = "",
     @SerializedName("part2_title") val part2Title: String = "",
-    @SerializedName("part2_content") val part2Content: String = "",
+    @SerializedName(value = "part2_content", alternate = ["part2_application"]) val part2Content: String = "",
+    @SerializedName("exam_tip") val examTip: String = "",
     @SerializedName("mcqs") val mcqs: List<QuizQuestionDto> = emptyList(),
     @SerializedName("rag_chunks") val ragChunks: List<KnowledgeChunk> = emptyList()
 )

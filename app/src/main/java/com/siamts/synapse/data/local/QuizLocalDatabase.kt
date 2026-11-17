@@ -42,11 +42,42 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         )
         db.execSQL(
             """
+            CREATE TABLE IF NOT EXISTS quiz_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject_id TEXT NOT NULL,
+                chapter_id TEXT NOT NULL,
+                question_text TEXT NOT NULL,
+                option_a TEXT NOT NULL,
+                option_b TEXT NOT NULL,
+                option_c TEXT NOT NULL,
+                option_d TEXT NOT NULL,
+                correct_option TEXT NOT NULL,
+                explanation TEXT,
+                question_json TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS chapter_questions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 subject_id TEXT NOT NULL,
                 chapter_id TEXT NOT NULL,
                 question_json TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS chapter_lessons (
+                chapter_id TEXT PRIMARY KEY,
+                subject_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                part1_concept TEXT NOT NULL,
+                part2_application TEXT NOT NULL,
+                exam_tip TEXT,
+                formulas_json TEXT,
+                syllabus_json TEXT
             )
             """.trimIndent()
         )
@@ -90,10 +121,52 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS chapter_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id TEXT NOT NULL, chapter_id TEXT NOT NULL, question_json TEXT NOT NULL)")
-        db.execSQL("CREATE TABLE IF NOT EXISTS subject_chapters (id TEXT PRIMARY KEY, subject_id TEXT NOT NULL, chapter_order INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT, question_count INTEGER NOT NULL, estimated_minutes INTEGER NOT NULL, total_marks INTEGER NOT NULL)")
-        db.execSQL("CREATE TABLE IF NOT EXISTS learning_plan_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, category TEXT NOT NULL, duration TEXT NOT NULL, is_completed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
-        db.execSQL("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT, created_at INTEGER NOT NULL)")
+        try {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS quiz_questions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject_id TEXT NOT NULL,
+                    chapter_id TEXT NOT NULL,
+                    question_text TEXT NOT NULL,
+                    option_a TEXT NOT NULL,
+                    option_b TEXT NOT NULL,
+                    option_c TEXT NOT NULL,
+                    option_d TEXT NOT NULL,
+                    correct_option TEXT NOT NULL,
+                    explanation TEXT,
+                    question_json TEXT NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS chapter_lessons (
+                    chapter_id TEXT PRIMARY KEY,
+                    subject_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    part1_concept TEXT NOT NULL,
+                    part2_application TEXT NOT NULL,
+                    exam_tip TEXT,
+                    formulas_json TEXT,
+                    syllabus_json TEXT
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE TABLE IF NOT EXISTS chapter_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id TEXT NOT NULL, chapter_id TEXT NOT NULL, question_json TEXT NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS subject_chapters (id TEXT PRIMARY KEY, subject_id TEXT NOT NULL, chapter_order INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT, question_count INTEGER NOT NULL, estimated_minutes INTEGER NOT NULL, total_marks INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS learning_plan_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, category TEXT NOT NULL, duration TEXT NOT NULL, is_completed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT, created_at INTEGER NOT NULL)")
+        } catch (_: Throwable) {
+            // Fallback to destructive migration: drop and recreate cleanly
+            try {
+                db.execSQL("DROP TABLE IF EXISTS quiz_questions")
+                db.execSQL("DROP TABLE IF EXISTS chapter_lessons")
+                db.execSQL("DROP TABLE IF EXISTS chapter_questions")
+                db.execSQL("DROP TABLE IF EXISTS subject_chapters")
+                onCreate(db)
+            } catch (_: Throwable) {}
+        }
     }
 
     override suspend fun insertQuizRecord(record: QuizRecordEntity): Long = withContext(Dispatchers.IO) {
@@ -185,27 +258,55 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         if (hasAndroidContext) {
             try {
                 val db = readableDatabase
-                val cursor = db.query(
-                    "chapter_questions",
-                    arrayOf("question_json"),
-                    "chapter_id = ? OR (subject_id = ? AND chapter_id = ?)",
-                    arrayOf(chapterId.trim(), subjectId.trim(), chapterId.trim()),
-                    null,
-                    null,
-                    "id ASC"
-                )
                 val list = mutableListOf<com.siamts.synapse.data.model.QuizQuestionDto>()
                 val gson = com.google.gson.Gson()
-                cursor.use { c ->
-                    val jsonCol = c.getColumnIndex("question_json")
-                    while (c.moveToNext()) {
-                        if (jsonCol >= 0) {
-                            val json = c.getString(jsonCol)
-                            val dto = gson.fromJson(json, com.siamts.synapse.data.model.QuizQuestionDto::class.java)
-                            if (dto != null) list.add(dto)
+
+                // 1. Try quiz_questions table first
+                try {
+                    val cursorQuiz = db.query(
+                        "quiz_questions",
+                        arrayOf("question_json"),
+                        "chapter_id = ? OR (subject_id = ? AND chapter_id = ?)",
+                        arrayOf(chapterId.trim(), subjectId.trim(), chapterId.trim()),
+                        null,
+                        null,
+                        "id ASC"
+                    )
+                    cursorQuiz.use { c ->
+                        val jsonCol = c.getColumnIndex("question_json")
+                        while (c.moveToNext()) {
+                            if (jsonCol >= 0) {
+                                val json = c.getString(jsonCol)
+                                val dto = gson.fromJson(json, com.siamts.synapse.data.model.QuizQuestionDto::class.java)
+                                if (dto != null) list.add(dto)
+                            }
+                        }
+                    }
+                } catch (_: Throwable) {}
+
+                // 2. Fallback to chapter_questions if empty
+                if (list.isEmpty()) {
+                    val cursorChap = db.query(
+                        "chapter_questions",
+                        arrayOf("question_json"),
+                        "chapter_id = ? OR (subject_id = ? AND chapter_id = ?)",
+                        arrayOf(chapterId.trim(), subjectId.trim(), chapterId.trim()),
+                        null,
+                        null,
+                        "id ASC"
+                    )
+                    cursorChap.use { c ->
+                        val jsonCol = c.getColumnIndex("question_json")
+                        while (c.moveToNext()) {
+                            if (jsonCol >= 0) {
+                                val json = c.getString(jsonCol)
+                                val dto = gson.fromJson(json, com.siamts.synapse.data.model.QuizQuestionDto::class.java)
+                                if (dto != null) list.add(dto)
+                            }
                         }
                     }
                 }
+
                 if (list.isNotEmpty()) {
                     inMemoryQuestions[cacheKey] = list
                     inMemoryQuestions[chapterId.trim()] = list
@@ -233,13 +334,34 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 db.beginTransaction()
                 try {
                     db.delete("chapter_questions", "chapter_id = ?", arrayOf(chapterId.trim()))
+                    try {
+                        db.delete("quiz_questions", "chapter_id = ?", arrayOf(chapterId.trim()))
+                    } catch (_: Throwable) {}
+
                     for (q in questions) {
+                        val qJson = gson.toJson(q)
                         val values = ContentValues().apply {
                             put("subject_id", subjectId.trim())
                             put("chapter_id", chapterId.trim())
-                            put("question_json", gson.toJson(q))
+                            put("question_json", qJson)
                         }
                         db.insert("chapter_questions", null, values)
+
+                        try {
+                            val qValues = ContentValues().apply {
+                                put("subject_id", subjectId.trim())
+                                put("chapter_id", chapterId.trim())
+                                put("question_text", q.question)
+                                put("option_a", q.options["A"].orEmpty())
+                                put("option_b", q.options["B"].orEmpty())
+                                put("option_c", q.options["C"].orEmpty())
+                                put("option_d", q.options["D"].orEmpty())
+                                put("correct_option", q.correctOption)
+                                put("explanation", q.explanation.orEmpty())
+                                put("question_json", qJson)
+                            }
+                            db.insert("quiz_questions", null, qValues)
+                        } catch (_: Throwable) {}
                     }
                     db.setTransactionSuccessful()
                 } finally {
@@ -377,6 +499,31 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         } catch (_: Throwable) {
             inMemoryChapters.toList()
         }
+    }
+
+    override suspend fun insertChapterLesson(
+        chapterId: Int,
+        subjectId: Int,
+        title: String,
+        part1Title: String,
+        part1Concept: String,
+        part2Title: String,
+        part2Application: String,
+        examTip: String
+    ): Unit = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) return@withContext
+        try {
+            val db = writableDatabase
+            val values = ContentValues().apply {
+                put("chapter_id", chapterId.toString())
+                put("subject_id", subjectId.toString())
+                put("title", title)
+                put("part1_concept", part1Concept)
+                put("part2_application", part2Application)
+                put("exam_tip", examTip)
+            }
+            db.insertWithOnConflict("chapter_lessons", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        } catch (_: Throwable) {}
     }
 
     // =========================================================================
@@ -587,7 +734,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 5
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null

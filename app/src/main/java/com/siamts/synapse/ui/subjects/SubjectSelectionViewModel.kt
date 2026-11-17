@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.data.local.AuthSessionState
+import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,92 +27,36 @@ class SubjectSelectionViewModel(
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull()
 ) : ViewModel() {
 
-    private val baseSubjects = listOf(
+    private val baseSubjects = BaseCurriculumData.subjects.map { catalogSub ->
+        val parsedColor = try {
+            Color(android.graphics.Color.parseColor(catalogSub.colorHex))
+        } catch (_: Throwable) {
+            when (catalogSub.id) {
+                "MATH" -> Color(0xFF3B82F6)
+                "CS" -> Color(0xFF10B981)
+                "DS" -> Color(0xFF8B5CF6)
+                "AI" -> Color(0xFF2563EB)
+                "PHY" -> Color(0xFFD97706)
+                "CHEM" -> Color(0xFFEF4444)
+                else -> Color(0xFF3B82F6)
+            }
+        }
         Subject(
-            id = "MATH",
-            title = "Mathematics",
-            iconSymbol = "∑",
-            progressPercentage = 72,
-            progressColor = Color(0xFF3B82F6),
-            category = "Formal Sciences",
-            chapters = listOf(
-                SubjectChapterSnippet(4, "Quadratic Equations", "Roots, factoring, discriminants, and parabolic graphs."),
-                SubjectChapterSnippet(1, "Calculus (Differentiation & Integration)", "Differentiation, derivatives, limits, rates of change, power rule, and integration."),
-                SubjectChapterSnippet(2, "Linear Algebra", "Matrices, determinants, eigenvalues, and vector spaces."),
-                SubjectChapterSnippet(3, "Probability & Statistics", "Bayes' theorem, normal distributions, and hypothesis tests.")
-            )
-        ),
-        Subject(
-            id = "CS",
-            title = "Computer Science",
-            iconSymbol = "</>",
-            progressPercentage = 84,
-            progressColor = Color(0xFF10B981),
-            category = "Technology",
-            chapters = listOf(
-                SubjectChapterSnippet(8, "Algorithms & Programming", "Python programming, Big-O notation, binary search, sorting, and recursion."),
-                SubjectChapterSnippet(5, "Data Structures", "Linked lists, stacks, queues, trees, and hash tables."),
-                SubjectChapterSnippet(6, "Operating Systems", "Process scheduling, virtual memory, threads, and concurrency."),
-                SubjectChapterSnippet(7, "Computer Networks & SQL", "Networks, TCP/IP protocols, relational algebra, and SQL transactions.")
-            )
-        ),
-        Subject(
-            id = "DS",
-            title = "Data Science",
-            iconSymbol = "📈",
-            progressPercentage = 58,
-            progressColor = Color(0xFF8B5CF6),
-            category = "Data & Analytics",
-            chapters = listOf(
-                SubjectChapterSnippet(13, "Data Visualization", "Heatmaps, scatter plots, Matplotlib, Seaborn, and dashboards."),
-                SubjectChapterSnippet(9, "Exploratory Data Analysis", "Summary statistics, missing value imputation, and outliers."),
-                SubjectChapterSnippet(10, "Machine Learning Foundations", "Linear regression, logistic classifiers, and loss functions."),
-                SubjectChapterSnippet(11, "Model Evaluation & Metrics", "ROC-AUC curves, precision, recall, and cross-validation.")
-            )
-        ),
-        Subject(
-            id = "AI",
-            title = "Artificial Intelligence",
-            iconSymbol = "🧠",
-            progressPercentage = 80,
-            progressColor = Color(0xFF2563EB),
-            category = "Computer Science",
-            chapters = listOf(
-                SubjectChapterSnippet(18, "Neural Networks & Deep Learning", "Forward propagation, backpropagation, activations, and gradient descent."),
-                SubjectChapterSnippet(14, "Transformers & Attention", "Self-attention mechanisms, encoder-decoder, BERT, and GPT."),
-                SubjectChapterSnippet(15, "Retrieval-Augmented Generation (RAG)", "Vector embeddings, cosine similarity, semantic search, and context grounding."),
-                SubjectChapterSnippet(16, "Reinforcement Learning", "Q-learning, policy gradients, Markov decision processes, and reward shaping.")
-            )
-        ),
-        Subject(
-            id = "PHY",
-            title = "Physics",
-            iconSymbol = "⚛",
-            progressPercentage = 42,
-            progressColor = Color(0xFFD97706),
-            category = "Physical Sciences",
-            chapters = listOf(
-                SubjectChapterSnippet(23, "Waves & Sound", "Frequency, wavelength, Doppler effect, and wave superposition."),
-                SubjectChapterSnippet(19, "Newton's Laws of Motion", "Inertia, F = ma, action-reaction, friction, and momentum."),
-                SubjectChapterSnippet(20, "Thermodynamics", "Zeroth, First, and Second laws, entropy, and heat engines."),
-                SubjectChapterSnippet(21, "Electromagnetism", "Coulomb's law, electric fields, magnetic flux, and Faraday's law.")
-            )
-        ),
-        Subject(
-            id = "CHEM",
-            title = "Chemistry",
-            iconSymbol = "🧪",
-            progressPercentage = 35,
-            progressColor = Color(0xFFEF4444),
-            category = "Physical Sciences",
-            chapters = listOf(
-                SubjectChapterSnippet(28, "Chemical Bonding", "Ionic, covalent, metallic bonds, electronegativity, and polarity."),
-                SubjectChapterSnippet(24, "Acids and Bases", "pH scale, neutralization, buffers, and Arrhenius/Brønsted definitions."),
-                SubjectChapterSnippet(25, "Periodic Table Trends", "Atomic radii, ionization energy, and electron affinities."),
-                SubjectChapterSnippet(26, "Stoichiometry & Reactions", "Mole conversions, balancing equations, and limiting reactants.")
-            )
+            id = catalogSub.id,
+            title = catalogSub.name,
+            iconSymbol = catalogSub.iconSymbol,
+            progressPercentage = 0,
+            progressColor = parsedColor,
+            category = catalogSub.category,
+            chapters = catalogSub.chapters.map { ch ->
+                SubjectChapterSnippet(
+                    chapterId = ch.chapterId,
+                    title = ch.title,
+                    summary = ch.summary
+                )
+            }
         )
-    )
+    }
 
     private val _uiState = MutableStateFlow(
         SubjectSelectionUiState(
@@ -228,7 +173,10 @@ class SubjectSelectionViewModel(
         val matchingSubjects = subjects.filter { sub ->
             sub.title.lowercase(Locale.ROOT).contains(trimmed) ||
             sub.category.lowercase(Locale.ROOT).contains(trimmed) ||
-            sub.chapters.any { it.title.lowercase(Locale.ROOT).contains(trimmed) }
+            sub.chapters.any {
+                it.title.lowercase(Locale.ROOT).contains(trimmed) ||
+                it.summary.lowercase(Locale.ROOT).contains(trimmed)
+            }
         }
 
         val chapterResults = mutableListOf<SearchResultItem>()

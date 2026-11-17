@@ -122,11 +122,13 @@ data class QuizQuestionDto(
     val question: String = "",
     @SerializedName("options")
     val options: Map<String, String> = emptyMap(),
-    @SerializedName("correct_option")
+    @SerializedName(value = "correct_option", alternate = ["correctAnswer"])
     val correctOption: String = "A",
     @SerializedName("explanation")
     val explanation: String? = null
-)
+) {
+    val correctAnswer: String get() = correctOption
+}
 
 data class QuizSubmitRequest(
     @SerializedName("chapter_id")

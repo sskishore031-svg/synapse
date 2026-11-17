@@ -21,6 +21,9 @@ class SynapseApplication : Application() {
             SubjectCatalogRepository.getInstance(this)
         } catch (_: Throwable) {}
         try {
+            com.siamts.synapse.data.local.SynapseDatabase.seedDatabase(this)
+        } catch (_: Throwable) {}
+        try {
             SynapseNotificationHelper.createNotificationChannel(this)
         } catch (_: Throwable) {}
     }

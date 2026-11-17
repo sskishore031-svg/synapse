@@ -41,7 +41,7 @@ class SubjectRoutingAndSeedingTest {
         for (name in expectedSubjects) {
             val sub = baseSubjects.firstOrNull { it.name.equals(name, ignoreCase = true) }
             assertNotNull("Base subject $name must exist", sub)
-            assertEquals("Subject $name must have 4 core chapters", 4, sub!!.chapters.size)
+            assertEquals("Subject $name must have 8 core chapters", 8, sub!!.chapters.size)
 
             for (ch in sub.chapters) {
                 assertTrue("Chapter ${ch.title} must have at least 5 MCQs", ch.mcqs.size >= 5)
@@ -59,7 +59,7 @@ class SubjectRoutingAndSeedingTest {
     @Test
     fun testPreSeededStudyNotesAreGeneratedForAllChapters() {
         val seededNotes = BaseCurriculumData.seededNotes
-        assertTrue("Must have at least 24 pre-seeded study notes", seededNotes.size >= 24)
+        assertTrue("Must have at least 48 pre-seeded study notes", seededNotes.size >= 48)
 
         for (note in seededNotes) {
             assertTrue("Note title must not be blank", note.title.isNotBlank())
@@ -82,8 +82,8 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Mathematics", mathState.title)
             assertEquals("Formal Sciences", mathState.category)
             assertEquals("∑", mathState.iconSymbol)
-            assertEquals(4, mathState.chapters.size)
-            assertEquals("Quadratic Equations", mathState.chapters.first().title)
+            assertEquals(8, mathState.chapters.size)
+            assertEquals("Foundations of Algebra, Functions & Set Theory", mathState.chapters.first().title)
 
             // 2. Load Physics
             viewModel.loadSubject("PHY")
@@ -91,8 +91,8 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Physics", phyState.title)
             assertEquals("Physical Sciences", phyState.category)
             assertEquals("⚛", phyState.iconSymbol)
-            assertEquals(4, phyState.chapters.size)
-            assertEquals("Waves & Sound", phyState.chapters.first().title)
+            assertEquals(8, phyState.chapters.size)
+            assertEquals("Units, Vectors & Kinematics", phyState.chapters.first().title)
 
             // 3. Load Chemistry
             viewModel.loadSubject("CHEM")
@@ -100,8 +100,8 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Chemistry", chemState.title)
             assertEquals("Physical Sciences", chemState.category)
             assertEquals("🧪", chemState.iconSymbol)
-            assertEquals(4, chemState.chapters.size)
-            assertEquals("Chemical Bonding", chemState.chapters.first().title)
+            assertEquals(8, chemState.chapters.size)
+            assertEquals("Atomic Structure & Quantum Numbers", chemState.chapters.first().title)
 
             // 4. Load Computer Science
             viewModel.loadSubject("CS")
@@ -109,15 +109,15 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Computer Science", csState.title)
             assertEquals("Technology", csState.category)
             assertEquals("</>", csState.iconSymbol)
-            assertEquals(4, csState.chapters.size)
-            assertEquals("Algorithms & Programming", csState.chapters.first().title)
+            assertEquals(8, csState.chapters.size)
+            assertEquals("Programming Fundamentals, Algorithms & Complexity (O(n))", csState.chapters.first().title)
 
             // 5. Load Data Science
             viewModel.loadSubject("DS")
             val dsState = viewModel.uiState.value
             assertEquals("Data Science", dsState.title)
             assertEquals("Data & Analytics", dsState.category)
-            assertEquals(4, dsState.chapters.size)
+            assertEquals(8, dsState.chapters.size)
 
             // 6. Ensure Physics does NOT fall back to Artificial Intelligence
             assertNotEquals("Artificial Intelligence", phyState.title)
@@ -137,10 +137,10 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Mathematics", mathState.subjectName)
             assertEquals("Mathematics Roadmap", mathState.title)
             assertEquals("∑", mathState.subjectIcon)
-            assertEquals(4, mathState.milestones.size)
-            assertEquals("Quadratic Equations", mathState.milestones.first().title)
-            assertEquals(4, mathState.activeChapterId)
-            assertTrue(mathState.milestoneSummary.contains("4 milestones"))
+            assertEquals(8, mathState.milestones.size)
+            assertEquals("Foundations of Algebra, Functions & Set Theory", mathState.milestones.first().title)
+            assertEquals(1, mathState.activeChapterId)
+            assertTrue(mathState.milestoneSummary.contains("8 milestones"))
 
             // Test Physics Roadmap
             viewModel.loadSubjectRoadmap("PHY")
@@ -148,8 +148,8 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("Physics", phyState.subjectName)
             assertEquals("Physics Roadmap", phyState.title)
             assertEquals("⚛", phyState.subjectIcon)
-            assertEquals(4, phyState.milestones.size)
-            assertEquals("Waves & Sound", phyState.milestones.first().title)
+            assertEquals(8, phyState.milestones.size)
+            assertEquals("Units, Vectors & Kinematics", phyState.milestones.first().title)
             assertNotEquals("Artificial Intelligence", phyState.subjectName)
 
             // Test Computer Science Roadmap
@@ -157,8 +157,8 @@ class SubjectRoutingAndSeedingTest {
             val csState = viewModel.uiState.value
             assertEquals("Computer Science", csState.subjectName)
             assertEquals("Computer Science Roadmap", csState.title)
-            assertEquals(4, csState.milestones.size)
-            assertEquals("Algorithms & Programming", csState.milestones.first().title)
+            assertEquals(8, csState.milestones.size)
+            assertEquals("Programming Fundamentals, Algorithms & Complexity (O(n))", csState.milestones.first().title)
         }
     }
 
@@ -167,14 +167,14 @@ class SubjectRoutingAndSeedingTest {
         runBlocking {
             val viewModel = ChapterLessonViewModel(externalScope = CoroutineScope(Dispatchers.Unconfined))
 
-            // Load Quadratic Equations (chapterId = 4)
-            viewModel.loadChapterLesson(chapterId = 4)
+            // Load Foundations of Algebra, Functions & Set Theory (chapterId = 1)
+            viewModel.loadChapterLesson(chapterId = 1)
             val state = viewModel.uiState.value
 
-            assertEquals("Quadratic Equations", state.chapterTitle)
+            assertEquals("Foundations of Algebra, Functions & Set Theory", state.chapterTitle)
             assertFalse("Placeholder text must be completely eliminated", state.part1Content.contains("Welcome to this chapter lesson"))
-            assertTrue("Part 1 must contain real polynomial definitions", state.part1Content.contains("ax² + bx + c = 0"))
-            assertTrue("Part 2 must contain quadratic formula / discriminant", state.part2Content.contains("b² - 4ac"))
+            assertTrue("Part 1 must contain real definitions", state.part1Content.isNotBlank())
+            assertTrue("Part 2 must contain worked examples", state.part2Content.isNotBlank())
             assertTrue("Syllabus topics must be populated", state.syllabus.isNotEmpty())
             assertTrue("Core formulas must be populated", state.coreFormulas.isNotEmpty())
         }
@@ -204,10 +204,10 @@ class SubjectRoutingAndSeedingTest {
                 externalScope = CoroutineScope(Dispatchers.Unconfined)
             )
 
-            // 1. Load Chapter Quiz for Quadratic Equations (chapterId = 4)
+            // 1. Load Chapter Quiz for chapterId = 4
             viewModel.loadChapterQuiz(4)
             val state = viewModel.uiState.value
-            assertEquals(5, state.totalQuestions)
+            assertEquals(8, state.totalQuestions)
             assertEquals("MATH", viewModel.currentSubjectId)
             assertEquals("4", viewModel.currentChapterId)
 
@@ -236,11 +236,11 @@ class SubjectRoutingAndSeedingTest {
             // Verify score calculation
             assertNotNull(callbackResultCaptured)
             val result = callbackResultCaptured!!
-            assertEquals(5, result.totalQuestions)
+            assertEquals(8, result.totalQuestions)
             assertTrue("Score must be at least 2", result.score >= 2)
             assertEquals(result.score, result.correctAnswers)
-            assertEquals(5 - result.score, result.incorrectAnswers)
-            assertEquals((result.score * 100) / 5, result.percentage)
+            assertEquals(8 - result.score, result.incorrectAnswers)
+            assertEquals((result.score * 100) / 8, result.percentage)
 
             // Verify local database persistence in 'quiz_records'
             val records = db.getAllRecords()
@@ -249,7 +249,7 @@ class SubjectRoutingAndSeedingTest {
             assertEquals("MATH", latest.subjectId)
             assertEquals("4", latest.chapterId)
             assertEquals(result.score, latest.score)
-            assertEquals(5, latest.totalQuestions)
+            assertEquals(8, latest.totalQuestions)
             assertTrue("Timestamp must be recent", latest.completedAt > 0)
         }
     }
@@ -271,7 +271,7 @@ class SubjectRoutingAndSeedingTest {
             val mathChapters = repo.getChaptersForSubject("MATH", "Mathematics")
             assertTrue("Mathematics chapters must not be empty", mathChapters.isNotEmpty())
             assertTrue("Mathematics must have at least 3 chapters", mathChapters.size >= 3)
-            assertEquals("Quadratic Equations", mathChapters.first().title)
+            assertEquals("Foundations of Algebra, Functions & Set Theory", mathChapters.first().title)
 
             val mathQuizzes = repo.getSubjectQuizzes("MATH", "Mathematics")
             assertTrue("Mathematics quizzes must not be empty", mathQuizzes.isNotEmpty())

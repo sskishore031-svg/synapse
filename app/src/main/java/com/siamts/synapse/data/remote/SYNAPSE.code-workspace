@@ -1,0 +1,52 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../../../../.."
+		},
+		{
+			"path": "../../../../../../../../../../../../../xampp/htdocs/Synapse_backend"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"**/.vscode": true,
+			".vscode": true,
+			"**/.gradle": true,
+			".gradle": true,
+			"**/.kotlin": true,
+			".kotlin": true,
+			"**/.idea": true,
+			".idea": true,
+			"**/build": true,
+			"build": true,
+			"**/*.iml": true,
+			"**/*.log": true,
+			"**/*.tmp": true,
+			"**/.postman": true,
+			".postman": true,
+			"**/postman": true,
+			"postman": true,
+			"**/*.postman_collection.json": true,
+			"*.postman_collection.json": true,
+			"**/*.postman_environment.json": true,
+			"*.postman_environment.json": true,
+			"**/*.sql": true,
+			"*.sql": true
+		},
+		"search.exclude": {
+			"**/build": true,
+			"**/.gradle": true,
+			"**/.kotlin": true,
+			"**/.idea": true,
+			"**/.vscode": true,
+			"**/postman": true,
+			"**/*.sql": true
+		}
+	}
+}

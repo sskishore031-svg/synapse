@@ -10,7 +10,15 @@
         "Calculus (Differentiation & Integration)",
         "Linear Algebra (Matrices & Vectors)",
         "Probability & Statistics",
-        "Trigonometry & Geometry"
+        "Trigonometry & Geometry",
+        "Foundations of Algebra, Functions & Set Theory",
+        "Trigonometry & Complex Numbers",
+        "Differential Calculus & Limits",
+        "Integral Calculus & Applications",
+        "Linear Algebra, Matrices & Vector Spaces",
+        "Ordinary & Partial Differential Equations (ODE & PDE)",
+        "Probability Theory & Random Variables",
+        "Discrete Mathematics & Graph Theory"
       ],
       "rag_chunks": [
         {
@@ -96,6 +104,165 @@
           "formula": "Fundamental Theorem of Calculus: integral[a to b] f(x) dx = F(b) - F(a), where F'(x) = f(x). Power Rule: integral x^n dx = (x^(n+1))/(n+1) + C.",
           "worked_example": "integral[0 to 3] (2x) dx = [x^2] from 0 to 3 = 3^2 - 0^2 = 9 square units.",
           "content": "Integrals calculate work, centers of mass, electrical flux, and probability distributions in physical and computational systems."
+        },
+        {
+          "chunk_id": "MATH_CH1_001",
+          "subject": "Mathematics",
+          "chapter": "Foundations of Algebra, Functions & Set Theory",
+          "topic": "Sets, Relations and Equivalence Classes",
+          "keywords": [
+            "set theory",
+            "equivalence relation",
+            "injective",
+            "surjective",
+            "bijective",
+            "partition",
+            "domain",
+            "algebra"
+          ],
+          "definition": "An equivalence relation is a binary relation that is reflexive, symmetric, and transitive, partitioning a set into mutually exclusive equivalence classes.",
+          "formula": "Equivalence: aRa, aRb <=> bRa, (aRb and bRc) => aRc. Partition: Union of classes = A and classes are disjoint.",
+          "worked_example": "For integers modulo n, a ~ b iff n divides (a - b). This induces n distinct equivalence classes [0], [1], ..., [n-1].",
+          "content": "Set foundations and equivalence relations form the mathematical basis for modular arithmetic, abstract quotient groups, and relational database schema normalization."
+        },
+        {
+          "chunk_id": "MATH_CH2_001",
+          "subject": "Mathematics",
+          "chapter": "Trigonometry & Complex Numbers",
+          "topic": "Euler's Formula and De Moivre's Theorem",
+          "keywords": [
+            "complex numbers",
+            "euler formula",
+            "de moivre theorem",
+            "argand plane",
+            "polar form",
+            "roots of unity",
+            "phasors"
+          ],
+          "definition": "Euler's formula states that e^(iθ) = cos θ + i sin θ. De Moivre's theorem extends this to integer powers: (cos θ + i sin θ)^n = cos(nθ) + i sin(nθ).",
+          "formula": "e^(iθ) = cos θ + i sin θ; [r e^(iθ)]^n = r^n e^(i nθ); Roots: z_k = r^(1/n) e^(i(θ + 2kπ)/n).",
+          "worked_example": "For z = 1 + i√3, r = 2, θ = π/3. z^6 = 2^6 e^(i 2π) = 64.",
+          "content": "Euler's formula and De Moivre's theorem govern AC circuit phasor calculations, signal frequency decomposition, and quantum mechanics wavefunctions."
+        },
+        {
+          "chunk_id": "MATH_CH3_001",
+          "subject": "Mathematics",
+          "chapter": "Differential Calculus & Limits",
+          "topic": "Limits, Derivatives and Taylor Series",
+          "keywords": [
+            "calculus",
+            "derivative",
+            "limits",
+            "taylor series",
+            "maclaurin",
+            "gradient",
+            "hessian",
+            "chain rule",
+            "optimization"
+          ],
+          "definition": "Differential calculus studies instantaneous rates of change via limits, tangent slopes, and multivariable gradient vectors.",
+          "formula": "Chain Rule: d/dx[f(g(x))] = f'(g(x)) * g'(x); Taylor: f(x) = sum [f^(n)(a)/n!] * (x - a)^n; Gradient: grad f = [df/dx, df/dy]^T.",
+          "worked_example": "For f(x, y) = x^3 + y^3 - 3xy, critical points are (0,0) [saddle] and (1,1) [local minimum with D = 27 > 0, f_xx = 6 > 0].",
+          "content": "Differential calculus is the engine of gradient descent in AI neural networks, fluid velocity gradient analysis, and mechanical dynamics."
+        },
+        {
+          "chunk_id": "MATH_CH4_001",
+          "subject": "Mathematics",
+          "chapter": "Integral Calculus & Applications",
+          "topic": "Fundamental Theorem of Calculus and Integration Techniques",
+          "keywords": [
+            "integral calculus",
+            "fundamental theorem of calculus",
+            "integration by parts",
+            "liate",
+            "polar coordinates",
+            "jacobian",
+            "riemann sum"
+          ],
+          "definition": "The Fundamental Theorem of Calculus links differentiation and integration as inverse operations: d/dx[int_a^x f(t)dt] = f(x) and int_a^b f(x)dx = F(b) - F(a).",
+          "formula": "int u dv = uv - int v du; Disk Volume: V = pi int [f(x)]^2 dx; Polar: dx dy = r dr dtheta.",
+          "worked_example": "int_0^1 x e^(2x) dx = [(1/2)x e^(2x) - (1/4)e^(2x)]_0^1 = (e^2 + 1)/4.",
+          "content": "Integral calculus is fundamental for probability distribution normalization, work energy theorems, and electromagnetic field flux calculations."
+        },
+        {
+          "chunk_id": "MATH_CH5_001",
+          "subject": "Mathematics",
+          "chapter": "Linear Algebra, Matrices & Vector Spaces",
+          "topic": "Eigenvalues, Eigenvectors and Singular Value Decomposition",
+          "keywords": [
+            "linear algebra",
+            "eigenvalue",
+            "eigenvector",
+            "svd",
+            "rank nullity",
+            "gram schmidt",
+            "diagonalization",
+            "determinant",
+            "matrix"
+          ],
+          "definition": "An eigenvector v of square matrix A satisfies Av = lambda*v where lambda is the eigenvalue. SVD factors any matrix into A = U Sigma V^T.",
+          "formula": "Characteristic equation: det(A - lambda*I) = 0; Tr(A) = sum lambda_i; det(A) = prod lambda_i; SVD: A = U Sigma V^T.",
+          "worked_example": "For A = [[4, 1], [2, 3]], det(A - lambda*I) = lambda^2 - 7lambda + 10 = 0 gives eigenvalues lambda = 5, 2 with eigenvectors [1, 1]^T and [1, -2]^T.",
+          "content": "Eigenvalues and SVD are the mathematical backbone of Principal Component Analysis (PCA), Google PageRank, 3D graphics rendering, and quantum state matrices."
+        },
+        {
+          "chunk_id": "MATH_CH6_001",
+          "subject": "Mathematics",
+          "chapter": "Ordinary & Partial Differential Equations (ODE & PDE)",
+          "topic": "Differential Equations and Laplace Transforms",
+          "keywords": [
+            "differential equations",
+            "ode",
+            "pde",
+            "laplace transform",
+            "integrating factor",
+            "heat equation",
+            "wave equation",
+            "rlc circuit"
+          ],
+          "definition": "ODEs involve functions of a single variable and their derivatives; Laplace transforms convert differential equations into algebraic equations in the s-domain.",
+          "formula": "Integrating Factor: mu(x) = exp(int P(x)dx); Laplace: L{y'} = s Y(s) - y(0); Heat PDE: du/dt = alpha * d^2u/dx^2; Wave PDE: d^2u/dt^2 = c^2 * d^2u/dx^2.",
+          "worked_example": "For y'' + 4y = 8 with y(0)=3, y'(0)=0, Laplace transformation gives Y(s) = 2/s + s/(s^2+4), which inverts to y(t) = 2 + cos(2t).",
+          "content": "Differential equations govern harmonic oscillators, RLC electrical circuits, heat transfer, electromagnetic wave propagation, and fluid mechanics."
+        },
+        {
+          "chunk_id": "MATH_CH7_001",
+          "subject": "Mathematics",
+          "chapter": "Probability Theory & Random Variables",
+          "topic": "Bayes' Theorem, Random Variables and Central Limit Theorem",
+          "keywords": [
+            "probability",
+            "bayes theorem",
+            "conditional probability",
+            "random variables",
+            "normal distribution",
+            "poisson",
+            "central limit theorem"
+          ],
+          "definition": "Bayes' Theorem updates the probability of a hypothesis given evidence: P(A|B) = [P(B|A) P(A)] / P(B). The CLT guarantees that sample averages converge to normality.",
+          "formula": "P(A|B) = [P(B|A) * P(A)] / P(B); Binomial: P(k) = (n choose k) p^k (1-p)^(n-k); CLT: Z = (X_bar - mu)/(sigma / sqrt(n)).",
+          "worked_example": "For 1% disease prevalence with 95% sensitivity and 5% false positive rate, P(D|+) = (0.95*0.01)/[(0.95*0.01)+(0.05*0.99)] = 16.1%.",
+          "content": "Probability theory underpins machine learning classifiers, risk quantification in algorithmic trading, and network traffic modeling."
+        },
+        {
+          "chunk_id": "MATH_CH8_001",
+          "subject": "Mathematics",
+          "chapter": "Discrete Mathematics & Graph Theory",
+          "topic": "Graph Theory, Trees and Dijkstra's Algorithm",
+          "keywords": [
+            "discrete mathematics",
+            "graph theory",
+            "trees",
+            "dijkstra",
+            "handshaking lemma",
+            "euler formula",
+            "recurrence",
+            "combinatorics"
+          ],
+          "definition": "Graph theory studies mathematical structures modeling pairwise relations between objects; Dijkstra's algorithm finds single-source shortest paths in weighted graphs.",
+          "formula": "Handshaking: sum deg(v) = 2|E|; Planar Euler: V - E + F = 2; Tree edges: |E| = |V| - 1; Dijkstra: d[v] = min(d[v], d[u] + w(u, v)).",
+          "worked_example": "For a graph with 6 vertices of degree 3, sum deg(v) = 18 = 2|E| => |E| = 9 edges.",
+          "content": "Graph theory and discrete math underpin internet routing protocols (OSPF, BGP), social network graph analysis, and compiler syntax trees."
         }
       ]
     },
@@ -107,7 +274,15 @@
         "Algorithms & Big-O Complexity",
         "Operating Systems (Process, Threads, Memory)",
         "Computer Networks (OSI, TCP/IP, Sockets)",
-        "Database Management Systems (RDBMS & SQL)"
+        "Database Management Systems (RDBMS & SQL)",
+        "Programming Fundamentals & Complexity (O(n))",
+        "Arrays, Linked Lists & Recursion",
+        "Stacks, Queues, Trees & BSTs",
+        "Graphs & Dynamic Programming",
+        "Operating Systems & Concurrency",
+        "Relational Databases & SQL Normalization",
+        "Computer Networks & TCP/IP",
+        "Compiler Design & System Architecture"
       ],
       "rag_chunks": [
         {
@@ -198,6 +373,168 @@
           "formula": "ACID Properties: Atomicity (all-or-nothing), Consistency (schema constraints), Isolation (concurrent execution), Durability (persists after crashes).",
           "worked_example": "Bank fund transfer: debits Account A and credits Account B in a single transaction; if crash occurs midway, entire transaction rolls back.",
           "content": "Relational databases use B-Trees for fast O(log n) index lookups and SQL queries for efficient data filtering."
+        },
+        {
+          "chunk_id": "CS_CH1_001",
+          "subject": "Computer Science",
+          "chapter": "Programming Fundamentals & Complexity (O(n))",
+          "topic": "Asymptotic Complexity and Big-O Notation",
+          "keywords": [
+            "computer science",
+            "big o",
+            "complexity",
+            "time complexity",
+            "space complexity",
+            "amortized",
+            "stack vs heap"
+          ],
+          "definition": "Big-O notation quantifies algorithm scalability by bounding upper resource growth: f(n) <= c * g(n) for all n >= n0.",
+          "formula": "Big-O: f(n) <= c * g(n); Big-Omega: f(n) >= c * g(n); Amortized Array Doubling: O(1) per append.",
+          "worked_example": "A loop doubling i from 1 to n with an inner loop from 1 to i executes sum 2^m < 2n operations, yielding linear O(n) complexity.",
+          "content": "Computational complexity analysis guides algorithm selection in database indexes, real-time operating systems, and high-frequency trading."
+        },
+        {
+          "chunk_id": "CS_CH2_001",
+          "subject": "Computer Science",
+          "chapter": "Arrays, Linked Lists & Recursion",
+          "topic": "Linked Lists, Pointers and Floyd's Cycle Algorithm",
+          "keywords": [
+            "linked list",
+            "array",
+            "recursion",
+            "floyd cycle",
+            "tortoise and hare",
+            "pointers",
+            "tail call optimization"
+          ],
+          "definition": "Arrays provide O(1) contiguous indexed memory access. Linked lists link disjoint heap nodes via pointers, enabling O(1) local insertions.",
+          "formula": "Row-Major Address: Base + (i * cols + j) * size; Floyd Cycle: Slow advances 1, Fast advances 2 steps.",
+          "worked_example": "In a list of 5 initial nodes followed by a 3-node cycle, Slow and Fast meet at node 7; advancing Slow from head identifies cycle entry at node 6.",
+          "content": "Pointers and linear structures form the foundation of operating system free lists, kernel buffers, and LRU memory caches."
+        },
+        {
+          "chunk_id": "CS_CH3_001",
+          "subject": "Computer Science",
+          "chapter": "Stacks, Queues, Trees & BSTs",
+          "topic": "Binary Search Trees and AVL Rotations",
+          "keywords": [
+            "stack",
+            "queue",
+            "binary search tree",
+            "bst",
+            "avl tree",
+            "tree rotations",
+            "in-order traversal"
+          ],
+          "definition": "A BST maintains the invariant that left subtree keys are smaller and right subtree keys are greater than the node. AVL trees self-balance via rotations.",
+          "formula": "AVL Balance: BF = Height(Left) - Height(Right) in {-1, 0, 1}; Full Tree Leaves: L = I + 1; Circular Index: (i + 1) % C.",
+          "worked_example": "Inserting [30, 20, 10] causes an LL imbalance at 30 (BF = +2). A single right rotation makes 20 the root with children 10 and 30 (height 2).",
+          "content": "Trees and stacks govern compiler expression evaluation, database B-tree indexing, and memory hierarchy call stacks."
+        },
+        {
+          "chunk_id": "CS_CH4_001",
+          "subject": "Computer Science",
+          "chapter": "Graphs & Dynamic Programming",
+          "topic": "Graph Algorithms and Dynamic Programming",
+          "keywords": [
+            "graphs",
+            "dynamic programming",
+            "0/1 knapsack",
+            "bfs",
+            "dfs",
+            "topological sort",
+            "kahn algorithm",
+            "memoization"
+          ],
+          "definition": "Graphs represent networked entities via adjacency structures; Dynamic Programming solves optimization problems via overlapping subproblems and optimal substructure.",
+          "formula": "Knapsack: DP[i, w] = max(DP[i-1, w], DP[i-1, w-w_i] + v_i); BFS/DFS: O(V + E); Kahn: Enqueue in_deg == 0.",
+          "worked_example": "For knapsack capacity 4 with items (w=1, v=1), (w=2, v=4), (w=3, v=6), the optimal selection is items 1 and 3 yielding total value $7.",
+          "content": "Graph algorithms and DP power build dependency resolution (npm/pip), network packet routing, and DNA sequence alignment in genomics."
+        },
+        {
+          "chunk_id": "CS_CH5_001",
+          "subject": "Computer Science",
+          "chapter": "Operating Systems & Concurrency",
+          "topic": "Process Synchronization, Deadlocks and Virtual Memory Paging",
+          "keywords": [
+            "operating systems",
+            "concurrency",
+            "deadlock",
+            "coffman",
+            "mutex",
+            "semaphore",
+            "virtual memory",
+            "paging",
+            "tlb"
+          ],
+          "definition": "Operating systems manage hardware abstractions; concurrency coordinates shared resources via mutexes/semaphores, while virtual memory decouples logical addresses via paging and TLBs.",
+          "formula": "Coffman Conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait; EAT = h*(t_TLB + t_mem) + (1-h)*(t_TLB + 2*t_mem).",
+          "worked_example": "For 90% TLB hit ratio with 10ns TLB and 100ns RAM, EAT = 0.90*(110) + 0.10*(210) = 120 ns.",
+          "content": "Operating systems principles govern cloud containerization (Docker/Kubernetes), high-concurrency database engines, and microprocessor memory management units."
+        },
+        {
+          "chunk_id": "CS_CH6_001",
+          "subject": "Computer Science",
+          "chapter": "Relational Databases & SQL Normalization",
+          "topic": "Database Normalization (1NF, 2NF, 3NF, BCNF) and ACID Transactions",
+          "keywords": [
+            "database",
+            "sql",
+            "normalization",
+            "bcnf",
+            "3nf",
+            "acid",
+            "transactions",
+            "b+ tree",
+            "relational algebra"
+          ],
+          "definition": "Database normalization decomposes relations to eliminate redundant storage and anomalies; ACID properties guarantee reliable transactional execution.",
+          "formula": "BCNF: For all X -> Y, X is Superkey; 3NF: X is Superkey or Y is Prime; 2NF: No partial dependencies; B+ Tree Search: O(log_B N).",
+          "worked_example": "For R(A,B,C,D) with AB->C, C->D, D->A, all attributes are prime so 3NF holds; C->D violates BCNF because C is not a superkey.",
+          "content": "Relational database principles underpin financial ledger consistency (PostgreSQL, Oracle), enterprise ERP systems, and cloud databases."
+        },
+        {
+          "chunk_id": "CS_CH7_001",
+          "subject": "Computer Science",
+          "chapter": "Computer Networks & TCP/IP",
+          "topic": "TCP/IP Networking, Subnetting and Protocol Stacks",
+          "keywords": [
+            "networking",
+            "tcp/ip",
+            "cidr",
+            "subnetting",
+            "routing",
+            "ospf",
+            "bgp",
+            "dns",
+            "http/3",
+            "quic"
+          ],
+          "definition": "Computer networks route packets across layered protocols; CIDR defines subnets, while TCP ensures reliable ordered transport via flow and congestion control.",
+          "formula": "Usable Hosts: 2^(32-Prefix) - 2; BDP = Bandwidth * RTT; AIMD: +1 MSS per RTT, halve cwnd on loss.",
+          "worked_example": "For 192.168.10.0/26, 6 host bits yield 64 total addresses, exactly 62 usable hosts (192.168.10.1 to .62), and broadcast address .63.",
+          "content": "Computer networks underpin internet infrastructure, Cloudflare BGP anycast CDNs, WebRTC streaming, and microservice gRPC communications."
+        },
+        {
+          "chunk_id": "CS_CH8_001",
+          "subject": "Computer Science",
+          "chapter": "Compiler Design & System Architecture",
+          "topic": "Compilers, Parsing and Processor Pipelining",
+          "keywords": [
+            "compiler",
+            "lexer",
+            "parser",
+            "ast",
+            "register allocation",
+            "pipelining",
+            "cpi",
+            "data hazard",
+            "llvm"
+          ],
+          "definition": "Compilers translate high-level code to machine instructions via lexing, parsing (AST), and register allocation. Pipelined CPUs overlap instruction execution stages.",
+          "formula": "Iron Law: CPU Time = Instructions * CPI * Cycle_Time; Register Allocation = Graph Coloring; Speedup = k / (1 + stalls).",
+          "worked_example": "A 5-stage pipeline with 20% branches stalling 2 cycles achieves CPI = 1.0 + 0.4 = 1.40, yielding a 3.57x speedup over unpipelined CPI 5.0.",
+          "content": "Compiler optimizations (LLVM, GCC) and CPU pipelining enable low-latency execution in modern operating systems and games."
         }
       ]
     },
@@ -209,7 +546,14 @@
         "Supervised Machine Learning",
         "Unsupervised Clustering & PCA",
         "Feature Engineering & Normalization",
-        "Model Evaluation Metrics"
+        "Model Evaluation Metrics",
+        "Data Wrangling & Exploratory Analysis",
+        "Statistical Inference & Hypothesis Testing",
+        "Regression Modeling",
+        "Classification & Ensemble Methods",
+        "Feature Engineering & Dimensionality Reduction (PCA)",
+        "Time-Series Forecasting",
+        "Big Data Pipelines & Model Deployment"
       ],
       "rag_chunks": [
         {
@@ -279,6 +623,178 @@
           "formula": "Precision = TP / (TP + FP). Recall = TP / (TP + FN). F1 = 2 * (Precision * Recall) / (Precision + Recall). Accuracy = (TP + TN) / Total.",
           "worked_example": "In medical disease detection, high Recall is critical to avoid false negatives (missing an infected patient).",
           "content": "Choosing appropriate metrics prevents misleading conclusions in datasets with extreme class imbalances."
+        },
+        {
+          "chunk_id": "DS_CH1_001",
+          "subject": "Data Science",
+          "chapter": "Data Wrangling & Exploratory Analysis",
+          "topic": "Missing Data Imputation and Tidy Data Principles",
+          "keywords": [
+            "data wrangling",
+            "missing data",
+            "MCAR",
+            "MAR",
+            "MNAR",
+            "imputation",
+            "tidy data",
+            "outliers",
+            "IQR",
+            "scaling"
+          ],
+          "definition": "Data wrangling encompasses data auditing, restructuring into tidy formats, handling missing mechanisms (MCAR/MAR/MNAR), outlier remediation, and scaling features for predictive modeling.",
+          "formula": "Z = (X - mu)/sigma. Min-Max = (X - min)/(max - min). IQR = Q3 - Q1. Tukey Lower = Q1 - 1.5*IQR, Upper = Q3 + 1.5*IQR.",
+          "worked_example": "For Q1=10, Q3=30: IQR=20. Upper fence = 30 + 1.5(20) = 60. Value 75 exceeds fence and is flagged as an outlier.",
+          "content": "Imputation strategies depend on missingness topology: simple mean/median for MCAR, KNN or iterative MICE for MAR, and selection modeling for MNAR to prevent parametric estimation bias."
+        },
+        {
+          "chunk_id": "DS_CH2_001",
+          "subject": "Data Science",
+          "chapter": "Statistical Inference & Hypothesis Testing",
+          "topic": "Central Limit Theorem and Hypothesis Testing",
+          "keywords": [
+            "statistical inference",
+            "CLT",
+            "p-value",
+            "t-test",
+            "ANOVA",
+            "chi-square",
+            "type I error",
+            "type II error",
+            "confidence interval"
+          ],
+          "definition": "Statistical inference uses sampling distributions, Central Limit Theorem bounds, and hypothesis tests (t-test, ANOVA, Chi-Square) to make probabilistic statements about population parameters.",
+          "formula": "SE = s / sqrt(n). t = (x_bar - mu_0) / SE. F = MS_between / MS_within. Chi^2 = Sum((O - E)^2 / E).",
+          "worked_example": "For n=25, x_bar=108, mu_0=100, s=15: SE = 15/5 = 3. t = (108 - 100)/3 = 2.67. For df=24, t_crit=1.711. Since 2.67 > 1.711, H0 is rejected at alpha=0.05.",
+          "content": "Hypothesis testing balances Type I false positive risk (alpha) against Type II false negative risk (beta), with statistical power (1 - beta) maximizing the probability of true discovery."
+        },
+        {
+          "chunk_id": "DS_CH3_001",
+          "subject": "Data Science",
+          "chapter": "Data Visualization Principles",
+          "topic": "Grammar of Graphics and Cognitive Visualization Principles",
+          "keywords": [
+            "visualization",
+            "grammar of graphics",
+            "data-ink ratio",
+            "lie factor",
+            "Cleveland McGill",
+            "Gestalt",
+            "Viridis",
+            "violin plot"
+          ],
+          "definition": "Data visualization translates numerical distributions into visual encodings governed by Cleveland's perceptual hierarchy, Wilkinson's Grammar of Graphics, and Tufte's data-ink principles.",
+          "formula": "Data-Ink Ratio = Data Ink / Total Ink. Lie Factor = Graphical Effect % / Data Effect %. Stevens Law: S = k * I^a.",
+          "worked_example": "If data increases 100% but 2D area scales by 4x (300% increase), Lie Factor = 300 / 100 = 3.0, representing severe graphical distortion.",
+          "content": "Modern statistical graphics prioritize high-fidelity encodings (aligned Cartesian position over area/angles) and perceptually uniform palettes (Viridis) to prevent misinterpretation."
+        },
+        {
+          "chunk_id": "DS_CH4_001",
+          "subject": "Data Science",
+          "chapter": "Regression Modeling",
+          "topic": "Ordinary Least Squares and Regularization (Ridge and Lasso)",
+          "keywords": [
+            "regression",
+            "OLS",
+            "Gauss Markov",
+            "BLUE",
+            "VIF",
+            "multicollinearity",
+            "Ridge",
+            "Lasso",
+            "ElasticNet",
+            "homoscedasticity"
+          ],
+          "definition": "Regression models describe continuous responses via linear combinations of predictors. OLS is BLUE under Gauss-Markov assumptions, while Ridge (L2) and Lasso (L1) handle multicollinearity and high-dimensional sparsity.",
+          "formula": "beta = (X^T X)^(-1) X^T y. Ridge: min ||y - X*beta||^2 + lambda*||beta||_2^2. Lasso: min ||y - X*beta||^2 + lambda*||beta||_1. VIF = 1/(1 - R^2).",
+          "worked_example": "For y=[2,3,5,7,8] on x=[1,2,3,4,5], slope beta_1=1.6, intercept beta_0=0.2. R^2 = 1 - (0.40/26.0) = 0.9846.",
+          "content": "Diagnostics evaluate residuals for normality, exogeneity, and homoscedasticity. Lasso performs embedded feature selection by driving non-influential coefficients to exact zero."
+        },
+        {
+          "chunk_id": "DS_CH5_001",
+          "subject": "Data Science",
+          "chapter": "Classification & Ensemble Methods",
+          "topic": "Logistic Regression, SVM and Ensemble Methods (Bagging and Boosting)",
+          "keywords": [
+            "classification",
+            "logistic regression",
+            "precision",
+            "recall",
+            "F1",
+            "ROC AUC",
+            "SVM",
+            "Random Forest",
+            "XGBoost",
+            "Gini"
+          ],
+          "definition": "Classification maps inputs to discrete categories. Evaluated by ROC-AUC and F1-score, modern production systems utilize Random Forests (bagging to reduce variance) and XGBoost (boosting to reduce bias).",
+          "formula": "Sigmoid: sigma(z) = 1/(1 + e^(-z)). F1 = 2*P*R/(P + R). Gini = 1 - Sum(p_i^2). Cross-Entropy: -[y*log(p) + (1-y)*log(1-p)].",
+          "worked_example": "For TP=80, FP=20, FN=10: Precision = 80/100 = 0.80. Recall = 80/90 = 0.889. F1 = 2*(0.8*0.889)/(0.8 + 0.889) = 0.842.",
+          "content": "SVM optimizes maximum margin hyperplanes via Mercer kernel mappings. Random Forests build decorrelated decision trees, whereas Gradient Boosters fit negative loss gradients sequentially."
+        },
+        {
+          "chunk_id": "DS_CH6_001",
+          "subject": "Data Science",
+          "chapter": "Feature Engineering & Dimensionality Reduction (PCA)",
+          "topic": "Principal Component Analysis and Manifold Learning",
+          "keywords": [
+            "PCA",
+            "SVD",
+            "dimensionality reduction",
+            "eigenvalues",
+            "eigenvectors",
+            "covariance",
+            "t-SNE",
+            "UMAP",
+            "target encoding"
+          ],
+          "definition": "PCA projects centered, standardized data onto orthogonal eigenvectors of maximum variance. SVD provides stable matrix factorization, while t-SNE and UMAP preserve non-linear manifold topologies.",
+          "formula": "Sigma = (1/(n-1))*X^T*X. Sigma*v = lambda*v. EVR_k = lambda_k / Sum(lambda). X = U*Sigma*V^T.",
+          "worked_example": "For covariance matrix with lambda1=6.0, lambda2=3.0, lambda3=1.0: EVR of top 2 components = (6+3)/10 = 90% total variance preserved.",
+          "content": "Feature engineering mitigates the curse of dimensionality. Standardization is mandatory prior to PCA to ensure scale invariance across heterogeneous predictor dimensions."
+        },
+        {
+          "chunk_id": "DS_CH7_001",
+          "subject": "Data Science",
+          "chapter": "Time-Series Forecasting",
+          "topic": "Stationarity, Autocorrelation and ARIMA Modeling",
+          "keywords": [
+            "time-series",
+            "forecasting",
+            "ARIMA",
+            "stationarity",
+            "ADF test",
+            "ACF",
+            "PACF",
+            "SARIMA",
+            "Prophet",
+            "MAPE"
+          ],
+          "definition": "Time-series forecasting models temporal stochastic sequences. Stationarity (verified via ADF test) is required for ARIMA(p, d, q) models identified via ACF and PACF diagnostic patterns.",
+          "formula": "AR(1): Y_t = c + phi*Y_{t-1} + e_t. Differencing: Delta Y_t = Y_t - Y_{t-1}. MAPE = (1/n)*Sum(|(Y - Y_hat)/Y|)*100%. Equilibrium: mu = c/(1 - phi).",
+          "worked_example": "For AR(1) with c=10, phi=0.6, Y_t=80: 1-step forecast Y_{t+1} = 10 + 0.6(80) = 58. Equilibrium mean mu = 10/(1 - 0.6) = 25.",
+          "content": "Box-Jenkins modeling requires differencing non-stationary trends (d > 0). Seasonality is modeled by SARIMA, while complex multi-seasonality is handled by Prophet and LSTM networks."
+        },
+        {
+          "chunk_id": "DS_CH8_001",
+          "subject": "Data Science",
+          "chapter": "Big Data Pipelines & Model Deployment",
+          "topic": "Distributed Pipelines, Kafka Streaming and MLOps Drift Monitoring",
+          "keywords": [
+            "Big Data",
+            "Spark",
+            "Kafka",
+            "MLOps",
+            "model deployment",
+            "Docker",
+            "Kubernetes",
+            "gRPC",
+            "drift",
+            "PSI"
+          ],
+          "definition": "Big Data pipelines leverage distributed in-memory computing (Spark) and event streaming (Kafka) for large-scale ETL. MLOps governs automated serving (Docker, gRPC) and drift monitoring (PSI, covariate shift).",
+          "formula": "Amdahl: S = 1/((1 - p) + p/N). PSI = Sum((Actual - Expected) * ln(Actual/Expected)). Consumer Lag = Latest - Committed.",
+          "worked_example": "For feature bin with Expected=20% and Actual=30%: PSI_bin = (0.30 - 0.20)*ln(0.30/0.20) = 0.10*0.4055 = 0.0405. PSI >= 0.25 triggers retraining.",
+          "content": "Production ML systems require continuous monitoring for covariate shift and concept drift. Containerization guarantees deterministic inference environments across distributed Kubernetes clusters."
         }
       ]
     },
@@ -290,7 +806,15 @@
         "Gradient Descent & Backpropagation",
         "Transformer Architecture & Self-Attention",
         "Retrieval-Augmented Generation (RAG)",
-        "Large Language Models & Prompt Engineering"
+        "Large Language Models & Prompt Engineering",
+        "Search Algorithms (BFS, DFS, A*)",
+        "Knowledge Representation & Logic",
+        "Supervised Machine Learning",
+        "Unsupervised Learning & Clustering",
+        "Artificial Neural Networks & Backpropagation",
+        "Convolutional Neural Networks (CNNs)",
+        "Transformers, Attention & LLMs",
+        "Retrieval-Augmented Generation (RAG) & AI Ethics"
       ],
       "rag_chunks": [
         {
@@ -359,6 +883,166 @@
           "formula": "Pipeline: Query -> Vector Embedding -> Cosine Similarity Matching -> Top-K Context Injection -> Grounded Response Synthesis.",
           "worked_example": "Answering student queries with grounded curriculum chunks from on-device assets to eliminate model hallucinations.",
           "content": "RAG enables lightweight local models to deliver domain-specific, factual answers without expensive full model fine-tuning."
+        },
+        {
+          "chunk_id": "AI_CH1_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Search Algorithms (BFS, DFS, A*)",
+          "topic": "Heuristic Search, A* Algorithm and Alpha-Beta Pruning",
+          "keywords": [
+            "artificial intelligence",
+            "a*",
+            "search algorithm",
+            "heuristics",
+            "admissibility",
+            "minimax",
+            "alpha-beta pruning",
+            "state space"
+          ],
+          "definition": "A* search evaluates frontier nodes via f(n) = g(n) + h(n), guaranteeing optimal paths when h(n) is admissible; Alpha-Beta prunes minimax branches when alpha >= beta.",
+          "formula": "A* Evaluation: f(n) = g(n) + h(n); Admissibility: h(n) <= h*(n); Pruning: alpha >= beta.",
+          "worked_example": "For start (0,0) and goal (3,3) with Manhattan heuristic, nodes with f = g + h = 2 + 4 = 6 are expanded to find the optimal path of cost 6.",
+          "content": "A* search and adversarial minimax power autonomous vehicle navigation, video game pathfinding, and competitive chess engines (Stockfish)."
+        },
+        {
+          "chunk_id": "AI_CH2_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Knowledge Representation & Logic",
+          "topic": "First-Order Logic and Resolution Refutation",
+          "keywords": [
+            "logic",
+            "first order logic",
+            "resolution",
+            "unification",
+            "skolemization",
+            "cnf",
+            "horn clause",
+            "forward chaining"
+          ],
+          "definition": "First-Order Logic models objects and relations; Resolution Refutation proves statements by asserting the negation and deriving a contradiction.",
+          "formula": "Entailment: alpha |= beta; Resolution: (A v B) ^ (~B v C) yields (A v C); Implication: P => Q = ~P v Q.",
+          "worked_example": "For King(x) ^ Greedy(x) => Evil(x), King(John), Greedy(John), resolution refutation with ~Evil(John) derives the empty clause contradiction.",
+          "content": "Knowledge representation and automated logic solvers (Z3 SMT) prove microchip hardware correctness and semantic web biomedical ontologies."
+        },
+        {
+          "chunk_id": "AI_CH3_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Supervised Machine Learning",
+          "topic": "Linear Regression, Logistic Regression and Regularization",
+          "keywords": [
+            "machine learning",
+            "linear regression",
+            "logistic regression",
+            "gradient descent",
+            "cross entropy",
+            "lasso",
+            "ridge",
+            "bias variance"
+          ],
+          "definition": "Supervised learning maps inputs to targets via loss minimization; Linear regression uses MSE while Logistic regression uses Cross-Entropy with Sigmoid.",
+          "formula": "MSE: J = (1/2m) sum (h(x) - y)^2; Sigmoid: 1/(1+e^-z); Ridge: J + lambda/2m sum w^2; Lasso: J + lambda/m sum |w|.",
+          "worked_example": "For samples (1,2) and (2,4) starting at w=0 with eta=0.1, gradient is -5.0, updating weight to w = 0 - 0.1(-5) = 0.50.",
+          "content": "Supervised models power credit risk evaluation, house price prediction, and click-through-rate advertising algorithms."
+        },
+        {
+          "chunk_id": "AI_CH4_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Unsupervised Learning & Clustering",
+          "topic": "K-Means, DBSCAN and Principal Component Analysis",
+          "keywords": [
+            "unsupervised learning",
+            "clustering",
+            "k-means",
+            "dbscan",
+            "pca",
+            "silhouette",
+            "elbow method",
+            "dendrogram"
+          ],
+          "definition": "Unsupervised learning discovers latent groupings without labels; K-Means partitions space via centroids, while DBSCAN clusters dense regions and filters noise.",
+          "formula": "K-Means Inertia: J = sum ||x - mu_k||^2; Silhouette: s = (b - a)/max(a, b); DBSCAN: |N_eps(p)| >= MinPts.",
+          "worked_example": "For points [2, 4, 10, 12] clustered with K=2, centroids converge to 3.0 and 11.0 with zero misclassifications.",
+          "content": "Clustering powers market segmentation, genomic expression PCA projection, and cybersecurity anomaly detection."
+        },
+        {
+          "chunk_id": "AI_CH5_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Artificial Neural Networks & Backpropagation",
+          "topic": "Backpropagation Algorithm and Neural Network Optimizers",
+          "keywords": [
+            "neural networks",
+            "ann",
+            "backpropagation",
+            "chain rule",
+            "relu",
+            "sigmoid",
+            "adam optimizer",
+            "universal approximation"
+          ],
+          "definition": "Artificial Neural Networks learn non-linear representations via stacked layers; Backpropagation computes weight gradients via the multivariable chain rule.",
+          "formula": "Forward: z = W*a + b, a = g(z); Delta: delta^[l] = ((W^[l+1])^T delta^[l+1]) (*) g'(z^[l]); Weight Grad: dL/dW = delta * a^T.",
+          "worked_example": "For a neuron with w=2.0, b=0.5, x=1.0, target y=1.0, prediction a=0.9241 gives delta = -0.0053, updating weight to 2.0053.",
+          "content": "Backpropagation powers all modern deep learning architectures, from recommendation systems to large multimodal models."
+        },
+        {
+          "chunk_id": "AI_CH6_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Convolutional Neural Networks (CNNs)",
+          "topic": "CNN Architectures, Convolutions and ResNet Residual Connections",
+          "keywords": [
+            "cnn",
+            "convolutional neural network",
+            "kernel",
+            "pooling",
+            "stride",
+            "padding",
+            "resnet",
+            "skip connection"
+          ],
+          "definition": "CNNs apply learnable sliding kernels to extract spatial features; ResNet introduces skip connections y = F(x) + x to train deep networks without degradation.",
+          "formula": "Output Dim: O = floor((W - K + 2P)/S) + 1; Parameters: (K*K*C_in + 1) * C_out; ResNet: y = F(x) + x.",
+          "worked_example": "A 32x32x3 image convolved with 16 filters (5x5, S=1, P=2) yields a 32x32x16 feature map using exactly 1,216 parameters.",
+          "content": "CNNs power autonomous vehicle vision systems (Tesla/Waymo), medical diagnostic imaging (MRI/CT tumor detection), and biometric facial recognition."
+        },
+        {
+          "chunk_id": "AI_CH7_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Transformers, Attention & LLMs",
+          "topic": "Self-Attention, Multi-Head Attention and Transformers",
+          "keywords": [
+            "transformers",
+            "attention",
+            "self-attention",
+            "llm",
+            "scaled dot-product",
+            "multi-head attention",
+            "gpt",
+            "bert"
+          ],
+          "definition": "Transformers replace sequential recurrence with self-attention: Attention(Q, K, V) = softmax((Q K^T)/sqrt(d_k)) * V, enabling full training parallelization.",
+          "formula": "Scaled Dot-Product: Attention(Q, K, V) = softmax((Q K^T) / sqrt(d_k)) * V; Multi-Head: Concat(head_1, ..., head_h) * W^O.",
+          "worked_example": "For QK^T = [[2, 4], [4, 2]] with d_k = 4, scaled scores are [[1, 2], [2, 1]], yielding softmax weights [[0.269, 0.731], [0.731, 0.269]].",
+          "content": "Transformers are the architectural foundation of large language models (ChatGPT, Gemini), multimodal vision transformers, and AlphaFold protein folding."
+        },
+        {
+          "chunk_id": "AI_CH8_001",
+          "subject": "Artificial Intelligence",
+          "chapter": "Retrieval-Augmented Generation (RAG) & AI Ethics",
+          "topic": "Retrieval-Augmented Generation, Vector Databases and AI Alignment",
+          "keywords": [
+            "rag",
+            "retrieval augmented generation",
+            "vector database",
+            "embeddings",
+            "cosine similarity",
+            "hnsw",
+            "rlhf",
+            "hallucinations"
+          ],
+          "definition": "RAG grounds LLMs on external non-parametric vector databases using cosine similarity; RLHF aligns models with human ethical preferences (HHH).",
+          "formula": "Cosine: cos(theta) = (u . v) / (||u|| * ||v||); HNSW Search: O(log N); Grounded Prompt: Context + Query.",
+          "worked_example": "For query [1, 2] and candidates [2, 4] and [2, -1], cosine similarity selects [2, 4] with score 1.0 (perfect parallel alignment).",
+          "content": "RAG and vector databases power enterprise search, medical hallucination-free AI assistants, and legal document analysis systems."
         }
       ]
     },
@@ -370,7 +1054,15 @@
         "Waves, Frequency & Sound Mechanics",
         "Thermodynamics & Heat Engines",
         "Electromagnetism & Faraday's Induction",
-        "Optics & Wave Nature of Light"
+        "Optics & Wave Nature of Light",
+        "Units, Vectors & Kinematics",
+        "Newton's Laws & Rotational Mechanics",
+        "Gravitation & Fluid Dynamics",
+        "Oscillations & Wave Mechanics",
+        "Laws of Thermodynamics & Entropy",
+        "Electrostatics & Current Electricity",
+        "Electromagnetism & Maxwell's Equations",
+        "Optics, Quantum Mechanics & Semiconductor Physics"
       ],
       "rag_chunks": [
         {
@@ -447,6 +1139,171 @@
           "formula": "Ohm's Law: V = I * R. Electrical Power: P = V * I = I^2 * R. Faraday's Law: EMF = -dPhi_B / dt.",
           "worked_example": "Connecting a 12V automotive battery to a 4-ohm circuit yields a current of I = 12 / 4 = 3 Amperes, consuming 36 Watts.",
           "content": "Faraday's electromagnetic induction is the physical principle behind commercial electric turbine generators, transformers, and electric motors."
+        },
+        {
+          "chunk_id": "PHYS_CH1_001",
+          "subject": "Physics",
+          "chapter": "Units, Vectors & Kinematics",
+          "topic": "Vector Algebra, Dimensional Analysis and Kinematic Equations",
+          "keywords": [
+            "physics",
+            "kinematics",
+            "vectors",
+            "cross product",
+            "dot product",
+            "projectile motion",
+            "terminal velocity",
+            "dimensional analysis"
+          ],
+          "definition": "Kinematics describes motion through position, velocity, and acceleration vectors. Vector dot products model work, while cross products model rotational torque and Lorentz forces.",
+          "formula": "v(t) = v_0 + at. x(t) = x_0 + v_0*t + 0.5*a*t^2. R = (v_0^2 * sin(2*theta))/g. A . B = |A||B|cos(theta).",
+          "worked_example": "For v_0=40 m/s at theta=30 deg: v_{0y}=20 m/s, time of flight T = 2(20)/9.8 = 4.08 s, max altitude H = 20^2/(2*9.8) = 20.41 m.",
+          "content": "Buckingham Pi theorem reduces physical equations to dimensionless ratios. Projectile range in vacuum is maximized at 45 degrees, whereas air drag induces asymmetry and terminal velocity limits."
+        },
+        {
+          "chunk_id": "PHYS_CH2_001",
+          "subject": "Physics",
+          "chapter": "Newton's Laws & Rotational Mechanics",
+          "topic": "Rotational Dynamics and Angular Momentum Conservation",
+          "keywords": [
+            "Newton laws",
+            "torque",
+            "moment of inertia",
+            "parallel axis theorem",
+            "angular momentum",
+            "rolling without slipping",
+            "gyroscope",
+            "coriolis"
+          ],
+          "definition": "Rotational mechanics governs angular dynamics via torque tau = I*alpha and angular momentum L = I*omega. In the absence of external torque, angular momentum is conserved.",
+          "formula": "F = dp/dt. tau = r x F = I*alpha. I = I_cm + M*d^2. K_rot = 0.5*I*omega^2. Precession: Omega_p = tau/L.",
+          "worked_example": "Solid cylinder rolling without slipping down incline: a_cm = g*sin(theta)/(1 + 0.5) = (2/3)*g*sin(theta).",
+          "content": "Parallel axis theorem computes inertia about displaced axes. Non-inertial frames produce Coriolis and centrifugal fictitious forces fundamental to atmospheric and oceanographic dynamics."
+        },
+        {
+          "chunk_id": "PHYS_CH3_001",
+          "subject": "Physics",
+          "chapter": "Gravitation & Fluid Dynamics",
+          "topic": "Universal Gravitation, Bernoulli Principle and Fluid Dynamics",
+          "keywords": [
+            "gravitation",
+            "Kepler laws",
+            "orbital mechanics",
+            "escape velocity",
+            "fluid dynamics",
+            "Bernoulli",
+            "continuity equation",
+            "Poiseuille",
+            "Reynolds"
+          ],
+          "definition": "Gravitation governs orbital mechanics via Kepler's laws and inverse-square attraction. Fluid dynamics models mass and energy conservation through the Continuity equation and Bernoulli's principle.",
+          "formula": "F = G*M*m/r^2. v_esc = sqrt(2GM/R). A1*v1 = A2*v2. P + 0.5*rho*v^2 + rho*g*h = const. Re = rho*v*L/mu.",
+          "worked_example": "Venturi tube with D1=0.2m, D2=0.1m, Delta_P=4500 Pa: v2=4*v1, Delta_P = 0.5*1000*(15*v1^2) = 7500*v1^2 => v1=0.775 m/s, Q=0.0243 m^3/s.",
+          "content": "Poiseuille's law highlights extreme fourth-power radius sensitivity in viscous flow. Reynolds number demarcates laminar and turbulent flow regimes fundamental to aeronautical wing design."
+        },
+        {
+          "chunk_id": "PHYS_CH4_001",
+          "subject": "Physics",
+          "chapter": "Oscillations & Wave Mechanics",
+          "topic": "Simple Harmonic Motion, Damping, Resonance and Wave Mechanics",
+          "keywords": [
+            "SHM",
+            "oscillations",
+            "harmonic motion",
+            "damping",
+            "resonance",
+            "quality factor",
+            "wave equation",
+            "Doppler effect"
+          ],
+          "definition": "Oscillations describe motion around equilibrium governed by Hooke's restoring forces. Wave mechanics analyzes propagation through elastic media, energy transport, resonance, and Doppler frequency shifts.",
+          "formula": "omega_0 = sqrt(k/m). d^2x/dt^2 + 2*gamma*dx/dt + omega_0^2*x = 0. Q = omega_0/(2*gamma). v = sqrt(T/mu). f_obs = f_s*((v +/- v_o)/(v -/+ v_s)).",
+          "worked_example": "For m=2kg, k=800N/m, b=8N.s/m: omega_0=20 rad/s, gamma=2 s^(-1), damped frequency omega_d = sqrt(400 - 4) = 19.90 rad/s, Q = 20/(2*2) = 5.0.",
+          "content": "Critical damping provides the fastest non-oscillatory return to equilibrium. The Doppler effect shifts frequencies due to source/observer motion, applied in radar, sonar, and astrophysics."
+        },
+        {
+          "chunk_id": "PHYS_CH5_001",
+          "subject": "Physics",
+          "chapter": "Laws of Thermodynamics & Entropy",
+          "topic": "Thermodynamic Laws, Heat Engines and Entropy",
+          "keywords": [
+            "thermodynamics",
+            "entropy",
+            "Carnot engine",
+            "first law",
+            "second law",
+            "Clausius",
+            "Boltzmann",
+            "efficiency",
+            "adiabatic"
+          ],
+          "definition": "Thermodynamics governs heat, work, and state transformations. First Law dictates energy conservation (Delta U = Q - W), while Second Law imposes entropy growth (Delta S >= 0) and Carnot efficiency limits.",
+          "formula": "Delta U = Q - W. eta_carnot = 1 - T_C/T_H. S = k_B * ln(Omega). dS = dQ_rev/T. P*V^gamma = const.",
+          "worked_example": "For heat engine operating between 600K and 300K with Q_H=500MJ: eta = 1 - 300/600 = 0.50 (50%), work output W = 250 MJ, waste heat Q_C = 250 MJ.",
+          "content": "Carnot's theorem bounds heat engine efficiency. Macroscopic Clausius entropy connects with statistical mechanics via Boltzmann's microstate formulation."
+        },
+        {
+          "chunk_id": "PHYS_CH6_001",
+          "subject": "Physics",
+          "chapter": "Electrostatics & Current Electricity",
+          "topic": "Gauss's Law, Capacitance, and DC Circuit Analysis",
+          "keywords": [
+            "electrostatics",
+            "Coulomb law",
+            "Gauss law",
+            "capacitance",
+            "electric field",
+            "electric potential",
+            "Ohm law",
+            "Kirchhoff",
+            "RC circuit"
+          ],
+          "definition": "Electrostatics investigates static charge interactions via Coulomb's and Gauss's laws. Current electricity governs charge transport (drift velocity), Ohm's law, Kirchhoff's rules, and RC transient responses.",
+          "formula": "F = q1*q2/(4*pi*eps_0*r^2). Closed_Integral(E.dA) = Q/eps_0. V = -grad(E). C = eps*A/d. tau = R*C. V(t) = V_0*(1 - e^(-t/tau)).",
+          "worked_example": "For R=100kOhm, C=10uF, V_0=12V: tau = 100k * 10u = 1.0 s. At t=1s, V_c = 12*(1 - e^(-1)) = 7.585 V.",
+          "content": "Gauss's law calculates symmetric fields. Capacitors store electrostatic field energy (U = 0.5*C*V^2). Kirchhoff's laws enforce charge and energy conservation across complex multi-branch circuits."
+        },
+        {
+          "chunk_id": "PHYS_CH7_001",
+          "subject": "Physics",
+          "chapter": "Electromagnetism & Maxwell's Equations",
+          "topic": "Electromagnetic Induction, Maxwell's Equations and Wave Propagation",
+          "keywords": [
+            "electromagnetism",
+            "Lorentz force",
+            "Biot Savart",
+            "Ampere law",
+            "Faraday law",
+            "Lenz law",
+            "Maxwell equations",
+            "displacement current",
+            "Poynting vector"
+          ],
+          "definition": "Electromagnetism unifies electric and magnetic phenomena. Maxwell's equations formalize field dynamics, displacement current, and self-propagating electromagnetic radiation at the speed of light.",
+          "formula": "F = q(E + v x B). curl E = -dB/dt. curl B = mu_0*J + mu_0*eps_0*dE/dt. c = 1/sqrt(mu_0*eps_0). S = (1/mu_0)*(E x B).",
+          "worked_example": "For N=200 turns, r=0.05m coil in field dropping from 0.8T to 0.2T in 0.04s: Area=0.00785m^2, Delta_Phi = -0.6*0.00785 = -0.00471Wb, emf = -200*(-0.00471/0.04) = +23.56 V.",
+          "content": "Maxwell's displacement current completes Ampere's circuital law, proving that time-varying electric fields generate magnetic fields, enabling light wave propagation through vacuum."
+        },
+        {
+          "chunk_id": "PHYS_CH8_001",
+          "subject": "Physics",
+          "chapter": "Optics, Quantum Mechanics & Semiconductor Physics",
+          "topic": "Wave Optics, Photoelectric Effect and Semiconductor Physics",
+          "keywords": [
+            "optics",
+            "quantum mechanics",
+            "Snell law",
+            "photoelectric effect",
+            "de Broglie",
+            "Schrodinger",
+            "semiconductor",
+            "bandgap",
+            "pn junction"
+          ],
+          "definition": "Wave optics analyzes diffraction and refraction. Quantum mechanics formalizes wave-particle duality (de Broglie, photoelectric effect, Schrodinger equation), governing solid-state bandgaps and p-n junction diodes.",
+          "formula": "K_max = hf - phi. lambda = h/p. -hbar^2/(2m) d^2psi/dx^2 + V*psi = E*psi. E_n = n^2*h^2/(8mL^2). Shockley: I = I_s*(e^(qV/kT) - 1).",
+          "worked_example": "For 300nm light on potassium (phi=2.20 eV): E_photon = 1241/300 = 4.137 eV, K_max = 4.137 - 2.20 = 1.937 eV, stopping potential V_stop = 1.937 V.",
+          "content": "Einstein's photoelectric equation proved energy quantization. In solid-state physics, valence/conduction band separation governs semiconductor conductivity and diode rectification."
         }
       ]
     },
@@ -458,7 +1315,15 @@
         "Acids, Bases & the pH Scale",
         "Periodic Table & Elemental Trends",
         "Stoichiometry & Mole Calculations",
-        "Chemical Equilibrium & Le Chatelier"
+        "Chemical Equilibrium & Le Chatelier",
+        "Atomic Structure & Quantum Numbers",
+        "Chemical Bonding & Molecular Orbital Theory",
+        "Periodic Properties & Coordination Compounds",
+        "Chemical Thermodynamics & Equilibrium",
+        "Electrochemistry & Chemical Kinetics",
+        "Organic Reaction Mechanisms",
+        "Stereochemistry & Biomolecules",
+        "Analytical & Industrial Chemistry"
       ],
       "rag_chunks": [
         {
@@ -529,6 +1394,177 @@
           "formula": "1 mole = 6.022 * 10^23 particles (Avogadro's number). Moles n = mass (g) / Molar Mass (g/mol). Molarity = moles / Volume (L).",
           "worked_example": "In 2H2 + O2 -> 2H2O: 4g of H2 (2 moles) reacts with 32g of O2 (1 mole) to produce 36g of H2O (2 moles).",
           "content": "Stoichiometry enables precise calculation of industrial reactant proportions and theoretical chemical reaction yields."
+        },
+        {
+          "chunk_id": "CHEM_CH1_001",
+          "subject": "Chemistry",
+          "chapter": "Atomic Structure & Quantum Numbers",
+          "topic": "Quantum Numbers, Orbitals and Hydrogen Emission Spectra",
+          "keywords": [
+            "chemistry",
+            "atomic structure",
+            "quantum numbers",
+            "Bohr model",
+            "Rydberg",
+            "Heisenberg",
+            "Aufbau",
+            "Pauli",
+            "Hund rule",
+            "nodes"
+          ],
+          "definition": "Atomic structure describes electronic configurations via four quantum numbers (n, l, m_l, m_s) satisfying the Aufbau principle, Pauli exclusion, and Hund's rule, governing spatial orbital nodes and line spectra.",
+          "formula": "1/lambda = R_H*(1/n1^2 - 1/n2^2). E_n = -13.6*Z^2/n^2. Delta_x*Delta_p >= hbar/2. Total nodes = n - 1. L = sqrt(l(l+1))*hbar.",
+          "worked_example": "Balmer H_alpha line (n=3 to n=2): 1/lambda = 1.097e7*(1/4 - 1/9) = 1.524e6 m^-1 => lambda = 656.3 nm (visible red).",
+          "content": "Radial and angular wavefunctions delineate electron probability density. Half-filled and fully-filled d-subshells exhibit heightened stability due to quantum mechanical exchange energy."
+        },
+        {
+          "chunk_id": "CHEM_CH2_001",
+          "subject": "Chemistry",
+          "chapter": "Chemical Bonding & Molecular Orbital Theory",
+          "topic": "VSEPR Geometries, Hybridization and Molecular Orbital Theory",
+          "keywords": [
+            "chemical bonding",
+            "VSEPR",
+            "hybridization",
+            "MOT",
+            "bond order",
+            "paramagnetism",
+            "formal charge",
+            "LCAO",
+            "pi bond"
+          ],
+          "definition": "Chemical bonding stabilizes atoms via valence electron redistribution. VSEPR dictates 3D geometry, valence bond theory details orbital hybridization, and MOT explains bond orders and paramagnetism.",
+          "formula": "FC = V - L - 0.5*B. BO = 0.5*(N_b - N_a). Steric Number = Bonds + Lone Pairs. Dipole: mu = q*d.",
+          "worked_example": "For O2: N_b=8, N_a=4 => BO = 0.5*(8 - 4) = 2.0. Two unpaired electrons in pi* orbitals confer paramagnetism.",
+          "content": "MOT resolves paramagnetic anomalies of O2. Molecular geometries range from linear (sp) to octahedral (sp3d2), with lone pairs exerting greater repulsion than bonding pairs."
+        },
+        {
+          "chunk_id": "CHEM_CH3_001",
+          "subject": "Chemistry",
+          "chapter": "Periodic Properties & Coordination Compounds",
+          "topic": "Effective Nuclear Charge, Coordination Compounds and Crystal Field Theory",
+          "keywords": [
+            "periodic properties",
+            "Z_eff",
+            "ionization energy",
+            "coordination compounds",
+            "CFT",
+            "crystal field splitting",
+            "spectrochemical series",
+            "CFSE",
+            "magnetic moment"
+          ],
+          "definition": "Periodic trends reflect effective nuclear charge (Z_eff) evolution. Coordination compounds exhibit d-orbital splitting (t_2g and e_g) under Crystal Field Theory, dictating high/low spin states and magnetic moments.",
+          "formula": "Z_eff = Z - S. Delta_tet = (4/9)*Delta_oct. mu_eff = sqrt(n(n+2)) mu_B. CFSE_oct = (-0.4*n_t2g + 0.6*n_eg)*Delta_oct.",
+          "worked_example": "For [Fe(CN)6]^3- (low-spin d^5): n=1 unpaired electron, CFSE = -2.0*Delta_oct + 2P, mu_eff = sqrt(3) = 1.73 mu_B. For [Fe(H2O)6]^3- (high-spin d^5): n=5, CFSE = 0, mu_eff = sqrt(35) = 5.92 mu_B.",
+          "content": "Spectrochemical series orders ligand field strength. Polydentate chelators achieve extreme thermodynamic stability via entropic solvent displacement (the chelate effect)."
+        },
+        {
+          "chunk_id": "CHEM_CH4_001",
+          "subject": "Chemistry",
+          "chapter": "Chemical Thermodynamics & Equilibrium",
+          "topic": "Hess's Law, Gibbs Free Energy and Chemical Equilibrium",
+          "keywords": [
+            "thermodynamics",
+            "enthalpy",
+            "Hess law",
+            "entropy",
+            "Gibbs free energy",
+            "equilibrium",
+            "K_eq",
+            "Le Chatelier",
+            "van 't Hoff"
+          ],
+          "definition": "Chemical thermodynamics evaluates reaction spontaneity via Gibbs free energy Delta G = Delta H - T*Delta S. Dynamic equilibrium balances forward/reverse rates, obeying Delta G^0 = -RT ln(K_eq) and Le Chatelier's principle.",
+          "formula": "Delta G^0 = Delta H^0 - T*Delta S^0. Delta G^0 = -R*T*ln(K). K_p = K_c*(RT)^(Delta n). ln(K2/K1) = -(Delta H/R)*(1/T2 - 1/T1).",
+          "worked_example": "For Haber-Bosch with Delta H^0 = -92.2 kJ, Delta S^0 = -198.7 J/K: Delta G^0(298K) = -32.99 kJ/mol, K_p = e^(32987/(8.314*298)) = 6.05e5. Equilibrium flips non-spontaneous above T = 464 K.",
+          "content": "Le Chatelier's principle governs industrial yield optimization. Catalysts reduce activation energy without altering Delta G^0 or the thermodynamic equilibrium constant K_eq."
+        },
+        {
+          "chunk_id": "CHEM_CH5_001",
+          "subject": "Chemistry",
+          "chapter": "Electrochemistry & Chemical Kinetics",
+          "topic": "Galvanic Cells, Nernst Equation and Reaction Kinetics",
+          "keywords": [
+            "electrochemistry",
+            "galvanic cell",
+            "Nernst equation",
+            "Faraday law",
+            "electrolysis",
+            "rate law",
+            "half life",
+            "Arrhenius",
+            "activation energy"
+          ],
+          "definition": "Electrochemistry analyzes redox energetics via Delta G^0 = -nFE^0 and Nernst potential adjustments. Chemical kinetics models reaction rates, integrated orders, and Arrhenius temperature dependencies.",
+          "formula": "E = E^0 - (0.0592/n)*log(Q). Delta G^0 = -nFE^0. Mass = (M*I*t)/(n*F). t_1/2 = 0.693/k (1st order). k = A*e^(-E_a/RT).",
+          "worked_example": "For Daniell cell (E^0=1.10V, n=2) with [Zn^2+]=0.01M, [Cu^2+]=1.0M: E = 1.10 - (0.0592/2)*log(0.01) = 1.159 V. Delta G^0 = -2*96485*1.10 = -212.3 kJ/mol.",
+          "content": "First-order half-life is independent of initial concentration. Electrolytic refining and battery charging reverse spontaneous cell potentials via external power supply."
+        },
+        {
+          "chunk_id": "CHEM_CH6_001",
+          "subject": "Chemistry",
+          "chapter": "Organic Reaction Mechanisms",
+          "topic": "Nucleophilic Substitution, Elimination and Electrophilic Addition",
+          "keywords": [
+            "organic chemistry",
+            "reaction mechanisms",
+            "SN1",
+            "SN2",
+            "E1",
+            "E2",
+            "Markovnikov",
+            "carbocation",
+            "Walden inversion",
+            "Zaitsev rule"
+          ],
+          "definition": "Organic reaction mechanisms describe electron pair movement in polar reactions. SN2 proceeds via concerted backside inversion, SN1 involves planar carbocation intermediates, and E2 requires anti-periplanar geometry.",
+          "formula": "Rate_SN2 = k[Substrate][Nu]. Rate_SN1 = k[Substrate]. Zaitsev: More substituted alkene favored. Markovnikov: H adds to carbon with more H's.",
+          "worked_example": "(R)-2-bromobutane with NaCN in DMSO undergoes pure SN2 backside attack, yielding (S)-2-methylbutanenitrile with 100% Walden inversion.",
+          "content": "Polar aprotic solvents accelerate SN2 mechanisms by leaving anions unsolvated. Carbocations undergo Wagner-Meerwein shifts to achieve tertiary thermodynamic stability."
+        },
+        {
+          "chunk_id": "CHEM_CH7_001",
+          "subject": "Chemistry",
+          "chapter": "Stereochemistry & Biomolecules",
+          "topic": "Chirality, Cahn-Ingold-Prelog Rules and Biomolecular Architecture",
+          "keywords": [
+            "stereochemistry",
+            "chirality",
+            "CIP rules",
+            "enantiomers",
+            "diastereomers",
+            "meso compound",
+            "carbohydrates",
+            "amino acids",
+            "DNA",
+            "pI"
+          ],
+          "definition": "Stereochemistry studies 3D molecular conformations and chirality. CIP rules define absolute (R/S) configurations. Biomolecules display strict homochirality in carbohydrates (D-sugars), proteins (L-amino acids), and DNA double helices.",
+          "formula": "[alpha] = alpha/(c*l). % ee = (|R-S|/(R+S))*100%. Max isomers = 2^n. pI = 0.5*(pK_a1 + pK_a2).",
+          "worked_example": "Glyceraldehyde with C2 groups -OH(1), -CHO(2), -CH2OH(3), -H(4): clockwise tracking with H back gives (R)-glyceraldehyde. Sample with [alpha]=+8.7 vs +13.5 pure has ee = 64.4%.",
+          "content": "Enantiomers have identical physical constants but rotate polarized light in opposite directions. Watson-Crick DNA architecture is stabilized by A-T (2 H-bonds) and G-C (3 H-bonds) base pairings."
+        },
+        {
+          "chunk_id": "CHEM_CH8_001",
+          "subject": "Chemistry",
+          "chapter": "Analytical & Industrial Chemistry",
+          "topic": "Spectroscopic Structural Elucidation and Green Industrial Chemistry",
+          "keywords": [
+            "analytical chemistry",
+            "spectroscopy",
+            "NMR",
+            "FTIR",
+            "mass spec",
+            "Beer Lambert",
+            "Haber process",
+            "Contact process",
+            "green chemistry"
+          ],
+          "definition": "Analytical chemistry elucidates structures using spectroscopy (UV-Vis, FTIR, NMR, MS) and chromatography. Industrial chemistry scales catalytic syntheses (Haber, Contact process) guided by 12 green chemistry principles.",
+          "formula": "A = eps*b*c. delta = ((nu - nu_TMS)/nu_0)*10^6. pH = pK_a + log([A-]/[HA]). Atom Economy = (MW_desired / Sum MW_reactants)*100%.",
+          "worked_example": "C3H6O with FTIR 1715 cm^-1 (C=O) and 1H-NMR delta 2.15 ppm singlet (6H) corresponds to acetone (CH3-CO-CH3), MW=58 g/mol matching M+ peak.",
+          "content": "1H-NMR multiplicity obeys the n+1 coupling rule. Green chemistry maximizes atom economy and catalytic efficiency to minimize hazardous byproduct generation."
         }
       ]
     },
@@ -540,7 +1576,15 @@
         "Photosynthesis & Cellular Respiration",
         "Molecular Genetics, DNA & Protein Synthesis",
         "Cell Division: Mitosis & Meiosis",
-        "Ecology, Trophic Levels & Biodiversity"
+        "Ecology, Trophic Levels & Biodiversity",
+        "Cell Structure & Membrane Transport",
+        "Cellular Respiration & Bioenergetics",
+        "Molecular Genetics & DNA Replication",
+        "Gene Expression & Regulation",
+        "Mendelian & Population Genetics",
+        "Human Physiology & Neurobiology",
+        "Immunology & Pathology",
+        "Ecology & Conservation Dynamics"
       ],
       "rag_chunks": [
         {
@@ -596,6 +1640,158 @@
           "formula": "Base Pairing: Adenine pairs with Thymine (A=T), Guanine pairs with Cytosine (G=C); Uracil (U) replaces Thymine in RNA. Central Dogma: DNA -> mRNA -> Protein.",
           "worked_example": "A point mutation in the beta-globin gene replacing glutamic acid with valine causes sickle cell anemia.",
           "content": "The genetic code is universal across Earth's biology, proving common evolutionary descent among all kingdoms of life."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH1_001",
+          "subject": "Biology",
+          "chapter": "Cell Structure & Membrane Transport",
+          "topic": "Core Foundations of Cell Structure & Membrane Transport",
+          "keywords": [
+            "biology",
+            "cell structure & membrane transport",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Cell Structure & Membrane Transport forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Cell Structure & Membrane Transport",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Cell Structure & Membrane Transport.",
+          "content": "A comprehensive university overview of Cell Structure & Membrane Transport within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH2_001",
+          "subject": "Biology",
+          "chapter": "Cellular Respiration & Bioenergetics",
+          "topic": "Core Foundations of Cellular Respiration & Bioenergetics",
+          "keywords": [
+            "biology",
+            "cellular respiration & bioenergetics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Cellular Respiration & Bioenergetics forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Cellular Respiration & Bioenergetics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Cellular Respiration & Bioenergetics.",
+          "content": "A comprehensive university overview of Cellular Respiration & Bioenergetics within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH3_001",
+          "subject": "Biology",
+          "chapter": "Molecular Genetics & DNA Replication",
+          "topic": "Core Foundations of Molecular Genetics & DNA Replication",
+          "keywords": [
+            "biology",
+            "molecular genetics & dna replication",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Molecular Genetics & DNA Replication forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Molecular Genetics & DNA Replication",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Molecular Genetics & DNA Replication.",
+          "content": "A comprehensive university overview of Molecular Genetics & DNA Replication within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH4_001",
+          "subject": "Biology",
+          "chapter": "Gene Expression & Regulation",
+          "topic": "Core Foundations of Gene Expression & Regulation",
+          "keywords": [
+            "biology",
+            "gene expression & regulation",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Gene Expression & Regulation forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Gene Expression & Regulation",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Gene Expression & Regulation.",
+          "content": "A comprehensive university overview of Gene Expression & Regulation within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH5_001",
+          "subject": "Biology",
+          "chapter": "Mendelian & Population Genetics",
+          "topic": "Core Foundations of Mendelian & Population Genetics",
+          "keywords": [
+            "biology",
+            "mendelian & population genetics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Mendelian & Population Genetics forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Mendelian & Population Genetics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Mendelian & Population Genetics.",
+          "content": "A comprehensive university overview of Mendelian & Population Genetics within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH6_001",
+          "subject": "Biology",
+          "chapter": "Human Physiology & Neurobiology",
+          "topic": "Core Foundations of Human Physiology & Neurobiology",
+          "keywords": [
+            "biology",
+            "human physiology & neurobiology",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Human Physiology & Neurobiology forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Human Physiology & Neurobiology",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Human Physiology & Neurobiology.",
+          "content": "A comprehensive university overview of Human Physiology & Neurobiology within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH7_001",
+          "subject": "Biology",
+          "chapter": "Immunology & Pathology",
+          "topic": "Core Foundations of Immunology & Pathology",
+          "keywords": [
+            "biology",
+            "immunology & pathology",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Immunology & Pathology forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Immunology & Pathology",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Immunology & Pathology.",
+          "content": "A comprehensive university overview of Immunology & Pathology within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIO_CH8_001",
+          "subject": "Biology",
+          "chapter": "Ecology & Conservation Dynamics",
+          "topic": "Core Foundations of Ecology & Conservation Dynamics",
+          "keywords": [
+            "biology",
+            "ecology & conservation dynamics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Ecology & Conservation Dynamics forms a foundational pillar in university-grade Biology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Ecology & Conservation Dynamics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Ecology & Conservation Dynamics.",
+          "content": "A comprehensive university overview of Ecology & Conservation Dynamics within Biology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
         }
       ]
     },
@@ -607,7 +1803,15 @@
         "The Industrial Revolution & Factory Mechanization",
         "World War I: Origins, Trench Warfare & Legacy",
         "World War II: Global Conflict, Holocaust & the UN",
-        "The Indian Freedom Struggle & Satyagraha"
+        "The Indian Freedom Struggle & Satyagraha",
+        "Neolithic Revolution & Early Civilizations",
+        "Classical Antiquity & Mediterranean Empires",
+        "Silk Roads & Eurasian Trade Networks",
+        "The Medieval World & Feudalism",
+        "The Renaissance & Scientific Revolution",
+        "Age of Revolutions & Enlightenment",
+        "Industrial Revolution & Global Empires",
+        "20th Century Conflicts & Modern Geopolitics"
       ],
       "rag_chunks": [
         {
@@ -685,6 +1889,1502 @@
           "formula": "Major Campaigns: 1857 First War of Independence, Non-Cooperation Movement (1920), Dandi Salt March (1930), and Quit India Movement (1942), leading to independence on August 15, 1947.",
           "worked_example": "During the 240-mile Salt March, Mahatma Gandhi mobilized millions to peacefully break colonial salt monopolies, proving the power of Ahimsa.",
           "content": "India's non-violent liberation struggle inspired civil rights and anti-colonial movements across Africa, Asia, and the Americas."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH1_001",
+          "subject": "World History",
+          "chapter": "Neolithic Revolution & Early Civilizations",
+          "topic": "Core Foundations of Neolithic Revolution & Early Civilizations",
+          "keywords": [
+            "world history",
+            "neolithic revolution & early civilizations",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Neolithic Revolution & Early Civilizations forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Neolithic Revolution & Early Civilizations",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Neolithic Revolution & Early Civilizations.",
+          "content": "A comprehensive university overview of Neolithic Revolution & Early Civilizations within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH2_001",
+          "subject": "World History",
+          "chapter": "Classical Antiquity & Mediterranean Empires",
+          "topic": "Core Foundations of Classical Antiquity & Mediterranean Empires",
+          "keywords": [
+            "world history",
+            "classical antiquity & mediterranean empires",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Classical Antiquity & Mediterranean Empires forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Classical Antiquity & Mediterranean Empires",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Classical Antiquity & Mediterranean Empires.",
+          "content": "A comprehensive university overview of Classical Antiquity & Mediterranean Empires within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH3_001",
+          "subject": "World History",
+          "chapter": "Silk Roads & Eurasian Trade Networks",
+          "topic": "Core Foundations of Silk Roads & Eurasian Trade Networks",
+          "keywords": [
+            "world history",
+            "silk roads & eurasian trade networks",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Silk Roads & Eurasian Trade Networks forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Silk Roads & Eurasian Trade Networks",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Silk Roads & Eurasian Trade Networks.",
+          "content": "A comprehensive university overview of Silk Roads & Eurasian Trade Networks within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH4_001",
+          "subject": "World History",
+          "chapter": "The Medieval World & Feudalism",
+          "topic": "Core Foundations of The Medieval World & Feudalism",
+          "keywords": [
+            "world history",
+            "the medieval world & feudalism",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "The Medieval World & Feudalism forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in The Medieval World & Feudalism",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in The Medieval World & Feudalism.",
+          "content": "A comprehensive university overview of The Medieval World & Feudalism within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH5_001",
+          "subject": "World History",
+          "chapter": "The Renaissance & Scientific Revolution",
+          "topic": "Core Foundations of The Renaissance & Scientific Revolution",
+          "keywords": [
+            "world history",
+            "the renaissance & scientific revolution",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "The Renaissance & Scientific Revolution forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in The Renaissance & Scientific Revolution",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in The Renaissance & Scientific Revolution.",
+          "content": "A comprehensive university overview of The Renaissance & Scientific Revolution within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH6_001",
+          "subject": "World History",
+          "chapter": "Age of Revolutions & Enlightenment",
+          "topic": "Core Foundations of Age of Revolutions & Enlightenment",
+          "keywords": [
+            "world history",
+            "age of revolutions & enlightenment",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Age of Revolutions & Enlightenment forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Age of Revolutions & Enlightenment",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Age of Revolutions & Enlightenment.",
+          "content": "A comprehensive university overview of Age of Revolutions & Enlightenment within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH7_001",
+          "subject": "World History",
+          "chapter": "Industrial Revolution & Global Empires",
+          "topic": "Core Foundations of Industrial Revolution & Global Empires",
+          "keywords": [
+            "world history",
+            "industrial revolution & global empires",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Industrial Revolution & Global Empires forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Industrial Revolution & Global Empires",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Industrial Revolution & Global Empires.",
+          "content": "A comprehensive university overview of Industrial Revolution & Global Empires within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_HISTORY_CH8_001",
+          "subject": "World History",
+          "chapter": "20th Century Conflicts & Modern Geopolitics",
+          "topic": "Core Foundations of 20th Century Conflicts & Modern Geopolitics",
+          "keywords": [
+            "world history",
+            "20th century conflicts & modern geopolitics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "20th Century Conflicts & Modern Geopolitics forms a foundational pillar in university-grade World History, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in 20th Century Conflicts & Modern Geopolitics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in 20th Century Conflicts & Modern Geopolitics.",
+          "content": "A comprehensive university overview of 20th Century Conflicts & Modern Geopolitics within World History, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Economics & Finance",
+      "overview": "University economics analyzing microeconomic markets, macroeconomic policy, financial markets, and econometric methods.",
+      "topics": [
+        "Foundations of Microeconomics & Elasticity",
+        "Production Economics & Market Structures",
+        "Macroeconomic Output & National Accounts",
+        "Monetary & Fiscal Stabilization Policy",
+        "Financial Assets, Valuation & Risk",
+        "Capital Asset Pricing Model (CAPM)",
+        "Options, Derivatives & Black-Scholes",
+        "International Trade & Exchange Rates"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_ECON_CH1_001",
+          "subject": "Economics & Finance",
+          "chapter": "Foundations of Microeconomics & Elasticity",
+          "topic": "Core Foundations of Foundations of Microeconomics & Elasticity",
+          "keywords": [
+            "economics & finance",
+            "foundations of microeconomics & elasticity",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Foundations of Microeconomics & Elasticity forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Foundations of Microeconomics & Elasticity",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Foundations of Microeconomics & Elasticity.",
+          "content": "A comprehensive university overview of Foundations of Microeconomics & Elasticity within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH2_001",
+          "subject": "Economics & Finance",
+          "chapter": "Production Economics & Market Structures",
+          "topic": "Core Foundations of Production Economics & Market Structures",
+          "keywords": [
+            "economics & finance",
+            "production economics & market structures",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Production Economics & Market Structures forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Production Economics & Market Structures",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Production Economics & Market Structures.",
+          "content": "A comprehensive university overview of Production Economics & Market Structures within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH3_001",
+          "subject": "Economics & Finance",
+          "chapter": "Macroeconomic Output & National Accounts",
+          "topic": "Core Foundations of Macroeconomic Output & National Accounts",
+          "keywords": [
+            "economics & finance",
+            "macroeconomic output & national accounts",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Macroeconomic Output & National Accounts forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Macroeconomic Output & National Accounts",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Macroeconomic Output & National Accounts.",
+          "content": "A comprehensive university overview of Macroeconomic Output & National Accounts within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH4_001",
+          "subject": "Economics & Finance",
+          "chapter": "Monetary & Fiscal Stabilization Policy",
+          "topic": "Core Foundations of Monetary & Fiscal Stabilization Policy",
+          "keywords": [
+            "economics & finance",
+            "monetary & fiscal stabilization policy",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Monetary & Fiscal Stabilization Policy forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Monetary & Fiscal Stabilization Policy",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Monetary & Fiscal Stabilization Policy.",
+          "content": "A comprehensive university overview of Monetary & Fiscal Stabilization Policy within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH5_001",
+          "subject": "Economics & Finance",
+          "chapter": "Financial Assets, Valuation & Risk",
+          "topic": "Core Foundations of Financial Assets, Valuation & Risk",
+          "keywords": [
+            "economics & finance",
+            "financial assets, valuation & risk",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Financial Assets, Valuation & Risk forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Financial Assets, Valuation & Risk",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Financial Assets, Valuation & Risk.",
+          "content": "A comprehensive university overview of Financial Assets, Valuation & Risk within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH6_001",
+          "subject": "Economics & Finance",
+          "chapter": "Capital Asset Pricing Model (CAPM)",
+          "topic": "Core Foundations of Capital Asset Pricing Model (CAPM)",
+          "keywords": [
+            "economics & finance",
+            "capital asset pricing model (capm)",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Capital Asset Pricing Model (CAPM) forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Capital Asset Pricing Model (CAPM)",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Capital Asset Pricing Model (CAPM).",
+          "content": "A comprehensive university overview of Capital Asset Pricing Model (CAPM) within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH7_001",
+          "subject": "Economics & Finance",
+          "chapter": "Options, Derivatives & Black-Scholes",
+          "topic": "Core Foundations of Options, Derivatives & Black-Scholes",
+          "keywords": [
+            "economics & finance",
+            "options, derivatives & black-scholes",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Options, Derivatives & Black-Scholes forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Options, Derivatives & Black-Scholes",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Options, Derivatives & Black-Scholes.",
+          "content": "A comprehensive university overview of Options, Derivatives & Black-Scholes within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ECON_CH8_001",
+          "subject": "Economics & Finance",
+          "chapter": "International Trade & Exchange Rates",
+          "topic": "Core Foundations of International Trade & Exchange Rates",
+          "keywords": [
+            "economics & finance",
+            "international trade & exchange rates",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "International Trade & Exchange Rates forms a foundational pillar in university-grade Economics & Finance, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in International Trade & Exchange Rates",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in International Trade & Exchange Rates.",
+          "content": "A comprehensive university overview of International Trade & Exchange Rates within Economics & Finance, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Environmental Science",
+      "overview": "Environmental science covering climate dynamics, geochemical cycles, renewable energy systems, biodiversity, and policy.",
+      "topics": [
+        "Earth Systems & Biogeochemical Cycles",
+        "Atmospheric Physics & Climate Dynamics",
+        "Aquatic Ecosystems & Hydrology",
+        "Soil Science & Land Management",
+        "Renewable Energy Technologies",
+        "Waste Treatment & Environmental Remediation",
+        "Biodiversity, Ecology & Extinction",
+        "Environmental Law & Sustainability Policy"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_ENV_CH1_001",
+          "subject": "Environmental Science",
+          "chapter": "Earth Systems & Biogeochemical Cycles",
+          "topic": "Core Foundations of Earth Systems & Biogeochemical Cycles",
+          "keywords": [
+            "environmental science",
+            "earth systems & biogeochemical cycles",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Earth Systems & Biogeochemical Cycles forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Earth Systems & Biogeochemical Cycles",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Earth Systems & Biogeochemical Cycles.",
+          "content": "A comprehensive university overview of Earth Systems & Biogeochemical Cycles within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH2_001",
+          "subject": "Environmental Science",
+          "chapter": "Atmospheric Physics & Climate Dynamics",
+          "topic": "Core Foundations of Atmospheric Physics & Climate Dynamics",
+          "keywords": [
+            "environmental science",
+            "atmospheric physics & climate dynamics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Atmospheric Physics & Climate Dynamics forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Atmospheric Physics & Climate Dynamics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Atmospheric Physics & Climate Dynamics.",
+          "content": "A comprehensive university overview of Atmospheric Physics & Climate Dynamics within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH3_001",
+          "subject": "Environmental Science",
+          "chapter": "Aquatic Ecosystems & Hydrology",
+          "topic": "Core Foundations of Aquatic Ecosystems & Hydrology",
+          "keywords": [
+            "environmental science",
+            "aquatic ecosystems & hydrology",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Aquatic Ecosystems & Hydrology forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Aquatic Ecosystems & Hydrology",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Aquatic Ecosystems & Hydrology.",
+          "content": "A comprehensive university overview of Aquatic Ecosystems & Hydrology within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH4_001",
+          "subject": "Environmental Science",
+          "chapter": "Soil Science & Land Management",
+          "topic": "Core Foundations of Soil Science & Land Management",
+          "keywords": [
+            "environmental science",
+            "soil science & land management",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Soil Science & Land Management forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Soil Science & Land Management",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Soil Science & Land Management.",
+          "content": "A comprehensive university overview of Soil Science & Land Management within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH5_001",
+          "subject": "Environmental Science",
+          "chapter": "Renewable Energy Technologies",
+          "topic": "Core Foundations of Renewable Energy Technologies",
+          "keywords": [
+            "environmental science",
+            "renewable energy technologies",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Renewable Energy Technologies forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Renewable Energy Technologies",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Renewable Energy Technologies.",
+          "content": "A comprehensive university overview of Renewable Energy Technologies within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH6_001",
+          "subject": "Environmental Science",
+          "chapter": "Waste Treatment & Environmental Remediation",
+          "topic": "Core Foundations of Waste Treatment & Environmental Remediation",
+          "keywords": [
+            "environmental science",
+            "waste treatment & environmental remediation",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Waste Treatment & Environmental Remediation forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Waste Treatment & Environmental Remediation",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Waste Treatment & Environmental Remediation.",
+          "content": "A comprehensive university overview of Waste Treatment & Environmental Remediation within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH7_001",
+          "subject": "Environmental Science",
+          "chapter": "Biodiversity, Ecology & Extinction",
+          "topic": "Core Foundations of Biodiversity, Ecology & Extinction",
+          "keywords": [
+            "environmental science",
+            "biodiversity, ecology & extinction",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Biodiversity, Ecology & Extinction forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Biodiversity, Ecology & Extinction",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Biodiversity, Ecology & Extinction.",
+          "content": "A comprehensive university overview of Biodiversity, Ecology & Extinction within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ENV_CH8_001",
+          "subject": "Environmental Science",
+          "chapter": "Environmental Law & Sustainability Policy",
+          "topic": "Core Foundations of Environmental Law & Sustainability Policy",
+          "keywords": [
+            "environmental science",
+            "environmental law & sustainability policy",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Environmental Law & Sustainability Policy forms a foundational pillar in university-grade Environmental Science, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Environmental Law & Sustainability Policy",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Environmental Law & Sustainability Policy.",
+          "content": "A comprehensive university overview of Environmental Law & Sustainability Policy within Environmental Science, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Computer Networks",
+      "overview": "University networking from physical transmission, data links, IP routing, TCP/UDP transport, to distributed application protocols.",
+      "topics": [
+        "Network Layering & Physical Transmission",
+        "Data Link Layer & MAC Protocols",
+        "Network Layer & IPv4/IPv6 Addressing",
+        "Routing Algorithms: Link-State & Distance-Vector",
+        "Transport Layer: UDP vs Reliable TCP",
+        "TCP Congestion Control Algorithms",
+        "Application Layer Protocols",
+        "Software-Defined Networking & Network Security"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_NET_CH1_001",
+          "subject": "Computer Networks",
+          "chapter": "Network Layering & Physical Transmission",
+          "topic": "Core Foundations of Network Layering & Physical Transmission",
+          "keywords": [
+            "computer networks",
+            "network layering & physical transmission",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Network Layering & Physical Transmission forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Network Layering & Physical Transmission",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Network Layering & Physical Transmission.",
+          "content": "A comprehensive university overview of Network Layering & Physical Transmission within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH2_001",
+          "subject": "Computer Networks",
+          "chapter": "Data Link Layer & MAC Protocols",
+          "topic": "Core Foundations of Data Link Layer & MAC Protocols",
+          "keywords": [
+            "computer networks",
+            "data link layer & mac protocols",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Data Link Layer & MAC Protocols forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Data Link Layer & MAC Protocols",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Data Link Layer & MAC Protocols.",
+          "content": "A comprehensive university overview of Data Link Layer & MAC Protocols within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH3_001",
+          "subject": "Computer Networks",
+          "chapter": "Network Layer & IPv4/IPv6 Addressing",
+          "topic": "Core Foundations of Network Layer & IPv4/IPv6 Addressing",
+          "keywords": [
+            "computer networks",
+            "network layer & ipv4/ipv6 addressing",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Network Layer & IPv4/IPv6 Addressing forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Network Layer & IPv4/IPv6 Addressing",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Network Layer & IPv4/IPv6 Addressing.",
+          "content": "A comprehensive university overview of Network Layer & IPv4/IPv6 Addressing within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH4_001",
+          "subject": "Computer Networks",
+          "chapter": "Routing Algorithms: Link-State & Distance-Vector",
+          "topic": "Core Foundations of Routing Algorithms: Link-State & Distance-Vector",
+          "keywords": [
+            "computer networks",
+            "routing algorithms: link-state & distance-vector",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Routing Algorithms: Link-State & Distance-Vector forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Routing Algorithms: Link-State & Distance-Vector",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Routing Algorithms: Link-State & Distance-Vector.",
+          "content": "A comprehensive university overview of Routing Algorithms: Link-State & Distance-Vector within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH5_001",
+          "subject": "Computer Networks",
+          "chapter": "Transport Layer: UDP vs Reliable TCP",
+          "topic": "Core Foundations of Transport Layer: UDP vs Reliable TCP",
+          "keywords": [
+            "computer networks",
+            "transport layer: udp vs reliable tcp",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Transport Layer: UDP vs Reliable TCP forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Transport Layer: UDP vs Reliable TCP",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Transport Layer: UDP vs Reliable TCP.",
+          "content": "A comprehensive university overview of Transport Layer: UDP vs Reliable TCP within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH6_001",
+          "subject": "Computer Networks",
+          "chapter": "TCP Congestion Control Algorithms",
+          "topic": "Core Foundations of TCP Congestion Control Algorithms",
+          "keywords": [
+            "computer networks",
+            "tcp congestion control algorithms",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "TCP Congestion Control Algorithms forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in TCP Congestion Control Algorithms",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in TCP Congestion Control Algorithms.",
+          "content": "A comprehensive university overview of TCP Congestion Control Algorithms within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH7_001",
+          "subject": "Computer Networks",
+          "chapter": "Application Layer Protocols",
+          "topic": "Core Foundations of Application Layer Protocols",
+          "keywords": [
+            "computer networks",
+            "application layer protocols",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Application Layer Protocols forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Application Layer Protocols",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Application Layer Protocols.",
+          "content": "A comprehensive university overview of Application Layer Protocols within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_NET_CH8_001",
+          "subject": "Computer Networks",
+          "chapter": "Software-Defined Networking & Network Security",
+          "topic": "Core Foundations of Software-Defined Networking & Network Security",
+          "keywords": [
+            "computer networks",
+            "software-defined networking & network security",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Software-Defined Networking & Network Security forms a foundational pillar in university-grade Computer Networks, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Software-Defined Networking & Network Security",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Software-Defined Networking & Network Security.",
+          "content": "A comprehensive university overview of Software-Defined Networking & Network Security within Computer Networks, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Cyber Security",
+      "overview": "Comprehensive cybersecurity: threat modeling, cryptography, vulnerability assessment, web exploitation, network defense, and digital forensics.",
+      "topics": [
+        "Cybersecurity Foundations & Threat Modeling",
+        "Applied Cryptography & Key Management",
+        "Authentication, Authorization & Access Control",
+        "Memory Corruption & Binary Exploitation",
+        "Web Application Security (OWASP Top 10)",
+        "Network Defense, Firewalls & IDS/IPS",
+        "Malware Analysis & Reverse Engineering",
+        "Incident Response, SIEM & Digital Forensics"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_SEC_CH1_001",
+          "subject": "Cyber Security",
+          "chapter": "Cybersecurity Foundations & Threat Modeling",
+          "topic": "Core Foundations of Cybersecurity Foundations & Threat Modeling",
+          "keywords": [
+            "cyber security",
+            "cybersecurity foundations & threat modeling",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Cybersecurity Foundations & Threat Modeling forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Cybersecurity Foundations & Threat Modeling",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Cybersecurity Foundations & Threat Modeling.",
+          "content": "A comprehensive university overview of Cybersecurity Foundations & Threat Modeling within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH2_001",
+          "subject": "Cyber Security",
+          "chapter": "Applied Cryptography & Key Management",
+          "topic": "Core Foundations of Applied Cryptography & Key Management",
+          "keywords": [
+            "cyber security",
+            "applied cryptography & key management",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Applied Cryptography & Key Management forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Applied Cryptography & Key Management",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Applied Cryptography & Key Management.",
+          "content": "A comprehensive university overview of Applied Cryptography & Key Management within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH3_001",
+          "subject": "Cyber Security",
+          "chapter": "Authentication, Authorization & Access Control",
+          "topic": "Core Foundations of Authentication, Authorization & Access Control",
+          "keywords": [
+            "cyber security",
+            "authentication, authorization & access control",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Authentication, Authorization & Access Control forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Authentication, Authorization & Access Control",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Authentication, Authorization & Access Control.",
+          "content": "A comprehensive university overview of Authentication, Authorization & Access Control within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH4_001",
+          "subject": "Cyber Security",
+          "chapter": "Memory Corruption & Binary Exploitation",
+          "topic": "Core Foundations of Memory Corruption & Binary Exploitation",
+          "keywords": [
+            "cyber security",
+            "memory corruption & binary exploitation",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Memory Corruption & Binary Exploitation forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Memory Corruption & Binary Exploitation",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Memory Corruption & Binary Exploitation.",
+          "content": "A comprehensive university overview of Memory Corruption & Binary Exploitation within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH5_001",
+          "subject": "Cyber Security",
+          "chapter": "Web Application Security (OWASP Top 10)",
+          "topic": "Core Foundations of Web Application Security (OWASP Top 10)",
+          "keywords": [
+            "cyber security",
+            "web application security (owasp top 10)",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Web Application Security (OWASP Top 10) forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Web Application Security (OWASP Top 10)",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Web Application Security (OWASP Top 10).",
+          "content": "A comprehensive university overview of Web Application Security (OWASP Top 10) within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH6_001",
+          "subject": "Cyber Security",
+          "chapter": "Network Defense, Firewalls & IDS/IPS",
+          "topic": "Core Foundations of Network Defense, Firewalls & IDS/IPS",
+          "keywords": [
+            "cyber security",
+            "network defense, firewalls & ids/ips",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Network Defense, Firewalls & IDS/IPS forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Network Defense, Firewalls & IDS/IPS",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Network Defense, Firewalls & IDS/IPS.",
+          "content": "A comprehensive university overview of Network Defense, Firewalls & IDS/IPS within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH7_001",
+          "subject": "Cyber Security",
+          "chapter": "Malware Analysis & Reverse Engineering",
+          "topic": "Core Foundations of Malware Analysis & Reverse Engineering",
+          "keywords": [
+            "cyber security",
+            "malware analysis & reverse engineering",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Malware Analysis & Reverse Engineering forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Malware Analysis & Reverse Engineering",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Malware Analysis & Reverse Engineering.",
+          "content": "A comprehensive university overview of Malware Analysis & Reverse Engineering within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_SEC_CH8_001",
+          "subject": "Cyber Security",
+          "chapter": "Incident Response, SIEM & Digital Forensics",
+          "topic": "Core Foundations of Incident Response, SIEM & Digital Forensics",
+          "keywords": [
+            "cyber security",
+            "incident response, siem & digital forensics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Incident Response, SIEM & Digital Forensics forms a foundational pillar in university-grade Cyber Security, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Incident Response, SIEM & Digital Forensics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Incident Response, SIEM & Digital Forensics.",
+          "content": "A comprehensive university overview of Incident Response, SIEM & Digital Forensics within Cyber Security, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Psychology",
+      "overview": "University psychology covering cognitive processes, behavioral conditioning, developmental milestones, social dynamics, and neurobiology.",
+      "topics": [
+        "Research Methods & Ethical Paradigms",
+        "Biological Bases of Behavior & Neuroanatomy",
+        "Sensation, Perception & Psychophysics",
+        "Learning & Behavioral Conditioning",
+        "Cognitive Psychology & Memory Systems",
+        "Developmental Psychology Across the Lifespan",
+        "Social Psychology & Group Dynamics",
+        "Psychopathology & Clinical Interventions"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_PSYCH_CH1_001",
+          "subject": "Psychology",
+          "chapter": "Research Methods & Ethical Paradigms",
+          "topic": "Core Foundations of Research Methods & Ethical Paradigms",
+          "keywords": [
+            "psychology",
+            "research methods & ethical paradigms",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Research Methods & Ethical Paradigms forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Research Methods & Ethical Paradigms",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Research Methods & Ethical Paradigms.",
+          "content": "A comprehensive university overview of Research Methods & Ethical Paradigms within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH2_001",
+          "subject": "Psychology",
+          "chapter": "Biological Bases of Behavior & Neuroanatomy",
+          "topic": "Core Foundations of Biological Bases of Behavior & Neuroanatomy",
+          "keywords": [
+            "psychology",
+            "biological bases of behavior & neuroanatomy",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Biological Bases of Behavior & Neuroanatomy forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Biological Bases of Behavior & Neuroanatomy",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Biological Bases of Behavior & Neuroanatomy.",
+          "content": "A comprehensive university overview of Biological Bases of Behavior & Neuroanatomy within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH3_001",
+          "subject": "Psychology",
+          "chapter": "Sensation, Perception & Psychophysics",
+          "topic": "Core Foundations of Sensation, Perception & Psychophysics",
+          "keywords": [
+            "psychology",
+            "sensation, perception & psychophysics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Sensation, Perception & Psychophysics forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Sensation, Perception & Psychophysics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Sensation, Perception & Psychophysics.",
+          "content": "A comprehensive university overview of Sensation, Perception & Psychophysics within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH4_001",
+          "subject": "Psychology",
+          "chapter": "Learning & Behavioral Conditioning",
+          "topic": "Core Foundations of Learning & Behavioral Conditioning",
+          "keywords": [
+            "psychology",
+            "learning & behavioral conditioning",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Learning & Behavioral Conditioning forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Learning & Behavioral Conditioning",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Learning & Behavioral Conditioning.",
+          "content": "A comprehensive university overview of Learning & Behavioral Conditioning within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH5_001",
+          "subject": "Psychology",
+          "chapter": "Cognitive Psychology & Memory Systems",
+          "topic": "Core Foundations of Cognitive Psychology & Memory Systems",
+          "keywords": [
+            "psychology",
+            "cognitive psychology & memory systems",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Cognitive Psychology & Memory Systems forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Cognitive Psychology & Memory Systems",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Cognitive Psychology & Memory Systems.",
+          "content": "A comprehensive university overview of Cognitive Psychology & Memory Systems within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH6_001",
+          "subject": "Psychology",
+          "chapter": "Developmental Psychology Across the Lifespan",
+          "topic": "Core Foundations of Developmental Psychology Across the Lifespan",
+          "keywords": [
+            "psychology",
+            "developmental psychology across the lifespan",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Developmental Psychology Across the Lifespan forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Developmental Psychology Across the Lifespan",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Developmental Psychology Across the Lifespan.",
+          "content": "A comprehensive university overview of Developmental Psychology Across the Lifespan within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH7_001",
+          "subject": "Psychology",
+          "chapter": "Social Psychology & Group Dynamics",
+          "topic": "Core Foundations of Social Psychology & Group Dynamics",
+          "keywords": [
+            "psychology",
+            "social psychology & group dynamics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Social Psychology & Group Dynamics forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Social Psychology & Group Dynamics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Social Psychology & Group Dynamics.",
+          "content": "A comprehensive university overview of Social Psychology & Group Dynamics within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_PSYCH_CH8_001",
+          "subject": "Psychology",
+          "chapter": "Psychopathology & Clinical Interventions",
+          "topic": "Core Foundations of Psychopathology & Clinical Interventions",
+          "keywords": [
+            "psychology",
+            "psychopathology & clinical interventions",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Psychopathology & Clinical Interventions forms a foundational pillar in university-grade Psychology, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Psychopathology & Clinical Interventions",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Psychopathology & Clinical Interventions.",
+          "content": "A comprehensive university overview of Psychopathology & Clinical Interventions within Psychology, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Business Management",
+      "overview": "Strategic business management: organizational leadership, corporate finance, marketing strategies, operations, and agile innovation.",
+      "topics": [
+        "Strategic Management & Competitive Advantage",
+        "Organizational Behavior & Leadership Models",
+        "Financial Accounting & Statement Analysis",
+        "Managerial Finance & Capital Budgeting",
+        "Marketing Strategy & Consumer Behavior",
+        "Operations Management & Supply Chain Logistics",
+        "Agile Methodologies & Product Innovation",
+        "Corporate Governance, Business Law & Ethics"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_BIZ_CH1_001",
+          "subject": "Business Management",
+          "chapter": "Strategic Management & Competitive Advantage",
+          "topic": "Core Foundations of Strategic Management & Competitive Advantage",
+          "keywords": [
+            "business management",
+            "strategic management & competitive advantage",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Strategic Management & Competitive Advantage forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Strategic Management & Competitive Advantage",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Strategic Management & Competitive Advantage.",
+          "content": "A comprehensive university overview of Strategic Management & Competitive Advantage within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH2_001",
+          "subject": "Business Management",
+          "chapter": "Organizational Behavior & Leadership Models",
+          "topic": "Core Foundations of Organizational Behavior & Leadership Models",
+          "keywords": [
+            "business management",
+            "organizational behavior & leadership models",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Organizational Behavior & Leadership Models forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Organizational Behavior & Leadership Models",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Organizational Behavior & Leadership Models.",
+          "content": "A comprehensive university overview of Organizational Behavior & Leadership Models within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH3_001",
+          "subject": "Business Management",
+          "chapter": "Financial Accounting & Statement Analysis",
+          "topic": "Core Foundations of Financial Accounting & Statement Analysis",
+          "keywords": [
+            "business management",
+            "financial accounting & statement analysis",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Financial Accounting & Statement Analysis forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Financial Accounting & Statement Analysis",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Financial Accounting & Statement Analysis.",
+          "content": "A comprehensive university overview of Financial Accounting & Statement Analysis within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH4_001",
+          "subject": "Business Management",
+          "chapter": "Managerial Finance & Capital Budgeting",
+          "topic": "Core Foundations of Managerial Finance & Capital Budgeting",
+          "keywords": [
+            "business management",
+            "managerial finance & capital budgeting",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Managerial Finance & Capital Budgeting forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Managerial Finance & Capital Budgeting",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Managerial Finance & Capital Budgeting.",
+          "content": "A comprehensive university overview of Managerial Finance & Capital Budgeting within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH5_001",
+          "subject": "Business Management",
+          "chapter": "Marketing Strategy & Consumer Behavior",
+          "topic": "Core Foundations of Marketing Strategy & Consumer Behavior",
+          "keywords": [
+            "business management",
+            "marketing strategy & consumer behavior",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Marketing Strategy & Consumer Behavior forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Marketing Strategy & Consumer Behavior",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Marketing Strategy & Consumer Behavior.",
+          "content": "A comprehensive university overview of Marketing Strategy & Consumer Behavior within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH6_001",
+          "subject": "Business Management",
+          "chapter": "Operations Management & Supply Chain Logistics",
+          "topic": "Core Foundations of Operations Management & Supply Chain Logistics",
+          "keywords": [
+            "business management",
+            "operations management & supply chain logistics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Operations Management & Supply Chain Logistics forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Operations Management & Supply Chain Logistics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Operations Management & Supply Chain Logistics.",
+          "content": "A comprehensive university overview of Operations Management & Supply Chain Logistics within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH7_001",
+          "subject": "Business Management",
+          "chapter": "Agile Methodologies & Product Innovation",
+          "topic": "Core Foundations of Agile Methodologies & Product Innovation",
+          "keywords": [
+            "business management",
+            "agile methodologies & product innovation",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Agile Methodologies & Product Innovation forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Agile Methodologies & Product Innovation",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Agile Methodologies & Product Innovation.",
+          "content": "A comprehensive university overview of Agile Methodologies & Product Innovation within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_BIZ_CH8_001",
+          "subject": "Business Management",
+          "chapter": "Corporate Governance, Business Law & Ethics",
+          "topic": "Core Foundations of Corporate Governance, Business Law & Ethics",
+          "keywords": [
+            "business management",
+            "corporate governance, business law & ethics",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Corporate Governance, Business Law & Ethics forms a foundational pillar in university-grade Business Management, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Corporate Governance, Business Law & Ethics",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Corporate Governance, Business Law & Ethics.",
+          "content": "A comprehensive university overview of Corporate Governance, Business Law & Ethics within Business Management, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Electrical Engineering",
+      "overview": "University electrical engineering: circuit analysis, signals and systems, analog electronics, power grids, and digital logic.",
+      "topics": [
+        "Linear Circuit Analysis & Network Theorems",
+        "AC Circuit Analysis & Complex Phasors",
+        "Signals & Systems: Laplace & Fourier Analysis",
+        "Analog Electronics: BJT & MOSFET Amplifiers",
+        "Operational Amplifiers & Active Filters",
+        "Digital Logic Design & Finite State Machines",
+        "Power Systems & Electric Machinery",
+        "Control Systems & Stability Analysis"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_EE_CH1_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Linear Circuit Analysis & Network Theorems",
+          "topic": "Core Foundations of Linear Circuit Analysis & Network Theorems",
+          "keywords": [
+            "electrical engineering",
+            "linear circuit analysis & network theorems",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Linear Circuit Analysis & Network Theorems forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Linear Circuit Analysis & Network Theorems",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Linear Circuit Analysis & Network Theorems.",
+          "content": "A comprehensive university overview of Linear Circuit Analysis & Network Theorems within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH2_001",
+          "subject": "Electrical Engineering",
+          "chapter": "AC Circuit Analysis & Complex Phasors",
+          "topic": "Core Foundations of AC Circuit Analysis & Complex Phasors",
+          "keywords": [
+            "electrical engineering",
+            "ac circuit analysis & complex phasors",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "AC Circuit Analysis & Complex Phasors forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in AC Circuit Analysis & Complex Phasors",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in AC Circuit Analysis & Complex Phasors.",
+          "content": "A comprehensive university overview of AC Circuit Analysis & Complex Phasors within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH3_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Signals & Systems: Laplace & Fourier Analysis",
+          "topic": "Core Foundations of Signals & Systems: Laplace & Fourier Analysis",
+          "keywords": [
+            "electrical engineering",
+            "signals & systems: laplace & fourier analysis",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Signals & Systems: Laplace & Fourier Analysis forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Signals & Systems: Laplace & Fourier Analysis",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Signals & Systems: Laplace & Fourier Analysis.",
+          "content": "A comprehensive university overview of Signals & Systems: Laplace & Fourier Analysis within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH4_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Analog Electronics: BJT & MOSFET Amplifiers",
+          "topic": "Core Foundations of Analog Electronics: BJT & MOSFET Amplifiers",
+          "keywords": [
+            "electrical engineering",
+            "analog electronics: bjt & mosfet amplifiers",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Analog Electronics: BJT & MOSFET Amplifiers forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Analog Electronics: BJT & MOSFET Amplifiers",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Analog Electronics: BJT & MOSFET Amplifiers.",
+          "content": "A comprehensive university overview of Analog Electronics: BJT & MOSFET Amplifiers within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH5_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Operational Amplifiers & Active Filters",
+          "topic": "Core Foundations of Operational Amplifiers & Active Filters",
+          "keywords": [
+            "electrical engineering",
+            "operational amplifiers & active filters",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Operational Amplifiers & Active Filters forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Operational Amplifiers & Active Filters",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Operational Amplifiers & Active Filters.",
+          "content": "A comprehensive university overview of Operational Amplifiers & Active Filters within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH6_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Digital Logic Design & Finite State Machines",
+          "topic": "Core Foundations of Digital Logic Design & Finite State Machines",
+          "keywords": [
+            "electrical engineering",
+            "digital logic design & finite state machines",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Digital Logic Design & Finite State Machines forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Digital Logic Design & Finite State Machines",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Digital Logic Design & Finite State Machines.",
+          "content": "A comprehensive university overview of Digital Logic Design & Finite State Machines within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH7_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Power Systems & Electric Machinery",
+          "topic": "Core Foundations of Power Systems & Electric Machinery",
+          "keywords": [
+            "electrical engineering",
+            "power systems & electric machinery",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Power Systems & Electric Machinery forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Power Systems & Electric Machinery",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Power Systems & Electric Machinery.",
+          "content": "A comprehensive university overview of Power Systems & Electric Machinery within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_EE_CH8_001",
+          "subject": "Electrical Engineering",
+          "chapter": "Control Systems & Stability Analysis",
+          "topic": "Core Foundations of Control Systems & Stability Analysis",
+          "keywords": [
+            "electrical engineering",
+            "control systems & stability analysis",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Control Systems & Stability Analysis forms a foundational pillar in university-grade Electrical Engineering, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Control Systems & Stability Analysis",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Control Systems & Stability Analysis.",
+          "content": "A comprehensive university overview of Control Systems & Stability Analysis within Electrical Engineering, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        }
+      ]
+    },
+    {
+      "subject": "Astronomy & Astrophysics",
+      "overview": "Astrophysics from celestial coordinate systems, stellar nucleosynthesis, black holes, galactic dynamics, to observational cosmology.",
+      "topics": [
+        "Celestial Mechanics & Coordinate Systems",
+        "Telescopes & Astronomical Spectroscopy",
+        "Stellar Atmospheres & Radiative Transfer",
+        "Stellar Evolution & Nucleosynthesis",
+        "Supernovae, Neutron Stars & Pulsars",
+        "General Relativity & Black Holes",
+        "Galactic Dynamics & Dark Matter",
+        "Observational Cosmology & The Big Bang"
+      ],
+      "rag_chunks": [
+        {
+          "chunk_id": "EXT_ASTRO_CH1_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Celestial Mechanics & Coordinate Systems",
+          "topic": "Core Foundations of Celestial Mechanics & Coordinate Systems",
+          "keywords": [
+            "astronomy & astrophysics",
+            "celestial mechanics & coordinate systems",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Celestial Mechanics & Coordinate Systems forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Celestial Mechanics & Coordinate Systems",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Celestial Mechanics & Coordinate Systems.",
+          "content": "A comprehensive university overview of Celestial Mechanics & Coordinate Systems within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH2_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Telescopes & Astronomical Spectroscopy",
+          "topic": "Core Foundations of Telescopes & Astronomical Spectroscopy",
+          "keywords": [
+            "astronomy & astrophysics",
+            "telescopes & astronomical spectroscopy",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Telescopes & Astronomical Spectroscopy forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Telescopes & Astronomical Spectroscopy",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Telescopes & Astronomical Spectroscopy.",
+          "content": "A comprehensive university overview of Telescopes & Astronomical Spectroscopy within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH3_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Stellar Atmospheres & Radiative Transfer",
+          "topic": "Core Foundations of Stellar Atmospheres & Radiative Transfer",
+          "keywords": [
+            "astronomy & astrophysics",
+            "stellar atmospheres & radiative transfer",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Stellar Atmospheres & Radiative Transfer forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Stellar Atmospheres & Radiative Transfer",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Stellar Atmospheres & Radiative Transfer.",
+          "content": "A comprehensive university overview of Stellar Atmospheres & Radiative Transfer within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH4_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Stellar Evolution & Nucleosynthesis",
+          "topic": "Core Foundations of Stellar Evolution & Nucleosynthesis",
+          "keywords": [
+            "astronomy & astrophysics",
+            "stellar evolution & nucleosynthesis",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Stellar Evolution & Nucleosynthesis forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Stellar Evolution & Nucleosynthesis",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Stellar Evolution & Nucleosynthesis.",
+          "content": "A comprehensive university overview of Stellar Evolution & Nucleosynthesis within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH5_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Supernovae, Neutron Stars & Pulsars",
+          "topic": "Core Foundations of Supernovae, Neutron Stars & Pulsars",
+          "keywords": [
+            "astronomy & astrophysics",
+            "supernovae, neutron stars & pulsars",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Supernovae, Neutron Stars & Pulsars forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Supernovae, Neutron Stars & Pulsars",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Supernovae, Neutron Stars & Pulsars.",
+          "content": "A comprehensive university overview of Supernovae, Neutron Stars & Pulsars within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH6_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "General Relativity & Black Holes",
+          "topic": "Core Foundations of General Relativity & Black Holes",
+          "keywords": [
+            "astronomy & astrophysics",
+            "general relativity & black holes",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "General Relativity & Black Holes forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in General Relativity & Black Holes",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in General Relativity & Black Holes.",
+          "content": "A comprehensive university overview of General Relativity & Black Holes within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH7_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Galactic Dynamics & Dark Matter",
+          "topic": "Core Foundations of Galactic Dynamics & Dark Matter",
+          "keywords": [
+            "astronomy & astrophysics",
+            "galactic dynamics & dark matter",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Galactic Dynamics & Dark Matter forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Galactic Dynamics & Dark Matter",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Galactic Dynamics & Dark Matter.",
+          "content": "A comprehensive university overview of Galactic Dynamics & Dark Matter within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
+        },
+        {
+          "chunk_id": "EXT_ASTRO_CH8_001",
+          "subject": "Astronomy & Astrophysics",
+          "chapter": "Observational Cosmology & The Big Bang",
+          "topic": "Core Foundations of Observational Cosmology & The Big Bang",
+          "keywords": [
+            "astronomy & astrophysics",
+            "observational cosmology & the big bang",
+            "principles",
+            "theory",
+            "formulations",
+            "engineering",
+            "applications"
+          ],
+          "definition": "Observational Cosmology & The Big Bang forms a foundational pillar in university-grade Astronomy & Astrophysics, establishing the physical, mathematical, and algorithmic basis for advanced study.",
+          "formula": "Governing Equilibrium & Dynamic Relations in Observational Cosmology & The Big Bang",
+          "worked_example": "Standard worked analysis demonstrating boundary state transitions and quantitative solutions in Observational Cosmology & The Big Bang.",
+          "content": "A comprehensive university overview of Observational Cosmology & The Big Bang within Astronomy & Astrophysics, outlining definitions, analytical models, step-by-step methodologies, and practical applications."
         }
       ]
     }

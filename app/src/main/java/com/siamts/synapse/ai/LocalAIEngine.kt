@@ -287,6 +287,27 @@ class LocalAIEngine private constructor(context: Context?) {
         } catch (e: Throwable) {
             logW(TAG, "extended_curriculum_catalog.json not loaded: ${e.message}")
         }
+
+        // 4. Supplement with UniversityCurriculumGenerator chunks if available
+        try {
+            val genChunks = com.siamts.synapse.data.local.UniversityCurriculumGenerator.getAllRAGChunks()
+            if (genChunks.isNotEmpty()) {
+                registerChunks(genChunks)
+                logD(TAG, "Supplemented UniversityCurriculumGenerator chunks. Total chunks: ${chunks.size}")
+            }
+        } catch (_: Throwable) {}
+    }
+
+    /**
+     * Dynamically registers knowledge chunks from memory into the offline RAG index.
+     */
+    fun registerChunks(newChunks: List<KnowledgeChunk>) {
+        if (newChunks.isEmpty()) return
+        synchronized(chunks) {
+            val existingIds = chunks.map { it.chunkId }.toSet()
+            val filtered = newChunks.filter { it.chunkId !in existingIds }
+            chunks.addAll(filtered)
+        }
     }
 
     /**
@@ -1276,21 +1297,21 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         val takeaways = listOf(
-            "Exam Focus: Master the core definition of $chapterTitle and clearly articulate key steps or boundary conditions.",
-            "High-Yield Mechanism: Understand mathematical relationships and governing formulas to solve multi-step problems accurately.",
-            "Scoring Tip: State fundamental assumptions, sketch accompanying diagrams or workflows, and verify units or edge cases."
+            "Foundational Theory: Master the rigorous definition of $chapterTitle, key axioms, and underlying theoretical constraints.",
+            "Quantitative Mastery: Memorize and practice applying the governing equations and operational formulas to multi-step numerical calculations.",
+            "Exam & Viva Scoring: State all underlying hypotheses explicitly, review real-world applications, and systematically verify dimensional consistency."
         )
 
         val md = buildString {
-            appendLine("# $chapterTitle - AI Smart Summary")
+            appendLine("# $chapterTitle - University Smart Notes")
             appendLine("**Subject:** $subjectName\n")
-            appendLine("### 📘 Key Definition")
+            appendLine("### 📘 Chapter Executive Summary & Key Definition")
             appendLine(definition)
             appendLine()
-            appendLine("### ⚡ Core Formulas & Laws")
+            appendLine("### ⚡ Key Equations / Rules Box (Core Formulas & Laws)")
             formulas.forEach { appendLine("• $it") }
             appendLine()
-            appendLine("### 💡 High-Yield Exam Takeaways")
+            appendLine("### 💡 High-Yield Exam Takeaways & Revision Points")
             takeaways.forEachIndexed { i, t -> appendLine("${i + 1}. $t") }
         }
 
@@ -1356,6 +1377,10 @@ class LocalAIEngine private constructor(context: Context?) {
                 }
                 INSTANCE ?: LocalAIEngine(appContext).also { INSTANCE = it }
             }
+        }
+
+        fun registerChunks(newChunks: List<KnowledgeChunk>) {
+            getInstance().registerChunks(newChunks)
         }
     }
 }

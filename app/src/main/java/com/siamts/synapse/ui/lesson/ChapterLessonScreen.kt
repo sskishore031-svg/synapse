@@ -566,27 +566,27 @@ fun ChapterLessonScreen(
                         }
                     }
 
-                    // Definition Card
+                    // Executive Summary Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "📘 Key Definition", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "📘 Chapter Executive Summary", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(text = smartNotes.keyDefinition, color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
                         }
                     }
 
-                    // Formulas / Laws Card
+                    // Key Equations / Rules Box Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "⚡ Core Formulas & Laws", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "⚡ Key Equations / Rules Box", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             smartNotes.coreFormulasOrLaws.forEach { formula ->
                                 Text(text = "• $formula", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
@@ -594,14 +594,14 @@ fun ChapterLessonScreen(
                         }
                     }
 
-                    // Exam Takeaways Card
+                    // 4 High-Yield University Revision Points Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFAF5FF))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "💡 3 High-Yield Exam Takeaways", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "💡 4 High-Yield University Revision Points", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             smartNotes.examTakeaways.forEachIndexed { idx, takeaway ->
                                 Text(text = "${idx + 1}. $takeaway", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
