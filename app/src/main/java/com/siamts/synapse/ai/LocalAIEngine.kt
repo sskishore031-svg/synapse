@@ -133,8 +133,14 @@ class LocalAIEngine private constructor(context: Context?) {
         "a", "an", "the", "in", "on", "at", "to", "for", "of", "with", "is", "are",
         "was", "were", "be", "been", "being", "do", "does", "did", "have", "has", "had",
         "can", "could", "should", "would", "what", "which", "who", "whom", "where", "when",
-        "why", "how", "explain", "describe", "tell", "me", "about", "give", "please",
-        "my", "your", "i", "you", "we", "they", "it", "this", "that", "and", "or", "by"
+        "why", "how", "explain", "describe", "define", "tell", "me", "about", "give", "please",
+        "work", "show", "from", "my", "your", "i", "you", "we", "they", "it", "this", "that", "and", "or", "by"
+    )
+
+    private val genericSubjectWords = setOf(
+        "physics", "math", "maths", "mathematics", "chemistry", "computer", "computers",
+        "science", "sciences", "biology", "history", "economics", "engineering", "ai",
+        "data"
     )
 
     /**
