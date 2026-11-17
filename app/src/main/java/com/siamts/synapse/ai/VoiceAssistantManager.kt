@@ -81,12 +81,14 @@ class VoiceAssistantManager(
                     if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                         tts.setLanguage(Locale.getDefault())
                     }
+
                     // Select natural Male voice
                     selectNaturalMaleVoice(tts)
 
                     // Resonant, natural male pitch and conversational cadence
                     tts.setPitch(0.88f)
                     tts.setSpeechRate(0.98f)
+
                     tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                         override fun onStart(utteranceId: String?) {
                             _voiceState.value = VoiceState.SPEAKING
@@ -316,7 +318,7 @@ class VoiceAssistantManager(
     }
 
     /**
-     * Executes fast inference on LocalAIEngine and speaks the result aloud via TextToSpeech.
+     * Executes fast inference on On-Device SLM / LocalAIEngine and speaks the result aloud via TextToSpeech.
      */
     private fun processVoiceQuery(query: String) {
         _voiceState.value = VoiceState.THINKING
@@ -324,11 +326,20 @@ class VoiceAssistantManager(
 
         thinkingJob?.cancel()
         thinkingJob = scope.launch(Dispatchers.Default) {
-            val response = localAiEngine.generateResponse(query)
-            val fullAnswer = if (response.paragraph2.isNotBlank()) {
-                "${response.paragraph1}\n\n${response.paragraph2}"
+            val slmEngine = try { SlmInferenceEngine.getInstance(context) } catch (_: Throwable) { null }
+            val fullAnswer = if (slmEngine != null && slmEngine.isModelAvailable()) {
+                val ragContext = localAiEngine.retrieveContext(query)
+                slmEngine.generateResponse(query, ragContext) ?: run {
+                    val resp = localAiEngine.generateResponse(query)
+                    if (resp.paragraph2.isNotBlank()) "${resp.paragraph1}\n\n${resp.paragraph2}" else resp.paragraph1
+                }
             } else {
-                response.paragraph1
+                val response = localAiEngine.generateResponse(query)
+                if (response.paragraph2.isNotBlank()) {
+                    "${response.paragraph1}\n\n${response.paragraph2}"
+                } else {
+                    response.paragraph1
+                }
             }
 
             val spokenAnswer = cleanTextForSpeech(fullAnswer)

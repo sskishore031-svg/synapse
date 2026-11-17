@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.ai.LocalAiStreamToken
+import com.siamts.synapse.ai.SlmInferenceEngine
 import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.data.local.AiChatStorage
 import com.siamts.synapse.data.local.SessionManager
@@ -29,6 +30,7 @@ class AiTutorViewModel(
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
     private val localAiEngine: LocalAIEngine = LocalAIEngine.getInstance(),
     private val chatStorage: AiChatStorage? = try { AiChatStorage.getInstance() } catch (_: Exception) { null },
+    private val slmEngine: SlmInferenceEngine? = try { SlmInferenceEngine.getInstance() } catch (_: Throwable) { null },
     private val externalScope: kotlinx.coroutines.CoroutineScope? = null
 ) : ViewModel() {
 
@@ -146,6 +148,68 @@ class AiTutorViewModel(
         // 3. Fast streaming on Dispatchers.Default (15ms per word)
         streamingJob?.cancel()
         streamingJob = scope.launch(Dispatchers.Default) {
+            val isSlmReady = slmEngine != null && slmEngine.isModelAvailable()
+            if (isSlmReady) {
+                _uiState.update { it.copy(aiThoughtStatus = "🧠 SYNAPSE SLM is thinking...") }
+                val ragContext = localAiEngine.retrieveContext(query)
+                var accumulated = ""
+                slmEngine?.generateResponseStream(query, ragContext, delayPerWordMs = 15L)?.collect { partialText ->
+                    accumulated = partialText
+                    val updatedMessages = _uiState.value.messages.map { msg ->
+                        if (msg.id == aiMessageId) {
+                            msg.copy(
+                                text = accumulated,
+                                paragraph2 = null
+                            )
+                        } else msg
+                    }
+                    _uiState.update {
+                        it.copy(
+                            messages = updatedMessages,
+                            aiAnswerParagraph1 = accumulated,
+                            aiAnswerParagraph2 = ""
+                        )
+                    }
+                }
+
+                if (accumulated.isNotBlank()) {
+                    val completedAiMessage = ChatMessage(
+                        id = aiMessageId,
+                        senderName = "SYNAPSE AI",
+                        text = accumulated,
+                        paragraph2 = null,
+                        timeAgo = "Just now",
+                        isUser = false,
+                        matchedSubject = "On-Device SLM",
+                        matchedChapter = "Neural Inference",
+                        matchedTopic = "Gemma-2B / Qwen"
+                    )
+
+                    val finalizedMessages = _uiState.value.messages.map {
+                        if (it.id == aiMessageId) completedAiMessage else it
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            messages = finalizedMessages,
+                            aiAnswerParagraph1 = accumulated,
+                            aiAnswerParagraph2 = "",
+                            aiThoughtStatus = "🧠 SYNAPSE SLM · On-Device Neural Model",
+                            isGenerating = false
+                        )
+                    }
+
+                    chatStorage?.saveMessages(currentUserId, finalizedMessages)
+
+                    try {
+                        val user = sessionManager?.getSessionUser()
+                        val email = user?.email ?: "student@synapse.ai"
+                        repository.askQuestion(question = query, userId = currentUserId, email = email)
+                    } catch (_: Exception) {}
+                    return@launch
+                }
+            }
+
             localAiEngine.streamResponse(query, delayPerWordMs = 15L).collect { streamEvent ->
                 when (streamEvent) {
                     is LocalAiStreamToken.Thinking -> {
