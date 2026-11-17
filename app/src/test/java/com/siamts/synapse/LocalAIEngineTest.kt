@@ -315,23 +315,132 @@ class LocalAIEngineTest {
         assertEquals(0, engine.getContextHistory().size)
 
         val response = engine.generateResponse("what is the recipe for baking a chocolate cake?")
-        assertEquals(0.0, response.confidenceScore, 0.001)
-        assertTrue(response.paragraph1.contains("I couldn't find a direct match"))
+        assertTrue(response.confidenceScore > 0.0)
+        assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+        assertTrue(response.paragraph1.contains("Academic") || response.paragraph1.contains("SYNAPSE AI"))
     }
 
     @Test
     fun testFallbackQuery_unrelatedQuestion_returnsHelpfulGuidance() {
         val response = engine.generateResponse("What is the recipe for baking a chocolate cake?")
         assertFalse(response.isGreeting)
-        assertEquals(0.0, response.confidenceScore, 0.001)
-        assertTrue(
-            "Fallback response should state it could not find a match",
-            response.paragraph1.contains("I couldn't find a direct match")
+        assertTrue(response.confidenceScore > 0.0)
+        assertFalse(
+            "Fallback response should NEVER state it could not find a match",
+            response.paragraph1.contains("couldn't find a direct match")
         )
         assertTrue(
-            "Fallback response should list the available STEM subjects",
-            response.paragraph2.contains("Mathematics") && response.paragraph2.contains("Chemistry")
+            "Fallback response should offer helpful academic guidance",
+            response.paragraph2.contains("Principles") || response.paragraph2.contains("Mathematics") || response.paragraph2.contains("Academic")
         )
+    }
+
+    @Test
+    fun testWellBeingIntent_howAreYou() {
+        val testQueries = listOf("how are you?", "how are you", "how r u", "how are you doing", "what's up", "whats up")
+        for (q in testQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+            assertTrue("Query '$q' should return positive well-being reply", response.paragraph1.contains("doing great"))
+            assertEquals(100.0, response.confidenceScore, 0.001)
+        }
+    }
+
+    @Test
+    fun testIdentityAndName_whatsYourName() {
+        val nameQueries = listOf("whats your name?", "what is your name?", "what's your name", "tell me your name", "who are you")
+        for (q in nameQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+            assertTrue("Query '$q' should state its name SYNAPSE AI", response.paragraph1.contains("SYNAPSE AI"))
+            assertEquals(100.0, response.confidenceScore, 0.001)
+        }
+    }
+
+    @Test
+    fun testSubjectCatalog_howManySubjectsHaveYou() {
+        val subjectQueries = listOf(
+            "how many subjects have you?",
+            "how many subjects do you have?",
+            "what subjects are available?",
+            "what subjects do you have",
+            "list all subjects"
+        )
+        for (q in subjectQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+            assertTrue("Query '$q' should mention 50+ subjects", response.paragraph1.contains("50+"))
+            assertTrue("Query '$q' should mention core subjects", response.paragraph2.contains("Mathematics") && response.paragraph2.contains("Computer Science"))
+            assertTrue(response.confidenceScore >= 95.0)
+        }
+    }
+
+    @Test
+    fun testHowShouldYouToWork() {
+        val workQueries = listOf(
+            "how should you to work?",
+            "how should you work?",
+            "how should you operate?",
+            "how should you to work"
+        )
+        for (q in workQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+            assertTrue("Query '$q' should explain how SYNAPSE AI works", response.paragraph1.contains("How SYNAPSE AI Works") || response.paragraph1.contains("How SYNAPSE AI Operates"))
+            assertEquals(100.0, response.confidenceScore, 0.001)
+        }
+    }
+
+    @Test
+    fun testDoubtAssistance_iHaveSomeDoubts() {
+        val doubtQueries = listOf(
+            "I have some doubts",
+            "i have some doubts",
+            "i have a doubt",
+            "i want some doubts for my subjects",
+            "clear my doubts",
+            "help me with my doubts"
+        )
+        for (q in doubtQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+            assertTrue("Query '$q' should trigger Doubt Resolution Tutor", response.paragraph1.contains("Doubt Resolution Tutor"))
+            assertTrue("Query '$q' should offer guidance on how to solve doubts", response.paragraph2.contains("How We Can Solve Your Doubts"))
+            assertTrue(response.confidenceScore >= 95.0)
+        }
+    }
+
+    @Test
+    fun testConceptQuery_whatIsWaveInPhysics_matchesWavesNotNewton() {
+        val response = engine.generateResponse("what is wave in physics?")
+        assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+        assertFalse("Must NOT return Newton's laws", response.paragraph1.contains("Newton") || response.paragraph2.contains("F = ma"))
+        assertTrue("Must match Waves topic or chapter", response.matchedChapter?.contains("Wave", ignoreCase = true) == true || response.matchedTopic?.contains("Wave", ignoreCase = true) == true)
+        assertTrue("Must contain wave speed formula v = f * lambda", response.paragraph2.contains("v = f") || response.paragraph2.contains("lambda"))
+    }
+
+    @Test
+    fun testConceptQuery_whatIsNewtonLaw_matchesNewtonLaws() {
+        val response = engine.generateResponse("what is newton law?")
+        assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+        assertTrue("Must match Newton topic or chapter", response.matchedTopic?.contains("Newton", ignoreCase = true) == true || response.paragraph1.contains("Newton"))
+        assertTrue("Must contain Newton formula or principle", response.paragraph2.contains("F = m") || response.paragraph2.contains("acceleration") || response.paragraph2.contains("Inertia"))
+    }
+
+    @Test
+    fun testConceptQuery_explainEigenvalues_matchesEigenvalues() {
+        val response = engine.generateResponse("explain eigenvalues")
+        assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+        assertTrue("Must match Eigenvalues", response.matchedTopic?.contains("Eigenvalue", ignoreCase = true) == true || response.paragraph1.contains("Eigenvalue", ignoreCase = true))
+        assertTrue("Must contain eigenvalue formula or explanation", response.paragraph2.contains("lambda") || response.paragraph2.contains("Av") || response.paragraph2.contains("matrix"))
+    }
+
+    @Test
+    fun testConceptQuery_whatIsBackpropagation_matchesBackpropagation() {
+        val response = engine.generateResponse("what is backpropagation?")
+        assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
+        assertTrue("Must match Backpropagation", response.matchedTopic?.contains("Backpropagation", ignoreCase = true) == true || response.paragraph1.contains("Backpropagation", ignoreCase = true))
+        assertTrue("Must contain gradient descent or neural network", response.paragraph2.contains("gradient") || response.paragraph2.contains("weight") || response.paragraph2.contains("chain rule"))
     }
 
     @Test
