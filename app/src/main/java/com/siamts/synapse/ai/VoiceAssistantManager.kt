@@ -81,8 +81,12 @@ class VoiceAssistantManager(
                     if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                         tts.setLanguage(Locale.getDefault())
                     }
-                    tts.setPitch(1.02f)
-                    tts.setSpeechRate(1.05f)
+                    // Select natural Male voice
+                    selectNaturalMaleVoice(tts)
+
+                    // Resonant, natural male pitch and conversational cadence
+                    tts.setPitch(0.88f)
+                    tts.setSpeechRate(0.98f)
                     tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                         override fun onStart(utteranceId: String?) {
                             _voiceState.value = VoiceState.SPEAKING
@@ -107,6 +111,42 @@ class VoiceAssistantManager(
             } else {
                 Log.e(tag, "TTS initialization failed: status=$status")
             }
+        }
+    }
+
+    /**
+     * Inspects available TTS voices to locate a natural English Male voice.
+     */
+    private fun selectNaturalMaleVoice(tts: TextToSpeech) {
+        try {
+            val voices = tts.voices
+            if (!voices.isNullOrEmpty()) {
+                val maleVoice = voices.find { voice ->
+                    val name = voice.name.lowercase(Locale.ROOT)
+                    val lang = voice.locale?.language?.lowercase(Locale.ROOT).orEmpty()
+                    lang.startsWith("en") && (
+                        name.contains("male") ||
+                        name.contains("en-us-x-iom") || // Google US English Male 1
+                        name.contains("en-us-x-tpd") || // Google US English Male 2
+                        name.contains("en-in-x-ene") || // Indian English Male
+                        name.contains("en-gb-x-rjs") || // UK English Male
+                        (voice.features?.any { it.contains("male", ignoreCase = true) } == true)
+                    ) && !name.contains("female")
+                } ?: voices.find { voice ->
+                    val name = voice.name.lowercase(Locale.ROOT)
+                    (name.contains("male") || name.contains("man")) && !name.contains("female")
+                } ?: voices.find { voice ->
+                    val name = voice.name.lowercase(Locale.ROOT)
+                    voice.locale?.language?.startsWith("en") == true && !name.contains("female")
+                }
+
+                if (maleVoice != null) {
+                    tts.voice = maleVoice
+                    Log.d(tag, "Selected Natural Male Voice for TTS: ${maleVoice.name}")
+                }
+            }
+        } catch (e: Throwable) {
+            Log.w(tag, "Could not set custom male voice: ${e.message}")
         }
     }
 
