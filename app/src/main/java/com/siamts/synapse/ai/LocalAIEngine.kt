@@ -137,6 +137,26 @@ class LocalAIEngine private constructor(context: Context?) {
         "my", "your", "i", "you", "we", "they", "it", "this", "that", "and", "or", "by"
     )
 
+    /**
+     * Stems common English plural and inflectional suffixes for robust RAG concept matching:
+     * e.g., "waves" -> "wave", "equations" -> "equation", "matrices" -> "matrix", "laws" -> "law".
+     */
+    fun stem(word: String): String {
+        val w = word.lowercase(Locale.ROOT).trim()
+        if (w.length <= 2) return w
+        return when {
+            w == "matrices" -> "matrix"
+            w == "indices" -> "index"
+            w == "vertices" -> "vertex"
+            w.endsWith("ics") -> w // Preserves physics, mechanics, optics, robotics, mathematics
+            w.endsWith("ies") && w.length > 4 -> w.dropLast(3) + "y"
+            w.endsWith("ves") && w.length > 4 -> w.dropLast(1) // waves -> wave, derivatives -> derivative
+            w.endsWith("shes") || w.endsWith("ches") || w.endsWith("sses") || w.endsWith("xes") || w.endsWith("zes") -> w.dropLast(2)
+            w.endsWith("s") && !w.endsWith("ss") && !w.endsWith("us") && !w.endsWith("is") && w.length > 3 -> w.dropLast(1) // equations -> equation, laws -> law, algorithms -> algorithm
+            else -> w
+        }
+    }
+
     private val greetings = setOf(
         "gm", "good morning", "good afternoon", "good evening", "gn", "good night",
         "hi", "hello", "hey", "vanakkam", "namaste", "hola", "greetings", "hii", "heyy", "yo"
