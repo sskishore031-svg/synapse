@@ -42,7 +42,7 @@ class ChatEnginePreferenceAndPersonaTest {
     fun testNameSetting_englishCallMe() {
         engine.preferredName = ""
         val response = engine.generateResponse("call me Kishore")
-        assertEquals("Got it, Kishore! From now on I will call you Kishore.", response.paragraph1)
+        assertEquals("Got it, Kishore! From now on, I will call you Kishore.", response.paragraph1)
         assertEquals("Kishore", engine.preferredName)
         assertTrue(response.isNameCapture)
         assertEquals("Kishore", response.capturedName)
@@ -52,7 +52,7 @@ class ChatEnginePreferenceAndPersonaTest {
     fun testNameSetting_tanglishEnodaName() {
         engine.preferredName = ""
         val response = engine.generateResponse("enoda name Kishore")
-        assertEquals("Got it, Kishore! From now on I will call you Kishore.", response.paragraph1)
+        assertEquals("Got it, Kishore! From now on, I will call you Kishore.", response.paragraph1)
         assertEquals("Kishore", engine.preferredName)
         assertTrue(response.isNameCapture)
     }
@@ -61,19 +61,19 @@ class ChatEnginePreferenceAndPersonaTest {
     fun testNameSetting_tanglishKupdu() {
         engine.preferredName = ""
         val response = engine.generateResponse("enakku Kishore nu kupdu")
-        assertEquals("Got it, Kishore! From now on I will call you Kishore.", response.paragraph1)
+        assertEquals("Got it, Kishore! From now on, I will call you Kishore.", response.paragraph1)
         assertEquals("Kishore", engine.preferredName)
     }
 
     @Test
     fun testNameSetting_askNameFollowup() {
         engine.preferredName = ""
-        val promptResp = engine.generateResponse("enoda name solu kupdu")
+        val promptResp = engine.generateResponse("call me by my name")
         assertEquals("Sure! What name would you like me to call you?", promptResp.paragraph1)
         assertTrue(engine.isWaitingForName)
 
         val answerResp = engine.generateResponse("Kishore")
-        assertEquals("Got it, Kishore! From now on I will call you Kishore.", answerResp.paragraph1)
+        assertEquals("Got it, Kishore! From now on, I will call you Kishore.", answerResp.paragraph1)
         assertEquals("Kishore", engine.preferredName)
         assertFalse(engine.isWaitingForName)
     }
@@ -115,28 +115,54 @@ class ChatEnginePreferenceAndPersonaTest {
     @Test
     fun testFarewell_bye() {
         val resp1 = engine.generateResponse("bye")
-        assertEquals("Okay bye, Kishore! We'll continue our studies tomorrow. Take care!", resp1.paragraph1)
+        assertEquals("Okay, bye, Kishore! We'll continue our studies tomorrow. Take care!", resp1.paragraph1)
         assertTrue(resp1.isFarewell)
 
         val resp2 = engine.generateResponse("goodbye")
-        assertEquals("Okay bye, Kishore! We'll continue our studies tomorrow. Take care!", resp2.paragraph1)
+        assertEquals("Okay, bye, Kishore! We'll continue our studies tomorrow. Take care!", resp2.paragraph1)
     }
 
     @Test
     fun testCasualSlang_bhaiGracefulHandling() {
-        // First time unclear input
+        // First time unclear input with name set
         val resp1 = engine.generateResponse("bhai")
-        assertEquals("Enakku puriyala, Kishore. Konjam clear-aa enna subject or topic venum nu sollunga!", resp1.paragraph1)
+        assertEquals("I didn't understand that, Kishore. Could you please explain clearly which subject or topic you need help with?", resp1.paragraph1)
         assertEquals(1, engine.consecutiveUnclearCount)
 
-        // Second time unclear input
+        // Second time unclear input with name set
         val resp2 = engine.generateResponse("bhai")
-        assertEquals("Enakku theriyadhu, Kishore. Please ask something related to your subjects, notes, or quizzes.", resp2.paragraph1)
+        assertEquals("I don't know about that, Kishore. Please ask something related to your subjects, study notes, or quizzes.", resp2.paragraph1)
         assertEquals(2, engine.consecutiveUnclearCount)
 
         // Does NOT hallucinate Euler's Formula or other random academic topics
         assertFalse(resp1.paragraph1.contains("Euler"))
         assertFalse(resp2.paragraph1.contains("Euler"))
+    }
+
+    @Test
+    fun testNameFreeByDefault_unclearAndFarewells() {
+        engine.preferredName = ""
+        engine.consecutiveUnclearCount = 0
+
+        // First unclear when name is blank
+        val resp1 = engine.generateResponse("bhai")
+        assertEquals("I didn't understand that. Could you please explain clearly which subject or topic you need help with?", resp1.paragraph1)
+
+        // Second unclear when name is blank
+        val resp2 = engine.generateResponse("bhai")
+        assertEquals("I don't know about that. Please ask something related to your subjects, study notes, or quizzes.", resp2.paragraph1)
+
+        // Farewell when name is blank
+        val respBye = engine.generateResponse("bye")
+        assertEquals("Okay, bye! We'll continue our studies tomorrow. Take care!", respBye.paragraph1)
+
+        // Style preference confirmation when name is blank
+        val respEmoji = engine.generateResponse("dont use emoji")
+        assertTrue(respEmoji.paragraph1.contains("Got it! I'll keep all responses clean with * bullet points and no emojis."))
+
+        // Out-of-scope response
+        val respOos = engine.generateResponse("who is rajinikanth")
+        assertEquals("Sorry, I don't know about that—it's outside my study scope. Ask me any subject concept, quiz, or revision note instead.", respOos.paragraph1)
     }
 
     @Test
@@ -164,3 +190,4 @@ class ChatEnginePreferenceAndPersonaTest {
         assertTrue(response.paragraph2.contains("* **Key Example & Practical Takeaway:** A 10kg object accelerates at 2 m/s^2 when 20N force is applied."))
     }
 }
+

@@ -62,7 +62,7 @@ class LocalAIEngineTest {
         for (query in casualGreetings) {
             val response = engine.generateResponse(query)
             assertTrue("Query '$query' should be detected as greeting", response.isGreeting)
-            assertEquals("Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!", response.paragraph1)
+            assertEquals("Hello! I'm doing great and ready to help you study. What topic shall we explore today?", response.paragraph1)
             assertTrue("Greeting should not dump long paragraphs", response.paragraph2.isBlank())
         }
 
@@ -312,7 +312,7 @@ class LocalAIEngineTest {
         val response = engine.generateResponse("what is the recipe for baking a chocolate cake?")
         assertTrue(response.confidenceScore > 0.0)
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue(response.paragraph1.contains("not relatable to our studies") || response.paragraph1.contains("Academic") || response.paragraph1.contains("SYNAPSE AI"))
+        assertTrue(response.paragraph1.contains("outside my study scope") || response.paragraph1.contains("not relatable to our studies") || response.paragraph1.contains("Academic") || response.paragraph1.contains("SYNAPSE AI"))
     }
 
     @Test
@@ -326,7 +326,7 @@ class LocalAIEngineTest {
         )
         assertTrue(
             "Food/recipe query must hit the strict out-of-scope guardrail boundary",
-            response.paragraph1.contains("not relatable to our studies")
+            response.paragraph1.contains("outside my study scope") || response.paragraph1.contains("not relatable to our studies")
         )
     }
 
@@ -471,6 +471,6 @@ class LocalAIEngineTest {
         assertTrue("Last event must be Completed", events.last() is LocalAiStreamToken.Completed)
         val tokenEvents = events.filterIsInstance<LocalAiStreamToken.Token>()
         assertTrue("Must emit token events", tokenEvents.isNotEmpty())
-        assertEquals("Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
+        assertEquals("Hello! I'm doing great and ready to help you study. What topic shall we explore today?", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
     }
 }

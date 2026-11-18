@@ -30,6 +30,7 @@ class UserPreferencesRepository private constructor(context: Context) {
         val KEY_STUDY_REMINDER_MINUTE = intPreferencesKey("study_reminder_minute")
 
         val KEY_PREFERRED_NAME = stringPreferencesKey("ai_preferred_name")
+        val KEY_CHAT_PREFERRED_NAME = stringPreferencesKey("chat_preferred_name")
         val KEY_INCLUDE_FORMULAS = booleanPreferencesKey("ai_include_formulas")
         val KEY_INCLUDE_EXAMPLES = booleanPreferencesKey("ai_include_examples")
         val KEY_USE_EMOJIS = booleanPreferencesKey("ai_use_emojis")
@@ -127,7 +128,9 @@ class UserPreferencesRepository private constructor(context: Context) {
 
     val preferredNameFlow: Flow<String> = dataStore.data
         .catch { emit(emptyPreferences()) }
-        .map { prefs -> prefs[KEY_PREFERRED_NAME].orEmpty() }
+        .map { prefs -> prefs[KEY_CHAT_PREFERRED_NAME]?.trim() ?: prefs[KEY_PREFERRED_NAME].orEmpty().trim() }
+
+    val chatPreferredNameFlow: Flow<String> = preferredNameFlow
 
     val includeFormulasFlow: Flow<Boolean> = dataStore.data
         .catch { emit(emptyPreferences()) }
@@ -141,18 +144,31 @@ class UserPreferencesRepository private constructor(context: Context) {
         .catch { emit(emptyPreferences()) }
         .map { prefs -> prefs[KEY_USE_EMOJIS] ?: false }
 
-    suspend fun setPreferredName(name: String) {
+    suspend fun setChatPreferredName(name: String) {
         dataStore.edit { prefs ->
-            prefs[KEY_PREFERRED_NAME] = name.trim()
+            val clean = name.trim()
+            prefs[KEY_CHAT_PREFERRED_NAME] = clean
+            prefs[KEY_PREFERRED_NAME] = clean
         }
     }
 
-    suspend fun getPreferredName(): String {
+    suspend fun getChatPreferredName(): String {
         return try {
-            dataStore.data.first()[KEY_PREFERRED_NAME].orEmpty()
+            val prefs = dataStore.data.first()
+            prefs[KEY_CHAT_PREFERRED_NAME]?.trim()
+                ?: prefs[KEY_PREFERRED_NAME]?.trim()
+                ?: ""
         } catch (_: Exception) {
             ""
         }
+    }
+
+    suspend fun setPreferredName(name: String) {
+        setChatPreferredName(name)
+    }
+
+    suspend fun getPreferredName(): String {
+        return getChatPreferredName()
     }
 
     suspend fun setIncludeFormulas(include: Boolean) {

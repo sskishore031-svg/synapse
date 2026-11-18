@@ -160,11 +160,16 @@ class LocalAIEngine private constructor(context: Context?) {
     @Volatile var consecutiveUnclearCount: Int = 0
     @Volatile var isWaitingForName: Boolean = false
 
+    var awaitingPreferredName: Boolean
+        get() = isWaitingForName
+        set(value) { isWaitingForName = value }
+
     /**
-     * Resolves the active name to address the user by (custom nickname, session name, or "friend").
+     * Resolves the active name to address the user by (custom nickname if explicitly set in chat, or empty string).
+     * Never auto-injects account username or generic placeholders like "friend".
      */
     fun getEffectiveUserName(): String {
-        return preferredName.ifBlank { "friend" }
+        return preferredName.trim()
     }
 
     /**
@@ -1038,9 +1043,15 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun buildWellBeingResponse(): LocalAiResponse {
+        val name = preferredName.trim()
+        val text = if (name.isNotBlank()) {
+            "Hello, $name! I'm doing great and ready to help you study. What topic shall we explore today?"
+        } else {
+            "Hello! I'm doing great and ready to help you study. What topic shall we explore today?"
+        }
         return LocalAiResponse(
-            paragraph1 = "I'm doing great and feeling energized! How's your study session going today?",
-            paragraph2 = "Whether you want to explore advanced university concepts, clear exam doubts, derive equations, or take an auto-graded quiz—I'm right here with you. Which subject or topic are we tackling next?",
+            paragraph1 = text,
+            paragraph2 = "",
             confidenceScore = 100.0,
             isGreeting = true
         )
@@ -1143,17 +1154,17 @@ class LocalAIEngine private constructor(context: Context?) {
     private fun checkNameSettingIntent(rawQuery: String, lowerQuery: String, normalized: String): LocalAiResponse? {
         val trimmedRaw = rawQuery.trim()
 
-        // 1. If currently waiting for user to provide their name (e.g. following "enoda name solu kupdu")
+        // 1. If currently waiting for user to provide their name (e.g. following "call me by my name")
         if (isWaitingForName) {
             val words = trimmedRaw.split(Regex("\\s+"))
-            val candidate = words.lastOrNull { it.isNotBlank() && it.first().isLetter() } ?: "Student"
+            val candidate = words.lastOrNull { it.isNotBlank() && it.first().isLetter() } ?: ""
             val cleanName = candidate.filter { it.isLetter() }.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
             if (cleanName.isNotBlank() && cleanName.length >= 2) {
                 preferredName = cleanName
                 isWaitingForName = false
                 consecutiveUnclearCount = 0
                 return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isGreeting = true,
@@ -1163,15 +1174,40 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
+        // 2. Direct name instruction first: "call me Kishore", "from now on call me Kishore", "call me by my name Kishore", "my name is Kishore"
+        val callMeMatch = Regex(
+            "^(?:from\\s+now\\s+on\\s+)?(?:call\\s+me\\s+(?:by\\s+my\\s+name\\s+|by\\s+name\\s+|with\\s+my\\s+name\\s+)?|my\\s+name\\s+is\\s+|name\\s+is\\s+|i\\s+am\\s+|i['’]m\\s+)([a-zA-Z]+)",
+            RegexOption.IGNORE_CASE
+        ).find(trimmedRaw)
+        if (callMeMatch != null) {
+            val candidate = callMeMatch.groupValues[1]
+            if (!setOf("by", "my", "name", "a", "an", "the").contains(candidate.lowercase(Locale.ROOT))) {
+                val name = candidate.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                if (name.isNotBlank() && name.length >= 2) {
+                    preferredName = name
+                    isWaitingForName = false
+                    consecutiveUnclearCount = 0
+                    return LocalAiResponse(
+                        paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
+                        paragraph2 = "",
+                        confidenceScore = 100.0,
+                        isGreeting = true,
+                        isNameCapture = true,
+                        capturedName = preferredName
+                    )
+                }
+            }
+        }
+
         val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
 
-        // 2. Command: User asks AI to call them by name without providing the name yet
+        // 3. Command: User asks AI to call them by name without providing the name yet
         val promptNameRequests = setOf(
-            "enoda name solu kupdu", "enoda name solli kupdu", "ennoda name solu kupdu", "ennoda name solli kupdu",
-            "enoda name solli koopdu", "call me by my name", "call me with my name", "call me my name",
+            "call me by my name", "call me by name", "call me with my name", "call me my name", "call me",
+            "enoda name solu kupdu", "enoda name solli kupdu", "ennoda name solu kupdu", "ennoda name solli koopdu",
             "en peyar solli koopdu", "en peru solli kupdu"
         )
-        if (promptNameRequests.any { clean.contains(it) } || clean == "call me") {
+        if (clean in promptNameRequests || clean == "call me") {
             isWaitingForName = true
             return LocalAiResponse(
                 paragraph1 = "Sure! What name would you like me to call you?",
@@ -1181,36 +1217,16 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 3. Command: User provides name directly
-        // English: "call me Kishore", "my name is Kishore", "name is Kishore"
-        val callMeMatch = Regex("^(?:call\\s+me|my\\s+name\\s+is|name\\s+is)\\s+([a-zA-Z]+)", RegexOption.IGNORE_CASE).find(trimmedRaw)
-        if (callMeMatch != null) {
-            val name = callMeMatch.groupValues[1].replaceFirstChar { it.uppercase() }
-            if (name.isNotBlank()) {
-                preferredName = name
-                isWaitingForName = false
-                consecutiveUnclearCount = 0
-                return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
-                    paragraph2 = "",
-                    confidenceScore = 100.0,
-                    isGreeting = true,
-                    isNameCapture = true,
-                    capturedName = preferredName
-                )
-            }
-        }
-
         // Tanglish: "enoda name Kishore", "ennoda name Kishore", "en per Kishore", "en peyar Kishore"
         val tanglishNameMatch = Regex("^(?:enoda|ennoda|en)\\s+(?:name|per|peyar)(?:\\s+is)?\\s+([a-zA-Z]+)", RegexOption.IGNORE_CASE).find(trimmedRaw)
         if (tanglishNameMatch != null) {
-            val name = tanglishNameMatch.groupValues[1].replaceFirstChar { it.uppercase() }
-            if (name.isNotBlank()) {
+            val name = tanglishNameMatch.groupValues[1].replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+            if (name.isNotBlank() && name.length >= 2) {
                 preferredName = name
                 isWaitingForName = false
                 consecutiveUnclearCount = 0
                 return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isGreeting = true,
@@ -1223,13 +1239,13 @@ class LocalAIEngine private constructor(context: Context?) {
         // Tanglish: "enakku Kishore nu kupdu", "enna Kishore nu kupdu", "inimel enna Kishore nu kupdu", "inimel Kishore nu kupdu"
         val tanglishKupduMatch = Regex("(?:enakku|enna|inimel\\s+enna|inimel)?\\s*([a-zA-Z]+)\\s*(?:nu|endru)\\s*(?:kupdu|koopdu|kollu)", RegexOption.IGNORE_CASE).find(trimmedRaw)
         if (tanglishKupduMatch != null) {
-            val name = tanglishKupduMatch.groupValues[1].replaceFirstChar { it.uppercase() }
+            val name = tanglishKupduMatch.groupValues[1].replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
             if (name.isNotBlank() && !setOf("enna", "enakku", "inimel", "name").contains(name.lowercase(Locale.ROOT))) {
                 preferredName = name
                 isWaitingForName = false
                 consecutiveUnclearCount = 0
                 return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isGreeting = true,
@@ -1244,7 +1260,8 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun checkStylePreferenceIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
         val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
-        val name = getEffectiveUserName()
+        val name = preferredName.trim()
+        val gotIt = if (name.isNotBlank()) "Got it, $name!" else "Got it!"
 
         // A. Emoji Preference Check
         val disableEmojiPhrases = setOf(
@@ -1255,7 +1272,7 @@ class LocalAIEngine private constructor(context: Context?) {
         if (disableEmojiPhrases.any { clean.contains(it) }) {
             useEmojis = false
             val lastChunk = getLastActiveChunk()
-            val confirmation = "Got it, $name! I'll keep all responses clean with * bullet points and no emojis."
+            val confirmation = "$gotIt I'll keep all responses clean with * bullet points and no emojis."
             val replyText = if (lastChunk != null) {
                 "$confirmation\n\nHere is **${lastChunk.topic}** in clean format:\n\n${formatChunkAccordingToPreferences(lastChunk)}"
             } else {
@@ -1273,7 +1290,7 @@ class LocalAIEngine private constructor(context: Context?) {
         if (enableEmojiPhrases.any { clean.contains(it) }) {
             useEmojis = true
             return LocalAiResponse(
-                paragraph1 = "Got it, $name! I'll include emojis in responses.",
+                paragraph1 = "$gotIt I'll include emojis in responses.",
                 paragraph2 = "",
                 confidenceScore = 100.0,
                 isPreferenceUpdate = true
@@ -1300,7 +1317,7 @@ class LocalAIEngine private constructor(context: Context?) {
             return if (lastChunk != null) {
                 val defText = if (lastChunk.definition.isNotBlank()) lastChunk.definition.trim() else lastChunk.content.substringBefore(".")
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! Here is the explanation for **${lastChunk.topic}** showing only the concept and definition:\n\n* **Concept & Definition:**\n$defText",
+                    paragraph1 = "$gotIt Here is the explanation for **${lastChunk.topic}** showing only the concept and definition:\n\n* **Concept & Definition:**\n$defText",
                     paragraph2 = "",
                     matchedSubject = lastChunk.subject,
                     matchedChapter = lastChunk.chapter,
@@ -1311,7 +1328,7 @@ class LocalAIEngine private constructor(context: Context?) {
                 )
             } else {
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! I'll provide only pure concepts and definitions without formulas or examples for upcoming topics. What shall we learn?",
+                    paragraph1 = "$gotIt I'll provide only pure concepts and definitions without formulas or examples for upcoming topics. What shall we learn?",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isPreferenceUpdate = true
@@ -1330,7 +1347,7 @@ class LocalAIEngine private constructor(context: Context?) {
             val lastChunk = getLastActiveChunk()
             return if (lastChunk != null) {
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! Here is **${lastChunk.topic}** without formulas:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
+                    paragraph1 = "$gotIt Here is **${lastChunk.topic}** without formulas:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
                     paragraph2 = "",
                     matchedSubject = lastChunk.subject,
                     matchedChapter = lastChunk.chapter,
@@ -1341,7 +1358,7 @@ class LocalAIEngine private constructor(context: Context?) {
                 )
             } else {
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! I'll omit formulas and focus on concepts and practical examples.",
+                    paragraph1 = "$gotIt I'll omit formulas and focus on concepts and practical examples.",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isPreferenceUpdate = true
@@ -1360,7 +1377,7 @@ class LocalAIEngine private constructor(context: Context?) {
             val lastChunk = getLastActiveChunk()
             return if (lastChunk != null) {
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! Here is **${lastChunk.topic}** without examples:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
+                    paragraph1 = "$gotIt Here is **${lastChunk.topic}** without examples:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
                     paragraph2 = "",
                     matchedSubject = lastChunk.subject,
                     matchedChapter = lastChunk.chapter,
@@ -1371,7 +1388,7 @@ class LocalAIEngine private constructor(context: Context?) {
                 )
             } else {
                 LocalAiResponse(
-                    paragraph1 = "Got it, $name! I'll omit examples and focus on core definitions and formulas.",
+                    paragraph1 = "$gotIt I'll omit examples and focus on core definitions and formulas.",
                     paragraph2 = "",
                     confidenceScore = 100.0,
                     isPreferenceUpdate = true
@@ -1383,7 +1400,7 @@ class LocalAIEngine private constructor(context: Context?) {
         if (clean.contains("include formula") || clean.contains("with formula") || clean.contains("show formula")) {
             includeFormulas = true
             return LocalAiResponse(
-                paragraph1 = "Got it, $name! Formulas will be included in subsequent explanations.",
+                paragraph1 = "$gotIt Formulas will be included in subsequent explanations.",
                 paragraph2 = "",
                 confidenceScore = 100.0,
                 isPreferenceUpdate = true
@@ -1392,7 +1409,7 @@ class LocalAIEngine private constructor(context: Context?) {
         if (clean.contains("include example") || clean.contains("with example") || clean.contains("show example")) {
             includeExamples = true
             return LocalAiResponse(
-                paragraph1 = "Got it, $name! Practical examples will be included in subsequent explanations.",
+                paragraph1 = "$gotIt Practical examples will be included in subsequent explanations.",
                 paragraph2 = "",
                 confidenceScore = 100.0,
                 isPreferenceUpdate = true
@@ -1414,9 +1431,14 @@ class LocalAIEngine private constructor(context: Context?) {
                 (words.size <= 3 && words.any { it in setOf("bye", "goodbye", "tata") })
 
         if (isFarewell) {
-            val name = getEffectiveUserName()
+            val name = preferredName.trim()
+            val replyText = if (name.isNotBlank()) {
+                "Okay, bye, $name! We'll continue our studies tomorrow. Take care!"
+            } else {
+                "Okay, bye! We'll continue our studies tomorrow. Take care!"
+            }
             return LocalAiResponse(
-                paragraph1 = "Okay bye, $name! We'll continue our studies tomorrow. Take care!",
+                paragraph1 = replyText,
                 paragraph2 = "",
                 confidenceScore = 100.0,
                 isGreeting = true,
@@ -1447,16 +1469,27 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun handleUnclearOrEmpty(query: String): LocalAiResponse {
         consecutiveUnclearCount++
-        val name = getEffectiveUserName()
+        val name = preferredName.trim()
+        val isNamed = name.isNotBlank()
         return if (consecutiveUnclearCount == 1) {
+            val text = if (isNamed) {
+                "I didn't understand that, $name. Could you please explain clearly which subject or topic you need help with?"
+            } else {
+                "I didn't understand that. Could you please explain clearly which subject or topic you need help with?"
+            }
             LocalAiResponse(
-                paragraph1 = "Enakku puriyala, $name. Konjam clear-aa enna subject or topic venum nu sollunga!",
+                paragraph1 = text,
                 paragraph2 = "",
                 confidenceScore = 100.0
             )
         } else {
+            val text = if (isNamed) {
+                "I don't know about that, $name. Please ask something related to your subjects, study notes, or quizzes."
+            } else {
+                "I don't know about that. Please ask something related to your subjects, study notes, or quizzes."
+            }
             LocalAiResponse(
-                paragraph1 = "Enakku theriyadhu, $name. Please ask something related to your subjects, notes, or quizzes.",
+                paragraph1 = text,
                 paragraph2 = "",
                 confidenceScore = 100.0
             )
@@ -1736,9 +1769,9 @@ class LocalAIEngine private constructor(context: Context?) {
             normalized.contains("namaste") ->
                 if (isNamed) "Namaste, $name! How can I assist you with your learning today?" else "Namaste! How can I assist you with your learning today?"
             normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
-                if (isNamed) "Hey $name! Great to see you. What subject shall we dive into today?" else "Hey friend! Great to see you. What subject shall we dive into today?"
+                if (isNamed) "Hey $name! Great to see you. What subject shall we dive into today?" else "Hey! Great to see you. What subject shall we dive into today?"
             else ->
-                if (isNamed) "Hello, $name! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!" else "Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!"
+                if (isNamed) "Hello, $name! I'm doing great and ready to help you study. What topic shall we explore today?" else "Hello! I'm doing great and ready to help you study. What topic shall we explore today?"
         }
 
         return LocalAiResponse(
@@ -2406,7 +2439,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "Sorry, that's not relatable to our studies or app! Ask me any subject concept, quiz, or study note instead."
+            "Sorry, I don't know about that—it's outside my study scope. Ask me any subject concept, quiz, or revision note instead."
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

@@ -68,18 +68,20 @@ class AiTutorViewModel(
             val email = user?.email ?: "student@synapse.ai"
 
             // Sync user preferences with localAiEngine
-            val savedPrefName = userPreferencesRepository?.getPreferredName().orEmpty()
-            val effectiveName = if (savedPrefName.isNotBlank()) {
-                savedPrefName
-            } else {
-                user?.name?.ifBlank { "STUDENT" } ?: "STUDENT"
-            }
-            localAiEngine.preferredName = effectiveName
+            // CRITICAL: NEVER inject user?.name from SessionManager into localAiEngine.preferredName!
+            // Strictly opt-in custom name only when explicitly requested by user in chat.
+            val savedPrefName = userPreferencesRepository?.getChatPreferredName().orEmpty()
+            localAiEngine.preferredName = savedPrefName
             localAiEngine.includeFormulas = userPreferencesRepository?.getIncludeFormulas() ?: true
             localAiEngine.includeExamples = userPreferencesRepository?.getIncludeExamples() ?: true
             localAiEngine.useEmojis = userPreferencesRepository?.getUseEmojis() ?: false
 
-            _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${effectiveName.uppercase()}") }
+            val headerTag = if (savedPrefName.isNotBlank()) {
+                "PERSONALIZED FOR ${savedPrefName.uppercase()}"
+            } else {
+                "SYNAPSE AI NEURAL CORE"
+            }
+            _uiState.update { it.copy(headerTag = headerTag) }
 
             // 1. Check persistent SQLite chat sessions
             val savedSessions = chatStorage?.loadSessions(currentUserId).orEmpty()
@@ -735,7 +737,9 @@ class AiTutorViewModel(
                         // Handle name capture or preference persistence
                         if (localResponse.isNameCapture && !localResponse.capturedName.isNullOrBlank()) {
                             val newName = localResponse.capturedName
+                            localAiEngine.preferredName = newName
                             scope.launch(Dispatchers.IO) {
+                                userPreferencesRepository?.setChatPreferredName(newName)
                                 userPreferencesRepository?.setPreferredName(newName)
                             }
                             _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${newName.uppercase()}") }
