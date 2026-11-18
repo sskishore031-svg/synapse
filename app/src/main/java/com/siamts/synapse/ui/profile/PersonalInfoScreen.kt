@@ -480,7 +480,7 @@ private fun copyUriToInternalStorage(context: Context, uri: Uri): String? {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri) ?: return null
         val profileDir = File(context.filesDir, "profile_images").apply { mkdirs() }
-        val targetFile = File(profileDir, "profile_${System.currentTimeMillis()}.jpg")
+        val targetFile = File(profileDir, "profile_avatar.jpg")
         val outputStream = FileOutputStream(targetFile)
         inputStream.use { input ->
             outputStream.use { output ->

@@ -151,6 +151,12 @@ class ProfileViewModel(
                 null
             }
 
+            if (removePhoto) {
+                sessionManager?.updateUserPhoto(null)
+            } else if (!photoUri.isNullOrBlank()) {
+                sessionManager?.updateUserPhoto(photoUri)
+            }
+
             val result = if (photoFile != null || removePhoto) {
                 // Upload via multipart/form-data to upload_profile.php
                 repository.uploadProfilePhoto(
@@ -186,6 +192,11 @@ class ProfileViewModel(
                 }
                 onComplete?.invoke(true)
             }.onFailure { error ->
+                if (!photoUri.isNullOrBlank() && !removePhoto) {
+                    _uiState.update { it.copy(profilePhotoUri = photoUri) }
+                } else if (removePhoto) {
+                    _uiState.update { it.copy(profilePhotoUri = null) }
+                }
                 _uiState.update {
                     it.copy(
                         isUpdating = false,

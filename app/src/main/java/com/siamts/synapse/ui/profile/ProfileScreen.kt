@@ -431,14 +431,7 @@ fun ProfileContent(
                                         )
                                     }
 
-                                    // Item 7: Help & Support
-                                    ProfileOptionRow(
-                                        icon = "❓",
-                                        title = "Help & Support",
-                                        onClick = { onHelpSupportClick?.invoke() },
-                                    )
-
-                                    // Item 8: About Synapse AI
+                                    // Item 7: About Synapse AI
                                     ProfileOptionRow(
                                         icon = "ℹ️",
                                         title = "About Synapse AI",

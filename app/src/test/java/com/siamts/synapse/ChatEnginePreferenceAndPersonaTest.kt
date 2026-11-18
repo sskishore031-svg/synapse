@@ -189,5 +189,46 @@ class ChatEnginePreferenceAndPersonaTest {
         assertTrue(response.paragraph2.contains("* **Formula / Core Principle:** F = m * a"))
         assertTrue(response.paragraph2.contains("* **Key Example & Practical Takeaway:** A 10kg object accelerates at 2 m/s^2 when 20N force is applied."))
     }
+
+    @Test
+    fun testSubjectOverview_whatAboutBiology() {
+        val response = engine.generateResponse("what about biology")
+        assertEquals("Biology", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("* **What it is:**"))
+        assertTrue(response.paragraph1.contains("living organisms"))
+        assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
+        assertTrue(response.paragraph1.contains("* **Advantages:**"))
+        assertTrue(response.paragraph1.contains("* **Disadvantages / Challenges:**"))
+    }
+
+    @Test
+    fun testSubjectOverview_usesOfPhysics() {
+        val response = engine.generateResponse("uses of physics")
+        assertEquals("Physics", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("* **What it is:**"))
+        assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
+        assertTrue(response.paragraph1.contains("* **Advantages:**"))
+        assertTrue(response.paragraph1.contains("* **Disadvantages / Challenges:**"))
+    }
+
+    @Test
+    fun testSubjectOverview_tellMeAboutCyberSecurity() {
+        val response = engine.generateResponse("tell me about cyber security")
+        assertEquals("Cyber Security", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("* **What it is:**"))
+        assertTrue(response.paragraph1.contains("safeguarding digital architectures"))
+        assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
+    }
+
+    @Test
+    fun testSubjectOverview_customCollegeSubject() {
+        val response = engine.generateResponse("what about marine biology")
+        assertEquals("Marine Biology", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("* **What it is:**"))
+        assertTrue(response.paragraph1.contains("Marine Biology is an academic discipline"))
+        assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
+        assertTrue(response.paragraph1.contains("* **Advantages:**"))
+        assertTrue(response.paragraph1.contains("* **Disadvantages / Challenges:**"))
+    }
 }
 

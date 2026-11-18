@@ -32,7 +32,8 @@ import java.util.Locale
 
 class SubjectCatalogRepository private constructor(context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext: Context = context.applicationContext
+    private val prefs: SharedPreferences = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -40,25 +41,37 @@ class SubjectCatalogRepository private constructor(context: Context) {
     val catalogSubjects: StateFlow<List<CatalogSubject>> = _catalogSubjects.asStateFlow()
 
     init {
-        loadCatalogFromAssets(context)
+        loadCatalogFromAssets(appContext)
     }
 
     private fun loadCatalogFromAssets(context: Context) {
         scope.launch {
-            try {
-                context.assets.open("extended_curriculum_catalog.json").use { inputStream ->
-                    InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
-                        val catalog = gson.fromJson(reader, ExtendedCurriculumCatalog::class.java)
-                        val addedSet = getSavedAddedSubjectIds()
-                        val updated = catalog.subjects.map { subj ->
-                            subj.copy(isAdded = addedSet.contains(subj.id) || addedSet.contains(subj.subjectId.toString()))
-                        }
-                        _catalogSubjects.value = updated
+            loadCatalogSync(context)
+        }
+    }
+
+    @Synchronized
+    private fun loadCatalogSync(context: Context) {
+        if (_catalogSubjects.value.isNotEmpty()) return
+        try {
+            context.assets.open("extended_curriculum_catalog.json").use { inputStream ->
+                InputStreamReader(inputStream, Charsets.UTF_8).use { reader ->
+                    val catalog = gson.fromJson(reader, ExtendedCurriculumCatalog::class.java)
+                    val addedSet = getSavedAddedSubjectIds()
+                    val updated = catalog.subjects.map { subj ->
+                        subj.copy(isAdded = addedSet.contains(subj.id) || addedSet.contains(subj.subjectId.toString()))
                     }
+                    _catalogSubjects.value = updated
                 }
-            } catch (e: Throwable) {
-                Log.e("SubjectCatalogRepo", "Failed to load extended_curriculum_catalog.json: ${e.message}")
             }
+        } catch (e: Throwable) {
+            Log.e("SubjectCatalogRepo", "Failed to load extended_curriculum_catalog.json: ${e.message}")
+        }
+    }
+
+    private fun ensureCatalogLoaded() {
+        if (_catalogSubjects.value.isEmpty()) {
+            loadCatalogSync(appContext)
         }
     }
 
@@ -69,16 +82,21 @@ class SubjectCatalogRepository private constructor(context: Context) {
     /**
      * Returns only the extended catalog subjects (10 subjects).
      */
-    fun getAllCatalogSubjects(): List<CatalogSubject> = _catalogSubjects.value
+    fun getAllCatalogSubjects(): List<CatalogSubject> {
+        ensureCatalogLoaded()
+        return _catalogSubjects.value
+    }
 
     /**
      * Returns all subjects across the entire curriculum (6 base + 10 extended).
      */
     fun getAllSubjects(): List<CatalogSubject> {
+        ensureCatalogLoaded()
         return BaseCurriculumData.subjects + _catalogSubjects.value
     }
 
     fun getAddedSubjects(): List<CatalogSubject> {
+        ensureCatalogLoaded()
         return _catalogSubjects.value.filter { it.isAdded }
     }
 
@@ -354,6 +372,10 @@ class SubjectCatalogRepository private constructor(context: Context) {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: SubjectCatalogRepository(context).also { INSTANCE = it }
             }
+        }
+
+        fun getInstanceOrNull(): SubjectCatalogRepository? {
+            return INSTANCE ?: runCatching { getInstance() }.getOrNull()
         }
     }
 }

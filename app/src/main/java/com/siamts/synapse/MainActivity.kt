@@ -425,13 +425,20 @@ class MainActivity : ComponentActivity() {
                         } else if (route.startsWith("roadmap_screen/")) {
                             val subId = route.removePrefix("roadmap_screen/")
                             navigateTo(AppScreen.Roadmap(subId))
-                        } else if (route.startsWith("lesson_screen/")) {
-                            val parts = route.removePrefix("lesson_screen/").split("/")
+                        } else if (route.startsWith("lesson_screen/") || route.startsWith("lesson_content/")) {
+                            val clean = if (route.startsWith("lesson_screen/")) route.removePrefix("lesson_screen/") else route.removePrefix("lesson_content/")
+                            val parts = clean.split("/")
                             if (parts.size == 1) {
-                                parts[0].toIntOrNull()?.let { navigateTo(AppScreen.DynamicChapterLesson(it)) }
+                                val cid = parts[0].toIntOrNull() ?: 1
+                                val resolvedSubId = BaseCurriculumData.getChapterById(cid)?.let {
+                                    BaseCurriculumData.subjects.firstOrNull { s -> s.chapters.any { ch -> ch.chapterId == cid } }?.id
+                                } ?: com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getAllSubjects()?.firstOrNull { s -> s.chapters.any { ch -> ch.chapterId == cid } }?.id
+                                navigateTo(AppScreen.DynamicChapterLesson(chapterId = cid, subjectId = resolvedSubId))
                             } else if (parts.size >= 2) {
                                 val subId = parts[0]
-                                val chapId = parts[1].toIntOrNull() ?: 4
+                                val chapId = parts[1].toIntOrNull()
+                                    ?: BaseCurriculumData.getSubjectById(subId)?.chapters?.firstOrNull()?.chapterId
+                                    ?: 1
                                 navigateTo(AppScreen.DynamicChapterLesson(chapterId = chapId, subjectId = subId))
                             }
                         } else if (route == "quiz_hub_screen" || route == "quiz_home" || route == "quiz") {
@@ -701,7 +708,9 @@ class MainActivity : ComponentActivity() {
                                         if (activeId > 0) {
                                             navigateTo(AppScreen.DynamicChapterLesson(chapterId = activeId, subjectId = screen.subjectId))
                                         } else {
-                                            val firstId = roadmapViewModel.uiState.value.milestones.firstOrNull()?.chapterId ?: 4
+                                            val firstId = roadmapViewModel.uiState.value.milestones.firstOrNull()?.chapterId
+                                                ?: BaseCurriculumData.getSubjectById(screen.subjectId)?.chapters?.firstOrNull()?.chapterId
+                                                ?: 1
                                             navigateTo(AppScreen.DynamicChapterLesson(chapterId = firstId, subjectId = screen.subjectId))
                                         }
                                     },

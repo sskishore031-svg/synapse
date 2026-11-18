@@ -187,32 +187,6 @@ fun HomeContent(
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Search Input
-                OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = onSearchChange,
-                    placeholder = {
-                        Text(
-                            text = "Ask Synapse AI or search topics...",
-                            color = TextMuted,
-                            fontSize = 14.sp,
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = CyanGlow,
-                        unfocusedBorderColor = Color(0xFF1E293B),
-                        focusedContainerColor = Color(0xFF0D1430),
-                        unfocusedContainerColor = Color(0xFF0B0F24),
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                    ),
-                    singleLine = true,
-                )
             }
 
             // Error or Loading Banners

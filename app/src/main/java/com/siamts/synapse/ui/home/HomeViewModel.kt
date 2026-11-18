@@ -53,13 +53,18 @@ class HomeViewModel(
             val user = manager?.getSessionUser()
             val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
 
-            val streak = manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 1
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
 
             val completedChapters = chapters.filter { it.isAttempted }.map { it.id }
             val quizChapters = quizRecords.map { it.chapterId }
             val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
+
+            val streak = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty()) {
+                manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+            } else {
+                0
+            }
 
             val avgScore = if (quizRecords.isNotEmpty()) {
                 (quizRecords.map { (it.score * 100) / it.totalQuestions.coerceAtLeast(1) }.average()).toInt()

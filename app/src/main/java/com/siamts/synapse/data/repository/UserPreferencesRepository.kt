@@ -34,6 +34,7 @@ class UserPreferencesRepository private constructor(context: Context) {
         val KEY_INCLUDE_FORMULAS = booleanPreferencesKey("ai_include_formulas")
         val KEY_INCLUDE_EXAMPLES = booleanPreferencesKey("ai_include_examples")
         val KEY_USE_EMOJIS = booleanPreferencesKey("ai_use_emojis")
+        val KEY_PROFILE_IMAGE_PATH = stringPreferencesKey("profile_image_path")
 
         const val DEFAULT_HOUR = 19 // 7:00 PM
         const val DEFAULT_MINUTE = 0
@@ -210,6 +211,31 @@ class UserPreferencesRepository private constructor(context: Context) {
             dataStore.data.first()[KEY_USE_EMOJIS] ?: false
         } catch (_: Exception) {
             false
+        }
+    }
+
+    // --- Profile Picture Persistence ---
+
+    val profileImagePathFlow: Flow<String?> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_PROFILE_IMAGE_PATH]?.takeIf { it.isNotBlank() } }
+
+    suspend fun setProfileImagePath(path: String?) {
+        dataStore.edit { prefs ->
+            if (path.isNullOrBlank()) {
+                prefs.remove(KEY_PROFILE_IMAGE_PATH)
+            } else {
+                prefs[KEY_PROFILE_IMAGE_PATH] = path.trim()
+            }
+        }
+    }
+
+    suspend fun getProfileImagePath(): String? {
+        return try {
+            val prefs = dataStore.data.first()
+            prefs[KEY_PROFILE_IMAGE_PATH]?.takeIf { it.isNotBlank() }
+        } catch (_: Exception) {
+            null
         }
     }
 }

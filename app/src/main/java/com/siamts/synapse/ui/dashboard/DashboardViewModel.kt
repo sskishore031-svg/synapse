@@ -83,9 +83,6 @@ class DashboardViewModel(
             val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
             val photo = user?.photoUrl ?: _uiState.value.profilePhotoUri
 
-            // 1. Streak from DataStore
-            val streakDays = manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 1
-
             // 2. Real stats from QuizDao and ChapterDao
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
@@ -93,6 +90,13 @@ class DashboardViewModel(
             val completedChapters = chapters.filter { it.isAttempted }.map { it.id }
             val quizChapters = quizRecords.map { it.chapterId }
             val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
+
+            // 1. Streak from DataStore (0 for new users with no completed topics or quizzes)
+            val streakDays = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty()) {
+                manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+            } else {
+                0
+            }
 
             val avgScore = if (quizRecords.isNotEmpty()) {
                 (quizRecords.map { (it.score * 100) / it.totalQuestions.coerceAtLeast(1) }.average()).toInt()

@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -242,55 +243,6 @@ fun DashboardContent(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Direct SYNAPSE AI Chat Query Input Bar
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .background(controlBgColor, RoundedCornerShape(16.dp))
-                        .border(1.dp, controlBorderColor, RoundedCornerShape(16.dp))
-                        .clickable { onAskAiClick() }
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "✨", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Ask SYNAPSE AI anything...",
-                                color = TextMuted,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🎙️", fontSize = 16.sp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .background(BlueAccent, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = "↑",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                    }
-                }
             }
 
             // Light Sheet Container
@@ -323,7 +275,6 @@ fun DashboardContent(
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
@@ -331,7 +282,6 @@ fun DashboardContent(
                                         color = TextSecondary,
                                         fontSize = 13.sp,
                                     )
-                                    Text(text = "🔔", fontSize = 16.sp)
                                 }
 
                                 Spacer(modifier = Modifier.height(10.dp))
@@ -612,56 +562,6 @@ fun DashboardContent(
                         }
                     }
 
-                    // 4. Recommended for You Card
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 2.dp
-                    ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "Recommended for you",
-                                    color = Color(0xFF0F172A),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .background(Color(0xFFF3E8FF), CircleShape),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(text = "∑", color = PurpleAccent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column {
-                                        Text(
-                                            text = uiState.recommendedTitle,
-                                            color = Color(0xFF0F172A),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                        Text(
-                                            text = uiState.recommendedSubtitle,
-                                            color = Color(0xFF64748B),
-                                            fontSize = 12.sp,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                     // 5. AI Tutor Banner Card
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
@@ -806,10 +706,19 @@ fun DashboardContent(
                     OutlinedTextField(
                         value = newTaskTitle,
                         onValueChange = { newTaskTitle = it },
-                        placeholder = { Text("e.g. Master Linear Algebra", fontSize = 13.sp) },
+                        placeholder = { Text("e.g. Master Linear Algebra", fontSize = 13.sp, color = Color(0xFF94A3B8)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF0F172A),
+                            cursorColor = Color(0xFF2563EB),
+                            focusedBorderColor = Color(0xFF2563EB),
+                            unfocusedBorderColor = Color(0xFFCBD5E1),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                        )
                     )
 
                     Text(

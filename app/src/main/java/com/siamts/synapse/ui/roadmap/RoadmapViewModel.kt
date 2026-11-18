@@ -122,8 +122,12 @@ class RoadmapViewModel(
 
         val total = chapters.size.coerceAtLeast(1)
         val percent = (completedCount * 100) / total
-        val sName = subject?.name ?: BaseCurriculumData.getSubjectById(targetId.toString())?.name ?: "Mathematics"
-        val sIcon = subject?.iconSymbol ?: BaseCurriculumData.getSubjectById(targetId.toString())?.iconSymbol ?: "∑"
+        val sName = subject?.name?.takeIf { it.isNotBlank() }
+            ?: BaseCurriculumData.getSubjectById(targetId.toString())?.name
+            ?: "Curriculum Subject"
+        val sIcon = subject?.iconSymbol?.takeIf { it.isNotBlank() }
+            ?: BaseCurriculumData.getSubjectById(targetId.toString())?.iconSymbol
+            ?: "📚"
 
         _uiState.update {
             it.copy(

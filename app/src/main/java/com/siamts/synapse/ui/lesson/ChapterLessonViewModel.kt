@@ -42,10 +42,21 @@ class ChapterLessonViewModel(
     }
 
     fun loadChapterLesson(chapterId: Int, subjectId: String? = null) {
-        val targetChapterId = if (chapterId > 0) chapterId else 4
+        val resolvedSubject = if (!subjectId.isNullOrBlank()) {
+            BaseCurriculumData.getSubjectById(subjectId)
+        } else null
+        val targetChapterId = if (chapterId > 0) {
+            chapterId
+        } else {
+            resolvedSubject?.chapters?.firstOrNull()?.chapterId ?: 1
+        }
 
         // 1. Immediately apply local curriculum lesson synchronously for instant offline display
         val localLesson = BaseCurriculumData.getChapterLesson(targetChapterId)
+            ?: (if (resolvedSubject?.chapters?.isNotEmpty() == true) {
+                resolvedSubject.chapters.firstOrNull()?.let { BaseCurriculumData.getChapterLesson(it.chapterId) }
+            } else null)
+
         if (localLesson?.data != null) {
             applyLessonData(targetChapterId, localLesson.data)
         }
@@ -109,7 +120,11 @@ class ChapterLessonViewModel(
                     BaseCurriculumData.getChapterById(targetChapterId)?.title ?: "Lesson"
                 },
                 subjectId = sub?.id ?: 1,
-                subjectName = sub?.name.orEmpty().ifEmpty { "Mathematics" },
+                subjectName = sub?.name.orEmpty().ifEmpty {
+                    BaseCurriculumData.getSubjectById((sub?.id ?: 1).toString())?.name
+                        ?: BaseCurriculumData.subjects.firstOrNull { s -> s.chapters.any { it.chapterId == targetChapterId } }?.name
+                        ?: "Curriculum Subject"
+                },
                 subjectSlug = sub?.slug.orEmpty(),
                 chapterOrder = chap?.chapterOrder ?: 1,
                 durationMinutes = chap?.estimatedMinutes ?: 15,

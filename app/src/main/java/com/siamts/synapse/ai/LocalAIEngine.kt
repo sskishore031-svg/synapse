@@ -646,6 +646,13 @@ class LocalAIEngine private constructor(context: Context?) {
             return casualSlangResp
         }
 
+        // 4B. STAGE 4B: Subject Overview Intent ("what about biology", "uses of math", etc.)
+        val subjectOverviewResp = checkSubjectOverviewIntent(lowerQuery, normalized)
+        if (subjectOverviewResp != null) {
+            consecutiveUnclearCount = 0
+            return subjectOverviewResp
+        }
+
         // Lazy asset load fallback if not loaded yet
         if (chunks.isEmpty()) {
             try {
@@ -1494,6 +1501,492 @@ class LocalAIEngine private constructor(context: Context?) {
                 confidenceScore = 100.0
             )
         }
+    }
+
+    private data class SubjectOverviewInfo(
+        val name: String,
+        val whatItIs: String,
+        val keyUses: String,
+        val advantages: String,
+        val challenges: String
+    )
+
+    private fun checkSubjectOverviewIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val norm = normalized.trim().lowercase(Locale.ROOT)
+
+        val overviewRegex = Regex("^(?:what\\s+about|what\\s+abou|about|tell\\s+me\\s+about|uses\\s+of|use\\s+of|advantages\\s+of|advantage\\s+of|benefits\\s+of|overview\\s+of|explain\\s+about|scope\\s+of|details\\s+of)\\s+([a-zA-Z\\s]+)$")
+        val match = overviewRegex.find(clean)
+
+        var candidateSubject = match?.groupValues?.getOrNull(1)?.trim()?.lowercase(Locale.ROOT)
+
+        if (candidateSubject.isNullOrBlank()) {
+            val standaloneSubjects = setOf(
+                "math", "maths", "mathematics", "computer science", "cs", "data science", "ds",
+                "artificial intelligence", "ai", "machine learning", "ml", "deep learning",
+                "physics", "chemistry", "biology", "bio", "history", "world history",
+                "economics", "finance", "environmental science", "ecology", "computer networks",
+                "networking", "cyber security", "cybersecurity", "security", "psychology",
+                "business", "business management", "electrical engineering", "astronomy",
+                "astrophysics", "statistics", "software engineering", "cloud computing",
+                "operating systems", "dbms", "database", "web development", "mobile development",
+                "blockchain", "robotics", "mechanical engineering", "civil engineering",
+                "biotechnology", "genetics", "neuroscience", "organic chemistry", "quantum physics",
+                "calculus", "linear algebra", "discrete mathematics", "philosophy", "sociology",
+                "political science", "literature", "accounting", "marketing", "cryptography",
+                "information technology", "architecture", "aerospace engineering",
+                "chemical engineering", "biomedical engineering", "nanotechnology",
+                "supply chain", "supply chain management", "law"
+            )
+            if (norm in standaloneSubjects) {
+                candidateSubject = norm
+            }
+        }
+
+        if (candidateSubject.isNullOrBlank()) return null
+
+        val info = resolveSubjectOverview(candidateSubject) ?: return null
+
+        val responseText = buildString {
+            appendLine("* **What it is:**")
+            appendLine(info.whatItIs)
+            appendLine()
+            appendLine("* **Key Uses & Real-World Work:**")
+            appendLine(info.keyUses)
+            appendLine()
+            appendLine("* **Advantages:**")
+            appendLine(info.advantages)
+            appendLine()
+            appendLine("* **Disadvantages / Challenges:**")
+            append(info.challenges)
+        }
+
+        return LocalAiResponse(
+            paragraph1 = responseText,
+            paragraph2 = "",
+            matchedSubject = info.name,
+            matchedChapter = "Overview",
+            matchedTopic = "${info.name} Overview",
+            confidenceScore = 98.0
+        )
+    }
+
+    private fun resolveSubjectOverview(candidate: String): SubjectOverviewInfo? {
+        val key = candidate.trim().lowercase(Locale.ROOT)
+        val overviewMap = mapOf(
+            "mathematics" to SubjectOverviewInfo(
+                "Mathematics",
+                "Mathematics is the foundational science of structure, quantity, space, and change, studying patterns through rigorous logical deduction and formal proofs.",
+                "Used across machine learning algorithms, quantitative finance, structural and aerospace engineering, cryptography, data science, and physics simulations.",
+                "Builds unparalleled analytical rigor, sharp abstract problem-solving, and universally transferable reasoning applied across all STEM fields.",
+                "High abstraction levels, complex prerequisite chains, and unforgiving precision requirements where minor computational errors alter entire proofs."
+            ),
+            "computer science" to SubjectOverviewInfo(
+                "Computer Science",
+                "Computer Science is the systematic study of computation, algorithmic problem-solving, data structures, software architecture, and the interaction between hardware and software.",
+                "Powering modern software engineering, operating systems, cloud infrastructures, distributed web systems, cybersecurity, and artificial intelligence platforms.",
+                "Massive industry demand, high scalability of digital solutions, rapid feedback cycles, and endless creative engineering possibilities.",
+                "Fast-evolving technological landscape requiring constant continuous learning, intricate software debugging, and complex system concurrency issues."
+            ),
+            "data science" to SubjectOverviewInfo(
+                "Data Science",
+                "Data Science is an interdisciplinary field combining statistics, machine learning, and domain knowledge to extract actionable insights and predictive intelligence from structured and unstructured data.",
+                "Business intelligence, algorithmic trading, customer behavioral modeling, recommendation engines (Netflix/Spotify), healthcare diagnostics, and supply chain forecasting.",
+                "Data-driven decision making, high industry valuation, and powerful synergy across business strategy and machine intelligence.",
+                "Noisy and messy real-world data, risks of statistical bias and over-fitting, and complex data pipeline maintenance."
+            ),
+            "artificial intelligence" to SubjectOverviewInfo(
+                "Artificial Intelligence",
+                "Artificial Intelligence is the branch of computer science dedicated to engineering intelligent agents that simulate cognitive capabilities like learning, pattern recognition, decision-making, and natural language understanding.",
+                "Large language models, autonomous self-driving vehicles, medical imaging diagnosis, automated robotics, real-time speech translation, and intelligent game theory.",
+                "Automates complex cognitive workflows, enables superhuman processing of massive data, and drives groundbreaking innovations across every scientific domain.",
+                "High computational and GPU power costs, 'black-box' explainability challenges, hallucination risks, and complex ethical and alignment considerations."
+            ),
+            "physics" to SubjectOverviewInfo(
+                "Physics",
+                "Physics is the fundamental natural science that investigates matter, energy, space, time, and the core physical laws that govern the universe from subatomic particles to cosmic scales.",
+                "Semiconductor hardware design, aerospace and satellite navigation, quantum computing, renewable energy systems, laser optics, and medical radiation technology.",
+                "Provides the deepest mechanistic understanding of physical reality, first-principles thinking, and universal mathematical modeling skills.",
+                "Demanding mathematical machinery (multivariable calculus, tensor algebra, differential equations) and unintuitive counter-intuitive quantum concepts."
+            ),
+            "chemistry" to SubjectOverviewInfo(
+                "Chemistry",
+                "Chemistry is the central science studying the composition, molecular structure, properties, and reactive transformations of matter at the atomic scale.",
+                "Pharmaceutical drug discovery, battery technology and energy storage, materials engineering, polymers, petrochemicals, and agricultural fertilizers.",
+                "Direct tangible impact on medicine and green energy, bridging physics and biology, and high industrial manufacturing relevance.",
+                "Extensive memorization of reaction pathways, complex spatial 3D stereochemistry, and hazardous laboratory handling protocols."
+            ),
+            "biology" to SubjectOverviewInfo(
+                "Biology",
+                "Biology is the natural science dedicated to investigating living organisms, covering cellular processes, physiological systems, genetic inheritance, evolutionary history, and ecological interactions.",
+                "Biomedical research, genomic medicine and CRISPR gene editing, vaccine engineering, ecological conservation, agricultural crop improvement, and forensic pathology.",
+                "Directly advances human health and disease prevention, explains the living natural world, and drives multi-billion dollar biotechnology innovations.",
+                "High conceptual complexity with endless biological exceptions, massive terminology memorization, and long experimental wet-lab incubation periods."
+            ),
+            "history" to SubjectOverviewInfo(
+                "World History",
+                "History is the academic study of past human societies, civilizations, cultural revolutions, governance systems, and geopolitical transformations across time.",
+                "Foreign policy and diplomatic strategy, legal jurisprudence, historical document archiving, geopolitical risk assessment, journalism, and public governance.",
+                "Contextualizes modern global politics, refines critical source evaluation, and teaches pattern recognition across human socio-economic cycles.",
+                "Subjective source interpretations, historiographical biases, and reliance on qualitative archival evidence rather than repeatable experiments."
+            ),
+            "economics" to SubjectOverviewInfo(
+                "Economics & Finance",
+                "Economics and Finance analyze the production, distribution, and consumption of scarce resources, examining individual decision-making, market mechanisms, and monetary policy.",
+                "Central banking, corporate financial strategy, investment portfolio management, public policy design, market pricing models, and international trade treaties.",
+                "High-earning career paths in investment banking and consulting, quantitative financial literacy, and deep understanding of global market dynamics.",
+                "Economic models depend heavily on simplifying behavioral assumptions, market volatility, and unpredictable geopolitical shocks."
+            ),
+            "environmental science" to SubjectOverviewInfo(
+                "Environmental Science",
+                "Environmental Science is an integrative discipline examining ecological systems, climate dynamics, human environmental impact, and sustainable natural resource management.",
+                "Carbon emissions auditing, renewable energy transition, wildlife conservation planning, environmental impact assessments (EIA), and climate policy advocacy.",
+                "Addresses the world's most critical sustainability challenges, clean energy innovations, and growing environmental regulatory compliance demand.",
+                "Complex multi-variable climate feedback loops, political polarization surrounding climate policy, and high friction in global treaty enforcement."
+            ),
+            "computer networks" to SubjectOverviewInfo(
+                "Computer Networks",
+                "Computer Networks explores the physical and logical communication architectures that interconnect computing devices, transmitting data packets through structured protocol layers.",
+                "Internet routing, cloud data center architectures, 5G wireless telecommunications, Content Delivery Networks (CDNs), and enterprise VPNs.",
+                "Essential foundation for all connected devices and web systems, stable enterprise infrastructure roles, and vital knowledge for cloud scale.",
+                "Complex packet loss and latency troubleshooting, distributed failure modes, and constant threat of network-level security attacks."
+            ),
+            "cyber security" to SubjectOverviewInfo(
+                "Cyber Security",
+                "Cyber Security is the practice of safeguarding digital architectures, servers, endpoints, networks, and confidential data from malicious intrusions, ransomware, and vulnerabilities.",
+                "Penetration testing and ethical hacking, security operations centers (SOC), secure cryptographic protocols, vulnerability patching, and compliance auditing.",
+                "Massive global talent shortage, high compensation, mission-critical organizational impact, and engaging adversarial problem solving.",
+                "Asymmetric battlefield (defenders must block all attacks, attackers need one gap), high burnout stress during active breaches, and relentless evolving threats."
+            ),
+            "psychology" to SubjectOverviewInfo(
+                "Psychology",
+                "Psychology is the scientific study of the mind and human behavior, examining cognitive perception, emotional regulation, neurobiology, and interpersonal social dynamics.",
+                "Clinical psychotherapy and mental health, User Experience (UX) product design, behavioral economics, organizational leadership, and marketing psychology.",
+                "Improves human understanding and emotional intelligence, enhances user-centered software design, and vital for mental health therapy.",
+                "High individual behavioral variance, replication crises in experimental psychological studies, and emotional fatigue in clinical therapy roles."
+            ),
+            "business" to SubjectOverviewInfo(
+                "Business Management",
+                "Business Management focuses on coordinating organizational resources, strategic planning, human capital, and operational execution to achieve sustainable commercial success.",
+                "Corporate strategy, startup scaling and venture capital, operational supply chains, product management, human resources, and marketing execution.",
+                "Broad executive career mobility, foundational leadership skills, and universal applicability across private enterprises and non-profits.",
+                "High dependency on market competition, interpersonal corporate friction, and high organizational accountability during revenue downturns."
+            ),
+            "electrical engineering" to SubjectOverviewInfo(
+                "Electrical Engineering",
+                "Electrical Engineering investigates the physics and practical engineering of electricity, electromagnetism, analog/digital electronics, power systems, and signal processing.",
+                "Microchip (VLSI) design, electric vehicle powertrains, power grid transmission, wireless telecommunications, and IoT embedded microcontrollers.",
+                "Powers the hardware backbone of modern civilization, strong cross-discipline hardware-software synergy, and protected engineering licensing.",
+                "Steep physical mathematics and electromagnetic field equations, expensive hardware prototyping cycles, and physical electrical hazards."
+            ),
+            "astronomy" to SubjectOverviewInfo(
+                "Astronomy & Astrophysics",
+                "Astronomy and Astrophysics explore celestial bodies, stellar life cycles, black holes, galactic structures, dark energy, and the cosmological origins of the universe.",
+                "Deep-space satellite exploration, cosmic radiation monitoring, orbital trajectory planning for space agencies, and advanced spectroscopy imaging.",
+                "Expands human knowledge of cosmic origins, pushes the limits of optical and radio sensors, and inspires visionary scientific exploration.",
+                "Inability to conduct hands-on laboratory experiments on celestial targets, scarce academic research positions, and reliance on massive space telescopes."
+            ),
+            "statistics" to SubjectOverviewInfo(
+                "Statistics",
+                "Statistics is the mathematical science of collecting, exploring, organizing, interpreting, and presenting empirical numerical data under uncertainty.",
+                "Clinical medical trials, A/B testing in tech products, actuarial insurance modeling, econometric forecasting, and quality assurance engineering.",
+                "Critical backbone for all empirical research and data science, high analytical demand, and objectivity in scientific conclusions.",
+                "Vulnerable to misinterpretation ('p-hacking', false correlations), abstract probability theory, and sensitive to non-representative sample sizes."
+            ),
+            "software engineering" to SubjectOverviewInfo(
+                "Software Engineering",
+                "Software Engineering is the disciplined engineering approach to the design, implementation, testing, maintenance, and lifecycle management of reliable software systems.",
+                "Enterprise application suites, automated CI/CD pipelines, distributed microservices, operating system kernels, and high-frequency trading platforms.",
+                "Instant global distribution of software products, high salaries, agile workflow feedback, and massive economic leverage.",
+                "Accumulation of technical debt, complex legacy codebases, and frequent production outages requiring high-stakes triage."
+            ),
+            "cloud computing" to SubjectOverviewInfo(
+                "Cloud Computing & DevOps",
+                "Cloud Computing provides on-demand computing power, storage, and networking over the internet, while DevOps unifies software development and IT infrastructure operations.",
+                "Containerized deployments (Kubernetes/Docker), serverless backends, auto-scaling web architectures, infrastructure as code (Terraform), and disaster recovery.",
+                "Eliminates physical data centers, scales apps effortlessly to millions of users, and reduces operational maintenance overhead.",
+                "Complex multi-cloud pricing and runaway billing costs, shared-responsibility security models, and distributed microservice network outages."
+            ),
+            "operating systems" to SubjectOverviewInfo(
+                "Operating Systems",
+                "Operating Systems is the study of core system software that manages hardware resources, processes, memory allocation, storage filesystems, and security abstractions.",
+                "Linux and Unix kernel development, real-time operating systems (RTOS) in aviation/robotics, hypervisors (KVM), and mobile platforms (Android/iOS).",
+                "Reveals how computers truly execute code at the lowest level, optimizes hardware efficiency, and foundational for system programmers.",
+                "Hard-to-reproduce race conditions and deadlocks, memory corruption bugs in low-level languages (C/Rust), and unforgiving kernel panics."
+            ),
+            "database" to SubjectOverviewInfo(
+                "Database Management Systems (DBMS)",
+                "DBMS focuses on software systems that store, retrieve, index, and organize structured and unstructured data while ensuring ACID transaction guarantees.",
+                "Relational SQL banking ledgers, NoSQL distributed key-value stores (Redis/Cassandra), vector databases for LLMs, and analytical data warehouses.",
+                "Guarantees mission-critical data integrity, enables sub-millisecond query execution over petabytes, and essential for every application.",
+                "Distributed consensus (CAP theorem trade-offs), complex query execution plan tuning, and catastrophic database migration risks."
+            ),
+            "web development" to SubjectOverviewInfo(
+                "Web Development",
+                "Web Development involves building interactive websites and web applications across client-side frontend interfaces, server-side backends, and APIs.",
+                "SaaS software products, modern e-commerce storefronts, interactive web portals, responsive progressive web apps (PWAs), and REST/GraphQL APIs.",
+                "Lowest barrier to entry for building working apps, instant cross-platform browser accessibility, and huge freelance/job market.",
+                "Rapidly changing frontend framework churn, cross-browser compatibility quirks, and frontend state management complexity."
+            ),
+            "mobile development" to SubjectOverviewInfo(
+                "Mobile App Development",
+                "Mobile App Development focuses on engineering applications optimized for mobile operating systems, touch interfaces, and portable embedded sensors.",
+                "Consumer smartphone apps, on-demand ride/food delivery logistics, mobile banking apps, wearable health sensors, and mobile games.",
+                "Direct access to billions of active smartphone users, rich device sensors (GPS/Camera/Biometrics), and high engagement.",
+                "Strict app store review delays, device fragmentation (varying screen sizes and Android OS versions), and battery consumption constraints."
+            ),
+            "blockchain" to SubjectOverviewInfo(
+                "Blockchain & Cryptography",
+                "Blockchain is a decentralized, cryptographically secure distributed ledger system that records transactions across peer-to-peer nodes without central authorities.",
+                "Decentralized finance (DeFi), immutable audit trails, smart contracts (Ethereum), zero-knowledge identity verification, and supply chain provenance.",
+                "Trustless peer-to-peer verification, resistance to centralized censorship and tampering, and automated smart contract execution.",
+                "High transaction latency and throughput bottlenecks, irreversible code vulnerability exploits in smart contracts, and regulatory uncertainty."
+            ),
+            "robotics" to SubjectOverviewInfo(
+                "Robotics",
+                "Robotics combines mechanical engineering, electronics, computer science, and control theory to design autonomous physical machines that sense and interact with the physical world.",
+                "Automated factory assembly lines, robotic surgery assistants, warehouse automation (Amazon Kiva), interplanetary rovers, and humanoid robots.",
+                "Replaces dangerous human labor in hazardous environments, increases manufacturing precision and speed, and embodies physical AI.",
+                "High hardware prototyping costs, actuator mechanical wear and tear, and complex real-time sensory perception under physical noise."
+            ),
+            "mechanical engineering" to SubjectOverviewInfo(
+                "Mechanical Engineering",
+                "Mechanical Engineering applies physics, materials science, and mathematics to design, analyze, manufacture, and maintain mechanical systems and thermal machinery.",
+                "Automotive engine and chassis design, aircraft turbines, HVAC thermal regulation, industrial tooling, and renewable wind turbines.",
+                "One of the broadest and most durable engineering disciplines, tangible physical creation, and foundational to manufacturing industries.",
+                "Long manufacturing lead times, strict safety certifications where failures cause physical catastrophe, and material fatigue issues."
+            ),
+            "civil engineering" to SubjectOverviewInfo(
+                "Civil Engineering",
+                "Civil Engineering is the branch of engineering that designs, constructs, and maintains physical infrastructure including bridges, highways, dams, tunnels, and skyscrapers.",
+                "Urban transportation networks, earthquake-resilient architectural design, municipal water supply and sewage, and mega-structural bridges.",
+                "Direct contribution to community infrastructure and civilization building, stable public and private employment, and enduring physical legacies.",
+                "Enormous capital budgets with heavy bureaucratic and environmental oversight, high liability risk for structural failures, and slow adoption of new construction tech."
+            ),
+            "biotechnology" to SubjectOverviewInfo(
+                "Biotechnology",
+                "Biotechnology utilizes biological systems, cellular machinery, and living organisms to create innovative medical treatments, industrial enzymes, and agricultural products.",
+                "Monoclonal antibody synthesis, synthetic insulin production, biodegradable bioplastics, bio-fuels, and drought-resistant genetically modified crops.",
+                "Revolutionary potential to treat previously incurable diseases, creates sustainable green bio-alternatives, and high financial investment.",
+                "Extremely long FDA clinical trial timelines (10+ years), massive research capital costs, and complex bioethical regulations."
+            ),
+            "genetics" to SubjectOverviewInfo(
+                "Genetics & Genomics",
+                "Genetics is the scientific study of heredity, genes, genomic sequencing, and genetic variation in living organisms.",
+                "Personalized medicine, prenatal genetic screening, CRISPR base editing, agricultural selective breeding, and hereditary cancer risk profiling.",
+                "Decodes the fundamental blueprint of life, unlocks targeted therapies, and revolutionizes forensic investigations.",
+                "Ethical debates surrounding germline gene modifications, gene patenting disputes, and complex polygenic interactions."
+            ),
+            "neuroscience" to SubjectOverviewInfo(
+                "Neuroscience",
+                "Neuroscience is the multidisciplinary science studying the nervous system and brain architecture, from cellular synaptic firing to cognitive brain networks.",
+                "Brain-Computer Interfaces (Neuralink), Alzheimer's and Parkinson's therapeutics, neuro-imaging (fMRI), and biologically inspired AI algorithms.",
+                "Tackles the ultimate mystery of human consciousness and memory, with profound applications in mental health and cognitive restoration.",
+                "Incredible biological complexity with billions of interconnected neurons, limited non-invasive measurement precision, and elusive neural decoding."
+            ),
+            "organic chemistry" to SubjectOverviewInfo(
+                "Organic Chemistry",
+                "Organic Chemistry is the study of the structure, properties, composition, reactions, and synthesis of carbon-based compounds.",
+                "Small-molecule pharmaceutical synthesis, petrochemical refining, specialty polymers, agrochemicals, and natural product extraction.",
+                "Indispensable molecular foundation for all drug development, paints, plastics, and biochemistry.",
+                "Challenging reaction mechanism pathways, stereochemical chirality puzzles, and hazardous laboratory reagents."
+            ),
+            "quantum physics" to SubjectOverviewInfo(
+                "Quantum Physics",
+                "Quantum Physics investigates physical behavior at atomic and subatomic scales where energy, momentum, and angular momentum are restricted to quantized values.",
+                "Quantum computing (qubits), quantum key distribution (QKD cryptography), atomic clocks for GPS, and laser diode spectroscopy.",
+                "Unlocks the deepest physical insights of our universe and drives exponential advances in quantum information processing.",
+                "Paradoxical phenomena (superposition, entanglement) that defy classical intuition, and extreme quantum decoherence challenges in hardware."
+            ),
+            "calculus" to SubjectOverviewInfo(
+                "Calculus",
+                "Calculus is the mathematical branch that studies continuous change, split into differential calculus (rates of change) and integral calculus (accumulation of quantities).",
+                "Gradient descent in machine learning, physical trajectory computation, optimization of economic profit, and signal processing transforms.",
+                "The foundational language of all physical and computational optimization, enabling modeling of dynamic continuous systems.",
+                "High barrier to entry with limit definitions, integration technique memorization, and rigorous multivariable coordinate conversions."
+            ),
+            "linear algebra" to SubjectOverviewInfo(
+                "Linear Algebra",
+                "Linear Algebra is the branch of mathematics focusing on vector spaces, linear transformations, matrices, and systems of linear equations.",
+                "3D computer graphics transformations, neural network weight tensors, Google PageRank, quantum state representations, and PCA dimensionality reduction.",
+                "Compact representation of high-dimensional data, computationally efficient on modern GPUs, and the mathematical heart of AI.",
+                "Abstract geometric transformations in n-dimensional spaces, unintuitive eigenvalue/eigenvector concepts, and matrix condition number instabilities."
+            ),
+            "discrete mathematics" to SubjectOverviewInfo(
+                "Discrete Mathematics",
+                "Discrete Mathematics is the study of mathematical structures that are fundamentally countable and distinct rather than continuous.",
+                "Graph theory for social network modeling, relational database query optimization, formal logic in compiler verification, and cryptographic modular arithmetic.",
+                "Essential theoretical pillar of computer science algorithms, proof techniques (induction, contradiction), and computational complexity theory.",
+                "Requires rigorous combinatorial reasoning, formal symbolic logic manipulation, and absence of smooth calculus approximations."
+            ),
+            "philosophy" to SubjectOverviewInfo(
+                "Philosophy & Ethics",
+                "Philosophy explores fundamental questions regarding existence, knowledge, ethics, logic, mind, and the principles of rational discourse.",
+                "AI alignment and safety ethics, legal reasoning, political constitutional theory, bioethics review boards, and logic formalization.",
+                "Sharpens flawless critical thinking, clarifies core assumptions, and navigates moral dilemmas in rapidly advancing technological eras.",
+                "Absence of empirical consensus, highly abstract metaphysical debates, and frequently misunderstood as having little direct commercial output."
+            ),
+            "sociology" to SubjectOverviewInfo(
+                "Sociology",
+                "Sociology is the scientific study of human society, social relationships, collective behavior, social stratification, and institutional dynamics.",
+                "Public policy design, urban community planning, demographic census analysis, market research, and corporate social responsibility (CSR).",
+                "Exposes systemic social patterns and inequalities, fosters empathy, and informs progressive governance and community initiatives.",
+                "Difficulty isolating confounding variables in complex populations, ideological debates, and qualitative research methodology disputes."
+            ),
+            "political science" to SubjectOverviewInfo(
+                "Political Science",
+                "Political Science investigates government systems, political behavior, public policies, electoral mechanisms, and international relations.",
+                "Electoral campaign strategy, legislative drafting, diplomatic negotiations, geopolitical intelligence, and public administration.",
+                "Demystifies governmental power structures, prepares for legal and diplomatic leadership, and protects democratic processes.",
+                "High polarization in contemporary politics, volatile voter sentiment, and gap between theoretical policy design and real-world implementation."
+            ),
+            "literature" to SubjectOverviewInfo(
+                "English Literature",
+                "English Literature studies written works of artistic value across cultural eras, analyzing narrative technique, thematic depth, rhetoric, and cultural commentary.",
+                "Professional copywriting, narrative writing in gaming/film, literary publishing, communications management, and content strategy.",
+                "Cultivates exceptional written expression, emotional empathy, and powerful rhetorical persuasion.",
+                "Subjective grading and critical reception, shifting publishing markets, and intense competition in creative writing industries."
+            ),
+            "accounting" to SubjectOverviewInfo(
+                "Accounting",
+                "Accounting is the measurement, processing, and communication of financial and non-financial information about economic entities.",
+                "Statutory corporate tax preparation, external financial auditing (Big 4), forensic fraud investigation, and managerial budgeting.",
+                "Rock-solid job stability, protected professional designations (CPA/CA), and foundational transparency for capital markets.",
+                "Strict regulatory compliance rules, repetitive manual ledger entries, and intense overtime during quarterly tax seasons."
+            ),
+            "marketing" to SubjectOverviewInfo(
+                "Marketing",
+                "Marketing is the business process of creating, communicating, delivering, and exchanging offerings that have value for customers, clients, and society.",
+                "Digital SEO/SEM customer acquisition, brand storytelling, consumer conversion funnels, market segmentation, and viral social media campaigns.",
+                "Direct driver of corporate revenue, creative and data-driven duality, and fast feedback from customer purchasing habits.",
+                "High platform ad cost volatility (Google/Meta), consumer ad fatigue, and difficulty proving long-term brand equity ROI."
+            ),
+            "information technology" to SubjectOverviewInfo(
+                "Information Technology",
+                "Information Technology focuses on the deployment, administration, security, and maintenance of computer systems, networks, and business software suites.",
+                "Enterprise IT support, identity management (Active Directory), corporate network security, systems administration, and hardware provisioning.",
+                "Universal demand across every modern business, clear certification career pathways (CompTIA, Cisco), and reliable career progression.",
+                "Repetitive ticket troubleshooting, sudden emergency outages outside business hours, and managing non-technical end-user expectations."
+            ),
+            "architecture" to SubjectOverviewInfo(
+                "Architecture",
+                "Architecture is the art and science of designing and erecting buildings, balancing aesthetic appeal, structural integrity, and human functionality.",
+                "Sustainable green building design, urban residential housing, commercial skyscraper blueprints, and historical preservation.",
+                "Leaves enduring aesthetic and physical monuments, combines creative artistry with engineering physics, and transforms city skylines.",
+                "Lengthy multi-year licensure requirements, demanding client revision cycles, and strict zoning code constraints."
+            ),
+            "aerospace engineering" to SubjectOverviewInfo(
+                "Aerospace Engineering",
+                "Aerospace Engineering is the primary field of engineering concerned with the development of aircraft, spacecraft, satellites, and propulsion missiles.",
+                "Commercial passenger aircraft design, orbital space launch vehicles (SpaceX), aerodynamic simulations, and satellite constellation tracking.",
+                "Pushes the physical frontier of human exploration, high prestige, and cutting-edge aerodynamics and materials science.",
+                "Zero tolerance for structural or computational failure, multi-decade design cycles, and strict national defense security clearances."
+            ),
+            "chemical engineering" to SubjectOverviewInfo(
+                "Chemical Engineering",
+                "Chemical Engineering applies physical sciences and life sciences together with mathematics and economics to convert chemicals and raw materials into valuable products at industrial scale.",
+                "Large-scale petroleum refining, pharmaceutical batch production, water desalination plants, and industrial food processing.",
+                "High starting salaries, mastery of industrial scaling from test-tube to factory, and versatile manufacturing careers.",
+                "Extreme industrial plant hazards (high pressure, toxic chemicals), remote manufacturing plant locations, and heavy emissions regulations."
+            ),
+            "biomedical engineering" to SubjectOverviewInfo(
+                "Biomedical Engineering",
+                "Biomedical Engineering combines engineering design and problem-solving principles with medical and biological sciences to advance healthcare treatment.",
+                "Prosthetic limb engineering, artificial organ development, MRI/CT scanner design, pacemaker electronics, and surgical robotics.",
+                "Directly improves human lifespan and patient quality of life, bridging clinical medicine and advanced hardware engineering.",
+                "Extremely stringent FDA medical device approvals, high risk of litigation, and complex biological-hardware biocompatibility issues."
+            ),
+            "nanotechnology" to SubjectOverviewInfo(
+                "Nanotechnology",
+                "Nanotechnology is the manipulation of matter on an atomic, molecular, and supramolecular scale (1 to 100 nanometers).",
+                "Targeted cancer drug nanocarriers, carbon nanotube materials, semiconductor EUV lithography, and self-cleaning hydrophobic coatings.",
+                "Unlocks revolutionary material properties invisible at macro scales, enabling hyper-efficient microchips and revolutionary medicines.",
+                "Expensive clean-room fabrication facilities, difficulty controlling molecular self-assembly, and unknown environmental nanotoxicology risks."
+            ),
+            "supply chain" to SubjectOverviewInfo(
+                "Supply Chain & Logistics",
+                "Supply Chain Management oversees the entire flow of goods, data, and finances related to a product or service, from raw material procurement to final customer delivery.",
+                "Global shipping fleet optimization, Amazon fulfillment warehousing, just-in-time inventory manufacturing, and demand forecasting.",
+                "Crucial backbone of global commerce, high organizational visibility, and heavy adoption of algorithmic and AI automation.",
+                "High vulnerability to geopolitical conflicts and pandemic disruptions, relentless margin pressure, and round-the-clock operational stress."
+            ),
+            "law" to SubjectOverviewInfo(
+                "Law & Legal Studies",
+                "Law is the system of rules created and enforced through social or governmental institutions to regulate behavior, settle disputes, and ensure justice.",
+                "Corporate contract negotiations, intellectual property litigation, criminal defense and prosecution, and constitutional advocacy.",
+                "Immense intellectual prestige, high-level advocacy power, and lucrative legal partnership earnings.",
+                "Exhaustive legal case law reading and citation memorization, adversarial courtroom environments, and high-stakes client accountability."
+            )
+        )
+
+        val aliasMap = mapOf(
+            "math" to "mathematics", "maths" to "mathematics", "algebra" to "mathematics", "calculus" to "calculus",
+            "cs" to "computer science", "programming" to "computer science", "coding" to "computer science",
+            "ds" to "data science", "data analytics" to "data science",
+            "ai" to "artificial intelligence", "ml" to "artificial intelligence", "machine learning" to "artificial intelligence", "deep learning" to "artificial intelligence",
+            "phy" to "physics", "waves" to "physics",
+            "chem" to "chemistry", "bonding" to "chemistry", "chemical bonding" to "chemistry",
+            "bio" to "biology", "life science" to "biology", "biological sciences" to "biology",
+            "world history" to "history", "ancient history" to "history",
+            "finance" to "economics", "econ" to "economics", "macroeconomics" to "economics", "microeconomics" to "economics",
+            "ecology" to "environmental science", "environment" to "environmental science", "environmental" to "environmental science",
+            "networks" to "computer networks", "networking" to "computer networks", "net" to "computer networks",
+            "security" to "cyber security", "cybersecurity" to "cyber security", "infosec" to "cyber security", "sec" to "cyber security",
+            "psych" to "psychology",
+            "management" to "business", "business management" to "business", "mba" to "business", "biz" to "business",
+            "electronics" to "electrical engineering", "circuits" to "electrical engineering", "ee" to "electrical engineering",
+            "astrophysics" to "astronomy", "astro" to "astronomy",
+            "swe" to "software engineering", "software dev" to "software engineering",
+            "devops" to "cloud computing", "cloud" to "cloud computing", "aws" to "cloud computing",
+            "os" to "operating systems", "linux" to "operating systems",
+            "dbms" to "database", "databases" to "database", "sql" to "database",
+            "web dev" to "web development", "frontend" to "web development", "backend" to "web development",
+            "mobile" to "mobile development", "android" to "mobile development", "ios" to "mobile development",
+            "crypto" to "blockchain", "cryptocurrency" to "blockchain", "cryptography" to "blockchain",
+            "automation" to "robotics",
+            "mechanics" to "mechanical engineering",
+            "structural engineering" to "civil engineering",
+            "biotech" to "biotechnology",
+            "genomics" to "genetics",
+            "brain" to "neuroscience",
+            "quantum" to "quantum physics", "quantum mechanics" to "quantum physics",
+            "matrices" to "linear algebra",
+            "discrete math" to "discrete mathematics",
+            "ethics" to "philosophy",
+            "pol sci" to "political science", "politics" to "political science", "govt" to "political science",
+            "english" to "literature", "english literature" to "literature",
+            "audit" to "accounting",
+            "it" to "information technology",
+            "aeronautics" to "aerospace engineering",
+            "bioengineering" to "biomedical engineering", "bme" to "biomedical engineering",
+            "logistics" to "supply chain", "supply chain management" to "supply chain",
+            "legal" to "law", "jurisprudence" to "law"
+        )
+
+        val resolvedKey = aliasMap[key] ?: key
+        if (overviewMap.containsKey(resolvedKey)) {
+            return overviewMap[resolvedKey]
+        }
+
+        val queryWords = key.split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (queryWords.size == 1) {
+            for ((k, v) in overviewMap) {
+                if (key == k || k.contains(key)) {
+                    return v
+                }
+            }
+        }
+
+        val formattedName = candidate.split(" ").filter { it.isNotBlank() }
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+
+        return SubjectOverviewInfo(
+            name = formattedName,
+            whatItIs = "$formattedName is an academic discipline focused on exploring the foundational principles, analytical methodologies, and structured theories that govern its field of study.",
+            keyUses = "Practitioners and scholars apply $formattedName across modern research, industrial problem-solving, high-level analysis, technology integration, and empirical investigation.",
+            advantages = "Develops rigorous critical reasoning, analytical problem-solving skills, and deep subject-matter expertise with diverse professional applications.",
+            challenges = "Requires substantial dedication, mastery of prerequisite theory, and sustained problem-solving practice to navigate complex abstract concepts."
+        )
     }
 
     private fun hasExplicitContextPronoun(lowerQuery: String): Boolean {

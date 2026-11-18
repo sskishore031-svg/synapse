@@ -27,7 +27,7 @@ data class DashboardUiState(
     val totalTopics: Int = 24,
     val quizScore: Int = 0,
     val quizzesAttempted: Int = 0,
-    val studyStreakDays: Int = 1,
+    val studyStreakDays: Int = 0,
     val todayPlanTotalTime: String = "0 min",
     val todayPlanItems: List<PlanItem> = emptyList(),
     val recommendedTitle: String = "Linear algebra essentials",

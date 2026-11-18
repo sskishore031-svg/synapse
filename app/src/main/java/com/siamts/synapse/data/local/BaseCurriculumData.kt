@@ -121,11 +121,14 @@ object BaseCurriculumData {
         val numId = resolveSubjectNumericId(subjectId)
         val byNum = subjects.firstOrNull { it.subjectId == numId }
         if (byNum != null) return byNum
-        return subjects.firstOrNull {
+        val byBase = subjects.firstOrNull {
             it.id.equals(subjectId, ignoreCase = true) ||
             it.name.equals(subjectId, ignoreCase = true) ||
             it.slug.equals(subjectId, ignoreCase = true)
         }
+        if (byBase != null) return byBase
+
+        return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getSubjectById(subjectId)
     }
 
     fun getChapterById(chapterId: Int): CatalogChapter? {
@@ -133,11 +136,12 @@ object BaseCurriculumData {
             val ch = subj.chapters.firstOrNull { it.chapterId == chapterId }
             if (ch != null) return ch
         }
-        return null
+        return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getChapterById(chapterId)
     }
 
     fun getSubjectChapters(subjectId: Int): SubjectChaptersResponse? {
-        val subject = subjects.firstOrNull { it.subjectId == subjectId } ?: return null
+        val subject = subjects.firstOrNull { it.subjectId == subjectId }
+            ?: return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getSubjectChapters(subjectId)
         val homeSub = HomeSubjectDto(
             id = subject.subjectId,
             name = subject.name,
@@ -174,7 +178,7 @@ object BaseCurriculumData {
     fun getChapterLesson(chapterId: Int): ChapterDetailResponse? {
         val parentSubject = subjects.firstOrNull { subj ->
             subj.chapters.any { it.chapterId == chapterId }
-        } ?: return null
+        } ?: return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getChapterLesson(chapterId)
         val chapter = parentSubject.chapters.firstOrNull { it.chapterId == chapterId } ?: return null
 
         val homeSub = HomeSubjectDto(

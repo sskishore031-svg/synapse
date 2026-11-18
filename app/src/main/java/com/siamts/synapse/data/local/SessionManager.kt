@@ -180,7 +180,7 @@ class SessionManager private constructor(context: Context) {
 
     val studyStreakFlow: Flow<Int> = dataStore.data
         .catch { emit(emptyPreferences()) }
-        .map { preferences -> preferences[KEY_STUDY_STREAK] ?: 1 }
+        .map { preferences -> preferences[KEY_STUDY_STREAK] ?: 0 }
 
     suspend fun recordActiveStudyDay(): Int {
         val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
@@ -205,9 +205,9 @@ class SessionManager private constructor(context: Context) {
     suspend fun getStudyStreak(): Int {
         return try {
             val prefs = dataStore.data.first()
-            prefs[KEY_STUDY_STREAK] ?: 1
+            prefs[KEY_STUDY_STREAK] ?: 0
         } catch (_: Exception) {
-            1
+            0
         }
     }
 
@@ -219,6 +219,9 @@ class SessionManager private constructor(context: Context) {
                 preferences[KEY_USER_PHOTO_URL] = photoUrl
             }
         }
+        try {
+            com.siamts.synapse.data.repository.UserPreferencesRepository.getInstanceOrNull()?.setProfileImagePath(photoUrl)
+        } catch (_: Throwable) {}
     }
 
     suspend fun updateInterests(interests: List<String>) {
