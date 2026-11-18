@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -27,6 +28,11 @@ class UserPreferencesRepository private constructor(context: Context) {
         val KEY_STUDY_REMINDER_ENABLED = booleanPreferencesKey("study_reminder_enabled")
         val KEY_STUDY_REMINDER_HOUR = intPreferencesKey("study_reminder_hour")
         val KEY_STUDY_REMINDER_MINUTE = intPreferencesKey("study_reminder_minute")
+
+        val KEY_PREFERRED_NAME = stringPreferencesKey("ai_preferred_name")
+        val KEY_INCLUDE_FORMULAS = booleanPreferencesKey("ai_include_formulas")
+        val KEY_INCLUDE_EXAMPLES = booleanPreferencesKey("ai_include_examples")
+        val KEY_USE_EMOJIS = booleanPreferencesKey("ai_use_emojis")
 
         const val DEFAULT_HOUR = 19 // 7:00 PM
         const val DEFAULT_MINUTE = 0
@@ -115,6 +121,80 @@ class UserPreferencesRepository private constructor(context: Context) {
 
     suspend fun getFormattedStudyTime(): String {
         return formatTime(getStudyReminderHour(), getStudyReminderMinute())
+    }
+
+    // --- AI Chat Formatting & Nickname Memory Preferences ---
+
+    val preferredNameFlow: Flow<String> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_PREFERRED_NAME].orEmpty() }
+
+    val includeFormulasFlow: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_INCLUDE_FORMULAS] ?: true }
+
+    val includeExamplesFlow: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_INCLUDE_EXAMPLES] ?: true }
+
+    val useEmojisFlow: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_USE_EMOJIS] ?: false }
+
+    suspend fun setPreferredName(name: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_PREFERRED_NAME] = name.trim()
+        }
+    }
+
+    suspend fun getPreferredName(): String {
+        return try {
+            dataStore.data.first()[KEY_PREFERRED_NAME].orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    suspend fun setIncludeFormulas(include: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[KEY_INCLUDE_FORMULAS] = include
+        }
+    }
+
+    suspend fun getIncludeFormulas(): Boolean {
+        return try {
+            dataStore.data.first()[KEY_INCLUDE_FORMULAS] ?: true
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    suspend fun setIncludeExamples(include: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[KEY_INCLUDE_EXAMPLES] = include
+        }
+    }
+
+    suspend fun getIncludeExamples(): Boolean {
+        return try {
+            dataStore.data.first()[KEY_INCLUDE_EXAMPLES] ?: true
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    suspend fun setUseEmojis(use: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[KEY_USE_EMOJIS] = use
+        }
+    }
+
+    suspend fun getUseEmojis(): Boolean {
+        return try {
+            dataStore.data.first()[KEY_USE_EMOJIS] ?: false
+        } catch (_: Exception) {
+            false
+        }
     }
 }
 

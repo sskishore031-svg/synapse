@@ -130,3 +130,4 @@ private fun formatDockTimer(seconds: Int): String {
     val s = seconds % 60
     return String.format(Locale.ROOT, "%02d:%02d", m, s)
 }
+

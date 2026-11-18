@@ -422,17 +422,24 @@ class VoiceAssistantManager(
     /**
      * Strips Markdown formatting, symbols, and emojis for natural, fluent spoken English.
      */
-    fun cleanTextForSpeech(text: String): String {
-        return text
-            .replace(Regex("\\*\\*(.*?)\\*\\*"), "$1") // Bold **text** -> text
-            .replace(Regex("\\*(.*?)\\*"), "$1") // Italic *text* -> text
-            .replace(Regex("#{1,6}\\s*"), "") // Markdown headers
-            .replace(Regex("`{1,3}[^`]*`{1,3}"), "") // Inline/block code
-            .replace(Regex("^[•\\-\\+]\\s*", RegexOption.MULTILINE), "") // Bullet points
-            .replace(Regex("[\\[\\]\\(\\)]"), " ") // Brackets
-            .replace(Regex("[⚡📘🧩💡✨🔍🟢🔴🎙️🤖🧠·↳🗑️]"), "") // UI Emojis
-            .replace(Regex("\\s+"), " ")
-            .trim()
+    fun cleanTextForSpeech(text: String): String = Companion.cleanTextForSpeech(text)
+
+    companion object {
+        /**
+         * Strips Markdown formatting, symbols, and emojis for natural, fluent spoken English.
+         */
+        fun cleanTextForSpeech(text: String): String {
+            return text
+                .replace(Regex("\\*\\*(.*?)\\*\\*"), "$1") // Bold **text** -> text
+                .replace(Regex("\\*(.*?)\\*"), "$1") // Italic *text* -> text
+                .replace(Regex("#{1,6}\\s*"), "") // Markdown headers
+                .replace(Regex("`{1,3}[^`]*`{1,3}"), "") // Inline/block code
+                .replace(Regex("^[•\\-\\+]\\s*", RegexOption.MULTILINE), "") // Bullet points
+                .replace(Regex("[\\[\\]\\(\\)]"), " ") // Brackets
+                .replace(Regex("[⚡📘🧩💡✨🔍🟢🔴🎙️🤖🧠·↳🗑️]"), "") // UI Emojis
+                .replace(Regex("\\s+"), " ")
+                .trim()
+        }
     }
 
     /**

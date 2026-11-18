@@ -152,3 +152,4 @@ class ChatSessionDaoTest {
         assertTrue(restored.isConceptAnswer)
     }
 }
+
