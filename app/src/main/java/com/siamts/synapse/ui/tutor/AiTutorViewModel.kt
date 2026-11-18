@@ -14,6 +14,7 @@ import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
 import com.siamts.synapse.data.repository.NotesRepositoryImpl
+import com.siamts.synapse.data.repository.UserPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,6 +37,7 @@ class AiTutorViewModel(
     private val repository: AiTutorRepository = AiTutorRepositoryImpl(),
     private val notesRepository: NotesRepository = NotesRepositoryImpl(),
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
+    private val userPreferencesRepository: UserPreferencesRepository? = UserPreferencesRepository.getInstanceOrNull(),
     private val localAiEngine: LocalAIEngine = LocalAIEngine.getInstance(),
     private val chatStorage: AiChatStorage? = try { AiChatStorage.getInstance() } catch (_: Exception) { null },
     private val slmEngine: SlmInferenceEngine? = try { SlmInferenceEngine.getInstance() } catch (_: Throwable) { null },
@@ -64,9 +66,20 @@ class AiTutorViewModel(
             val user = sessionManager?.getSessionUser()
             currentUserId = user?.id ?: 1
             val email = user?.email ?: "student@synapse.ai"
-            val studentName = user?.name?.ifBlank { "STUDENT" } ?: "STUDENT"
 
-            _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${studentName.uppercase()}") }
+            // Sync user preferences with localAiEngine
+            val savedPrefName = userPreferencesRepository?.getPreferredName().orEmpty()
+            val effectiveName = if (savedPrefName.isNotBlank()) {
+                savedPrefName
+            } else {
+                user?.name?.ifBlank { "STUDENT" } ?: "STUDENT"
+            }
+            localAiEngine.preferredName = effectiveName
+            localAiEngine.includeFormulas = userPreferencesRepository?.getIncludeFormulas() ?: true
+            localAiEngine.includeExamples = userPreferencesRepository?.getIncludeExamples() ?: true
+            localAiEngine.useEmojis = userPreferencesRepository?.getUseEmojis() ?: false
+
+            _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${effectiveName.uppercase()}") }
 
             // 1. Check persistent SQLite chat sessions
             val savedSessions = chatStorage?.loadSessions(currentUserId).orEmpty()
@@ -719,6 +732,22 @@ class AiTutorViewModel(
                             if (it.id == aiMessageId) completedAiMessage else it
                         }
 
+                        // Handle name capture or preference persistence
+                        if (localResponse.isNameCapture && !localResponse.capturedName.isNullOrBlank()) {
+                            val newName = localResponse.capturedName
+                            scope.launch(Dispatchers.IO) {
+                                userPreferencesRepository?.setPreferredName(newName)
+                            }
+                            _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${newName.uppercase()}") }
+                        }
+                        if (localResponse.isPreferenceUpdate) {
+                            scope.launch(Dispatchers.IO) {
+                                userPreferencesRepository?.setIncludeFormulas(localAiEngine.includeFormulas)
+                                userPreferencesRepository?.setIncludeExamples(localAiEngine.includeExamples)
+                                userPreferencesRepository?.setUseEmojis(localAiEngine.useEmojis)
+                            }
+                        }
+
                         _uiState.update {
                             it.copy(
                                 messages = finalizedMessages,
@@ -737,7 +766,16 @@ class AiTutorViewModel(
                         try {
                             val user = sessionManager?.getSessionUser()
                             val email = user?.email ?: "student@synapse.ai"
-                            repository.askQuestion(question = query, userId = currentUserId, email = email)
+                            repository.askQuestion(
+                                question = query,
+                                userId = currentUserId,
+                                email = email,
+                                preferredName = localAiEngine.preferredName,
+                                includeFormulas = localAiEngine.includeFormulas,
+                                includeExamples = localAiEngine.includeExamples,
+                                useEmojis = localAiEngine.useEmojis,
+                                consecutiveUnclear = localAiEngine.consecutiveUnclearCount
+                            )
                         } catch (_: Exception) {
                             // Local fallback handled on-device
                         }

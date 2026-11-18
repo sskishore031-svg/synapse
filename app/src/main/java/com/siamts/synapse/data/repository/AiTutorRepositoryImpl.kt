@@ -13,10 +13,26 @@ class AiTutorRepositoryImpl(
     override suspend fun askQuestion(
         question: String,
         userId: Int?,
-        email: String?
+        email: String?,
+        preferredName: String?,
+        includeFormulas: Boolean?,
+        includeExamples: Boolean?,
+        useEmojis: Boolean?,
+        consecutiveUnclear: Int?
     ): Result<AiTutorResponse> {
         return try {
-            val response = api.askQuestion(userId = userId, email = email, request = AiTutorRequest(question))
+            val response = api.askQuestion(
+                userId = userId,
+                email = email,
+                request = AiTutorRequest(
+                    question = question,
+                    preferredName = preferredName,
+                    includeFormulas = includeFormulas,
+                    includeExamples = includeExamples,
+                    useEmojis = useEmojis,
+                    consecutiveUnclear = consecutiveUnclear
+                )
+            )
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {

@@ -71,14 +71,18 @@ data class EducationalKnowledgeBase(
  */
 data class LocalAiResponse(
     val paragraph1: String,
-    val paragraph2: String,
+    val paragraph2: String = "",
     val matchedSubject: String? = null,
     val matchedChapter: String? = null,
     val matchedTopic: String? = null,
     val confidenceScore: Double = 0.0,
     val isGreeting: Boolean = false,
     val isFollowUp: Boolean = false,
-    val isTopicSuggestion: Boolean = false
+    val isTopicSuggestion: Boolean = false,
+    val isFarewell: Boolean = false,
+    val isNameCapture: Boolean = false,
+    val capturedName: String? = null,
+    val isPreferenceUpdate: Boolean = false
 )
 
 /**
@@ -148,12 +152,37 @@ class LocalAIEngine private constructor(context: Context?) {
     private val stemCache = ConcurrentHashMap<String, String>()
     private val tokenCache = ConcurrentHashMap<String, List<String>>()
 
+    // Dynamic User Preferences & Conversational Persona Memory
+    @Volatile var preferredName: String = ""
+    @Volatile var includeFormulas: Boolean = true
+    @Volatile var includeExamples: Boolean = true
+    @Volatile var useEmojis: Boolean = false // Default false: use clean * bullet points everywhere!
+    @Volatile var consecutiveUnclearCount: Int = 0
+    @Volatile var isWaitingForName: Boolean = false
+
+    /**
+     * Resolves the active name to address the user by (custom nickname, session name, or "friend").
+     */
+    fun getEffectiveUserName(): String {
+        return preferredName.ifBlank { "friend" }
+    }
+
     /**
      * Clears cached tokenized queries and stemmed word mappings.
      */
     fun clearCaches() {
         stemCache.clear()
         tokenCache.clear()
+    }
+
+    /**
+     * Clears rolling context turns from memory.
+     */
+    fun clearHistory() {
+        synchronized(contextHistory) {
+            contextHistory.clear()
+        }
+        clearCaches()
     }
 
     /**
@@ -489,6 +518,12 @@ class LocalAIEngine private constructor(context: Context?) {
         synchronized(contextHistory) {
             contextHistory.clear()
         }
+        preferredName = ""
+        consecutiveUnclearCount = 0
+        isWaitingForName = false
+        includeFormulas = true
+        includeExamples = true
+        useEmojis = false
     }
 
     /**
@@ -500,6 +535,12 @@ class LocalAIEngine private constructor(context: Context?) {
 
     /**
      * Generates a context-aware 100% on-device response.
+     * Follows strict 5-stage intent order:
+     * 1. Name-setting & Nickname Memory
+     * 2. Style/Formatting Preferences
+     * 3. Farewells, Greetings & Small Talk
+     * 4. Out-of-Scope & Casual Slang Guardrails
+     * 5. Weighted Academic RAG Retrieval & Context Memory
      */
     fun generateResponse(userQuery: String): LocalAiResponse {
         val query = userQuery.trim()
@@ -510,67 +551,94 @@ class LocalAIEngine private constructor(context: Context?) {
         val normalized = normalizeQuery(query)
         val lowerQuery = query.lowercase(Locale.ROOT)
 
-        // 0. Strict Out-of-Scope Guardrail (Fast Check)
-        if (isOutOfScopeQuery(normalized)) {
-            return buildOutOfScopeResponse()
+        // 1. STAGE 1: Name-Setting & Nickname Memory ("call me Kishore", "enoda name solu kupdu")
+        val nameSettingResp = checkNameSettingIntent(query, lowerQuery, normalized)
+        if (nameSettingResp != null) {
+            consecutiveUnclearCount = 0
+            return nameSettingResp
         }
 
-        // 1. Intent A: Casual / Well-Being Greetings ("how are you", "how are you doing", "how r u", "whats up")
+        // 2. STAGE 2: Formatting & Style Preferences ("no formula", "no example", "no emoji", "no need of formula and example")
+        val stylePrefResp = checkStylePreferenceIntent(lowerQuery, normalized)
+        if (stylePrefResp != null) {
+            consecutiveUnclearCount = 0
+            return stylePrefResp
+        }
+
+        // 3. STAGE 3: Farewells, Greetings & Small Talk (Intercepted BEFORE any topic/RAG search!)
+        val farewellResp = checkFarewellIntent(normalized)
+        if (farewellResp != null) {
+            consecutiveUnclearCount = 0
+            return farewellResp
+        }
+
         if (isWellBeingQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildWellBeingResponse()
         }
 
-        // 2. Intent B: How It Works / Operational Guidance ("how should you to work", "how should you work")
-        if (isHowItWorksQuery(normalized)) {
-            return buildHowItWorksResponse()
-        }
-
-        // 3. Intent C: Identity & Persona / Name ("whats your name", "what is your name", "who are you", "how do you work")
         if (isIdentityQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildIdentityResponse()
         }
 
-        // 4. Intent D: Doubt Resolution Assistance ("i have some doubts", "i want some doubts for my subjects")
+        if (isHowItWorksQuery(normalized)) {
+            consecutiveUnclearCount = 0
+            return buildHowItWorksResponse()
+        }
+
         if (isDoubtAssistanceQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildDoubtAssistanceResponse()
         }
 
-        // 5. Intent E: Subject Catalog & Curriculum Overview ("how many subjects have you", "what subjects are available")
         if (isSubjectCatalogQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildSubjectCatalogResponse()
         }
 
-        // 6. Intent F: Capabilities & Help ("what can you do", "features", "how to use", "help me study")
         if (isCapabilitiesQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildCapabilitiesResponse()
         }
 
-        // 7. Intent G: Gratitude & Closing ("thank you", "thanks", "thx", "awesome", "great", "ok", "got it", "nice")
         if (isGratitudeQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildGratitudeResponse()
         }
 
-        // 8. Intent H: Casual Greetings ("hi", "hello", "hey", "gm", "good morning", "vanakkam", "namaste", "yo")
         if (isGreetingQuery(normalized)) {
+            consecutiveUnclearCount = 0
             return buildGreetingResponse(normalized)
         }
 
-        // 8B. Intent: Everyday Small Talk ("you are awesome", "i am bored", "motivate me", "who made you")
         val smallTalkResp = checkSmallTalkIntent(normalized)
         if (smallTalkResp != null) {
+            consecutiveUnclearCount = 0
             return smallTalkResp
         }
 
-        // 9. Intent Handler: Topic Suggestion / Chapter Listing ("give me some maths topic", "suggest chemistry chapters")
         val topicSuggestionResp = checkTopicSuggestionIntent(lowerQuery)
         if (topicSuggestionResp != null) {
+            consecutiveUnclearCount = 0
             return topicSuggestionResp
         }
 
-        // 10. Intent Handler: App Features & Navigation Guidance
         val appFeatureResp = checkAppFeatureQuery(lowerQuery)
         if (appFeatureResp != null) {
+            consecutiveUnclearCount = 0
             return appFeatureResp
+        }
+
+        // 4. STAGE 4: Explicit Out-of-Scope & Casual Slang Guardrails
+        if (isOutOfScopeQuery(normalized)) {
+            consecutiveUnclearCount = 0
+            return buildOutOfScopeResponse()
+        }
+
+        val casualSlangResp = checkCasualSlangIntent(lowerQuery, normalized)
+        if (casualSlangResp != null) {
+            return casualSlangResp
         }
 
         // Lazy asset load fallback if not loaded yet
@@ -581,7 +649,7 @@ class LocalAIEngine private constructor(context: Context?) {
             } catch (_: Throwable) {}
         }
 
-        // 11. Intent Handler: Context-Aware Multi-Turn Follow-up Queries
+        // 5. STAGE 5: Weighted Academic RAG Retrieval & Context Memory
         val lastTopicTurn = synchronized(contextHistory) {
             contextHistory.lastOrNull { it.matchedTopic != null || it.chunkId != null }
         }
@@ -593,6 +661,7 @@ class LocalAIEngine private constructor(context: Context?) {
             }
 
             if (activeChunk != null) {
+                consecutiveUnclearCount = 0
                 val followUpResponse = buildContextAwareFollowUpResponse(lowerQuery, activeChunk)
                 recordTurn(userQuery, activeChunk)
                 return followUpResponse
@@ -604,19 +673,20 @@ class LocalAIEngine private constructor(context: Context?) {
                     topic = lastTopicTurn.matchedTopic.orEmpty(),
                     content = "${lastTopicTurn.matchedTopic} in ${lastTopicTurn.matchedSubject}."
                 )
+                consecutiveUnclearCount = 0
                 val followUpResponse = buildContextAwareFollowUpResponse(lowerQuery, syntheticChunk)
                 recordTurn(userQuery, syntheticChunk)
                 return followUpResponse
             }
         }
 
-        // 12. Tokenize query
+        // Tokenize query
         val tokens = tokenize(lowerQuery)
         if (tokens.isEmpty()) {
-            return buildAcademicGuidanceResponse(query, emptyList())
+            return handleUnclearOrEmpty(query)
         }
 
-        // 13. Intent Handler: Conceptual Explanation (Match against RAG Chunks)
+        // Match against RAG Chunks
         val scoredChunks = synchronized(chunks) {
             chunks.map { chunk ->
                 val score = computeRelevanceScore(lowerQuery, tokens, chunk)
@@ -630,13 +700,14 @@ class LocalAIEngine private constructor(context: Context?) {
         val normalizedScore = (bestScore / (tokenCount * 25.0)).coerceIn(0.0, 1.0)
 
         if (bestMatch != null && bestScore >= 12.0 && normalizedScore >= 0.25) {
+            consecutiveUnclearCount = 0
             val response = buildEducationalResponse(bestMatch.second, bestScore, isElaborated = isElaborationQuery(normalized))
             recordTurn(userQuery, bestMatch.second)
             return response
         }
 
-        // 14. Attempt context-assisted match if prior turn exists
-        if (lastTopicTurn != null) {
+        // Context-assisted match ONLY when query has explicit context pronoun/word
+        if (lastTopicTurn != null && hasExplicitContextPronoun(lowerQuery)) {
             val contextQuery = "$lowerQuery ${lastTopicTurn.matchedTopic.orEmpty()} ${lastTopicTurn.matchedChapter.orEmpty()}"
             val contextTokens = tokenize(contextQuery)
             val contextScored = synchronized(chunks) {
@@ -646,15 +717,17 @@ class LocalAIEngine private constructor(context: Context?) {
             }
             val contextBest = contextScored.maxByOrNull { it.first }
             if (contextBest != null && contextBest.first >= 12.0) {
+                consecutiveUnclearCount = 0
                 val resp = buildEducationalResponse(contextBest.second, contextBest.first, isElaborated = isElaborationQuery(normalized))
                 recordTurn(userQuery, contextBest.second)
                 return resp
             }
         }
 
-        // 15. Check if query is an academic inquiry for curriculum / syllabus / college concepts
+        // Legitimate academic inquiry for curriculum / syllabus / college concepts
         val academicInquiryWords = setOf("syllabus", "curriculum", "study", "exam", "college", "university", "engineering", "degree", "course", "major")
         if (tokens.any { it in academicInquiryWords } || academicInquiryWords.any { normalized.contains(it) }) {
+            consecutiveUnclearCount = 0
             val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
             if (generativeResp != null) {
                 recordTurn(
@@ -674,8 +747,8 @@ class LocalAIEngine private constructor(context: Context?) {
             return buildAcademicGuidanceResponse(query, tokens)
         }
 
-        // 16. Strict Out-of-Scope Guardrail (Minimum Similarity Threshold — Zero Random Hallucinations)
-        return buildOutOfScopeResponse()
+        // Unrecognized query -> handled gracefully by unclear guardrail (NEVER returns Euler's formula!)
+        return handleUnclearOrEmpty(query)
     }
 
     /**
@@ -1067,6 +1140,377 @@ class LocalAIEngine private constructor(context: Context?) {
         }
     }
 
+    private fun checkNameSettingIntent(rawQuery: String, lowerQuery: String, normalized: String): LocalAiResponse? {
+        val trimmedRaw = rawQuery.trim()
+
+        // 1. If currently waiting for user to provide their name (e.g. following "enoda name solu kupdu")
+        if (isWaitingForName) {
+            val words = trimmedRaw.split(Regex("\\s+"))
+            val candidate = words.lastOrNull { it.isNotBlank() && it.first().isLetter() } ?: "Student"
+            val cleanName = candidate.filter { it.isLetter() }.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+            if (cleanName.isNotBlank() && cleanName.length >= 2) {
+                preferredName = cleanName
+                isWaitingForName = false
+                consecutiveUnclearCount = 0
+                return LocalAiResponse(
+                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isGreeting = true,
+                    isNameCapture = true,
+                    capturedName = preferredName
+                )
+            }
+        }
+
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+
+        // 2. Command: User asks AI to call them by name without providing the name yet
+        val promptNameRequests = setOf(
+            "enoda name solu kupdu", "enoda name solli kupdu", "ennoda name solu kupdu", "ennoda name solli kupdu",
+            "enoda name solli koopdu", "call me by my name", "call me with my name", "call me my name",
+            "en peyar solli koopdu", "en peru solli kupdu"
+        )
+        if (promptNameRequests.any { clean.contains(it) } || clean == "call me") {
+            isWaitingForName = true
+            return LocalAiResponse(
+                paragraph1 = "Sure! What name would you like me to call you?",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true
+            )
+        }
+
+        // 3. Command: User provides name directly
+        // English: "call me Kishore", "my name is Kishore", "name is Kishore"
+        val callMeMatch = Regex("^(?:call\\s+me|my\\s+name\\s+is|name\\s+is)\\s+([a-zA-Z]+)", RegexOption.IGNORE_CASE).find(trimmedRaw)
+        if (callMeMatch != null) {
+            val name = callMeMatch.groupValues[1].replaceFirstChar { it.uppercase() }
+            if (name.isNotBlank()) {
+                preferredName = name
+                isWaitingForName = false
+                consecutiveUnclearCount = 0
+                return LocalAiResponse(
+                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isGreeting = true,
+                    isNameCapture = true,
+                    capturedName = preferredName
+                )
+            }
+        }
+
+        // Tanglish: "enoda name Kishore", "ennoda name Kishore", "en per Kishore", "en peyar Kishore"
+        val tanglishNameMatch = Regex("^(?:enoda|ennoda|en)\\s+(?:name|per|peyar)(?:\\s+is)?\\s+([a-zA-Z]+)", RegexOption.IGNORE_CASE).find(trimmedRaw)
+        if (tanglishNameMatch != null) {
+            val name = tanglishNameMatch.groupValues[1].replaceFirstChar { it.uppercase() }
+            if (name.isNotBlank()) {
+                preferredName = name
+                isWaitingForName = false
+                consecutiveUnclearCount = 0
+                return LocalAiResponse(
+                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isGreeting = true,
+                    isNameCapture = true,
+                    capturedName = preferredName
+                )
+            }
+        }
+
+        // Tanglish: "enakku Kishore nu kupdu", "enna Kishore nu kupdu", "inimel enna Kishore nu kupdu", "inimel Kishore nu kupdu"
+        val tanglishKupduMatch = Regex("(?:enakku|enna|inimel\\s+enna|inimel)?\\s*([a-zA-Z]+)\\s*(?:nu|endru)\\s*(?:kupdu|koopdu|kollu)", RegexOption.IGNORE_CASE).find(trimmedRaw)
+        if (tanglishKupduMatch != null) {
+            val name = tanglishKupduMatch.groupValues[1].replaceFirstChar { it.uppercase() }
+            if (name.isNotBlank() && !setOf("enna", "enakku", "inimel", "name").contains(name.lowercase(Locale.ROOT))) {
+                preferredName = name
+                isWaitingForName = false
+                consecutiveUnclearCount = 0
+                return LocalAiResponse(
+                    paragraph1 = "Got it, $preferredName! From now on I will call you $preferredName.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isGreeting = true,
+                    isNameCapture = true,
+                    capturedName = preferredName
+                )
+            }
+        }
+
+        return null
+    }
+
+    private fun checkStylePreferenceIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val name = getEffectiveUserName()
+
+        // A. Emoji Preference Check
+        val disableEmojiPhrases = setOf(
+            "dont use emoji", "dont use emojis", "do not use emoji", "do not use emojis",
+            "no emoji", "no emojis", "stop emoji", "stop emojis", "remove emoji",
+            "remove emojis", "without emoji", "without emojis", "avoid emoji", "avoid emojis"
+        )
+        if (disableEmojiPhrases.any { clean.contains(it) }) {
+            useEmojis = false
+            val lastChunk = getLastActiveChunk()
+            val confirmation = "Got it, $name! I'll keep all responses clean with * bullet points and no emojis."
+            val replyText = if (lastChunk != null) {
+                "$confirmation\n\nHere is **${lastChunk.topic}** in clean format:\n\n${formatChunkAccordingToPreferences(lastChunk)}"
+            } else {
+                confirmation
+            }
+            return LocalAiResponse(
+                paragraph1 = replyText,
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isPreferenceUpdate = true
+            )
+        }
+
+        val enableEmojiPhrases = setOf("use emoji", "use emojis", "with emoji", "with emojis", "show emoji", "include emoji")
+        if (enableEmojiPhrases.any { clean.contains(it) }) {
+            useEmojis = true
+            return LocalAiResponse(
+                paragraph1 = "Got it, $name! I'll include emojis in responses.",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isPreferenceUpdate = true
+            )
+        }
+
+        // B. Formula & Example Suppression Check
+        // 1. Both Suppressed: "no need of formula and example", "no formula and example", "only explain", "just explain", "only concept"
+        val suppressBothPhrases = setOf(
+            "no need of formula and example", "no need of formula and no example", "no need of formula or example",
+            "no formula and example", "no formula and no example", "no formula or example", "no formula no example",
+            "without formula and example", "without formula or example", "without formula and without example",
+            "no formulas and examples", "without formulas and examples", "no need of formulas and examples",
+            "only explain", "just explain", "only definition", "only concept", "explain without formula and example",
+            "dont show formula and example", "dont give formula and example"
+        )
+        if (suppressBothPhrases.any { clean.contains(it) } ||
+            (clean.contains("no formula") && clean.contains("no example")) ||
+            (clean.contains("without formula") && clean.contains("without example")) ||
+            (clean.contains("only") && (clean.contains("explain") || clean.contains("concept") || clean.contains("definition")) && !clean.contains("example") && !clean.contains("formula"))) {
+            includeFormulas = false
+            includeExamples = false
+            val lastChunk = getLastActiveChunk()
+            return if (lastChunk != null) {
+                val defText = if (lastChunk.definition.isNotBlank()) lastChunk.definition.trim() else lastChunk.content.substringBefore(".")
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! Here is the explanation for **${lastChunk.topic}** showing only the concept and definition:\n\n* **Concept & Definition:**\n$defText",
+                    paragraph2 = "",
+                    matchedSubject = lastChunk.subject,
+                    matchedChapter = lastChunk.chapter,
+                    matchedTopic = lastChunk.topic,
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true,
+                    isFollowUp = true
+                )
+            } else {
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! I'll provide only pure concepts and definitions without formulas or examples for upcoming topics. What shall we learn?",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true
+                )
+            }
+        }
+
+        // 2. Suppress Formula Only: "no formula", "no formulas", "without formula", "no need of formula"
+        val suppressFormulaPhrases = setOf(
+            "no need of formula", "no need of formulas", "no formula", "no formulas",
+            "without formula", "without formulas", "dont show formula", "dont give formula",
+            "omit formula", "skip formula"
+        )
+        if (suppressFormulaPhrases.any { clean.contains(it) }) {
+            includeFormulas = false
+            val lastChunk = getLastActiveChunk()
+            return if (lastChunk != null) {
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! Here is **${lastChunk.topic}** without formulas:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
+                    paragraph2 = "",
+                    matchedSubject = lastChunk.subject,
+                    matchedChapter = lastChunk.chapter,
+                    matchedTopic = lastChunk.topic,
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true,
+                    isFollowUp = true
+                )
+            } else {
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! I'll omit formulas and focus on concepts and practical examples.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true
+                )
+            }
+        }
+
+        // 3. Suppress Example Only: "no example", "no examples", "without example", "no need of example"
+        val suppressExamplePhrases = setOf(
+            "no need of example", "no need of examples", "no example", "no examples",
+            "without example", "without examples", "dont show example", "dont give example",
+            "omit example", "skip example"
+        )
+        if (suppressExamplePhrases.any { clean.contains(it) }) {
+            includeExamples = false
+            val lastChunk = getLastActiveChunk()
+            return if (lastChunk != null) {
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! Here is **${lastChunk.topic}** without examples:\n\n${formatChunkAccordingToPreferences(lastChunk)}",
+                    paragraph2 = "",
+                    matchedSubject = lastChunk.subject,
+                    matchedChapter = lastChunk.chapter,
+                    matchedTopic = lastChunk.topic,
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true,
+                    isFollowUp = true
+                )
+            } else {
+                LocalAiResponse(
+                    paragraph1 = "Got it, $name! I'll omit examples and focus on core definitions and formulas.",
+                    paragraph2 = "",
+                    confidenceScore = 100.0,
+                    isPreferenceUpdate = true
+                )
+            }
+        }
+
+        // 4. Restore Formula or Example: "with formula", "include formula", "with example", "include example"
+        if (clean.contains("include formula") || clean.contains("with formula") || clean.contains("show formula")) {
+            includeFormulas = true
+            return LocalAiResponse(
+                paragraph1 = "Got it, $name! Formulas will be included in subsequent explanations.",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isPreferenceUpdate = true
+            )
+        }
+        if (clean.contains("include example") || clean.contains("with example") || clean.contains("show example")) {
+            includeExamples = true
+            return LocalAiResponse(
+                paragraph1 = "Got it, $name! Practical examples will be included in subsequent explanations.",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isPreferenceUpdate = true
+            )
+        }
+
+        return null
+    }
+
+    private fun checkFarewellIntent(normalized: String): LocalAiResponse? {
+        val farewells = setOf(
+            "bye", "byee", "byeee", "goodbye", "good bye", "see you", "see u", "see ya",
+            "tata", "take care", "kelamburen", "poyitu varen", "varaen", "varatta"
+        )
+        val clean = normalized.lowercase(Locale.ROOT).trim()
+        val words = clean.split(Regex("\\s+"))
+
+        val isFarewell = farewells.contains(clean) ||
+                (words.size <= 3 && words.any { it in setOf("bye", "goodbye", "tata") })
+
+        if (isFarewell) {
+            val name = getEffectiveUserName()
+            return LocalAiResponse(
+                paragraph1 = "Okay bye, $name! We'll continue our studies tomorrow. Take care!",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true,
+                isFarewell = true
+            )
+        }
+        return null
+    }
+
+    private fun checkCasualSlangIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
+        val trimmed = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val words = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
+
+        val casualSlangWords = setOf(
+            "bhai", "bro", "brother", "machan", "machi", "thala", "thalaiva", "mapla",
+            "nanba", "nanbaa", "dost", "dosti", "hm", "hmm", "hmmm", "da", "di", "pa",
+            "ah", "ahh", "oh", "k", "kk", "okey", "lol", "lmao", "wat", "huh", "y",
+            "enna", "enna da", "sollu", "sollunga", "pesu", "pesunga", "dei", "ayyo"
+        )
+
+        val isPureSlang = words.all { it in casualSlangWords } || (words.size <= 2 && words.any { it in casualSlangWords })
+        if (isPureSlang) {
+            return handleUnclearOrEmpty(lowerQuery)
+        }
+
+        return null
+    }
+
+    private fun handleUnclearOrEmpty(query: String): LocalAiResponse {
+        consecutiveUnclearCount++
+        val name = getEffectiveUserName()
+        return if (consecutiveUnclearCount == 1) {
+            LocalAiResponse(
+                paragraph1 = "Enakku puriyala, $name. Konjam clear-aa enna subject or topic venum nu sollunga!",
+                paragraph2 = "",
+                confidenceScore = 100.0
+            )
+        } else {
+            LocalAiResponse(
+                paragraph1 = "Enakku theriyadhu, $name. Please ask something related to your subjects, notes, or quizzes.",
+                paragraph2 = "",
+                confidenceScore = 100.0
+            )
+        }
+    }
+
+    private fun hasExplicitContextPronoun(lowerQuery: String): Boolean {
+        val words = lowerQuery.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
+        val pronouns = setOf("it", "its", "this", "that", "these", "those", "roots", "solve", "formula", "derivation")
+        return words.any { it in pronouns } && words.size <= 6
+    }
+
+    private fun getLastActiveChunk(): KnowledgeChunk? {
+        val lastTopicTurn = synchronized(contextHistory) {
+            contextHistory.lastOrNull { it.matchedTopic != null || it.chunkId != null }
+        } ?: return null
+
+        return synchronized(chunks) {
+            chunks.find { it.chunkId == lastTopicTurn.chunkId }
+                ?: chunks.find { it.topic.equals(lastTopicTurn.matchedTopic, ignoreCase = true) }
+        } ?: if (!lastTopicTurn.matchedTopic.isNullOrBlank()) {
+            KnowledgeChunk(
+                chunkId = lastTopicTurn.chunkId ?: "hist",
+                subject = lastTopicTurn.matchedSubject.orEmpty(),
+                chapter = lastTopicTurn.matchedChapter.orEmpty(),
+                topic = lastTopicTurn.matchedTopic.orEmpty(),
+                definition = "${lastTopicTurn.matchedTopic} in ${lastTopicTurn.matchedSubject}."
+            )
+        } else null
+    }
+
+    private fun formatChunkAccordingToPreferences(chunk: KnowledgeChunk): String {
+        val defText = if (chunk.definition.isNotBlank()) chunk.definition.trim() else chunk.content.substringBefore(".")
+        val formulaText = if (chunk.formulaOrCoreRule.isNotBlank()) chunk.formulaOrCoreRule.trim() else ""
+        val exampleText = if (chunk.workedExample.isNotBlank()) chunk.workedExample.trim() else generateTopicExample(chunk)
+
+        val bulletPrefix = if (useEmojis) "📘 " else "* "
+        val formulaPrefix = if (useEmojis) "⚡ " else "* "
+        val examplePrefix = if (useEmojis) "💡 " else "* "
+
+        return buildString {
+            appendLine("${bulletPrefix}**Concept & Definition** (${chunk.subject} · ${chunk.topic})")
+            appendLine(defText)
+            if (includeFormulas && formulaText.isNotBlank()) {
+                appendLine()
+                appendLine("${formulaPrefix}**Formula / Core Principle:** $formulaText")
+            }
+            if (includeExamples && exampleText.isNotBlank()) {
+                appendLine()
+                appendLine("${examplePrefix}**Key Example & Practical Takeaway:** $exampleText")
+            }
+        }.trim()
+    }
+
     fun isOutOfScopeQuery(normalized: String): Boolean {
         for (phrase in outOfScopePhrases) {
             if (normalized == phrase || normalized.startsWith("$phrase ") || normalized.endsWith(" $phrase") || normalized.contains(" $phrase ") || normalized.contains(phrase)) {
@@ -1119,10 +1563,17 @@ class LocalAIEngine private constructor(context: Context?) {
         val formula = if (chunk.formulaOrCoreRule.isNotBlank()) chunk.formulaOrCoreRule else "Core principle in ${chunk.subject}."
         val example = if (chunk.workedExample.isNotBlank()) chunk.workedExample.substringBefore(".") + "." else "Applied in ${chunk.chapter}."
 
-        val p1 = "📘 **${chunk.topic}** (${chunk.subject})\n$def"
-        val p2 = "1. **Core Principle & Formula:** $formula\n" +
-                "2. **Quick Takeaway:** $example\n" +
-                "3. **Exam Focus:** Key concept in ${chunk.chapter}."
+        val bulletPrefix = if (useEmojis) "📘 " else "* "
+        val p1 = "${bulletPrefix}**${chunk.topic}** (${chunk.subject})\n$def"
+        val p2 = buildString {
+            if (includeFormulas) {
+                appendLine("1. **Core Principle & Formula:** $formula")
+            }
+            if (includeExamples) {
+                appendLine("2. **Quick Takeaway:** $example")
+            }
+            append("3. **Exam Focus:** Key concept in ${chunk.chapter}.")
+        }.trim()
 
         return LocalAiResponse(
             paragraph1 = p1,
@@ -1269,23 +1720,25 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun buildGreetingResponse(normalized: String): LocalAiResponse {
+        val name = preferredName.trim()
+        val isNamed = name.isNotBlank()
         val replyText = when {
             normalized == "gn" || normalized.contains("good night") ->
-                "Good night! Rest well and keep learning tomorrow."
+                if (isNamed) "Good night, $name! Rest well and keep learning tomorrow." else "Good night! Rest well and keep learning tomorrow."
             normalized.contains("good morning") || normalized == "gm" ->
-                "Good morning! Ready to learn something exciting today? What subject are we tackling?"
+                if (isNamed) "Good morning, $name! Ready to learn something exciting today? What subject are we tackling?" else "Good morning! Ready to learn something exciting today? What subject are we tackling?"
             normalized.contains("good afternoon") ->
-                "Good afternoon! Hope you're having a productive day. What subject shall we explore?"
+                if (isNamed) "Good afternoon, $name! Hope you're having a productive day. What subject shall we explore?" else "Good afternoon! Hope you're having a productive day. What subject shall we explore?"
             normalized.contains("good evening") ->
-                "Good evening! Let's do some focused study tonight. What can I help you understand?"
+                if (isNamed) "Good evening, $name! Let's do some focused study tonight. What can I help you understand?" else "Good evening! Let's do some focused study tonight. What can I help you understand?"
             normalized.contains("vanakkam") ->
-                "Vanakkam! How can I help you with your studies today?"
+                if (isNamed) "Vanakkam, $name! How can I help you with your studies today?" else "Vanakkam! How can I help you with your studies today?"
             normalized.contains("namaste") ->
-                "Namaste! How can I assist you with your learning today?"
+                if (isNamed) "Namaste, $name! How can I assist you with your learning today?" else "Namaste! How can I assist you with your learning today?"
             normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
-                "Hey friend! Great to see you. What subject shall we dive into today?"
+                if (isNamed) "Hey $name! Great to see you. What subject shall we dive into today?" else "Hey friend! Great to see you. What subject shall we dive into today?"
             else ->
-                "Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!"
+                if (isNamed) "Hello, $name! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!" else "Hello! I'm SYNAPSE AI, your study friend. Ask me any concept, formula, or quiz topic to get started!"
         }
 
         return LocalAiResponse(
@@ -1298,6 +1751,11 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun isFollowUpQuery(lowerQuery: String): Boolean {
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
+        if (cleaned.contains("no example") || cleaned.contains("without example") ||
+            cleaned.contains("no formula") || cleaned.contains("without formula") ||
+            cleaned.contains("no need") || cleaned.contains("dont use") || cleaned.contains("no emoji")) {
+            return false
+        }
         if (isShortenQuery(cleaned)) return true
         if (isElaborationQuery(cleaned)) return true
         if (examplePrompts.any { cleaned.contains(it) }) return true
@@ -1326,15 +1784,18 @@ class LocalAIEngine private constructor(context: Context?) {
             return buildEducationalResponse(chunk, 100.0, isElaborated = true, isFollowUp = true)
         }
 
-        if (examplePrompts.any { cleaned.contains(it) } || cleaned.contains("example")) {
+        val bulletPrefix = if (useEmojis) "📘 " else "* "
+        val insightPrefix = if (useEmojis) "💡 " else "* "
+
+        if (examplePrompts.any { cleaned.contains(it) } || (cleaned.contains("example") && !cleaned.contains("no example") && !cleaned.contains("without example"))) {
             val exampleText = if (chunk.workedExample.isNotBlank()) {
                 chunk.workedExample
             } else {
                 generateTopicExample(chunk)
             }
             return LocalAiResponse(
-                paragraph1 = "📘 **Practical Example** (${chunk.subject} · ${chunk.topic})\n\nHere is a real-world scenario illustrating **${chunk.topic}**:",
-                paragraph2 = "$exampleText\n\n💡 *Context Grounded:* Derived from ${chunk.chapter} (${chunk.subject}).",
+                paragraph1 = "${bulletPrefix}**Practical Example** (${chunk.subject} · ${chunk.topic})\n\nHere is a real-world scenario illustrating **${chunk.topic}**:",
+                paragraph2 = "$exampleText\n\n${insightPrefix}*Context Grounded:* Derived from ${chunk.chapter} (${chunk.subject}).",
                 matchedSubject = chunk.subject,
                 matchedChapter = chunk.chapter,
                 matchedTopic = chunk.topic,
@@ -1347,8 +1808,8 @@ class LocalAIEngine private constructor(context: Context?) {
             val stepGuide = generateSolveGuide(chunk)
             val formulaText = if (chunk.formulaOrCoreRule.isNotBlank()) chunk.formulaOrCoreRule else chunk.content.substringBefore(".")
             return LocalAiResponse(
-                paragraph1 = "📘 **Method & Solving Steps** (${chunk.subject} · ${chunk.topic})\n\nHere is how to solve and evaluate problems for **${chunk.topic}**:",
-                paragraph2 = "$stepGuide\n\n💡 *Formula/Insight:* $formulaText.",
+                paragraph1 = "${bulletPrefix}**Method & Solving Steps** (${chunk.subject} · ${chunk.topic})\n\nHere is how to solve and evaluate problems for **${chunk.topic}**:",
+                paragraph2 = "$stepGuide\n\n${insightPrefix}*Formula/Insight:* $formulaText.",
                 matchedSubject = chunk.subject,
                 matchedChapter = chunk.chapter,
                 matchedTopic = chunk.topic,
@@ -1358,8 +1819,8 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         return LocalAiResponse(
-            paragraph1 = "📘 **In-Depth Breakdown** (${chunk.subject} · ${chunk.topic})\n\nExpanding further on **${chunk.topic}**:",
-            paragraph2 = "${chunk.content.ifBlank { "${chunk.definition}\n\n${chunk.formulaOrCoreRule}" }}\n\n💡 *Takeaway:* Mastering ${chunk.topic} connects directly to advanced applications in ${chunk.chapter}.",
+            paragraph1 = "${bulletPrefix}**In-Depth Breakdown** (${chunk.subject} · ${chunk.topic})\n\nExpanding further on **${chunk.topic}**:",
+            paragraph2 = "${chunk.content.ifBlank { "${chunk.definition}\n\n${chunk.formulaOrCoreRule}" }}\n\n${insightPrefix}*Takeaway:* Mastering ${chunk.topic} connects directly to advanced applications in ${chunk.chapter}.",
             matchedSubject = chunk.subject,
             matchedChapter = chunk.chapter,
             matchedTopic = chunk.topic,
@@ -1561,19 +2022,27 @@ class LocalAIEngine private constructor(context: Context?) {
             generateTopicExample(chunk)
         }
 
+        val bulletPrefix = if (useEmojis) "📘 " else "* "
+        val formulaPrefix = if (useEmojis) "⚡ " else "* "
+        val examplePrefix = if (useEmojis) "💡 " else "* "
+
         return if (isElaborated) {
-            val p1 = "🔍 **In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
+            val p1 = "${bulletPrefix}**In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
                     "**1. Theoretical Foundations & Mechanism:**\n" +
-                    "${chunk.content}\n\n" +
-                    "**2. Mathematical Formulations & Derivations:**\n" +
-                    formulaText
-            val p2 = "**3. Comprehensive Practical Application:**\n" +
-                    "$exampleText\n\n" +
-                    "**4. High-Yield Exam Takeaway:**\n" +
-                    "Mastering ${chunk.topic} requires remembering key governing assumptions, units, and boundary conditions."
+                    "${chunk.content}" +
+                    (if (includeFormulas && formulaText.isNotBlank()) "\n\n**2. Mathematical Formulations & Derivations:**\n$formulaText" else "")
+            val p2 = buildString {
+                if (includeExamples && exampleText.isNotBlank()) {
+                    appendLine("**3. Comprehensive Practical Application:**")
+                    appendLine(exampleText)
+                    appendLine()
+                }
+                appendLine("**4. High-Yield Exam Takeaway:**")
+                append("Mastering ${chunk.topic} requires remembering key governing assumptions, units, and boundary conditions.")
+            }.trim()
 
             LocalAiResponse(
-                paragraph1 = p1,
+                paragraph1 = p1.trim(),
                 paragraph2 = p2,
                 matchedSubject = chunk.subject,
                 matchedChapter = chunk.chapter,
@@ -1584,8 +2053,15 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         } else {
             // Concise-by-default (3-5 lines max: 1-sentence definition + key formula/rule + 1 quick example)
-            val p1 = "📘 **Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText"
-            val p2 = "⚡ **Formula / Core Principle:** $formulaText\n💡 **Key Example & Practical Takeaway:** $exampleText"
+            val p1 = "${bulletPrefix}**Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText"
+            val p2 = buildString {
+                if (includeFormulas && formulaText.isNotBlank()) {
+                    appendLine("${formulaPrefix}**Formula / Core Principle:** $formulaText")
+                }
+                if (includeExamples && exampleText.isNotBlank()) {
+                    append("${examplePrefix}**Key Example & Practical Takeaway:** $exampleText")
+                }
+            }.trim()
 
             LocalAiResponse(
                 paragraph1 = p1,
@@ -1609,12 +2085,23 @@ class LocalAIEngine private constructor(context: Context?) {
         tokens: List<String>
     ): LocalAiResponse? {
         val q = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val bPrefix = if (useEmojis) "📘 " else "* "
+        val fPrefix = if (useEmojis) "⚡ " else "* "
+        val ePrefix = if (useEmojis) "💡 " else "* "
 
         // 1. BIOLOGY
         if (q.contains("photosynthesis") || (q.contains("light") && q.contains("chloroplast"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n6CO₂ + 6H₂O + Photons → C₆H₁₂O₆ + 6O₂\n\nOperates in two stages: Light-dependent reactions (in thylakoids) generate ATP and NADPH, followed by the Calvin cycle (in stroma) synthesizing glucose carbohydrates.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nGreen leaves absorb atmospheric CO₂ through stomata and pull water from soil roots; oxygen is released as a vital byproduct sustaining aerobic life.")
+                }
+            }.trim()
             return LocalAiResponse(
-                paragraph1 = "📘 **Concept & Definition** (Biology · Plant Physiology)\n\nPhotosynthesis is the biochemical process by which green plants, algae, and cyanobacteria convert light energy from the sun into chemical energy stored in glucose molecules. It takes place in cellular chloroplasts using the green pigment chlorophyll.",
-                paragraph2 = "⚡ **Formula / Core Principle**\n\n6CO₂ + 6H₂O + Photons → C₆H₁₂O₆ + 6O₂\n\nOperates in two stages: Light-dependent reactions (in thylakoids) generate ATP and NADPH, followed by the Calvin cycle (in stroma) synthesizing glucose carbohydrates.\n\n💡 **Key Example & Practical Takeaway**\nGreen leaves absorb atmospheric CO₂ through stomata and pull water from soil roots; oxygen is released as a vital byproduct sustaining aerobic life.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (Biology · Plant Physiology)\n\nPhotosynthesis is the biochemical process by which green plants, algae, and cyanobacteria convert light energy from the sun into chemical energy stored in glucose molecules. It takes place in cellular chloroplasts using the green pigment chlorophyll.",
+                paragraph2 = p2,
                 matchedSubject = "Biology",
                 matchedChapter = "Plant Physiology",
                 matchedTopic = "Photosynthesis",
@@ -1623,9 +2110,17 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         if (q.contains("dna") || q.contains("rna") || q.contains("genetic") || q.contains("heredity") || q.contains("chromosome")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\nBase Pairing Rule: Adenine pairs with Thymine (A=T via 2 hydrogen bonds), and Guanine pairs with Cytosine (G≡C via 3 hydrogen bonds). In RNA, Uracil (U) replaces Thymine.\nCentral Dogma: DNA → (Transcription) → mRNA → (Translation) → Functional Proteins.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nA single nucleotide substitution in the hemoglobin gene causes sickle cell anemia, illustrating how molecular base sequences govern macroscopic human health.")
+                }
+            }.trim()
             return LocalAiResponse(
-                paragraph1 = "📘 **Concept & Definition** (Biology · Genetics & Molecular Biology)\n\nDNA (Deoxyribonucleic Acid) is the double-helical macromolecule containing genetic blueprints for biological organism development and functioning. RNA (Ribonucleic Acid) carries messages from DNA to ribosomes for protein synthesis.",
-                paragraph2 = "⚡ **Formula / Core Principle**\n\nBase Pairing Rule: Adenine pairs with Thymine (A=T via 2 hydrogen bonds), and Guanine pairs with Cytosine (G≡C via 3 hydrogen bonds). In RNA, Uracil (U) replaces Thymine.\nCentral Dogma: DNA → (Transcription) → mRNA → (Translation) → Functional Proteins.\n\n💡 **Key Example & Practical Takeaway**\nA single nucleotide substitution in the hemoglobin gene causes sickle cell anemia, illustrating how molecular base sequences govern macroscopic human health.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (Biology · Genetics & Molecular Biology)\n\nDNA (Deoxyribonucleic Acid) is the double-helical macromolecule containing genetic blueprints for biological organism development and functioning. RNA (Ribonucleic Acid) carries messages from DNA to ribosomes for protein synthesis.",
+                paragraph2 = p2,
                 matchedSubject = "Biology",
                 matchedChapter = "Genetics & Molecular Biology",
                 matchedTopic = "DNA and Genetics",
@@ -1637,18 +2132,34 @@ class LocalAIEngine private constructor(context: Context?) {
         if (q.contains("world war") || q.contains("ww1") || q.contains("ww2") || q.contains("world war 1") || q.contains("world war 2") || q.contains("world war i") || q.contains("world war ii")) {
             val isWW2 = q.contains("2") || q.contains("ii") || q.contains("hitler") || q.contains("nazi") || q.contains("pearl harbor") || q.contains("hiroshima")
             return if (isWW2) {
+                val p2 = buildString {
+                    if (includeFormulas) {
+                        appendLine("${fPrefix}**Formula / Core Principle**\n\nKey Milestones: Battle of Stalingrad (1942–1943), D-Day Normandy Landings (1944), conclusion with German surrender and atomic bombings of Hiroshima & Nagasaki (August 1945).\n")
+                    }
+                    if (includeExamples) {
+                        appendLine("${ePrefix}**Key Example & Practical Takeaway**\nThe post-war Bretton Woods conference established modern international economic architecture including the World Bank and IMF.")
+                    }
+                }.trim()
                 LocalAiResponse(
-                    paragraph1 = "📘 **Concept & Definition** (History · Modern World History)\n\nWorld War II (1939–1945) was a global conflict fought between the Allied Powers (USA, Great Britain, Soviet Union, France, China) and the Axis Powers (Nazi Germany, Imperial Japan, Fascist Italy), sparked by Germany's invasion of Poland on September 1, 1939.",
-                    paragraph2 = "⚡ **Formula / Core Principle**\n\nKey Milestones: Battle of Stalingrad (1942–1943), D-Day Normandy Landings (1944), conclusion with German surrender and atomic bombings of Hiroshima & Nagasaki (August 1945).\n\n💡 **Key Example & Practical Takeaway**\nThe post-war Bretton Woods conference established modern international economic architecture including the World Bank and IMF.",
+                    paragraph1 = "${bPrefix}**Concept & Definition** (History · Modern World History)\n\nWorld War II (1939–1945) was a global conflict fought between the Allied Powers (USA, Great Britain, Soviet Union, France, China) and the Axis Powers (Nazi Germany, Imperial Japan, Fascist Italy), sparked by Germany's invasion of Poland on September 1, 1939.",
+                    paragraph2 = p2,
                     matchedSubject = "History",
                     matchedChapter = "Modern World History",
                     matchedTopic = "World War II",
                     confidenceScore = 90.0
                 )
             } else {
+                val p2 = buildString {
+                    if (includeFormulas) {
+                        appendLine("${fPrefix}**Formula / Core Principle**\n\nThe M-A-I-N Causes: Militarism, Alliances, Imperialism, and Nationalism. Sparked by the assassination of Archduke Franz Ferdinand in Sarajevo (June 28, 1914).\n")
+                    }
+                    if (includeExamples) {
+                        appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTrench warfare on the Western Front reshaped 20th-century warfare, leading to the collapse of four empires and the Treaty of Versailles (1919).")
+                    }
+                }.trim()
                 LocalAiResponse(
-                    paragraph1 = "📘 **Concept & Definition** (History · Modern World History)\n\nWorld War I (1914–1918), known as the Great War, was a global European-centered conflict between the Allied Powers (Britain, France, Russia, USA, Italy) and the Central Powers (Germany, Austria-Hungary, Ottoman Empire, Bulgaria).",
-                    paragraph2 = "⚡ **Formula / Core Principle**\n\nThe M-A-I-N Causes: Militarism, Alliances, Imperialism, and Nationalism. Sparked by the assassination of Archduke Franz Ferdinand in Sarajevo (June 28, 1914).\n\n💡 **Key Example & Practical Takeaway**\nTrench warfare on the Western Front reshaped 20th-century warfare, leading to the collapse of four empires and the Treaty of Versailles (1919).",
+                    paragraph1 = "${bPrefix}**Concept & Definition** (History · Modern World History)\n\nWorld War I (1914–1918), known as the Great War, was a global European-centered conflict between the Allied Powers (Britain, France, Russia, USA, Italy) and the Central Powers (Germany, Austria-Hungary, Ottoman Empire, Bulgaria).",
+                    paragraph2 = p2,
                     matchedSubject = "History",
                     matchedChapter = "Modern World History",
                     matchedTopic = "World War I",
@@ -1659,9 +2170,17 @@ class LocalAIEngine private constructor(context: Context?) {
 
         // 3. GEOGRAPHY
         if (q.contains("plate tectonics") || q.contains("earthquake") || q.contains("volcano") || q.contains("continental drift") || q.contains("tectonic")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Convergent: Plates collide, causing subduction trenches and mountain ranges.\n• Divergent: Plates pull apart, creating mid-ocean ridges and rift valleys.\n• Transform: Plates slide horizontally past each other, releasing seismic stress as earthquakes.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nThe ongoing collision between the Indian Plate and Eurasian Plate elevates Mount Everest and the Himalayan range by ~5 mm annually.")
+                }
+            }.trim()
             return LocalAiResponse(
-                paragraph1 = "📘 **Concept & Definition** (Geography · Geomorphology & Geology)\n\nPlate Tectonics is the unifying geological theory stating that Earth's outer lithosphere is broken into rigid plates that float and move atop the ductile asthenosphere mantle beneath them.",
-                paragraph2 = "⚡ **Formula / Core Principle**\n\n• Convergent: Plates collide, causing subduction trenches and mountain ranges.\n• Divergent: Plates pull apart, creating mid-ocean ridges and rift valleys.\n• Transform: Plates slide horizontally past each other, releasing seismic stress as earthquakes.\n\n💡 **Key Example & Practical Takeaway**\nThe ongoing collision between the Indian Plate and Eurasian Plate elevates Mount Everest and the Himalayan range by ~5 mm annually.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (Geography · Geomorphology & Geology)\n\nPlate Tectonics is the unifying geological theory stating that Earth's outer lithosphere is broken into rigid plates that float and move atop the ductile asthenosphere mantle beneath them.",
+                paragraph2 = p2,
                 matchedSubject = "Geography",
                 matchedChapter = "Geomorphology",
                 matchedTopic = "Plate Tectonics and Seismic Activity",
@@ -1689,9 +2208,17 @@ class LocalAIEngine private constructor(context: Context?) {
 
         if (detectedSubject != null && isExplicitAcademicQuestion) {
             val cleanTopic = query.replace(Regex("(?i)^(explain|what is|how does|define|tell me about)\\s+"), "").trim()
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n1. Define primary variables, boundary conditions, and governing hypotheses.\n2. Apply the canonical laws and theorems established in $detectedSubject.\n3. Verify results and examine real-world trade-offs.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nMastering $cleanTopic develops rigorous problem-solving skills and forms a solid foundation for advanced studies in $detectedSubject.")
+                }
+            }.trim()
             return LocalAiResponse(
-                paragraph1 = "📘 **Concept & Definition** ($detectedSubject · $cleanTopic)\n\n$cleanTopic is an essential concept within $detectedSubject. Understanding its underlying principles allows students to connect theoretical fundamentals with empirical real-world applications.",
-                paragraph2 = "⚡ **Formula / Core Principle**\n\n1. Define primary variables, boundary conditions, and governing hypotheses.\n2. Apply the canonical laws and theorems established in $detectedSubject.\n3. Verify results and examine real-world trade-offs.\n\n💡 **Key Example & Practical Takeaway**\nMastering $cleanTopic develops rigorous problem-solving skills and forms a solid foundation for advanced studies in $detectedSubject.",
+                paragraph1 = "${bPrefix}**Concept & Definition** ($detectedSubject · $cleanTopic)\n\n$cleanTopic is an essential concept within $detectedSubject. Understanding its underlying principles allows students to connect theoretical fundamentals with empirical real-world applications.",
+                paragraph2 = p2,
                 matchedSubject = detectedSubject,
                 matchedChapter = "Core Concepts",
                 matchedTopic = cleanTopic,

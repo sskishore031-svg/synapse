@@ -7,7 +7,12 @@ interface AiTutorRepository {
     suspend fun askQuestion(
         question: String,
         userId: Int? = null,
-        email: String? = null
+        email: String? = null,
+        preferredName: String? = null,
+        includeFormulas: Boolean? = null,
+        includeExamples: Boolean? = null,
+        useEmojis: Boolean? = null,
+        consecutiveUnclear: Int? = null
     ): Result<AiTutorResponse>
 
     suspend fun getHistory(

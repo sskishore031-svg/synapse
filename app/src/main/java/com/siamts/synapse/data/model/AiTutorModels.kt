@@ -4,7 +4,17 @@ import com.google.gson.annotations.SerializedName
 
 data class AiTutorRequest(
     @SerializedName("question")
-    val question: String
+    val question: String,
+    @SerializedName("preferred_name")
+    val preferredName: String? = null,
+    @SerializedName("include_formulas")
+    val includeFormulas: Boolean? = null,
+    @SerializedName("include_examples")
+    val includeExamples: Boolean? = null,
+    @SerializedName("use_emojis")
+    val useEmojis: Boolean? = null,
+    @SerializedName("consecutive_unclear")
+    val consecutiveUnclear: Int? = null
 )
 
 data class AiTutorResponse(
