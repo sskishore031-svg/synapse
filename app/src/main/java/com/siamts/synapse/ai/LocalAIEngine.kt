@@ -1512,6 +1512,10 @@ class LocalAIEngine private constructor(context: Context?) {
     )
 
     private fun checkSubjectOverviewIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
+        if (hasExplicitContextPronoun(lowerQuery) || (contextHistory.isNotEmpty() && isFollowUpQuery(lowerQuery))) {
+            return null
+        }
+
         val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
         val norm = normalized.trim().lowercase(Locale.ROOT)
 
@@ -1545,7 +1549,25 @@ class LocalAIEngine private constructor(context: Context?) {
 
         if (candidateSubject.isNullOrBlank()) return null
 
-        val info = resolveSubjectOverview(candidateSubject) ?: return null
+        val candWords = candidateSubject.split(Regex("\\s+"))
+        if (candWords.any { it in setOf("it", "its", "this", "that", "these", "those", "roots", "solve", "formula") }) {
+            return null
+        }
+
+        val candClean = candidateSubject.removePrefix("the ").removePrefix("a ").removePrefix("an ").trim()
+        val isKnownSub = isKnownSubject(candClean) || isKnownSubject(candidateSubject)
+
+        if (!isKnownSub) {
+            // If candidate is a specific topic matching our RAG chunks, defer to RAG
+            val bestRagScore = synchronized(chunks) {
+                chunks.maxOfOrNull { computeRelevanceScore(lowerQuery, tokenize(lowerQuery), it) } ?: 0.0
+            }
+            if (bestRagScore >= 4.0) {
+                return null
+            }
+        }
+
+        val info = resolveSubjectOverview(candClean) ?: resolveSubjectOverview(candidateSubject) ?: return null
 
         val responseText = buildString {
             appendLine("* **What it is:**")
@@ -1569,6 +1591,27 @@ class LocalAIEngine private constructor(context: Context?) {
             matchedTopic = "${info.name} Overview",
             confidenceScore = 98.0
         )
+    }
+
+    private fun isKnownSubject(candidate: String): Boolean {
+        val known = setOf(
+            "math", "maths", "mathematics", "computer science", "cs", "data science", "ds",
+            "artificial intelligence", "ai", "machine learning", "ml", "deep learning",
+            "physics", "chemistry", "biology", "bio", "history", "world history",
+            "economics", "finance", "environmental science", "ecology", "computer networks",
+            "networking", "cyber security", "cybersecurity", "security", "psychology",
+            "business", "business management", "electrical engineering", "astronomy",
+            "astrophysics", "statistics", "software engineering", "cloud computing",
+            "operating systems", "dbms", "database", "web development", "mobile development",
+            "blockchain", "robotics", "mechanical engineering", "civil engineering",
+            "biotechnology", "genetics", "neuroscience", "organic chemistry", "quantum physics",
+            "calculus", "linear algebra", "discrete mathematics", "philosophy", "sociology",
+            "political science", "literature", "accounting", "marketing", "cryptography",
+            "information technology", "architecture", "aerospace engineering",
+            "chemical engineering", "biomedical engineering", "nanotechnology",
+            "supply chain", "supply chain management", "law"
+        )
+        return candidate.trim().lowercase(Locale.ROOT) in known
     }
 
     private fun resolveSubjectOverview(candidate: String): SubjectOverviewInfo? {
