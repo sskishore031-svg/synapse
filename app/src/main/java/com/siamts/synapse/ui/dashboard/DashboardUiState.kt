@@ -19,7 +19,7 @@ data class DashboardUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val dateText: String = "",
-    val userName: String = "",
+    val userName: String = "Kishore",
     val profilePhotoUri: String? = null,
     val overallProgress: Int = 0,
     val progressMessage: String = "Welcome! Every lesson builds your foundation.",

@@ -78,11 +78,10 @@ class AiChatAndLiveVoiceTest {
         val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
         val viewModel = AiTutorViewModel(externalScope = testScope)
 
-        viewModel.onSendMessage("start mathematics quiz")
+        viewModel.onSendMessage("start python quiz")
 
-        val actionMsg = viewModel.uiState.value.messages.firstOrNull { it.actionCommand == "NAVIGATE_QUIZ" }
-        assertNotNull(actionMsg)
-        assertTrue(actionMsg!!.text.contains("Mathematics Quiz"))
+        assertNotNull(viewModel.uiState.value.activeQuizSession)
+        assertTrue(viewModel.uiState.value.messages.any { it.isQuizQuestion })
     }
 
     @Test
@@ -90,11 +89,11 @@ class AiChatAndLiveVoiceTest {
         val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
         val viewModel = AiTutorViewModel(externalScope = testScope)
 
-        viewModel.onSendMessage("open computer science")
+        viewModel.onSendMessage("open python")
 
         val actionMsg = viewModel.uiState.value.messages.firstOrNull { it.actionCommand == "NAVIGATE_SUBJECT" }
         assertNotNull(actionMsg)
-        assertTrue(actionMsg!!.text.contains("Computer Science"))
+        assertTrue(actionMsg!!.text.contains("Python"))
     }
 
     @Test

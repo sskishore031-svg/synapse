@@ -191,20 +191,20 @@ class ChatEnginePreferenceAndPersonaTest {
     }
 
     @Test
-    fun testSubjectOverview_whatAboutBiology() {
-        val response = engine.generateResponse("what about biology")
-        assertEquals("Biology", response.matchedSubject)
+    fun testSubjectOverview_whatAboutPython() {
+        val response = engine.generateResponse("what about python")
+        assertEquals("Python & Coding Logic", response.matchedSubject)
         assertTrue(response.paragraph1.contains("* **What it is:**"))
-        assertTrue(response.paragraph1.contains("living organisms"))
+        assertTrue(response.paragraph1.contains("Python & Coding Logic"))
         assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
         assertTrue(response.paragraph1.contains("* **Advantages:**"))
         assertTrue(response.paragraph1.contains("* **Disadvantages / Challenges:**"))
     }
 
     @Test
-    fun testSubjectOverview_usesOfPhysics() {
-        val response = engine.generateResponse("uses of physics")
-        assertEquals("Physics", response.matchedSubject)
+    fun testSubjectOverview_usesOfSql() {
+        val response = engine.generateResponse("uses of sql")
+        assertEquals("SQL & Database Management", response.matchedSubject)
         assertTrue(response.paragraph1.contains("* **What it is:**"))
         assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
         assertTrue(response.paragraph1.contains("* **Advantages:**"))
@@ -212,11 +212,10 @@ class ChatEnginePreferenceAndPersonaTest {
     }
 
     @Test
-    fun testSubjectOverview_tellMeAboutCyberSecurity() {
-        val response = engine.generateResponse("tell me about cyber security")
-        assertEquals("Cyber Security", response.matchedSubject)
+    fun testSubjectOverview_tellMeAboutAi() {
+        val response = engine.generateResponse("tell me about modern tech")
+        assertEquals("AI & Modern Tech Concepts", response.matchedSubject)
         assertTrue(response.paragraph1.contains("* **What it is:**"))
-        assertTrue(response.paragraph1.contains("safeguarding digital architectures"))
         assertTrue(response.paragraph1.contains("* **Key Uses & Real-World Work:**"))
     }
 

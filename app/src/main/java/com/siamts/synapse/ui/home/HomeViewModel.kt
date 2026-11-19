@@ -37,7 +37,7 @@ class HomeViewModel(
         viewModelScope.launch {
             manager.sessionStateFlow.collect { sessionState ->
                 if (sessionState is com.siamts.synapse.data.local.AuthSessionState.Authenticated) {
-                    val realName = sessionState.user.name.takeIf { it.isNotBlank() } ?: "Student"
+                    val realName = sessionState.user.name.takeIf { it.isNotBlank() } ?: "Kishore"
                     _uiState.update { current ->
                         current.copy(
                             userName = realName,
@@ -53,7 +53,7 @@ class HomeViewModel(
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val manager = sessionManager ?: SessionManager.getInstanceOrNull()
             val user = manager?.getSessionUser()
-            val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
+            val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Kishore" }
 
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }

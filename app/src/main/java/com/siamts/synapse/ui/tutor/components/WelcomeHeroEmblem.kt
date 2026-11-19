@@ -79,7 +79,7 @@ fun WelcomeHeroEmblem(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Your smart study friend for clear concepts, instant quizzes, and revision notes. What shall we learn today?",
+            text = "Your intelligent companion for software engineering placement prep, clear concepts, and interactive in-chat quizzes. What shall we explore today?",
             color = Color(0xFF94A3B8),
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
@@ -90,7 +90,7 @@ fun WelcomeHeroEmblem(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Dynamic clickable curriculum subject chips
-        val subjects = listOf("Mathematics", "Computer Science", "Artificial Intelligence", "Physics", "Chemistry", "Data Science")
+        val subjects = listOf("Python & Coding Logic", "SQL & Database Management", "AI & Modern Tech Concepts", "Aptitude & Interview Prep")
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)

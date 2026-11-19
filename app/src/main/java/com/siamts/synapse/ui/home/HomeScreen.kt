@@ -64,6 +64,14 @@ import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
+import com.siamts.synapse.ui.theme.AmberAccent
+import com.siamts.synapse.ui.theme.AmberGlow
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -159,9 +167,9 @@ fun HomeContent(
 ) {
     val isDark = LocalThemeIsDark.current
     val pageBgGradient = if (isDark) {
-        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+        listOf(DarkBackgroundTop, Color(0xFF0C0D12), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+        listOf(Color(0xFFFDFBF7), Color(0xFFF8F4EE), LightBackground)
     }
     val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
 
@@ -184,15 +192,17 @@ fun HomeContent(
                 ) {
                     Column {
                         Text(
-                            text = uiState.greeting,
-                            color = if (isDark) TextSecondary else BlueAccent,
-                            fontSize = 13.sp,
-                        )
-                        Text(
-                            text = "${uiState.userName} 👋",
+                            text = "Hello, ${uiState.userName.ifBlank { "Kishore" }}! 👋",
                             color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Daily Micro-Learning & Placement Companion",
+                            color = SunsetOrange,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                         )
                     }
 
@@ -202,7 +212,7 @@ fun HomeContent(
                     ) {
                         Text(
                             text = "⚡ Mind Power: ${uiState.mindPower}%",
-                            color = CyanGlow,
+                            color = AmberGlow,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -395,10 +405,10 @@ fun HomeContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E293B))
+                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -406,118 +416,121 @@ fun HomeContent(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "TODAY'S MICRO-LEARNING GOAL",
-                                            color = CyanAccent,
+                                            text = "TODAY'S OVERALL PROGRESS",
+                                            color = SunsetOrange,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 1.sp
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "${uiState.todayGoalPercent}% Completed",
+                                            text = "${uiState.overallProgress}% Completed",
                                             color = Color.White,
-                                            fontSize = 22.sp,
+                                            fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = if (uiState.todayGoalPercent == 100) "Goal achieved! Outstanding discipline." else "Master 2-min daily concepts & tasks",
-                                            color = Color(0xFF94A3B8),
+                                            text = if (uiState.overallProgress == 100) "Goal achieved! Outstanding discipline." else "Master 2-min daily concepts & tasks",
+                                            color = TextSecondary,
                                             fontSize = 12.sp
                                         )
                                     }
 
                                     Box(
-                                        modifier = Modifier.size(60.dp),
+                                        modifier = Modifier.size(64.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator(
-                                            progress = { (uiState.todayGoalPercent / 100f).coerceIn(0f, 1f) },
+                                            progress = { (uiState.overallProgress / 100f).coerceIn(0f, 1f) },
                                             modifier = Modifier.fillMaxSize(),
-                                            color = CyanGlow,
-                                            trackColor = Color(0xFF1E293B),
+                                            color = SunsetOrange,
+                                            trackColor = Color(0xFF1E212D),
                                             strokeWidth = 6.dp
                                         )
                                         Text(
-                                            text = "${uiState.todayGoalPercent}%",
+                                            text = "${uiState.overallProgress}%",
                                             color = Color.White,
-                                            fontSize = 12.sp,
+                                            fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(14.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                                // 3 Metric Badges
+                                // 3 Metric Badges: '0 Topics done', '0% Quiz score', '0 days Study streak'
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Metric 1: Micro-Lessons Done
+                                    // Metric 1: Topics done
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
-                                                text = "${uiState.topicsDone}/20",
+                                                text = "${uiState.topicsDone}",
                                                 color = Color.White,
-                                                fontSize = 14.sp,
+                                                fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
-                                                text = "Lessons Done",
-                                                color = Color(0xFF94A3B8),
-                                                fontSize = 10.sp
+                                                text = "Topics done",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }
 
-                                    // Metric 2: Average Quiz Score
+                                    // Metric 2: Quiz score
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = "${uiState.quizScore}%",
-                                                color = CyanGlow,
-                                                fontSize = 14.sp,
+                                                color = AmberGold,
+                                                fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
-                                                text = "Avg Quiz",
-                                                color = Color(0xFF94A3B8),
-                                                fontSize = 10.sp
+                                                text = "Quiz score",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }
 
-                                    // Metric 3: Study Streak
+                                    // Metric 3: Study streak
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
-                                                text = "${uiState.studyStreakDays}d 🔥",
-                                                color = Color(0xFFF59E0B),
-                                                fontSize = 14.sp,
+                                                text = "${uiState.studyStreakDays} days",
+                                                color = SunsetOrange,
+                                                fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
-                                                text = "Streak",
-                                                color = Color(0xFF94A3B8),
-                                                fontSize = 10.sp
+                                                text = "Study streak",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }
@@ -536,7 +549,7 @@ fun HomeContent(
                             ) {
                                 Column {
                                     Text(
-                                        text = "Today's Study Plan",
+                                        text = "Today's Task",
                                         color = TextPrimary,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
@@ -548,15 +561,16 @@ fun HomeContent(
                                     )
                                 }
 
-                                Button(
-                                    onClick = onAddTaskClick,
-                                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
-                                    shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .border(1.dp, SunsetOrange.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+                                        .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                        .clickable { onAddTaskClick() }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
                                     Text(
-                                        text = "+ Add Task",
-                                        color = Color.White,
+                                        text = "+ Add a task",
+                                        color = SunsetOrange,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -569,8 +583,8 @@ fun HomeContent(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E293B))
+                                    colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(16.dp),
@@ -580,13 +594,13 @@ fun HomeContent(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
                                             Text(
-                                                text = "No study tasks scheduled yet",
+                                                text = "No tasks added yet",
                                                 color = TextPrimary,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
-                                                text = "Tap '+ Add Task' to plan your 2-min micro-lessons for today!",
+                                                text = "Tap '+ Add a task' to plan your 2-min micro-lessons for today!",
                                                 color = TextSecondary,
                                                 fontSize = 11.sp
                                             )
@@ -599,10 +613,10 @@ fun HomeContent(
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(14.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
+                                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
                                             border = androidx.compose.foundation.BorderStroke(
                                                 1.dp,
-                                                if (task.isCompleted) Color(0xFF059669) else Color(0xFF1E293B)
+                                                if (task.isCompleted) Color(0xFF059669) else SurfaceBorder
                                             )
                                         ) {
                                             Row(
@@ -617,22 +631,22 @@ fun HomeContent(
                                                         onTaskToggle(task.id, isChecked)
                                                     },
                                                     colors = CheckboxDefaults.colors(
-                                                        checkedColor = Color(0xFF059669),
-                                                        uncheckedColor = Color(0xFF64748B)
+                                                        checkedColor = SunsetOrange,
+                                                        uncheckedColor = Color(0xFF6B7280)
                                                     )
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = task.title,
-                                                        color = if (task.isCompleted) Color(0xFF64748B) else TextPrimary,
+                                                        color = if (task.isCompleted) Color(0xFF6B7280) else TextPrimary,
                                                         fontSize = 14.sp,
                                                         fontWeight = if (task.isCompleted) FontWeight.Normal else FontWeight.SemiBold,
                                                         textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
                                                     )
                                                     Text(
                                                         text = "⏱ ${task.duration} · ${task.category}",
-                                                        color = if (task.isCompleted) Color(0xFF059669) else CyanAccent,
+                                                        color = if (task.isCompleted) Color(0xFF059669) else AmberGold,
                                                         fontSize = 11.sp
                                                     )
                                                 }
@@ -991,7 +1005,8 @@ fun HomeContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF070B1B))
+                    .background(DarkBackgroundBottom)
+                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1002,7 +1017,12 @@ fun HomeContent(
                     Box(
                         modifier = Modifier
                             .background(
-                                color = if (isSelected) Color(0xFF161F42) else Color.Transparent,
+                                color = if (isSelected) SurfacePanelElevated else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .border(
+                                width = if (isSelected) 1.dp else 0.dp,
+                                color = if (isSelected) SunsetOrange.copy(alpha = 0.5f) else Color.Transparent,
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .clickable { onTabSelect(index) }
@@ -1010,12 +1030,36 @@ fun HomeContent(
                     ) {
                         Text(
                             text = tabName,
-                            color = if (isSelected) CyanGlow else TextSecondary,
+                            color = if (isSelected) SunsetOrange else TextSecondary,
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         )
                     }
                 }
+            }
+        }
+
+        // Floating Sunset Amber Chat Integration Button (never overlaps left column text)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 72.dp, end = 16.dp)
+                .background(
+                    brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
+                    shape = RoundedCornerShape(24.dp)
+                )
+                .border(1.dp, AmberGold.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                .clickable { onAiChatClick?.invoke() }
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "🤖 ", fontSize = 14.sp)
+                Text(
+                    text = "Chat with SYNAPSE",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

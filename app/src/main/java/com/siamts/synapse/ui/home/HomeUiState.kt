@@ -36,8 +36,8 @@ data class HomeSubjectItem(
 data class HomeUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val userName: String = "Student",
-    val greeting: String = "Welcome Back,",
+    val userName: String = "Kishore",
+    val greeting: String = "Hello,",
     val mindPower: Int = 0,
     val profilePhotoUri: String? = null,
     val course: String = "Placement & Micro-Learning Prep",

@@ -1,4 +1,4 @@
-﻿package com.siamts.synapse.ui.tutor
+package com.siamts.synapse.ui.tutor
 
 import com.siamts.synapse.data.local.ChatSessionEntity
 import java.util.UUID
@@ -21,7 +21,37 @@ data class ChatMessage(
     val savedNoteTitle: String? = null,
     val actionCommand: String? = null,
     val isSaved: Boolean = false,
+    val isQuizQuestion: Boolean = false,
+    val quizOptions: Map<String, String>? = null,
+    val quizQuestionIndex: Int = 0,
+    val quizTotalQuestions: Int = 10,
+    val isQuizScorecard: Boolean = false,
+    val quizScore: Int = 0,
+    val quizTotal: Int = 10,
+    val quizSubject: String? = null,
+    val quizMistakes: List<String> = emptyList(),
+    val isQuizScoreSaved: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
+)
+
+data class InChatQuizAnswer(
+    val questionNumber: Int,
+    val question: String,
+    val selectedOption: String,
+    val correctOption: String,
+    val isCorrect: Boolean,
+    val explanation: String
+)
+
+data class InChatQuizSession(
+    val sessionId: String = UUID.randomUUID().toString(),
+    val subjectId: String,
+    val subjectName: String,
+    val questions: List<com.siamts.synapse.data.model.QuizQuestionDto>,
+    val currentIndex: Int = 0,
+    val score: Int = 0,
+    val userAnswers: List<InChatQuizAnswer> = emptyList(),
+    val isCompleted: Boolean = false
 )
 
 /**
@@ -42,7 +72,7 @@ sealed class AiUiAction {
 data class AiTutorUiState(
     val headerTag: String = "PERSONALIZED FOR STUDENT",
     val tutorTitle: String = "SYNAPSE AI",
-    val tutorName: String = "SYNAPSE · Neural Study Companion",
+    val tutorName: String = "SYNAPSE · On-Device Neural Tutor",
     val isOnline: Boolean = true,
     val timeHeader: String = "TODAY",
     val messages: List<ChatMessage> = emptyList(),
@@ -51,9 +81,10 @@ data class AiTutorUiState(
     val inputQuery: String = "",
     val isGenerating: Boolean = false,
     val currentlySpeakingMessageId: String? = null,
-    val currentSessionId: String = "",
-    val chatSessions: List<ChatSessionEntity> = emptyList(),
+    val activeQuizSession: InChatQuizSession? = null,
     val isHistorySheetVisible: Boolean = false,
+    val chatSessions: List<ChatSessionEntity> = emptyList(),
+    val currentSessionId: String = "",
     val isHoldRecording: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val recordingDurationSeconds: Int = 0,

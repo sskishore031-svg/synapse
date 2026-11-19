@@ -108,6 +108,8 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.tutor.components.AiMessageCanvas
 import com.siamts.synapse.ui.tutor.components.ChatHistoryBottomSheet
 import com.siamts.synapse.ui.tutor.components.HandsFreeVoiceDock
+import com.siamts.synapse.ui.tutor.components.InChatQuizQuestionCard
+import com.siamts.synapse.ui.tutor.components.InChatQuizScorecardCard
 import com.siamts.synapse.ui.tutor.components.WelcomeHeroEmblem
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import kotlinx.coroutines.delay
@@ -228,6 +230,12 @@ fun AiTutorScreen(
             },
             onFormatFiveMark = { message ->
                 viewModel.formatAsFiveMark(message)
+            },
+            onSelectQuizOption = { optionKey ->
+                viewModel.submitQuizAnswer(optionKey)
+            },
+            onSaveQuizScoreAndMistakes = { message ->
+                viewModel.saveQuizScorecardAndMistakes(message)
             },
             onOpenNotes = {
                 onNavigateToNotes?.invoke()
@@ -352,6 +360,8 @@ fun AiTutorContent(
     onElaborate: (ChatMessage) -> Unit = {},
     onFormatTwoMark: (ChatMessage) -> Unit = {},
     onFormatFiveMark: (ChatMessage) -> Unit = {},
+    onSelectQuizOption: (String) -> Unit = {},
+    onSaveQuizScoreAndMistakes: (ChatMessage) -> Unit = {},
     onOpenNotes: () -> Unit = {},
     onBackClick: () -> Unit,
     onMicTouchDown: () -> Boolean = { true },
@@ -522,6 +532,18 @@ fun AiTutorContent(
                                     SavedNoteInteractiveCard(
                                         message = message,
                                         onOpenNotes = onOpenNotes
+                                    )
+                                } else if (message.isQuizQuestion) {
+                                    InChatQuizQuestionCard(
+                                        message = message,
+                                        onSelectOption = onSelectQuizOption
+                                    )
+                                } else if (message.isQuizScorecard) {
+                                    InChatQuizScorecardCard(
+                                        message = message,
+                                        onSaveScoreAndMistakes = {
+                                            onSaveQuizScoreAndMistakes(message)
+                                        }
                                     )
                                 } else {
                                     AiMessageCanvas(

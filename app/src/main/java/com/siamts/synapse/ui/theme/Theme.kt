@@ -17,25 +17,25 @@ import androidx.core.view.WindowCompat
 val LocalThemeIsDark = compositionLocalOf { true }
 
 private val DarkColorScheme = darkColorScheme(
-    primary = CyanGlow,
-    secondary = PurpleAccent,
-    tertiary = CyanAccent,
+    primary = SunsetOrange,
+    secondary = AmberGold,
+    tertiary = SunsetOrangeEnd,
     background = DarkBackground,
-    surface = DarkBackgroundTop,
-    surfaceVariant = Color(0xFF161F42),
-    onPrimary = Color.Black,
-    onSecondary = Color.White,
-    onTertiary = Color.Black,
+    surface = SurfacePanel,
+    surfaceVariant = SurfacePanelElevated,
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onTertiary = Color.White,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary,
-    outline = Color(0xFF2E3B68)
+    outline = SurfaceBorder
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = BlueAccent,
-    secondary = PurpleAccent,
-    tertiary = CyanAccent,
+    primary = SunsetOrange,
+    secondary = AmberGold,
+    tertiary = AmberAccent,
     background = LightBackground,
     surface = LightSurface,
     surfaceVariant = LightSurfaceVariant,

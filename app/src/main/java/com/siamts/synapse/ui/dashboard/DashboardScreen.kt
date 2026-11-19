@@ -59,6 +59,15 @@ import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
+import com.siamts.synapse.ui.theme.AmberAccent
+import com.siamts.synapse.ui.theme.AmberGlow
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
+import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -245,15 +254,12 @@ fun DashboardContent(
                 }
             }
 
-            // Light Sheet Container
+            // Content Container (Design 4 Transparent on Warm Dark Background)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(color = Color.Transparent)
             ) {
                 Column(
                     modifier = Modifier
@@ -262,7 +268,7 @@ fun DashboardContent(
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // 1. "Your learning journey" Dark Card
+                    // 1. "Your learning journey" Card (Design 4 SurfacePanel)
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 2.dp
@@ -270,56 +276,56 @@ fun DashboardContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        text = "Your learning journey",
-                                        color = TextSecondary,
-                                        fontSize = 13.sp,
-                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "TODAY'S OVERALL PROGRESS",
+                                            color = SunsetOrange,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${uiState.overallProgress}% Completed",
+                                            color = TextPrimary,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Text(
+                                            text = if (uiState.overallProgress == 100) "Goal achieved! Outstanding discipline." else uiState.progressMessage,
+                                            color = TextSecondary,
+                                            fontSize = 12.sp,
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier.size(64.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        androidx.compose.material3.CircularProgressIndicator(
+                                            progress = { (uiState.overallProgress / 100f).coerceIn(0f, 1f) },
+                                            modifier = Modifier.fillMaxSize(),
+                                            color = SunsetOrange,
+                                            trackColor = Color(0xFF1E212D),
+                                            strokeWidth = 6.dp
+                                        )
+                                        Text(
+                                            text = "${uiState.overallProgress}%",
+                                            color = TextPrimary,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Row(verticalAlignment = Alignment.Bottom) {
-                                    Text(
-                                        text = "${uiState.overallProgress}%",
-                                        color = TextPrimary,
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "overall progress",
-                                        color = TextSecondary,
-                                        fontSize = 13.sp,
-                                        modifier = Modifier.padding(bottom = 4.dp),
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                LinearProgressIndicator(
-                                    progress = { uiState.overallProgress / 100f },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(6.dp),
-                                    color = CyanGlow,
-                                    trackColor = Color(0xFF334155),
-                                )
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Text(
-                                    text = uiState.progressMessage,
-                                    color = TextSecondary,
-                                    fontSize = 12.sp,
-                                )
                             }
                         }
                     }

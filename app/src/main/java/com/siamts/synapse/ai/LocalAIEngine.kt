@@ -899,7 +899,7 @@ class LocalAIEngine private constructor(context: Context?) {
             q.contains("note") && (q.contains("how") || q.contains("create") || q.contains("save") || q.contains("where") || q.contains("download")) -> {
                 LocalAiResponse(
                     paragraph1 = "📝 **SYNAPSE Notes Organizer**\n\nYou can access, create, and organize study notes by tapping the Notes icon in the bottom navigation bar.",
-                    paragraph2 = "⚡ **Key Capabilities**\n\n• Tap the **➕** button on the Notes screen to create Common, Subject-specific, or Saved notes.\n• Access **Subject Notes** directly for Mathematics, CS, AI, Physics, and Chemistry.\n• Save or download any note for instant offline study.",
+                    paragraph2 = "⚡ **Key Capabilities**\n\n• Tap the **➕** button on the Notes screen to create Common, Subject-specific, or Saved notes.\n• Access **Subject Notes** directly for Python, SQL, AI & Modern Tech, and Aptitude.\n• Save or download any note for instant fast study.",
                     confidenceScore = 95.0
                 )
             }
@@ -1125,7 +1125,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildIdentityResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "I am SYNAPSE AI, your friendly study companion! I help you master 50+ university subjects across Engineering, Science, and Humanities with clear concept explanations, interactive quizzes, and smart revision notes. Ask me any study doubt, or tell me to launch a quiz or save notes!",
+            paragraph1 = "I am SYNAPSE AI, your intelligent career & placement learning companion! I help you master 4 high-impact career tracks: Python & Coding Logic, SQL & Database Management, AI & Modern Tech Concepts, and Aptitude & Interview Prep with clear concept explanations, interactive in-chat quizzes, and smart revision notes. Ask me any study doubt, or tell me to test you with a quiz!",
             paragraph2 = "",
             confidenceScore = 100.0,
             isGreeting = false
@@ -1137,17 +1137,17 @@ class LocalAIEngine private constructor(context: Context?) {
             normalized.contains("you are awesome") || normalized.contains("you are great") || normalized.contains("youre awesome") || normalized.contains("you are cool") ->
                 "Thank you so much! You're awesome for putting in the effort to study. Let's keep it going!"
             normalized.contains("i am bored") || normalized.contains("im bored") || normalized == "bored" ->
-                "How about a quick 3-minute quiz or learning a fascinating fact in science or tech? Pick a subject and let's make it fun!"
+                "How about a quick 10-question placement quiz or learning a fascinating coding concept? Pick a track and let's test your skills!"
             normalized.contains("stressed about exams") || normalized.contains("i am stressed") || normalized.contains("im stressed") || normalized.contains("exam stress") || normalized == "stressed" ->
-                "Take a deep breath! You've got this. Let's break your revision down into bite-sized 10-minute topics so you feel confident and in control."
+                "Take a deep breath! You've got this. Let's break your preparation down into bite-sized 10-minute micro-lessons so you feel confident and in control."
             normalized.contains("motivate me") || normalized.contains("give me motivation") || normalized.contains("motivation") ->
-                "Every expert was once a beginner who refused to quit. Focus on mastering just one concept right now—progress adds up fast!"
+                "Every senior engineer and tech leader was once a beginner who refused to quit. Focus on mastering just one concept right now—progress adds up fast!"
             normalized.contains("who made you") || normalized.contains("who created you") || normalized.contains("who built you") ->
-                "I was built by the SYNAPSE AI team to be your personal university study companion and learning buddy!"
+                "I was built by the SYNAPSE AI team to be your personal tech career & placement study companion!"
             normalized.contains("are you smart") || normalized.contains("how smart are you") ->
-                "I know 50+ college subjects inside and out, but my favorite thing is helping you become the smartest person in the room!"
+                "I know Python, SQL, Modern AI, and Aptitude inside and out, and my goal is helping you excel in technical placement exams and interviews!"
             normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
-                "Hey friend! Great to see you. What subject shall we dive into today?"
+                "Hey friend! Great to see you. Which track shall we dive into today: Python, SQL, AI, or Aptitude?"
             else -> null
         }
         return reply?.let {
@@ -1578,21 +1578,10 @@ class LocalAIEngine private constructor(context: Context?) {
 
         if (candidateSubject.isNullOrBlank()) {
             val standaloneSubjects = setOf(
-                "math", "maths", "mathematics", "computer science", "cs", "data science", "ds",
-                "artificial intelligence", "ai", "machine learning", "ml", "deep learning",
-                "physics", "chemistry", "biology", "bio", "history", "world history",
-                "economics", "finance", "environmental science", "ecology", "computer networks",
-                "networking", "cyber security", "cybersecurity", "security", "psychology",
-                "business", "business management", "electrical engineering", "astronomy",
-                "astrophysics", "statistics", "software engineering", "cloud computing",
-                "operating systems", "dbms", "database", "web development", "mobile development",
-                "blockchain", "robotics", "mechanical engineering", "civil engineering",
-                "biotechnology", "genetics", "neuroscience", "organic chemistry", "quantum physics",
-                "calculus", "linear algebra", "discrete mathematics", "philosophy", "sociology",
-                "political science", "literature", "accounting", "marketing", "cryptography",
-                "information technology", "architecture", "aerospace engineering",
-                "chemical engineering", "biomedical engineering", "nanotechnology",
-                "supply chain", "supply chain management", "law"
+                "python", "coding", "programming", "python & coding logic", "coding logic", "python logic",
+                "sql", "database", "databases", "dbms", "rdbms", "sql & database management", "database management",
+                "ai", "artificial intelligence", "ml", "machine learning", "deep learning", "modern tech", "tech", "llm", "rag", "ai & modern tech concepts",
+                "aptitude", "quant", "quantitative aptitude", "logical reasoning", "reasoning", "interview", "interview prep", "puzzles", "placement", "aptitude & interview prep"
             )
             if (norm in standaloneSubjects) {
                 candidateSubject = norm
@@ -1647,21 +1636,10 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun isKnownSubject(candidate: String): Boolean {
         val known = setOf(
-            "math", "maths", "mathematics", "computer science", "cs", "data science", "ds",
-            "artificial intelligence", "ai", "machine learning", "ml", "deep learning",
-            "physics", "chemistry", "biology", "bio", "history", "world history",
-            "economics", "finance", "environmental science", "ecology", "computer networks",
-            "networking", "cyber security", "cybersecurity", "security", "psychology",
-            "business", "business management", "electrical engineering", "astronomy",
-            "astrophysics", "statistics", "software engineering", "cloud computing",
-            "operating systems", "dbms", "database", "web development", "mobile development",
-            "blockchain", "robotics", "mechanical engineering", "civil engineering",
-            "biotechnology", "genetics", "neuroscience", "organic chemistry", "quantum physics",
-            "calculus", "linear algebra", "discrete mathematics", "philosophy", "sociology",
-            "political science", "literature", "accounting", "marketing", "cryptography",
-            "information technology", "architecture", "aerospace engineering",
-            "chemical engineering", "biomedical engineering", "nanotechnology",
-            "supply chain", "supply chain management", "law"
+            "python", "coding", "programming", "python & coding logic", "coding logic", "python logic",
+            "sql", "database", "databases", "dbms", "rdbms", "sql & database management", "database management",
+            "ai", "artificial intelligence", "ml", "machine learning", "deep learning", "modern tech", "tech", "llm", "rag", "ai & modern tech concepts",
+            "aptitude", "quant", "quantitative aptitude", "logical reasoning", "reasoning", "interview", "interview prep", "puzzles", "placement", "aptitude & interview prep"
         )
         return candidate.trim().lowercase(Locale.ROOT) in known
     }
@@ -1669,393 +1647,50 @@ class LocalAIEngine private constructor(context: Context?) {
     private fun resolveSubjectOverview(candidate: String): SubjectOverviewInfo? {
         val key = candidate.trim().lowercase(Locale.ROOT)
         val overviewMap = mapOf(
-            "mathematics" to SubjectOverviewInfo(
-                "Mathematics",
-                "Mathematics is the foundational science of structure, quantity, space, and change, studying patterns through rigorous logical deduction and formal proofs.",
-                "Used across machine learning algorithms, quantitative finance, structural and aerospace engineering, cryptography, data science, and physics simulations.",
-                "Builds unparalleled analytical rigor, sharp abstract problem-solving, and universally transferable reasoning applied across all STEM fields.",
-                "High abstraction levels, complex prerequisite chains, and unforgiving precision requirements where minor computational errors alter entire proofs."
+            "python & coding logic" to SubjectOverviewInfo(
+                "Python & Coding Logic",
+                "Python & Coding Logic is the foundational software engineering discipline covering memory architecture, core OOP principles, functional paradigms, and algorithmic problem-solving techniques.",
+                "Used in backend web development (Django/FastAPI), machine learning model building, data pipeline automation, enterprise scripting, and technical coding rounds for top tech companies.",
+                "High developer velocity, readable syntax, massive standard and third-party library ecosystem, versatile applicability from microservices to AI, and high recruitment demand.",
+                "Dynamic typing runtime overhead, GIL (Global Interpreter Lock) concurrency limitations, and memory consumption compared to compiled languages like C++ or Rust."
             ),
-            "computer science" to SubjectOverviewInfo(
-                "Computer Science",
-                "Computer Science is the systematic study of computation, algorithmic problem-solving, data structures, software architecture, and the interaction between hardware and software.",
-                "Powering modern software engineering, operating systems, cloud infrastructures, distributed web systems, cybersecurity, and artificial intelligence platforms.",
-                "Massive industry demand, high scalability of digital solutions, rapid feedback cycles, and endless creative engineering possibilities.",
-                "Fast-evolving technological landscape requiring constant continuous learning, intricate software debugging, and complex system concurrency issues."
+            "sql & database management" to SubjectOverviewInfo(
+                "SQL & Database Management",
+                "SQL & Database Management focuses on relational database modeling, relational algebra, ACID transaction safety, B-Tree index optimization, and querying complex structured datasets.",
+                "Powering core enterprise data storage, financial transactions, real-time analytics, user authentication backends, and data warehousing for high-concurrency systems.",
+                "Strict data integrity and consistency through ACID compliance, standardized declarative query language across all relational engines (PostgreSQL, MySQL), and predictable query execution plans.",
+                "Horizontal scaling complexity (sharding/replication lag) compared to NoSQL, rigid schema migrations on multi-terabyte tables, and database deadlocks under extreme contention."
             ),
-            "data science" to SubjectOverviewInfo(
-                "Data Science",
-                "Data Science is an interdisciplinary field combining statistics, machine learning, and domain knowledge to extract actionable insights and predictive intelligence from structured and unstructured data.",
-                "Business intelligence, algorithmic trading, customer behavioral modeling, recommendation engines (Netflix/Spotify), healthcare diagnostics, and supply chain forecasting.",
-                "Data-driven decision making, high industry valuation, and powerful synergy across business strategy and machine intelligence.",
-                "Noisy and messy real-world data, risks of statistical bias and over-fitting, and complex data pipeline maintenance."
+            "ai & modern tech concepts" to SubjectOverviewInfo(
+                "AI & Modern Tech Concepts",
+                "AI & Modern Tech Concepts encompasses the architecture and deployment of machine learning models, neural networks, Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), cloud architectures, and cybersecurity.",
+                "Generative AI assistants, autonomous robotics, semantic search engines, enterprise cloud infrastructure, threat intelligence, and predictive decision-support systems.",
+                "Automates complex human-cognitive tasks, processes unstructured multimodal data at scale, and unlocks unprecedented software capabilities.",
+                "High GPU compute and inference latency costs, model hallucination and alignment risks, data privacy regulations, and complex MLOps deployment pipelines.",
             ),
-            "artificial intelligence" to SubjectOverviewInfo(
-                "Artificial Intelligence",
-                "Artificial Intelligence is the branch of computer science dedicated to engineering intelligent agents that simulate cognitive capabilities like learning, pattern recognition, decision-making, and natural language understanding.",
-                "Large language models, autonomous self-driving vehicles, medical imaging diagnosis, automated robotics, real-time speech translation, and intelligent game theory.",
-                "Automates complex cognitive workflows, enables superhuman processing of massive data, and drives groundbreaking innovations across every scientific domain.",
-                "High computational and GPU power costs, 'black-box' explainability challenges, hallucination risks, and complex ethical and alignment considerations."
-            ),
-            "physics" to SubjectOverviewInfo(
-                "Physics",
-                "Physics is the fundamental natural science that investigates matter, energy, space, time, and the core physical laws that govern the universe from subatomic particles to cosmic scales.",
-                "Semiconductor hardware design, aerospace and satellite navigation, quantum computing, renewable energy systems, laser optics, and medical radiation technology.",
-                "Provides the deepest mechanistic understanding of physical reality, first-principles thinking, and universal mathematical modeling skills.",
-                "Demanding mathematical machinery (multivariable calculus, tensor algebra, differential equations) and unintuitive counter-intuitive quantum concepts."
-            ),
-            "chemistry" to SubjectOverviewInfo(
-                "Chemistry",
-                "Chemistry is the central science studying the composition, molecular structure, properties, and reactive transformations of matter at the atomic scale.",
-                "Pharmaceutical drug discovery, battery technology and energy storage, materials engineering, polymers, petrochemicals, and agricultural fertilizers.",
-                "Direct tangible impact on medicine and green energy, bridging physics and biology, and high industrial manufacturing relevance.",
-                "Extensive memorization of reaction pathways, complex spatial 3D stereochemistry, and hazardous laboratory handling protocols."
-            ),
-            "biology" to SubjectOverviewInfo(
-                "Biology",
-                "Biology is the natural science dedicated to investigating living organisms, covering cellular processes, physiological systems, genetic inheritance, evolutionary history, and ecological interactions.",
-                "Biomedical research, genomic medicine and CRISPR gene editing, vaccine engineering, ecological conservation, agricultural crop improvement, and forensic pathology.",
-                "Directly advances human health and disease prevention, explains the living natural world, and drives multi-billion dollar biotechnology innovations.",
-                "High conceptual complexity with endless biological exceptions, massive terminology memorization, and long experimental wet-lab incubation periods."
-            ),
-            "history" to SubjectOverviewInfo(
-                "World History",
-                "History is the academic study of past human societies, civilizations, cultural revolutions, governance systems, and geopolitical transformations across time.",
-                "Foreign policy and diplomatic strategy, legal jurisprudence, historical document archiving, geopolitical risk assessment, journalism, and public governance.",
-                "Contextualizes modern global politics, refines critical source evaluation, and teaches pattern recognition across human socio-economic cycles.",
-                "Subjective source interpretations, historiographical biases, and reliance on qualitative archival evidence rather than repeatable experiments."
-            ),
-            "economics" to SubjectOverviewInfo(
-                "Economics & Finance",
-                "Economics and Finance analyze the production, distribution, and consumption of scarce resources, examining individual decision-making, market mechanisms, and monetary policy.",
-                "Central banking, corporate financial strategy, investment portfolio management, public policy design, market pricing models, and international trade treaties.",
-                "High-earning career paths in investment banking and consulting, quantitative financial literacy, and deep understanding of global market dynamics.",
-                "Economic models depend heavily on simplifying behavioral assumptions, market volatility, and unpredictable geopolitical shocks."
-            ),
-            "environmental science" to SubjectOverviewInfo(
-                "Environmental Science",
-                "Environmental Science is an integrative discipline examining ecological systems, climate dynamics, human environmental impact, and sustainable natural resource management.",
-                "Carbon emissions auditing, renewable energy transition, wildlife conservation planning, environmental impact assessments (EIA), and climate policy advocacy.",
-                "Addresses the world's most critical sustainability challenges, clean energy innovations, and growing environmental regulatory compliance demand.",
-                "Complex multi-variable climate feedback loops, political polarization surrounding climate policy, and high friction in global treaty enforcement."
-            ),
-            "computer networks" to SubjectOverviewInfo(
-                "Computer Networks",
-                "Computer Networks explores the physical and logical communication architectures that interconnect computing devices, transmitting data packets through structured protocol layers.",
-                "Internet routing, cloud data center architectures, 5G wireless telecommunications, Content Delivery Networks (CDNs), and enterprise VPNs.",
-                "Essential foundation for all connected devices and web systems, stable enterprise infrastructure roles, and vital knowledge for cloud scale.",
-                "Complex packet loss and latency troubleshooting, distributed failure modes, and constant threat of network-level security attacks."
-            ),
-            "cyber security" to SubjectOverviewInfo(
-                "Cyber Security",
-                "Cyber Security is the practice of safeguarding digital architectures, servers, endpoints, networks, and confidential data from malicious intrusions, ransomware, and vulnerabilities.",
-                "Penetration testing and ethical hacking, security operations centers (SOC), secure cryptographic protocols, vulnerability patching, and compliance auditing.",
-                "Massive global talent shortage, high compensation, mission-critical organizational impact, and engaging adversarial problem solving.",
-                "Asymmetric battlefield (defenders must block all attacks, attackers need one gap), high burnout stress during active breaches, and relentless evolving threats."
-            ),
-            "psychology" to SubjectOverviewInfo(
-                "Psychology",
-                "Psychology is the scientific study of the mind and human behavior, examining cognitive perception, emotional regulation, neurobiology, and interpersonal social dynamics.",
-                "Clinical psychotherapy and mental health, User Experience (UX) product design, behavioral economics, organizational leadership, and marketing psychology.",
-                "Improves human understanding and emotional intelligence, enhances user-centered software design, and vital for mental health therapy.",
-                "High individual behavioral variance, replication crises in experimental psychological studies, and emotional fatigue in clinical therapy roles."
-            ),
-            "business" to SubjectOverviewInfo(
-                "Business Management",
-                "Business Management focuses on coordinating organizational resources, strategic planning, human capital, and operational execution to achieve sustainable commercial success.",
-                "Corporate strategy, startup scaling and venture capital, operational supply chains, product management, human resources, and marketing execution.",
-                "Broad executive career mobility, foundational leadership skills, and universal applicability across private enterprises and non-profits.",
-                "High dependency on market competition, interpersonal corporate friction, and high organizational accountability during revenue downturns."
-            ),
-            "electrical engineering" to SubjectOverviewInfo(
-                "Electrical Engineering",
-                "Electrical Engineering investigates the physics and practical engineering of electricity, electromagnetism, analog/digital electronics, power systems, and signal processing.",
-                "Microchip (VLSI) design, electric vehicle powertrains, power grid transmission, wireless telecommunications, and IoT embedded microcontrollers.",
-                "Powers the hardware backbone of modern civilization, strong cross-discipline hardware-software synergy, and protected engineering licensing.",
-                "Steep physical mathematics and electromagnetic field equations, expensive hardware prototyping cycles, and physical electrical hazards."
-            ),
-            "astronomy" to SubjectOverviewInfo(
-                "Astronomy & Astrophysics",
-                "Astronomy and Astrophysics explore celestial bodies, stellar life cycles, black holes, galactic structures, dark energy, and the cosmological origins of the universe.",
-                "Deep-space satellite exploration, cosmic radiation monitoring, orbital trajectory planning for space agencies, and advanced spectroscopy imaging.",
-                "Expands human knowledge of cosmic origins, pushes the limits of optical and radio sensors, and inspires visionary scientific exploration.",
-                "Inability to conduct hands-on laboratory experiments on celestial targets, scarce academic research positions, and reliance on massive space telescopes."
-            ),
-            "statistics" to SubjectOverviewInfo(
-                "Statistics",
-                "Statistics is the mathematical science of collecting, exploring, organizing, interpreting, and presenting empirical numerical data under uncertainty.",
-                "Clinical medical trials, A/B testing in tech products, actuarial insurance modeling, econometric forecasting, and quality assurance engineering.",
-                "Critical backbone for all empirical research and data science, high analytical demand, and objectivity in scientific conclusions.",
-                "Vulnerable to misinterpretation ('p-hacking', false correlations), abstract probability theory, and sensitive to non-representative sample sizes."
-            ),
-            "software engineering" to SubjectOverviewInfo(
-                "Software Engineering",
-                "Software Engineering is the disciplined engineering approach to the design, implementation, testing, maintenance, and lifecycle management of reliable software systems.",
-                "Enterprise application suites, automated CI/CD pipelines, distributed microservices, operating system kernels, and high-frequency trading platforms.",
-                "Instant global distribution of software products, high salaries, agile workflow feedback, and massive economic leverage.",
-                "Accumulation of technical debt, complex legacy codebases, and frequent production outages requiring high-stakes triage."
-            ),
-            "cloud computing" to SubjectOverviewInfo(
-                "Cloud Computing & DevOps",
-                "Cloud Computing provides on-demand computing power, storage, and networking over the internet, while DevOps unifies software development and IT infrastructure operations.",
-                "Containerized deployments (Kubernetes/Docker), serverless backends, auto-scaling web architectures, infrastructure as code (Terraform), and disaster recovery.",
-                "Eliminates physical data centers, scales apps effortlessly to millions of users, and reduces operational maintenance overhead.",
-                "Complex multi-cloud pricing and runaway billing costs, shared-responsibility security models, and distributed microservice network outages."
-            ),
-            "operating systems" to SubjectOverviewInfo(
-                "Operating Systems",
-                "Operating Systems is the study of core system software that manages hardware resources, processes, memory allocation, storage filesystems, and security abstractions.",
-                "Linux and Unix kernel development, real-time operating systems (RTOS) in aviation/robotics, hypervisors (KVM), and mobile platforms (Android/iOS).",
-                "Reveals how computers truly execute code at the lowest level, optimizes hardware efficiency, and foundational for system programmers.",
-                "Hard-to-reproduce race conditions and deadlocks, memory corruption bugs in low-level languages (C/Rust), and unforgiving kernel panics."
-            ),
-            "database" to SubjectOverviewInfo(
-                "Database Management Systems (DBMS)",
-                "DBMS focuses on software systems that store, retrieve, index, and organize structured and unstructured data while ensuring ACID transaction guarantees.",
-                "Relational SQL banking ledgers, NoSQL distributed key-value stores (Redis/Cassandra), vector databases for LLMs, and analytical data warehouses.",
-                "Guarantees mission-critical data integrity, enables sub-millisecond query execution over petabytes, and essential for every application.",
-                "Distributed consensus (CAP theorem trade-offs), complex query execution plan tuning, and catastrophic database migration risks."
-            ),
-            "web development" to SubjectOverviewInfo(
-                "Web Development",
-                "Web Development involves building interactive websites and web applications across client-side frontend interfaces, server-side backends, and APIs.",
-                "SaaS software products, modern e-commerce storefronts, interactive web portals, responsive progressive web apps (PWAs), and REST/GraphQL APIs.",
-                "Lowest barrier to entry for building working apps, instant cross-platform browser accessibility, and huge freelance/job market.",
-                "Rapidly changing frontend framework churn, cross-browser compatibility quirks, and frontend state management complexity."
-            ),
-            "mobile development" to SubjectOverviewInfo(
-                "Mobile App Development",
-                "Mobile App Development focuses on engineering applications optimized for mobile operating systems, touch interfaces, and portable embedded sensors.",
-                "Consumer smartphone apps, on-demand ride/food delivery logistics, mobile banking apps, wearable health sensors, and mobile games.",
-                "Direct access to billions of active smartphone users, rich device sensors (GPS/Camera/Biometrics), and high engagement.",
-                "Strict app store review delays, device fragmentation (varying screen sizes and Android OS versions), and battery consumption constraints."
-            ),
-            "blockchain" to SubjectOverviewInfo(
-                "Blockchain & Cryptography",
-                "Blockchain is a decentralized, cryptographically secure distributed ledger system that records transactions across peer-to-peer nodes without central authorities.",
-                "Decentralized finance (DeFi), immutable audit trails, smart contracts (Ethereum), zero-knowledge identity verification, and supply chain provenance.",
-                "Trustless peer-to-peer verification, resistance to centralized censorship and tampering, and automated smart contract execution.",
-                "High transaction latency and throughput bottlenecks, irreversible code vulnerability exploits in smart contracts, and regulatory uncertainty."
-            ),
-            "robotics" to SubjectOverviewInfo(
-                "Robotics",
-                "Robotics combines mechanical engineering, electronics, computer science, and control theory to design autonomous physical machines that sense and interact with the physical world.",
-                "Automated factory assembly lines, robotic surgery assistants, warehouse automation (Amazon Kiva), interplanetary rovers, and humanoid robots.",
-                "Replaces dangerous human labor in hazardous environments, increases manufacturing precision and speed, and embodies physical AI.",
-                "High hardware prototyping costs, actuator mechanical wear and tear, and complex real-time sensory perception under physical noise."
-            ),
-            "mechanical engineering" to SubjectOverviewInfo(
-                "Mechanical Engineering",
-                "Mechanical Engineering applies physics, materials science, and mathematics to design, analyze, manufacture, and maintain mechanical systems and thermal machinery.",
-                "Automotive engine and chassis design, aircraft turbines, HVAC thermal regulation, industrial tooling, and renewable wind turbines.",
-                "One of the broadest and most durable engineering disciplines, tangible physical creation, and foundational to manufacturing industries.",
-                "Long manufacturing lead times, strict safety certifications where failures cause physical catastrophe, and material fatigue issues."
-            ),
-            "civil engineering" to SubjectOverviewInfo(
-                "Civil Engineering",
-                "Civil Engineering is the branch of engineering that designs, constructs, and maintains physical infrastructure including bridges, highways, dams, tunnels, and skyscrapers.",
-                "Urban transportation networks, earthquake-resilient architectural design, municipal water supply and sewage, and mega-structural bridges.",
-                "Direct contribution to community infrastructure and civilization building, stable public and private employment, and enduring physical legacies.",
-                "Enormous capital budgets with heavy bureaucratic and environmental oversight, high liability risk for structural failures, and slow adoption of new construction tech."
-            ),
-            "biotechnology" to SubjectOverviewInfo(
-                "Biotechnology",
-                "Biotechnology utilizes biological systems, cellular machinery, and living organisms to create innovative medical treatments, industrial enzymes, and agricultural products.",
-                "Monoclonal antibody synthesis, synthetic insulin production, biodegradable bioplastics, bio-fuels, and drought-resistant genetically modified crops.",
-                "Revolutionary potential to treat previously incurable diseases, creates sustainable green bio-alternatives, and high financial investment.",
-                "Extremely long FDA clinical trial timelines (10+ years), massive research capital costs, and complex bioethical regulations."
-            ),
-            "genetics" to SubjectOverviewInfo(
-                "Genetics & Genomics",
-                "Genetics is the scientific study of heredity, genes, genomic sequencing, and genetic variation in living organisms.",
-                "Personalized medicine, prenatal genetic screening, CRISPR base editing, agricultural selective breeding, and hereditary cancer risk profiling.",
-                "Decodes the fundamental blueprint of life, unlocks targeted therapies, and revolutionizes forensic investigations.",
-                "Ethical debates surrounding germline gene modifications, gene patenting disputes, and complex polygenic interactions."
-            ),
-            "neuroscience" to SubjectOverviewInfo(
-                "Neuroscience",
-                "Neuroscience is the multidisciplinary science studying the nervous system and brain architecture, from cellular synaptic firing to cognitive brain networks.",
-                "Brain-Computer Interfaces (Neuralink), Alzheimer's and Parkinson's therapeutics, neuro-imaging (fMRI), and biologically inspired AI algorithms.",
-                "Tackles the ultimate mystery of human consciousness and memory, with profound applications in mental health and cognitive restoration.",
-                "Incredible biological complexity with billions of interconnected neurons, limited non-invasive measurement precision, and elusive neural decoding."
-            ),
-            "organic chemistry" to SubjectOverviewInfo(
-                "Organic Chemistry",
-                "Organic Chemistry is the study of the structure, properties, composition, reactions, and synthesis of carbon-based compounds.",
-                "Small-molecule pharmaceutical synthesis, petrochemical refining, specialty polymers, agrochemicals, and natural product extraction.",
-                "Indispensable molecular foundation for all drug development, paints, plastics, and biochemistry.",
-                "Challenging reaction mechanism pathways, stereochemical chirality puzzles, and hazardous laboratory reagents."
-            ),
-            "quantum physics" to SubjectOverviewInfo(
-                "Quantum Physics",
-                "Quantum Physics investigates physical behavior at atomic and subatomic scales where energy, momentum, and angular momentum are restricted to quantized values.",
-                "Quantum computing (qubits), quantum key distribution (QKD cryptography), atomic clocks for GPS, and laser diode spectroscopy.",
-                "Unlocks the deepest physical insights of our universe and drives exponential advances in quantum information processing.",
-                "Paradoxical phenomena (superposition, entanglement) that defy classical intuition, and extreme quantum decoherence challenges in hardware."
-            ),
-            "calculus" to SubjectOverviewInfo(
-                "Calculus",
-                "Calculus is the mathematical branch that studies continuous change, split into differential calculus (rates of change) and integral calculus (accumulation of quantities).",
-                "Gradient descent in machine learning, physical trajectory computation, optimization of economic profit, and signal processing transforms.",
-                "The foundational language of all physical and computational optimization, enabling modeling of dynamic continuous systems.",
-                "High barrier to entry with limit definitions, integration technique memorization, and rigorous multivariable coordinate conversions."
-            ),
-            "linear algebra" to SubjectOverviewInfo(
-                "Linear Algebra",
-                "Linear Algebra is the branch of mathematics focusing on vector spaces, linear transformations, matrices, and systems of linear equations.",
-                "3D computer graphics transformations, neural network weight tensors, Google PageRank, quantum state representations, and PCA dimensionality reduction.",
-                "Compact representation of high-dimensional data, computationally efficient on modern GPUs, and the mathematical heart of AI.",
-                "Abstract geometric transformations in n-dimensional spaces, unintuitive eigenvalue/eigenvector concepts, and matrix condition number instabilities."
-            ),
-            "discrete mathematics" to SubjectOverviewInfo(
-                "Discrete Mathematics",
-                "Discrete Mathematics is the study of mathematical structures that are fundamentally countable and distinct rather than continuous.",
-                "Graph theory for social network modeling, relational database query optimization, formal logic in compiler verification, and cryptographic modular arithmetic.",
-                "Essential theoretical pillar of computer science algorithms, proof techniques (induction, contradiction), and computational complexity theory.",
-                "Requires rigorous combinatorial reasoning, formal symbolic logic manipulation, and absence of smooth calculus approximations."
-            ),
-            "philosophy" to SubjectOverviewInfo(
-                "Philosophy & Ethics",
-                "Philosophy explores fundamental questions regarding existence, knowledge, ethics, logic, mind, and the principles of rational discourse.",
-                "AI alignment and safety ethics, legal reasoning, political constitutional theory, bioethics review boards, and logic formalization.",
-                "Sharpens flawless critical thinking, clarifies core assumptions, and navigates moral dilemmas in rapidly advancing technological eras.",
-                "Absence of empirical consensus, highly abstract metaphysical debates, and frequently misunderstood as having little direct commercial output."
-            ),
-            "sociology" to SubjectOverviewInfo(
-                "Sociology",
-                "Sociology is the scientific study of human society, social relationships, collective behavior, social stratification, and institutional dynamics.",
-                "Public policy design, urban community planning, demographic census analysis, market research, and corporate social responsibility (CSR).",
-                "Exposes systemic social patterns and inequalities, fosters empathy, and informs progressive governance and community initiatives.",
-                "Difficulty isolating confounding variables in complex populations, ideological debates, and qualitative research methodology disputes."
-            ),
-            "political science" to SubjectOverviewInfo(
-                "Political Science",
-                "Political Science investigates government systems, political behavior, public policies, electoral mechanisms, and international relations.",
-                "Electoral campaign strategy, legislative drafting, diplomatic negotiations, geopolitical intelligence, and public administration.",
-                "Demystifies governmental power structures, prepares for legal and diplomatic leadership, and protects democratic processes.",
-                "High polarization in contemporary politics, volatile voter sentiment, and gap between theoretical policy design and real-world implementation."
-            ),
-            "literature" to SubjectOverviewInfo(
-                "English Literature",
-                "English Literature studies written works of artistic value across cultural eras, analyzing narrative technique, thematic depth, rhetoric, and cultural commentary.",
-                "Professional copywriting, narrative writing in gaming/film, literary publishing, communications management, and content strategy.",
-                "Cultivates exceptional written expression, emotional empathy, and powerful rhetorical persuasion.",
-                "Subjective grading and critical reception, shifting publishing markets, and intense competition in creative writing industries."
-            ),
-            "accounting" to SubjectOverviewInfo(
-                "Accounting",
-                "Accounting is the measurement, processing, and communication of financial and non-financial information about economic entities.",
-                "Statutory corporate tax preparation, external financial auditing (Big 4), forensic fraud investigation, and managerial budgeting.",
-                "Rock-solid job stability, protected professional designations (CPA/CA), and foundational transparency for capital markets.",
-                "Strict regulatory compliance rules, repetitive manual ledger entries, and intense overtime during quarterly tax seasons."
-            ),
-            "marketing" to SubjectOverviewInfo(
-                "Marketing",
-                "Marketing is the business process of creating, communicating, delivering, and exchanging offerings that have value for customers, clients, and society.",
-                "Digital SEO/SEM customer acquisition, brand storytelling, consumer conversion funnels, market segmentation, and viral social media campaigns.",
-                "Direct driver of corporate revenue, creative and data-driven duality, and fast feedback from customer purchasing habits.",
-                "High platform ad cost volatility (Google/Meta), consumer ad fatigue, and difficulty proving long-term brand equity ROI."
-            ),
-            "information technology" to SubjectOverviewInfo(
-                "Information Technology",
-                "Information Technology focuses on the deployment, administration, security, and maintenance of computer systems, networks, and business software suites.",
-                "Enterprise IT support, identity management (Active Directory), corporate network security, systems administration, and hardware provisioning.",
-                "Universal demand across every modern business, clear certification career pathways (CompTIA, Cisco), and reliable career progression.",
-                "Repetitive ticket troubleshooting, sudden emergency outages outside business hours, and managing non-technical end-user expectations."
-            ),
-            "architecture" to SubjectOverviewInfo(
-                "Architecture",
-                "Architecture is the art and science of designing and erecting buildings, balancing aesthetic appeal, structural integrity, and human functionality.",
-                "Sustainable green building design, urban residential housing, commercial skyscraper blueprints, and historical preservation.",
-                "Leaves enduring aesthetic and physical monuments, combines creative artistry with engineering physics, and transforms city skylines.",
-                "Lengthy multi-year licensure requirements, demanding client revision cycles, and strict zoning code constraints."
-            ),
-            "aerospace engineering" to SubjectOverviewInfo(
-                "Aerospace Engineering",
-                "Aerospace Engineering is the primary field of engineering concerned with the development of aircraft, spacecraft, satellites, and propulsion missiles.",
-                "Commercial passenger aircraft design, orbital space launch vehicles (SpaceX), aerodynamic simulations, and satellite constellation tracking.",
-                "Pushes the physical frontier of human exploration, high prestige, and cutting-edge aerodynamics and materials science.",
-                "Zero tolerance for structural or computational failure, multi-decade design cycles, and strict national defense security clearances."
-            ),
-            "chemical engineering" to SubjectOverviewInfo(
-                "Chemical Engineering",
-                "Chemical Engineering applies physical sciences and life sciences together with mathematics and economics to convert chemicals and raw materials into valuable products at industrial scale.",
-                "Large-scale petroleum refining, pharmaceutical batch production, water desalination plants, and industrial food processing.",
-                "High starting salaries, mastery of industrial scaling from test-tube to factory, and versatile manufacturing careers.",
-                "Extreme industrial plant hazards (high pressure, toxic chemicals), remote manufacturing plant locations, and heavy emissions regulations."
-            ),
-            "biomedical engineering" to SubjectOverviewInfo(
-                "Biomedical Engineering",
-                "Biomedical Engineering combines engineering design and problem-solving principles with medical and biological sciences to advance healthcare treatment.",
-                "Prosthetic limb engineering, artificial organ development, MRI/CT scanner design, pacemaker electronics, and surgical robotics.",
-                "Directly improves human lifespan and patient quality of life, bridging clinical medicine and advanced hardware engineering.",
-                "Extremely stringent FDA medical device approvals, high risk of litigation, and complex biological-hardware biocompatibility issues."
-            ),
-            "nanotechnology" to SubjectOverviewInfo(
-                "Nanotechnology",
-                "Nanotechnology is the manipulation of matter on an atomic, molecular, and supramolecular scale (1 to 100 nanometers).",
-                "Targeted cancer drug nanocarriers, carbon nanotube materials, semiconductor EUV lithography, and self-cleaning hydrophobic coatings.",
-                "Unlocks revolutionary material properties invisible at macro scales, enabling hyper-efficient microchips and revolutionary medicines.",
-                "Expensive clean-room fabrication facilities, difficulty controlling molecular self-assembly, and unknown environmental nanotoxicology risks."
-            ),
-            "supply chain" to SubjectOverviewInfo(
-                "Supply Chain & Logistics",
-                "Supply Chain Management oversees the entire flow of goods, data, and finances related to a product or service, from raw material procurement to final customer delivery.",
-                "Global shipping fleet optimization, Amazon fulfillment warehousing, just-in-time inventory manufacturing, and demand forecasting.",
-                "Crucial backbone of global commerce, high organizational visibility, and heavy adoption of algorithmic and AI automation.",
-                "High vulnerability to geopolitical conflicts and pandemic disruptions, relentless margin pressure, and round-the-clock operational stress."
-            ),
-            "law" to SubjectOverviewInfo(
-                "Law & Legal Studies",
-                "Law is the system of rules created and enforced through social or governmental institutions to regulate behavior, settle disputes, and ensure justice.",
-                "Corporate contract negotiations, intellectual property litigation, criminal defense and prosecution, and constitutional advocacy.",
-                "Immense intellectual prestige, high-level advocacy power, and lucrative legal partnership earnings.",
-                "Exhaustive legal case law reading and citation memorization, adversarial courtroom environments, and high-stakes client accountability."
+            "aptitude & interview prep" to SubjectOverviewInfo(
+                "Aptitude & Interview Prep",
+                "Aptitude & Interview Prep trains quantitative problem-solving speed, logical reasoning, data interpretation, pattern recognition, and professional behavioral interview communication.",
+                "Clearing first-round campus placement screening tests, competitive tech assessments, managerial case studies, and engineering HR/technical interviews.",
+                "Drastically sharpens mental math speed, structured deduction under strict time limits, cognitive clarity, and articulation during high-pressure placement drives.",
+                "Strict time constraints per problem (under 60 seconds), trick questions requiring pattern shortcuts, and fatigue during multi-hour recruitment examinations."
             )
         )
 
         val aliasMap = mapOf(
-            "math" to "mathematics", "maths" to "mathematics", "algebra" to "mathematics", "calculus" to "calculus",
-            "cs" to "computer science", "programming" to "computer science", "coding" to "computer science",
-            "ds" to "data science", "data analytics" to "data science",
-            "ai" to "artificial intelligence", "ml" to "artificial intelligence", "machine learning" to "artificial intelligence", "deep learning" to "artificial intelligence",
-            "phy" to "physics", "waves" to "physics",
-            "chem" to "chemistry", "bonding" to "chemistry", "chemical bonding" to "chemistry",
-            "bio" to "biology", "life science" to "biology", "biological sciences" to "biology",
-            "world history" to "history", "ancient history" to "history",
-            "finance" to "economics", "econ" to "economics", "macroeconomics" to "economics", "microeconomics" to "economics",
-            "ecology" to "environmental science", "environment" to "environmental science", "environmental" to "environmental science",
-            "networks" to "computer networks", "networking" to "computer networks", "net" to "computer networks",
-            "security" to "cyber security", "cybersecurity" to "cyber security", "infosec" to "cyber security", "sec" to "cyber security",
-            "psych" to "psychology",
-            "management" to "business", "business management" to "business", "mba" to "business", "biz" to "business",
-            "electronics" to "electrical engineering", "circuits" to "electrical engineering", "ee" to "electrical engineering",
-            "astrophysics" to "astronomy", "astro" to "astronomy",
-            "swe" to "software engineering", "software dev" to "software engineering",
-            "devops" to "cloud computing", "cloud" to "cloud computing", "aws" to "cloud computing",
-            "os" to "operating systems", "linux" to "operating systems",
-            "dbms" to "database", "databases" to "database", "sql" to "database",
-            "web dev" to "web development", "frontend" to "web development", "backend" to "web development",
-            "mobile" to "mobile development", "android" to "mobile development", "ios" to "mobile development",
-            "crypto" to "blockchain", "cryptocurrency" to "blockchain", "cryptography" to "blockchain",
-            "automation" to "robotics",
-            "mechanics" to "mechanical engineering",
-            "structural engineering" to "civil engineering",
-            "biotech" to "biotechnology",
-            "genomics" to "genetics",
-            "brain" to "neuroscience",
-            "quantum" to "quantum physics", "quantum mechanics" to "quantum physics",
-            "matrices" to "linear algebra",
-            "discrete math" to "discrete mathematics",
-            "ethics" to "philosophy",
-            "pol sci" to "political science", "politics" to "political science", "govt" to "political science",
-            "english" to "literature", "english literature" to "literature",
-            "audit" to "accounting",
-            "it" to "information technology",
-            "aeronautics" to "aerospace engineering",
-            "bioengineering" to "biomedical engineering", "bme" to "biomedical engineering",
-            "logistics" to "supply chain", "supply chain management" to "supply chain",
-            "legal" to "law", "jurisprudence" to "law"
+            "python" to "python & coding logic", "python3" to "python & coding logic", "py" to "python & coding logic",
+            "coding" to "python & coding logic", "programming" to "python & coding logic", "logic" to "python & coding logic",
+            "sql" to "sql & database management", "database" to "sql & database management", "databases" to "sql & database management",
+            "dbms" to "sql & database management", "rdbms" to "sql & database management",
+            "ai" to "ai & modern tech concepts", "artificial intelligence" to "ai & modern tech concepts",
+            "machine learning" to "ai & modern tech concepts", "ml" to "ai & modern tech concepts",
+            "deep learning" to "ai & modern tech concepts", "modern tech" to "ai & modern tech concepts",
+            "tech" to "ai & modern tech concepts", "llm" to "ai & modern tech concepts", "rag" to "ai & modern tech concepts",
+            "aptitude" to "aptitude & interview prep", "quant" to "aptitude & interview prep",
+            "quantitative aptitude" to "aptitude & interview prep", "logical reasoning" to "aptitude & interview prep",
+            "reasoning" to "aptitude & interview prep", "interview" to "aptitude & interview prep",
+            "interview prep" to "aptitude & interview prep", "placement" to "aptitude & interview prep",
+            "placement prep" to "aptitude & interview prep", "puzzles" to "aptitude & interview prep"
         )
 
         val resolvedKey = aliasMap[key] ?: key
@@ -2253,15 +1888,13 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildSubjectCatalogResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "📚 **SYNAPSE AI University Curriculum Catalog (50+ Subjects)**\n\nI currently feature a comprehensive, university-grade curriculum of **50+ academic subjects**, each organized into 8 to 10 progressive college chapters ranging from foundational basics to advanced mastery.",
-            paragraph2 = "⚡ **Core Disciplines Available On-Device:**\n" +
-                    "• 📐 **Mathematics & Statistics**: Foundations of Algebra, Complex Numbers, Differential Calculus, Integral Calculus, Linear Algebra, ODE/PDE, Probability & Graph Theory\n" +
-                    "• 💻 **Computer Science**: Programming Fundamentals, Data Structures (Trees, Stacks, Queues), Graphs & DP, Operating Systems, DBMS & Compilers\n" +
-                    "• 🤖 **Artificial Intelligence & Data Science**: Search Algorithms, Supervised ML, Deep Learning & CNNs, Transformers, RAG & AI Ethics\n" +
-                    "• ⚡ **Physical Sciences & Engineering**: Waves, Newton's Laws, Thermodynamics, Electromagnetism, Digital Electronics, VLSI & Robotics\n" +
-                    "• 🧪 **Chemical & Life Sciences**: Chemical Bonding, Stoichiometry, Molecular Biology, Genetics & Cellular Physiology\n" +
-                    "• 🏛️ **Humanities & Management**: World History, Micro/Macro Economics, and Professional Communication\n\n" +
-                    "💡 *Every chapter includes structured lesson content, auto-graded quizzes, and AI smart notes. Just type or speak any subject to get started!*",
+            paragraph1 = "📚 **SYNAPSE AI Placement & Career Track Catalog (4 Core Tracks)**\n\nI feature 4 high-impact career tracks curated for software engineering campus placements, technical assessments, and interview rounds:",
+            paragraph2 = "⚡ **Core Tracks Available On-Device:**\n" +
+                    "• 🐍 **Python & Coding Logic**: Memory model, OOP, closures, algorithmic problem-solving & data structures\n" +
+                    "• 🗄️ **SQL & Database Management**: Schema design, ACID transactions, B-Tree indexing, complex joins & query optimization\n" +
+                    "• 🤖 **AI & Modern Tech Concepts**: Neural networks, LLMs, RAG architectures, cloud computing & cybersecurity\n" +
+                    "• 🎯 **Aptitude & Interview Prep**: Speed math, logical deduction, data interpretation & placement interview strategies\n\n" +
+                    "💡 *Every track includes interactive chapters, in-chat quizzes, and smart revision notes. Tell me which track you want to explore!*",
             confidenceScore = 98.0,
             isTopicSuggestion = true
         )
@@ -2283,14 +1916,14 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun buildHowItWorksResponse(): LocalAiResponse {
         return LocalAiResponse(
-            paragraph1 = "⚙️ **How SYNAPSE AI Works & How to Study With It**\n\nSYNAPSE AI is built as a complete on-device academic companion designed to run 100% offline directly on your mobile device without needing internet access or sending private data to cloud servers.",
+            paragraph1 = "⚙️ **How SYNAPSE AI Works & How to Study With It**\n\nSYNAPSE AI is built as your complete intelligent academic and placement preparation companion, providing fast on-device responses, interactive in-chat quizzes, and automated smart notes.",
             paragraph2 = "⚡ **Key Capabilities & Workflow:**\n" +
-                    "1. 🧠 **Offline SLM + Semantic RAG**: Generates clear, verified concept explanations, formulas, and step-by-step worked examples directly on your phone with zero hallucinations.\n" +
-                    "2. 🎙️ **Live Voice Assistant**: Talk naturally to ask questions hands-free; our speech recognizer listens patiently without cutting you off, and replies in a natural male voice.\n" +
-                    "3. 📝 **AI Smart Notes**: Automatically summarizes chapters into key definitions, core formulas, and high-yield exam takeaways.\n" +
-                    "4. 🎯 **Auto-Graded Quizzes**: Test your understanding with chapter-level practice questions and instant answer explanations.\n" +
+                    "1. 🧠 **Fast SLM + Semantic RAG**: Generates clear, verified concept explanations, formulas, code snippets, and interview breakdowns with zero hallucinations.\n" +
+                    "2. 🎙️ **Live Voice Assistant**: Talk naturally to ask questions hands-free; our speech recognizer listens patiently and replies in a natural voice.\n" +
+                    "3. 📝 **AI Smart Notes**: Automatically summarizes concepts into key definitions, core principles, and high-yield interview takeaways.\n" +
+                    "4. 🎯 **Interactive In-Chat Quizzes**: Test your understanding with chapter-level practice questions, instant answer scoring, and explanations right inside the chat.\n" +
                     "5. 🔄 **Hybrid Backend Sync**: All your learning progress, completed chapters, notes, and quiz scores synchronize seamlessly between local storage and the database.\n\n" +
-                    "To begin, select a subject from the home screen, or simply type or speak your questions right here!",
+                    "To begin, select a track from the home screen, or simply type or speak your questions right here!",
             confidenceScore = 100.0,
             isGreeting = false
         )
@@ -2710,102 +2343,121 @@ class LocalAIEngine private constructor(context: Context?) {
         val fPrefix = if (useEmojis) "⚡ " else "* "
         val ePrefix = if (useEmojis) "💡 " else "* "
 
-        // 1. BIOLOGY
-        if (q.contains("photosynthesis") || (q.contains("light") && q.contains("chloroplast"))) {
+        // 1. PYTHON & CODING LOGIC
+        if (q.contains("gil") || (q.contains("global") && q.contains("interpreter") && q.contains("lock"))) {
             val p2 = buildString {
                 if (includeFormulas) {
-                    appendLine("${fPrefix}**Formula / Core Principle**\n\n6CO₂ + 6H₂O + Photons → C₆H₁₂O₆ + 6O₂\n\nOperates in two stages: Light-dependent reactions (in thylakoids) generate ATP and NADPH, followed by the Calvin cycle (in stroma) synthesizing glucose carbohydrates.\n")
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\nCPython Architecture: A mutex mechanism that allows only one native thread to execute Python bytecode at a time, preventing race conditions on reference counting garbage collection.\n")
                 }
                 if (includeExamples) {
-                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nGreen leaves absorb atmospheric CO₂ through stomata and pull water from soil roots; oxygen is released as a vital byproduct sustaining aerobic life.")
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nUse `multiprocessing` instead of `threading` for CPU-bound tasks (e.g. image processing) to utilize multiple CPU cores concurrently.")
                 }
             }.trim()
             return LocalAiResponse(
-                paragraph1 = "${bPrefix}**Concept & Definition** (Biology · Plant Physiology)\n\nPhotosynthesis is the biochemical process by which green plants, algae, and cyanobacteria convert light energy from the sun into chemical energy stored in glucose molecules. It takes place in cellular chloroplasts using the green pigment chlorophyll.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · Concurrency & Runtime)\n\nThe Global Interpreter Lock (GIL) is a thread-synchronization mechanism used by the standard CPython interpreter. It ensures that only one native thread executes Python bytecode at any given moment, safeguarding Python's internal memory management against concurrency bugs.",
                 paragraph2 = p2,
-                matchedSubject = "Biology",
-                matchedChapter = "Plant Physiology",
-                matchedTopic = "Photosynthesis",
-                confidenceScore = 90.0
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Python Memory Model & Internals",
+                matchedTopic = "Global Interpreter Lock (GIL)",
+                confidenceScore = 95.0
             )
         }
 
-        if (q.contains("dna") || q.contains("rna") || q.contains("genetic") || q.contains("heredity") || q.contains("chromosome")) {
+        if (q.contains("mutable") || q.contains("immutable") || (q.contains("list") && q.contains("tuple"))) {
             val p2 = buildString {
                 if (includeFormulas) {
-                    appendLine("${fPrefix}**Formula / Core Principle**\n\nBase Pairing Rule: Adenine pairs with Thymine (A=T via 2 hydrogen bonds), and Guanine pairs with Cytosine (G≡C via 3 hydrogen bonds). In RNA, Uracil (U) replaces Thymine.\nCentral Dogma: DNA → (Transcription) → mRNA → (Translation) → Functional Proteins.\n")
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Mutable (In-Place Modifications): list, dict, set, bytearray\n• Immutable (Hashable & Fixed): int, float, str, tuple, frozenset\nIdentity Check: `id(a)` remains identical for mutable in-place mutations.\n")
                 }
                 if (includeExamples) {
-                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nA single nucleotide substitution in the hemoglobin gene causes sickle cell anemia, illustrating how molecular base sequences govern macroscopic human health.")
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTuples can be used as dictionary keys because they are hashable, whereas lists will raise `TypeError: unhashable type: 'list'`.")
                 }
             }.trim()
             return LocalAiResponse(
-                paragraph1 = "${bPrefix}**Concept & Definition** (Biology · Genetics & Molecular Biology)\n\nDNA (Deoxyribonucleic Acid) is the double-helical macromolecule containing genetic blueprints for biological organism development and functioning. RNA (Ribonucleic Acid) carries messages from DNA to ribosomes for protein synthesis.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · Core Types & Memory)\n\nIn Python, mutable objects can have their state or contents modified after instantiation without changing their memory identity (`id()`). Immutable objects cannot be altered once allocated; any modification creates an entirely new object in memory.",
                 paragraph2 = p2,
-                matchedSubject = "Biology",
-                matchedChapter = "Genetics & Molecular Biology",
-                matchedTopic = "DNA and Genetics",
-                confidenceScore = 90.0
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Data Structures & Memory Model",
+                matchedTopic = "Mutable vs Immutable Types",
+                confidenceScore = 95.0
             )
         }
 
-        // 2. HISTORY
-        if (q.contains("world war") || q.contains("ww1") || q.contains("ww2") || q.contains("world war 1") || q.contains("world war 2") || q.contains("world war i") || q.contains("world war ii")) {
-            val isWW2 = q.contains("2") || q.contains("ii") || q.contains("hitler") || q.contains("nazi") || q.contains("pearl harbor") || q.contains("hiroshima")
-            return if (isWW2) {
-                val p2 = buildString {
-                    if (includeFormulas) {
-                        appendLine("${fPrefix}**Formula / Core Principle**\n\nKey Milestones: Battle of Stalingrad (1942–1943), D-Day Normandy Landings (1944), conclusion with German surrender and atomic bombings of Hiroshima & Nagasaki (August 1945).\n")
-                    }
-                    if (includeExamples) {
-                        appendLine("${ePrefix}**Key Example & Practical Takeaway**\nThe post-war Bretton Woods conference established modern international economic architecture including the World Bank and IMF.")
-                    }
-                }.trim()
-                LocalAiResponse(
-                    paragraph1 = "${bPrefix}**Concept & Definition** (History · Modern World History)\n\nWorld War II (1939–1945) was a global conflict fought between the Allied Powers (USA, Great Britain, Soviet Union, France, China) and the Axis Powers (Nazi Germany, Imperial Japan, Fascist Italy), sparked by Germany's invasion of Poland on September 1, 1939.",
-                    paragraph2 = p2,
-                    matchedSubject = "History",
-                    matchedChapter = "Modern World History",
-                    matchedTopic = "World War II",
-                    confidenceScore = 90.0
-                )
-            } else {
-                val p2 = buildString {
-                    if (includeFormulas) {
-                        appendLine("${fPrefix}**Formula / Core Principle**\n\nThe M-A-I-N Causes: Militarism, Alliances, Imperialism, and Nationalism. Sparked by the assassination of Archduke Franz Ferdinand in Sarajevo (June 28, 1914).\n")
-                    }
-                    if (includeExamples) {
-                        appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTrench warfare on the Western Front reshaped 20th-century warfare, leading to the collapse of four empires and the Treaty of Versailles (1919).")
-                    }
-                }.trim()
-                LocalAiResponse(
-                    paragraph1 = "${bPrefix}**Concept & Definition** (History · Modern World History)\n\nWorld War I (1914–1918), known as the Great War, was a global European-centered conflict between the Allied Powers (Britain, France, Russia, USA, Italy) and the Central Powers (Germany, Austria-Hungary, Ottoman Empire, Bulgaria).",
-                    paragraph2 = p2,
-                    matchedSubject = "History",
-                    matchedChapter = "Modern World History",
-                    matchedTopic = "World War I",
-                    confidenceScore = 90.0
-                )
-            }
-        }
-
-        // 3. GEOGRAPHY
-        if (q.contains("plate tectonics") || q.contains("earthquake") || q.contains("volcano") || q.contains("continental drift") || q.contains("tectonic")) {
+        // 2. SQL & DATABASE MANAGEMENT
+        if (q.contains("acid") || (q.contains("atomicity") && q.contains("consistency"))) {
             val p2 = buildString {
                 if (includeFormulas) {
-                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Convergent: Plates collide, causing subduction trenches and mountain ranges.\n• Divergent: Plates pull apart, creating mid-ocean ridges and rift valleys.\n• Transform: Plates slide horizontally past each other, releasing seismic stress as earthquakes.\n")
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• **A - Atomicity:** All-or-nothing execution via WAL (Write-Ahead Logging).\n• **C - Consistency:** Preserves database constraints (FK, Unique, Check).\n• **I - Isolation:** Prevents dirty reads, non-repeatable reads, and phantom reads.\n• **D - Durability:** Committed data survives crashes and power loss.\n")
                 }
                 if (includeExamples) {
-                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nThe ongoing collision between the Indian Plate and Eurasian Plate elevates Mount Everest and the Himalayan range by ~5 mm annually.")
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nBank Transfer: Debiting Account A and Crediting Account B must either both commit or both roll back together to maintain total account balances.")
                 }
             }.trim()
             return LocalAiResponse(
-                paragraph1 = "${bPrefix}**Concept & Definition** (Geography · Geomorphology & Geology)\n\nPlate Tectonics is the unifying geological theory stating that Earth's outer lithosphere is broken into rigid plates that float and move atop the ductile asthenosphere mantle beneath them.",
+                paragraph1 = "${bPrefix}**Concept & Definition** (SQL & Database Management · Transaction Management)\n\nACID is an acronym representing the four cornerstone properties of reliable relational database transactions: Atomicity, Consistency, Isolation, and Durability. These properties ensure transactional data integrity even during concurrent access and hardware crashes.",
                 paragraph2 = p2,
-                matchedSubject = "Geography",
-                matchedChapter = "Geomorphology",
-                matchedTopic = "Plate Tectonics and Seismic Activity",
-                confidenceScore = 90.0
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Transactions & Concurrency",
+                matchedTopic = "ACID Properties",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("join") || (q.contains("inner") && q.contains("outer"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• `INNER JOIN`: Returns rows with matches in both tables (intersection).\n• `LEFT JOIN`: Returns all rows from left table + matched right table rows (NULL if no match).\n• `FULL JOIN`: Union of left and right joins with NULL padding for non-matches.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\n`SELECT u.name, o.id FROM Users u LEFT JOIN Orders o ON u.id = o.user_id` preserves all users, even those who haven't placed an order yet.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (SQL & Database Management · Relational Queries)\n\nAn SQL JOIN clause combines rows from two or more tables based on a related common column between them. Joins form the primary relational algebra operation for querying normalized data.",
+                paragraph2 = p2,
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Advanced SQL Queries",
+                matchedTopic = "SQL Joins",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 3. AI & MODERN TECH CONCEPTS
+        if (q.contains("rag") || (q.contains("retrieval") && q.contains("augmented"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\nArchitecture: Query → Embedding Model → Vector Search (Cosine Similarity) → Top-K Chunks Retrieved → Context-Injected Prompt → LLM Synthesis → Accurate Answer.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nEnterprise search bots retrieve company PDFs from vector databases to answer employee questions with citations instead of hallucinating outdated training data.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (AI & Modern Tech Concepts · Generative AI & LLMs)\n\nRetrieval-Augmented Generation (RAG) is an AI architectural framework that enhances Large Language Model outputs by dynamically retrieving authoritative knowledge from external databases before generating an answer, drastically eliminating hallucinations.",
+                paragraph2 = p2,
+                matchedSubject = "AI & Modern Tech Concepts",
+                matchedChapter = "Generative AI & LLMs",
+                matchedTopic = "Retrieval-Augmented Generation (RAG)",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 4. APTITUDE & INTERVIEW PREP
+        if (q.contains("time and work") || (q.contains("efficiency") && q.contains("work"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Work Done = Efficiency × Time\n• If A takes x days and B takes y days, combined rate = (1/x) + (1/y) = (x+y)/(x*y)\n• Combined Days = (x*y)/(x+y)\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nIf A completes a job in 12 days and B in 24 days: Combined Days = (12 * 24) / (12 + 24) = 288 / 36 = 8 days.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Aptitude & Interview Prep · Quantitative Aptitude)\n\nTime and Work problems evaluate rates of task completion and workforce efficiency. Problems are solved using unit-rate methods or LCM total-work models.",
+                paragraph2 = p2,
+                matchedSubject = "Aptitude & Interview Prep",
+                matchedChapter = "Arithmetic & Word Problems",
+                matchedTopic = "Time and Work",
+                confidenceScore = 95.0
             )
         }
 
@@ -2817,13 +2469,10 @@ class LocalAIEngine private constructor(context: Context?) {
         val isExplicitAcademicQuestion = academicMarkers.any { q.contains(it) }
 
         val detectedSubject = when {
-            hasWord("biology", "biological", "plant", "plants", "animal", "animals", "species", "organism", "cellular") -> "Biology"
-            hasWord("history", "historical", "dynasty", "monarchy", "emperor", "empire", "treaty", "colonization") -> "History"
-            hasWord("geography", "geographic", "ocean", "oceans", "river", "rivers", "mountain", "mountains", "plateau", "glacier") -> "Geography"
-            hasWord("math", "mathematics", "algebra", "calculus", "geometry", "trigonometry", "matrix", "integral", "derivative") -> "Mathematics"
-            hasWord("physics", "quantum", "optics", "relativity", "gravitation", "thermodynamics", "electromagnetism") -> "Physics"
-            hasWord("chemistry", "stoichiometry", "equilibrium", "redox", "titration", "isotope", "enthalpy") -> "Chemistry"
-            hasWord("computer", "software", "algorithm", "compiler", "database", "cybersecurity", "encryption") -> "Computer Science"
+            hasWord("python", "code", "coding", "oop", "tuple", "list", "dict", "decorator", "generator") -> "Python & Coding Logic"
+            hasWord("sql", "query", "database", "dbms", "join", "table", "schema", "acid", "index") -> "SQL & Database Management"
+            hasWord("ai", "tech", "model", "neural", "llm", "rag", "transformer", "cloud", "security") -> "AI & Modern Tech Concepts"
+            hasWord("aptitude", "speed", "work", "distance", "ratio", "percentage", "probability", "reasoning", "puzzle", "interview") -> "Aptitude & Interview Prep"
             else -> null
         }
 
@@ -2831,19 +2480,19 @@ class LocalAIEngine private constructor(context: Context?) {
             val cleanTopic = query.replace(Regex("(?i)^(explain|what is|how does|define|tell me about)\\s+"), "").trim()
             val p2 = buildString {
                 if (includeFormulas) {
-                    appendLine("${fPrefix}**Formula / Core Principle**\n\n1. Define primary variables, boundary conditions, and governing hypotheses.\n2. Apply the canonical laws and theorems established in $detectedSubject.\n3. Verify results and examine real-world trade-offs.\n")
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n1. Master core definition, time/space complexity, and boundary conditions.\n2. Apply the canonical design patterns established in $detectedSubject.\n3. Review placement interview edge cases and trade-offs.\n")
                 }
                 if (includeExamples) {
-                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nMastering $cleanTopic develops rigorous problem-solving skills and forms a solid foundation for advanced studies in $detectedSubject.")
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nMastering $cleanTopic builds strong conceptual clarity for technical coding assessments and recruitment interviews.")
                 }
             }.trim()
             return LocalAiResponse(
-                paragraph1 = "${bPrefix}**Concept & Definition** ($detectedSubject · $cleanTopic)\n\n$cleanTopic is an essential concept within $detectedSubject. Understanding its underlying principles allows students to connect theoretical fundamentals with empirical real-world applications.",
+                paragraph1 = "${bPrefix}**Concept & Definition** ($detectedSubject · $cleanTopic)\n\n$cleanTopic is an essential concept within $detectedSubject. Understanding its underlying mechanics allows candidates to excel in technical assessments and practical software engineering.",
                 paragraph2 = p2,
                 matchedSubject = detectedSubject,
                 matchedChapter = "Core Concepts",
                 matchedTopic = cleanTopic,
-                confidenceScore = 75.0
+                confidenceScore = 80.0
             )
         }
 
@@ -2863,18 +2512,18 @@ class LocalAIEngine private constructor(context: Context?) {
             val capitalizedTopic = cleanTopic.split(Regex("\\s+"))
                 .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
 
-            val p1 = "📘 **Academic Exploration: $capitalizedTopic**\n\n" +
-                    "$capitalizedTopic is an important concept in university-level studies. In higher education curricula, mastering this concept equips students with rigorous conceptual grounding, mathematical logic, and analytical problem-solving methodologies."
+            val p1 = "📘 **Career & Placement Prep: $capitalizedTopic**\n\n" +
+                    "$capitalizedTopic is a high-yield concept in technical campus placements and engineering interview assessments. Mastering its theoretical intuition, memory tradeoffs, and edge cases is essential for technical coding and screening rounds."
             val p2 = "⚡ **Core Study Framework & Key Principles:**\n\n" +
-                    "• **Theoretical Foundations:** Review the primary definitions, governing laws, and underlying assumptions for $capitalizedTopic.\n" +
-                    "• **Analytical Derivations:** Break down complex multi-step problems, verify boundary conditions, and analyze tradeoffs.\n" +
-                    "• **Real-World Application:** Relate theoretical equations to modern scientific and engineering implementations.\n\n" +
-                    "💡 *Study Suggestion:* Ask me *\"Give me a worked example of $capitalizedTopic\"*, *\"Explain $capitalizedTopic step-by-step\"*, or *\"Generate smart notes for $capitalizedTopic\"*!"
+                    "• **Theoretical Foundations:** Understand the core definition, time/space complexity, and syntax rules for $capitalizedTopic.\n" +
+                    "• **Code & Syntax Implementation:** Write clean, modular, and optimized code handling edge cases.\n" +
+                    "• **Interview Focus:** Be prepared to explain trade-offs and alternative approaches during technical interviews.\n\n" +
+                    "💡 *Study Suggestion:* Ask me *'Test me on $capitalizedTopic with a 10-question quiz'* or *'Give me a code example for $capitalizedTopic'*!"
 
             return LocalAiResponse(
                 paragraph1 = p1,
                 paragraph2 = p2,
-                matchedSubject = "University Curriculum",
+                matchedSubject = "Career & Placement Tracks",
                 matchedChapter = capitalizedTopic,
                 matchedTopic = capitalizedTopic,
                 confidenceScore = 75.0,
@@ -2882,14 +2531,13 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        val p1 = "🎓 **SYNAPSE AI University Study Companion**\n\n" +
-                "I am your 100% on-device academic tutor, equipped with an extensive university curriculum spanning over 50 academic subjects—including Mathematics, Computer Science, AI, Physics, Chemistry, and Engineering."
+        val p1 = "🎓 **SYNAPSE AI Placement & Career Companion**\n\n" +
+                "I am your intelligent career companion, equipped with comprehensive study materials spanning 4 high-impact career tracks: Python & Coding Logic, SQL & Database Management, AI & Modern Tech Concepts, and Aptitude & Interview Prep."
         val p2 = "⚡ **Here is How We Can Study Right Now:**\n\n" +
-                "• **Master Specific Concepts:** Ask e.g. *\"Explain Eigenvalues\"*, *\"What is a B-Tree?\"*, *\"Derive Quadratic Formula\"*, or *\"How does Backpropagation work?\"*\n" +
-                "• **Resolve Study Doubts:** Ask me any problem or question you are stuck on for an immediate step-by-step breakdown.\n" +
-                "• **Explore Course Syllabi:** Ask *\"Suggest Mathematics topics\"* or *\"What can I learn in Computer Science?\"*\n" +
-                "• **High-Yield Smart Notes:** Ask me to generate revision notes and formula cheat-sheets for any chapter.\n\n" +
-                "Which subject or concept would you like to explore?"
+                "• **Master Specific Concepts:** Ask e.g. *\"Explain Python GIL\"*, *\"What is B-Tree Indexing in SQL?\"*, *\"How does RAG work?\"*, or *\"Speed math shortcuts for Time & Work\"*\n" +
+                "• **In-Chat 10-Question Quizzes:** Say *\"Test me on Python\"* or *\"Start a 10-question SQL quiz\"* for instant practice and auto-grading.\n" +
+                "• **High-Yield Smart Notes:** Ask me to generate revision notes and formula cheat-sheets for any topic.\n\n" +
+                "Which track or concept would you like to explore?"
 
         return LocalAiResponse(
             paragraph1 = p1,

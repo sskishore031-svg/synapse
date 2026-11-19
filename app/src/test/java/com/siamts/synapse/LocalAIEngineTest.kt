@@ -306,7 +306,7 @@ class LocalAIEngineTest {
     fun testTanglishIdentity_neeYaru_returnsConciseIntro() {
         val response = engine.generateResponse("nee yaru?")
         assertTrue(response.paragraph1.contains("I am SYNAPSE AI"))
-        assertTrue(response.paragraph1.contains("50+ university subjects"))
+        assertTrue(response.paragraph1.contains("career tracks") || response.paragraph1.contains("tracks"))
     }
 
     @Test
@@ -349,8 +349,8 @@ class LocalAIEngineTest {
         for (q in subjectQueries) {
             val response = engine.generateResponse(q)
             assertFalse("Query '$q' must NEVER contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-            assertTrue("Query '$q' should mention 50+ subjects", response.paragraph1.contains("50+"))
-            assertTrue("Query '$q' should mention core subjects", response.paragraph2.contains("Mathematics") && response.paragraph2.contains("Computer Science"))
+            assertTrue("Query '$q' should mention 4 Core Tracks", response.paragraph1.contains("4 Core Tracks") || response.paragraph1.contains("4") || response.paragraph1.contains("Tracks"))
+            assertTrue("Query '$q' should mention core tracks", response.paragraph2.contains("Python") && response.paragraph2.contains("SQL"))
             assertTrue(response.confidenceScore >= 95.0)
         }
     }

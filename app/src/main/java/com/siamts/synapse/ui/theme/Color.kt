@@ -2,39 +2,59 @@ package com.siamts.synapse.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val DarkBackground = Color(0xFF090D1E)
-val DarkBackgroundTop = Color(0xFF0D1430)
-val DarkBackgroundBottom = Color(0xFF050712)
+// ==========================================
+// Design 4: Sunset Amber & Orange Theme
+// ==========================================
 
-val CyanGlow = Color(0xFF00F0FF)
-val CyanAccent = Color(0xFF38BDF8)
-val BlueAccent = Color(0xFF3B82F6)
-val PurpleAccent = Color(0xFF8B5CF6)
-val PurpleGlow = Color(0xFFA855F7)
+// Main Backgrounds: Deep warm dark charcoal and dark blue-black (#090A0E / #0C0D12)
+val DarkBackground = Color(0xFF090A0E)
+val DarkBackgroundTop = Color(0xFF0C0D12)
+val DarkBackgroundBottom = Color(0xFF07080B)
 
-val TextPrimary = Color(0xFFFFFFFF)
-val TextSecondary = Color(0xFF94A3B8)
-val TextMuted = Color(0xFF64748B)
+// Elevated Panels & Frost Surfaces: Translucent dark grey/frost #13141B with 1.dp border #25221F
+val SurfacePanel = Color(0xFF13141B)
+val SurfacePanelElevated = Color(0xFF181A24)
+val SurfaceBorder = Color(0xFF25221F)
 
-val DashedBorderColor = Color(0xFF00E5FF).copy(alpha = 0.4f)
-val DashedBorderBoxBg = Color(0xFF00E5FF).copy(alpha = 0.02f)
+// Sunset Orange & Golden Amber Accents
+val SunsetOrange = Color(0xFFFF5500)
+val SunsetOrangeEnd = Color(0xFFFF8C00)
+val AmberGold = Color(0xFFFFAA00)
+val AmberGoldEnd = Color(0xFFFFD500)
+val AmberAccent = Color(0xFFFF9500)
+val AmberGlow = Color(0xFFFFB300)
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Visual compatibility tokens mapped to Sunset Amber & Orange palette
+val CyanGlow = Color(0xFFFF9500)       // Sunset Amber Glow
+val CyanAccent = Color(0xFFFF8C00)     // Sunset Orange Accent
+val BlueAccent = Color(0xFFFF5500)     // Vibrant Sunset Orange
+val PurpleAccent = Color(0xFFFFAA00)   // Golden Amber
+val PurpleGlow = Color(0xFFFFB300)     // Golden Amber Glow
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Text Hierarchies: Crisp white/warm cream (#F8FAFC), pale amber-grey (#9A9EA6), rich orange
+val TextPrimary = Color(0xFFF8FAFC)
+val TextSecondary = Color(0xFF9A9EA6)
+val TextMuted = Color(0xFF6B7280)
+
+val DashedBorderColor = Color(0xFFFF8C00).copy(alpha = 0.4f)
+val DashedBorderBoxBg = Color(0xFFFF8C00).copy(alpha = 0.02f)
+
+// Material Theme Tokens
+val Purple80 = Color(0xFFFFD500)
+val PurpleGrey80 = Color(0xFFFFC27A)
+val Pink80 = Color(0xFFFF9F68)
+
+val Purple40 = Color(0xFFCC4400)
+val PurpleGrey40 = Color(0xFF994400)
+val Pink40 = Color(0xFF883300)
 
 // Light Theme Palette
-val LightBackground = Color(0xFFF8FAFC)
+val LightBackground = Color(0xFFFDFBF7)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF1F5F9)
-val LightTextPrimary = Color(0xFF0F172A)
-val LightTextSecondary = Color(0xFF475569)
-val LightTextMuted = Color(0xFF94A3B8)
-val LightBorder = Color(0xFFE2E8F0)
+val LightSurfaceVariant = Color(0xFFF8F4EE)
+val LightTextPrimary = Color(0xFF181512)
+val LightTextSecondary = Color(0xFF5C554E)
+val LightTextMuted = Color(0xFF8C847A)
+val LightBorder = Color(0xFFEADBCE)
 val LightCardBg = Color(0xFFFFFFFF)
-val LightPrimary = Color(0xFF0284C7)
-
+val LightPrimary = Color(0xFFFF5500)

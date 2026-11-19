@@ -63,7 +63,7 @@ class DashboardViewModel(
         viewModelScope.launch {
             manager.sessionStateFlow.collect { sessionState ->
                 if (sessionState is AuthSessionState.Authenticated) {
-                    val realName = sessionState.user.name.takeIf { it.isNotBlank() } ?: "Student"
+                    val realName = sessionState.user.name.takeIf { it.isNotBlank() } ?: "Kishore"
                     val photoUrl = sessionState.user.photoUrl
                     _uiState.update { current ->
                         current.copy(
@@ -80,7 +80,7 @@ class DashboardViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val manager = sessionManager ?: SessionManager.getInstanceOrNull()
             val user = manager?.getSessionUser()
-            val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
+            val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Kishore" }
             val photo = user?.photoUrl ?: _uiState.value.profilePhotoUri
 
             // 2. Real stats from QuizDao and ChapterDao

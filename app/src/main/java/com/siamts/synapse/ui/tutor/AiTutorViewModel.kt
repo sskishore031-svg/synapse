@@ -8,8 +8,13 @@ import com.siamts.synapse.ai.LocalAiStreamToken
 import com.siamts.synapse.ai.SlmInferenceEngine
 import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.data.local.AiChatStorage
+import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.ChatSessionEntity
+import com.siamts.synapse.data.local.MistakeQuestionEntity
+import com.siamts.synapse.data.local.QuizRecordEntity
 import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.local.SynapseDatabase
+import com.siamts.synapse.data.model.QuizQuestionDto
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
@@ -350,8 +355,22 @@ class AiTutorViewModel(
         // 1. Instantly clear input query on Main thread with 0ms lag
         _uiState.update { it.copy(inputQuery = "") }
 
-        // --- Dynamic Length Control Checks ("give me short", "short ha sollu", "chinadha thaa") ---
         val lowerQ = query.lowercase(Locale.ROOT).trim()
+
+        // --- Active In-Chat Quiz Input Interceptor ---
+        val currentQuiz = _uiState.value.activeQuizSession
+        if (currentQuiz != null && !currentQuiz.isCompleted) {
+            if (isQuizCancellation(lowerQ)) {
+                cancelActiveQuiz(query)
+                return
+            }
+            val currentQ = currentQuiz.questions.getOrNull(currentQuiz.currentIndex)
+            val detectedOption = parseOptionFromInput(query, currentQ?.options)
+            if (detectedOption != null) {
+                submitQuizAnswer(detectedOption)
+                return
+            }
+        }
 
         // --- Board Exam Format Shortcuts (2M and 5M) ---
         if (isTwoMarkQuery(lowerQ)) {
@@ -491,37 +510,9 @@ class AiTutorViewModel(
             return
         }
 
-        // B. Quiz Launch Command
+        // B. In-Chat Interactive 10-Question Quiz Command (Stay inside chat)
         if (isQuizActionQuery(query)) {
-            val (subId, subName) = resolveSubjectFromQuery(query)
-            val userMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                senderName = "You",
-                text = query,
-                timeAgo = "Just now",
-                isUser = true
-            )
-            val actionMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                senderName = "SYNAPSE AI",
-                text = "🚀 Launching your $subName Quiz now! Get ready to test your conceptual mastery.",
-                timeAgo = "Just now",
-                isUser = false,
-                actionCommand = "NAVIGATE_QUIZ"
-            )
-            _uiState.update {
-                it.copy(
-                    messages = it.messages + userMsg + actionMsg,
-                    userQuestion = query,
-                    isGenerating = false,
-                    aiThoughtStatus = "🚀 Launching $subName Quiz"
-                )
-            }
-            chatStorage?.saveMessages(currentUserId, _uiState.value.messages)
-            persistCurrentSession(_uiState.value.messages)
-            scope.launch {
-                _actionEvent.emit(AiUiAction.NavigateToQuiz(subId, subName))
-            }
+            startInChatQuiz(query)
             return
         }
 
@@ -1009,16 +1000,388 @@ class AiTutorViewModel(
 
     private fun isQuizActionQuery(q: String): Boolean {
         val lower = q.lowercase(Locale.ROOT)
-        return (lower.contains("quiz") && (lower.contains("start") || lower.contains("open") || lower.contains("take") || lower.contains("launch") || lower.contains("test"))) ||
+        return lower.contains("quiz") || lower.contains("test me") ||
+                lower.contains("practice test") || lower.contains("test my") ||
+                lower.contains("ask me 10") || lower.contains("10 questions") ||
+                lower.contains("give me 10") || lower.contains("mcq") ||
                 lower == "quiz" || lower == "take a quiz" || lower == "start quiz"
+    }
+
+    private fun isQuizCancellation(lower: String): Boolean {
+        return lower == "cancel" || lower == "stop" || lower == "quit" ||
+               lower == "exit" || lower == "stop quiz" || lower == "cancel quiz" ||
+               lower == "quit quiz" || lower == "end quiz"
+    }
+
+    fun cancelActiveQuiz(userQuery: String = "Cancel quiz") {
+        val session = _uiState.value.activeQuizSession ?: return
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = userQuery,
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val cancelMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = "Quiz cancelled. Let me know which topic you would like to study next!",
+            timeAgo = "Just now",
+            isUser = false
+        )
+        val newMessages = _uiState.value.messages + userMsg + cancelMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                activeQuizSession = null,
+                aiThoughtStatus = "Quiz ended"
+            )
+        }
+        persistCurrentSession(newMessages)
+    }
+
+    private fun parseOptionFromInput(input: String, options: Map<String, String>?): String? {
+        val trimmed = input.trim()
+        val upper = trimmed.uppercase(Locale.ROOT)
+        if (upper in setOf("A", "B", "C", "D")) return upper
+        if (upper.startsWith("OPTION ") && upper.removePrefix("OPTION ").trim() in setOf("A", "B", "C", "D")) {
+            return upper.removePrefix("OPTION ").trim()
+        }
+        if (trimmed == "1") return "A"
+        if (trimmed == "2") return "B"
+        if (trimmed == "3") return "C"
+        if (trimmed == "4") return "D"
+
+        if (options != null) {
+            val lowerInput = trimmed.lowercase(Locale.ROOT)
+            for ((k, v) in options) {
+                val lowerV = v.lowercase(Locale.ROOT)
+                if (lowerInput == lowerV || (lowerInput.length > 3 && lowerV.contains(lowerInput))) {
+                    return k
+                }
+            }
+        }
+        return null
+    }
+
+    private fun startInChatQuiz(query: String) {
+        val (subId, subName) = resolveSubjectFromQuery(query)
+        val subject = BaseCurriculumData.getSubjectById(subId)
+            ?: BaseCurriculumData.subjects.firstOrNull { it.name.equals(subName, ignoreCase = true) }
+            ?: BaseCurriculumData.subjects.firstOrNull()
+
+        // Check if user specifically requested a chapter (e.g. "chapter 1", "chapter 2", etc.)
+        val chapterRegex = Regex("chapter\\s*(\\d+)", RegexOption.IGNORE_CASE)
+        val chMatch = chapterRegex.find(query)
+        val reqChapterNum = chMatch?.groupValues?.getOrNull(1)?.toIntOrNull()
+
+        val allMcqs = mutableListOf<QuizQuestionDto>()
+        if (subject != null) {
+            if (reqChapterNum != null) {
+                val targetChapter = subject.chapters.getOrNull(reqChapterNum - 1)
+                    ?: subject.chapters.firstOrNull { it.chapterId % 10 == reqChapterNum }
+                if (targetChapter != null && targetChapter.mcqs.isNotEmpty()) {
+                    allMcqs.addAll(targetChapter.mcqs)
+                }
+            }
+            // Fill up from other chapters in subject
+            for (ch in subject.chapters) {
+                for (q in ch.mcqs) {
+                    if (allMcqs.none { it.id == q.id }) {
+                        allMcqs.add(q)
+                    }
+                }
+            }
+        }
+
+        // Fallback: If still under 10, pull across all 4 subjects
+        if (allMcqs.size < 10) {
+            for (s in BaseCurriculumData.subjects) {
+                for (ch in s.chapters) {
+                    for (q in ch.mcqs) {
+                        if (allMcqs.none { it.id == q.id }) {
+                            allMcqs.add(q)
+                        }
+                    }
+                }
+            }
+        }
+
+        val selectedQuestions = if (allMcqs.size >= 10) allMcqs.shuffled().take(10) else allMcqs
+        if (selectedQuestions.isEmpty()) {
+            onSendMessage("Explain $subName")
+            return
+        }
+
+        val session = InChatQuizSession(
+            subjectId = subId,
+            subjectName = subName,
+            questions = selectedQuestions,
+            currentIndex = 0,
+            score = 0
+        )
+
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = query,
+            timeAgo = "Just now",
+            isUser = true
+        )
+
+        val introMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = "🎯 **SYNAPSE Interactive Quiz: $subName**\n\n10 Placement-Grade Multiple Choice Questions.\nSelect an option below or type/speak A, B, C, or D!",
+            timeAgo = "Just now",
+            isUser = false,
+            matchedSubject = subName
+        )
+
+        val q1 = selectedQuestions[0]
+        val q1Msg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = "**Question 1 of ${selectedQuestions.size}**\n\n${q1.question}",
+            timeAgo = "Just now",
+            isUser = false,
+            isQuizQuestion = true,
+            quizOptions = q1.options,
+            quizQuestionIndex = 0,
+            quizTotalQuestions = selectedQuestions.size,
+            matchedSubject = subName
+        )
+
+        val newMessages = _uiState.value.messages + userMsg + introMsg + q1Msg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                activeQuizSession = session,
+                userQuestion = query,
+                isGenerating = false,
+                aiThoughtStatus = "🎯 In-Chat Quiz: $subName (Question 1/${selectedQuestions.size})"
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
+    }
+
+    fun submitQuizAnswer(optionKey: String) {
+        val session = _uiState.value.activeQuizSession ?: return
+        if (session.isCompleted || session.currentIndex >= session.questions.size) return
+
+        val q = session.questions[session.currentIndex]
+        val cleanOption = optionKey.trim().uppercase(Locale.ROOT)
+        val selectedText = q.options[cleanOption] ?: cleanOption
+        val isCorrect = cleanOption.equals(q.correctOption.trim(), ignoreCase = true)
+
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = "Option $cleanOption: $selectedText",
+            timeAgo = "Just now",
+            isUser = true
+        )
+
+        val newScore = if (isCorrect) session.score + 1 else session.score
+        val newIndex = session.currentIndex + 1
+        val answerRecord = InChatQuizAnswer(
+            questionNumber = newIndex,
+            question = q.question,
+            selectedOption = cleanOption,
+            correctOption = q.correctOption,
+            isCorrect = isCorrect,
+            explanation = q.explanation.orEmpty()
+        )
+        val updatedAnswers = session.userAnswers + answerRecord
+
+        val evalText = if (isCorrect) {
+            "✅ **Correct!** (+1 Point)\n\n${q.explanation.orEmpty()}\n\n📊 *Current Score: $newScore / $newIndex*"
+        } else {
+            val correctText = q.options[q.correctOption] ?: q.correctOption
+            "❌ **Incorrect!**\n\nThe correct answer is **Option ${q.correctOption}**: $correctText\n\n💡 **Explanation:** ${q.explanation.orEmpty()}\n\n📊 *Current Score: $newScore / $newIndex*"
+        }
+
+        val evalMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = evalText,
+            timeAgo = "Just now",
+            isUser = false,
+            matchedSubject = session.subjectName
+        )
+
+        val nextMessages = mutableListOf<ChatMessage>()
+        nextMessages.add(userMsg)
+        nextMessages.add(evalMsg)
+
+        val updatedSession: InChatQuizSession
+        if (newIndex < session.questions.size) {
+            val nextQ = session.questions[newIndex]
+            val nextMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "SYNAPSE AI",
+                text = "**Question ${newIndex + 1} of ${session.questions.size}**\n\n${nextQ.question}",
+                timeAgo = "Just now",
+                isUser = false,
+                isQuizQuestion = true,
+                quizOptions = nextQ.options,
+                quizQuestionIndex = newIndex,
+                quizTotalQuestions = session.questions.size,
+                matchedSubject = session.subjectName
+            )
+            nextMessages.add(nextMsg)
+            updatedSession = session.copy(
+                currentIndex = newIndex,
+                score = newScore,
+                userAnswers = updatedAnswers
+            )
+        } else {
+            // Quiz Completed
+            val pct = (newScore * 100) / session.questions.size
+            val mistakes = updatedAnswers.filter { !it.isCorrect }
+            val mistakeSummary = mistakes.map { "• ${it.question}\n  *Correct: Option ${it.correctOption}* — ${it.explanation}" }
+
+            val scorecardText = buildString {
+                appendLine("• **Final Score:** $newScore / ${session.questions.size} ($pct%)")
+                val grade = when {
+                    pct >= 90 -> "🌟 Outstanding Mastery! Placement Assessment Ready."
+                    pct >= 70 -> "👍 Great Performance! Solid Conceptual Foundation."
+                    pct >= 50 -> "📈 Good Effort — Review weak areas to master the topic."
+                    else -> "📚 Needs Revision — Re-read key chapter notes and retry."
+                }
+                appendLine("• **Assessment:** $grade\n")
+                if (mistakes.isNotEmpty()) {
+                    appendLine("⚠️ **Weak Areas & Identified Mistakes (${mistakes.size} questions):**")
+                    mistakes.forEachIndexed { i, m ->
+                        appendLine("${i + 1}. ${m.question}")
+                        appendLine("   *Correct Answer (${m.correctOption}):* ${m.explanation}\n")
+                    }
+                } else {
+                    appendLine("✨ **Zero Mistakes!** Perfect 100% score across all 10 questions!")
+                }
+            }.trim()
+
+            val scorecardMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "SYNAPSE AI",
+                text = scorecardText,
+                timeAgo = "Just now",
+                isUser = false,
+                isQuizScorecard = true,
+                quizScore = newScore,
+                quizTotal = session.questions.size,
+                quizSubject = session.subjectName,
+                quizMistakes = mistakeSummary
+            )
+            nextMessages.add(scorecardMsg)
+            updatedSession = session.copy(
+                currentIndex = newIndex,
+                score = newScore,
+                userAnswers = updatedAnswers,
+                isCompleted = true
+            )
+
+            // Save record to local database
+            scope.launch(Dispatchers.IO) {
+                try {
+                    SynapseDatabase.getInstance().insertQuizRecord(
+                        QuizRecordEntity(
+                            subjectId = session.subjectId,
+                            chapterId = "chat_quiz_10",
+                            score = newScore,
+                            totalQuestions = session.questions.size,
+                            completedAt = System.currentTimeMillis()
+                        )
+                    )
+                    for (m in mistakes) {
+                        SynapseDatabase.getInstance().insertMistake(
+                            MistakeQuestionEntity(
+                                subjectId = session.subjectId,
+                                chapterId = "chat_quiz_10",
+                                questionText = m.question,
+                                optionA = "",
+                                optionB = "",
+                                optionC = "",
+                                optionD = "",
+                                correctOption = m.correctOption,
+                                explanation = m.explanation
+                            )
+                        )
+                    }
+                } catch (_: Throwable) {}
+            }
+        }
+
+        val finalMessages = _uiState.value.messages + nextMessages
+        _uiState.update {
+            it.copy(
+                messages = finalMessages,
+                activeQuizSession = updatedSession,
+                aiThoughtStatus = if (updatedSession.isCompleted) "🏆 Quiz Complete ($newScore/${session.questions.size})"
+                                  else "🎯 In-Chat Quiz: ${session.subjectName} (${newIndex + 1}/${session.questions.size})"
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, finalMessages)
+        persistCurrentSession(finalMessages)
+    }
+
+    fun saveQuizScorecardAndMistakes(message: ChatMessage) {
+        if (message.isQuizScoreSaved) return
+        val subject = message.quizSubject ?: "Placement Assessment"
+        val noteTitle = "$subject Quiz Scorecard (${message.quizScore}/${message.quizTotal})"
+        val noteContent = buildString {
+            appendLine("# $noteTitle")
+            appendLine("**Subject:** $subject")
+            appendLine("**Score:** ${message.quizScore} / ${message.quizTotal} (${(message.quizScore * 100) / message.quizTotal}%)")
+            appendLine("**Date:** ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(java.util.Date())}")
+            appendLine()
+            appendLine("### Detailed Score & Review")
+            appendLine(message.text)
+        }
+
+        scope.launch(Dispatchers.IO) {
+            try {
+                val user = sessionManager?.getSessionUser()
+                val uid = user?.id ?: currentUserId
+                val email = user?.email ?: "student@synapse.ai"
+                notesRepository.saveNote(
+                    title = noteTitle,
+                    content = noteContent,
+                    subjectId = 101,
+                    category = "QUIZ_SCORECARD",
+                    userId = uid,
+                    email = email
+                )
+            } catch (_: Exception) {}
+        }
+
+        val updatedMessages = _uiState.value.messages.map {
+            if (it.id == message.id) it.copy(isQuizScoreSaved = true) else it
+        }
+
+        val confirmMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = "Done! I've saved your quiz scorecard and weak areas to your Notes tab as **$noteTitle**.",
+            timeAgo = "Just now",
+            isUser = false,
+            isSavedNoteCard = true,
+            savedNoteTitle = noteTitle
+        )
+
+        val newMessages = updatedMessages + confirmMsg
+        _uiState.update { it.copy(messages = newMessages) }
+        persistCurrentSession(newMessages)
     }
 
     private fun isSubjectActionQuery(q: String): Boolean {
         val lower = q.lowercase(Locale.ROOT)
         return (lower.startsWith("open ") || lower.startsWith("go to ") || lower.contains("roadmap")) &&
-                (lower.contains("math") || lower.contains("physics") || lower.contains("chemistry") ||
-                 lower.contains("computer") || lower.contains("science") || lower.contains("biology") ||
-                 lower.contains("social") || lower.contains("commerce") || lower.contains("economics"))
+                (lower.contains("python") || lower.contains("sql") || lower.contains("database") ||
+                 lower.contains("ai") || lower.contains("aptitude") || lower.contains("interview") ||
+                 lower.contains("coding") || lower.contains("tech") || lower.contains("track") ||
+                 lower.contains("computer") || lower.contains("science") || lower.contains("math"))
     }
 
     private fun isNotesActionQuery(q: String): Boolean {
@@ -1043,40 +1406,15 @@ class AiTutorViewModel(
         fun hasWord(w: String) = words.contains(w)
 
         return when {
-            // Class 10
-            lower.contains("10") && (lower.contains("soc") || lower.contains("history") || lower.contains("geo") || lower.contains("civic")) -> Pair("1003", "10th Social Science")
-            lower.contains("10") && lower.contains("math") -> Pair("1001", "10th Mathematics")
-            lower.contains("10") && lower.contains("sci") -> Pair("1002", "10th Science")
-
-            // Class 11
-            lower.contains("11") && lower.contains("phys") -> Pair("1102", "11th Physics")
-            lower.contains("11") && lower.contains("chem") -> Pair("1103", "11th Chemistry")
-            lower.contains("11") && lower.contains("bio") -> Pair("1104", "11th Biology")
-            lower.contains("11") && (lower.contains("computer") || hasWord("cs") || lower.contains("python")) -> Pair("1105", "11th Computer Science")
-            lower.contains("11") && (lower.contains("comm") || lower.contains("account")) -> Pair("1106", "11th Commerce & Accountancy")
-            lower.contains("11") && lower.contains("econ") -> Pair("1107", "11th Economics")
-            lower.contains("11") && lower.contains("math") -> Pair("1101", "11th Mathematics")
-
-            // Class 12
-            lower.contains("12") && lower.contains("phys") -> Pair("1202", "12th Physics")
-            lower.contains("12") && lower.contains("chem") -> Pair("1203", "12th Chemistry")
-            lower.contains("12") && lower.contains("bio") -> Pair("1204", "12th Biology")
-            lower.contains("12") && (lower.contains("computer") || hasWord("cs") || lower.contains("python")) -> Pair("1205", "12th Computer Science")
-            lower.contains("12") && (lower.contains("comm") || lower.contains("account")) -> Pair("1206", "12th Commerce & Accountancy")
-            lower.contains("12") && lower.contains("econ") -> Pair("1207", "12th Economics")
-            lower.contains("12") && lower.contains("math") -> Pair("1201", "12th Mathematics")
-
-            // Defaults without class prefix (specific subjects first)
-            lower.contains("computer") || hasWord("cs") || lower.contains("python") -> Pair("1205", "12th Computer Science")
-            lower.contains("social") || lower.contains("history") || lower.contains("geography") || lower.contains("civics") -> Pair("1003", "10th Social Science")
-            lower.contains("math") -> Pair("1001", "10th Mathematics")
-            lower.contains("phys") -> Pair("1202", "12th Physics")
-            lower.contains("chem") -> Pair("1203", "12th Chemistry")
-            lower.contains("bio") -> Pair("1204", "12th Biology")
-            lower.contains("commerce") || lower.contains("account") -> Pair("1206", "12th Commerce & Accountancy")
-            lower.contains("econ") -> Pair("1207", "12th Economics")
-            lower.contains("science") -> Pair("1002", "10th Science")
-            else -> Pair("1001", "10th Mathematics")
+            lower.contains("python") || lower.contains("coding") || lower.contains("logic") || hasWord("py") ->
+                Pair("101", "Python & Coding Logic")
+            lower.contains("sql") || lower.contains("database") || lower.contains("dbms") || lower.contains("rdbms") || lower.contains("query") ->
+                Pair("102", "SQL & Database Management")
+            lower.contains("ai") || lower.contains("tech") || lower.contains("modern") || lower.contains("machine learning") || lower.contains("ml") || lower.contains("neural") || lower.contains("cloud") || lower.contains("cyber") ->
+                Pair("103", "AI & Modern Tech Concepts")
+            lower.contains("aptitude") || lower.contains("interview") || lower.contains("quant") || lower.contains("math") || lower.contains("reasoning") || lower.contains("puzzle") || lower.contains("prep") ->
+                Pair("104", "Aptitude & Interview Prep")
+            else -> Pair("101", "Python & Coding Logic")
         }
     }
 
