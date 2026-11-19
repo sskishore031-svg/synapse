@@ -15,13 +15,15 @@ fun QuizHubScreen(
     viewModel: QuizHomeViewModel,
     onBackClick: () -> Unit,
     onSelectSubject: (Int, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenMistakeVault: () -> Unit = {}
 ) {
     QuizHomeSelectionScreen(
         viewModel = viewModel,
         onBackClick = onBackClick,
         onSelectSubject = onSelectSubject,
-        modifier = modifier
+        modifier = modifier,
+        onOpenMistakeVault = onOpenMistakeVault
     )
 }
 

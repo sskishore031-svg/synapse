@@ -146,6 +146,10 @@ class ChapterLessonViewModel(
         _uiState.update { it.copy(currentPartIndex = partIndex) }
     }
 
+    fun setCheatSheetMode(enabled: Boolean) {
+        _uiState.update { it.copy(isCheatSheetMode = enabled) }
+    }
+
     fun saveSmartNotes(
         title: String,
         content: String,

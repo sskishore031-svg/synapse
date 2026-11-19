@@ -21,5 +21,6 @@ data class ChapterLessonUiState(
     val previousChapterId: Int? = null,
     val nextChapterId: Int? = null,
     val isMarkingComplete: Boolean = false,
-    val completionSuccess: Boolean = false
+    val completionSuccess: Boolean = false,
+    val isCheatSheetMode: Boolean = false
 )

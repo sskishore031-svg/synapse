@@ -119,29 +119,73 @@ class QuizViewModel(
         }
         currentSubjectId = resolvedSub
 
-        val targetChapterId = if (chapterId > 0) {
-            chapterId
+        val isMistakeVault = chapterId == -999 || decodedSub.equals("MISTAKE_VAULT", ignoreCase = true)
+        if (isMistakeVault) {
+            val mistakes = quizDao.getAllMistakes()
+            val vaultQuestions = mistakes.map { it.toQuizQuestionDto() }
+            val fQ = vaultQuestions.firstOrNull() ?: QuizQuestionDto(
+                id = 1,
+                questionNumber = 1,
+                question = "All caught up! Zero missed questions remaining in your Mistake Vault.",
+                options = mapOf(
+                    "A" to "Keep practicing quizzes to reinforce concepts.",
+                    "B" to "Review previous chapters.",
+                    "C" to "Well done!",
+                    "D" to "All of the above"
+                ),
+                correctOption = "D",
+                explanation = "Your Mistake Vault automatically tracks questions you answer incorrectly and clears them once answered correctly."
+            )
+            val qList = if (vaultQuestions.isNotEmpty()) vaultQuestions else listOf(fQ)
+            currentSubjectId = "MISTAKE_VAULT"
+            currentChapterId = "-999"
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = null,
+                    chapterId = -999,
+                    currentQuestionIndex = 1,
+                    topicTag = "MISTAKE VAULT · RE-TEST",
+                    title = "Mistake Vault Re-Test (${qList.size} Questions)",
+                    questions = qList,
+                    totalQuestions = qList.size,
+                    questionText = qList.first().question,
+                    options = buildOptionsFromDto(qList.first()),
+                    selectedOptionId = null,
+                    answersMap = emptyMap(),
+                    submissionResult = null
+                )
+            }
+            return
+        }
+
+        val isRevisionTest = chapterId <= 0 || chapterId == 9999
+        val targetChapterId = if (isRevisionTest) {
+            9999
         } else {
-            foundSubject?.chapters?.firstOrNull()?.chapterId ?: 4
+            chapterId
         }
         currentChapterId = targetChapterId.toString()
 
-        // Synchronous 0ms resolution for instant on-device rendering & JVM tests
-        val baseChapter = BaseCurriculumData.getChapterById(targetChapterId)
-        val catChapter = if (baseChapter == null) catalogRepo?.getChapterById(targetChapterId) else null
+        val baseChapter = if (isRevisionTest) null else BaseCurriculumData.getChapterById(targetChapterId)
+        val catChapter = if (baseChapter == null && !isRevisionTest) catalogRepo?.getChapterById(targetChapterId) else null
         val initialQuestions = when {
+            isRevisionTest && foundSubject != null -> {
+                val allMcqs = foundSubject.chapters.flatMap { it.mcqs }
+                if (allMcqs.isNotEmpty()) allMcqs.take(50) else emptyList()
+            }
             baseChapter != null && baseChapter.mcqs.isNotEmpty() -> baseChapter.mcqs
             catChapter != null && catChapter.mcqs.isNotEmpty() -> catChapter.mcqs
             else -> catalogRepo?.getChapterQuiz(targetChapterId).orEmpty()
         }
 
         val subjectTitle = foundSubject?.name ?: BaseCurriculumData.getSubjectById(currentSubjectId)?.name ?: currentSubjectId
-        val chapterTitle = baseChapter?.title ?: catChapter?.title ?: "Chapter $targetChapterId"
+        val chapterTitle = if (isRevisionTest) "Full Subject Revision Test" else (baseChapter?.title ?: catChapter?.title ?: "Chapter $targetChapterId")
 
         if (initialQuestions.isNotEmpty()) {
             val fQ = initialQuestions.first()
-            val topicTag = "$subjectTitle QUIZ".uppercase()
-            val quizTitle = "$chapterTitle Quiz"
+            val topicTag = if (isRevisionTest) "$subjectTitle · 50 QUESTIONS REVISION".uppercase() else "$subjectTitle QUIZ".uppercase()
+            val quizTitle = if (isRevisionTest) "$subjectTitle Full Revision Test" else "$chapterTitle Quiz"
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -529,8 +573,31 @@ class QuizViewModel(
         questions.forEachIndexed { index, q ->
             val selectedOption = state.answersMap[q.id]
                 ?: _userSelections.value[index]?.let { idx -> listOf("A", "B", "C", "D").getOrNull(idx) }
-            if (selectedOption != null && selectedOption.equals(q.correctOption, ignoreCase = true)) {
+            val isCorrect = selectedOption != null && selectedOption.equals(q.correctOption, ignoreCase = true)
+            if (isCorrect) {
                 correctAnswersCount++
+                scope.launch {
+                    try {
+                        quizDao.removeMistake(q.question)
+                    } catch (_: Throwable) {}
+                }
+            } else {
+                scope.launch {
+                    try {
+                        val mistake = com.siamts.synapse.data.local.MistakeQuestionEntity(
+                            subjectId = subId,
+                            chapterId = chapIdStr,
+                            questionText = q.question,
+                            optionA = q.options["A"].orEmpty(),
+                            optionB = q.options["B"].orEmpty(),
+                            optionC = q.options["C"].orEmpty(),
+                            optionD = q.options["D"].orEmpty(),
+                            correctOption = q.correctOption,
+                            explanation = q.explanation
+                        )
+                        quizDao.insertMistake(mistake)
+                    } catch (_: Throwable) {}
+                }
             }
         }
 

@@ -1716,6 +1716,9 @@ class MainActivity : ComponentActivity() {
                                     onSelectSubject = { subId, subName ->
                                         navigateTo(AppScreen.SubjectQuizSelection(subId, subName))
                                     },
+                                    onOpenMistakeVault = {
+                                        navigateTo(AppScreen.DynamicQuizAttempt(chapterId = -999, subjectId = "MISTAKE_VAULT"))
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),

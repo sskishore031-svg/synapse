@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  */
 object SynapseDatabase {
     const val DATABASE_NAME = "synapse_quiz.db"
-    const val DATABASE_VERSION = 5
+    const val DATABASE_VERSION = 7
 
     @Volatile
     private var isSeedingStarted = false

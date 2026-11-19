@@ -1,5 +1,6 @@
 package com.siamts.synapse.ui.lesson
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -222,6 +223,58 @@ fun ChapterLessonScreen(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
+                        // High-Utility Mode Toggle: Full A-to-Z Lesson | 5-Min Cheat Sheet
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                                .padding(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val isFull = !uiState.isCheatSheetMode
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(
+                                        if (isFull) BlueAccent else Color.Transparent,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable { viewModel.setCheatSheetMode(false) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Full A-to-Z Lesson",
+                                    color = if (isFull) Color.White else Color(0xFF64748B),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+
+                            val isCheat = uiState.isCheatSheetMode
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(
+                                        if (isCheat) Brush.horizontalGradient(listOf(Color(0xFFD97706), Color(0xFFB45309))) else Color.Transparent,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable { viewModel.setCheatSheetMode(true) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "⚡ 5-Min Cheat Sheet",
+                                    color = if (isCheat) Color.White else Color(0xFF64748B),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (!uiState.isCheatSheetMode) {
                         // Part 1 / Part 2 Tabs
                         Row(
                             modifier = Modifier
@@ -243,10 +296,10 @@ fun ChapterLessonScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Part 1: Concept",
+                                    text = "Part 1: A-to-Z Concepts & Formulas",
                                     color = if (isPart1) Color.White else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
+                                    fontSize = 12.sp
                                 )
                             }
 
@@ -263,10 +316,10 @@ fun ChapterLessonScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Part 2: Application",
+                                    text = "Part 2: Worked Examples & Board Q&A",
                                     color = if (isPart2) Color.White else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
+                                    fontSize = 12.sp
                                 )
                             }
                         }
@@ -394,6 +447,13 @@ fun ChapterLessonScreen(
 
                             Spacer(modifier = Modifier.height(20.dp))
                         }
+                    } else {
+                        // 5-Min Quick Revision Cheat Sheet
+                        ChapterCheatSheetView(
+                            uiState = uiState,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                         // Bottom Actions Bar
                         Column(
@@ -429,7 +489,7 @@ fun ChapterLessonScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "✨ AI Smart Summary & Notes",
+                                        text = "📝 Save A-to-Z Notes",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp
@@ -573,7 +633,7 @@ fun ChapterLessonScreen(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "📘 Chapter Executive Summary", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "📘 Key Points & Core Concepts", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(text = smartNotes.keyDefinition, color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
                         }
@@ -586,7 +646,7 @@ fun ChapterLessonScreen(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "⚡ Key Equations / Rules Box", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "⚡ Important Formulas / Key Dates / Definitions", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             smartNotes.coreFormulasOrLaws.forEach { formula ->
                                 Text(text = "• $formula", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
@@ -594,14 +654,14 @@ fun ChapterLessonScreen(
                         }
                     }
 
-                    // 4 High-Yield University Revision Points Card
+                    // 2-Mark & 5-Mark Samacheer Revision Points Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFAF5FF))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "💡 4 High-Yield University Revision Points", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "💡 2-Mark & 5-Mark Samacheer Revision Points", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             smartNotes.examTakeaways.forEachIndexed { idx, takeaway ->
                                 Text(text = "${idx + 1}. $takeaway", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
@@ -705,5 +765,250 @@ fun ChapterLessonScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * High-Speed 5-Minute Quick Revision Cheat Sheet for Last-Minute Board Exam Prep.
+ * Displays Must-Know Formulas, One-Line Definitions, Memory Tricks, and 2M/5M Expected Questions.
+ */
+@Composable
+fun ChapterCheatSheetView(
+    uiState: ChapterLessonUiState,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Top Banner
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
+            border = BorderStroke(1.dp, Color(0xFFFDE68A))
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "⚡", fontSize = 26.sp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "5-Minute Board Exam Cheat Sheet",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF92400E)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "High-speed last-minute revision · Key formulas, definitions & 2M/5M questions",
+                        fontSize = 11.sp,
+                        color = Color(0xFFB45309)
+                    )
+                }
+            }
+        }
+
+        // Section 1: Must-Know Formulas / Equations / Key Historical Dates
+        val formulas = uiState.coreFormulas.ifEmpty {
+            listOf(
+                "Fundamental governing equation for ${uiState.chapterTitle}",
+                "Standard boundary and equilibrium conditions",
+                "Conservation principles and SI unit relationships"
+            )
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "⚡", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Must-Know Formulas & Key Equations",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+                formulas.forEach { f ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF8FAFC), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = f,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF1E293B)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Section 2: One-Line Textbook Definitions
+        val definitions = uiState.syllabus.ifEmpty {
+            listOf(
+                "${uiState.chapterTitle} Definition: Core topic in the Samacheer Kalvi syllabus.",
+                "Key Principle: Governs state transformations and analytical solutions.",
+                "Standard Unit: Expressed in canonical SI units according to board guidelines."
+            )
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "📖", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "One-Line Textbook Definitions",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+                definitions.forEach { d ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = "•", color = BlueAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = d,
+                            fontSize = 13.sp,
+                            color = Color(0xFF334155),
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // Section 3: Memory Tricks & Mnemonics
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "💡", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Memory Tricks & Mnemonics",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = "Rule of Thumb: Always verify boundary conditions and check that physical units balance on both sides of every equation before proceeding with calculations.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF1E40AF),
+                        lineHeight = 18.sp
+                    )
+                }
+            }
+        }
+
+        // Section 4: Top Expected Public Exam Questions (2M & 5M)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "🎯", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Top Expected Public Exam Questions",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+                // 2-Mark Question
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = "2-Mark Question:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0284C7)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Define the core principle of ${uiState.chapterTitle} and state its SI unit / mathematical statement.",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "• Write precise definition · State governing formula · Include correct SI units for 2 full marks.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+
+                // 5-Mark Question
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = "5-Mark Question:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF7C3AED)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Explain the complete theoretical derivation and applications of ${uiState.chapterTitle} with a neat labeled diagram.",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "• Side headings · Principle · Step-by-step derivation · Practical applications & conclusion.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

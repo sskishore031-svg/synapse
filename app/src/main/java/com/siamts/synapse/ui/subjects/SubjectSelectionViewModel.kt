@@ -135,11 +135,11 @@ class SubjectSelectionViewModel(
                     )
                 }
 
-                val allCombined = applyInterests(baseSubjects + addedSubjects, _uiState.value.userInterests)
+                val allCombined = applyInterests(baseSubjects, _uiState.value.userInterests)
                 val currentQuery = _uiState.value.searchQuery
 
                 _uiState.update { current ->
-                    val (filtered, results) = performSearch(allCombined, currentQuery)
+                    val (filtered, results) = performSearch(allCombined, currentQuery, current.selectedClass)
                     current.copy(
                         subjects = allCombined,
                         filteredSubjects = filtered,
@@ -151,9 +151,20 @@ class SubjectSelectionViewModel(
         }
     }
 
+    fun onClassSelected(className: String) {
+        _uiState.update { current ->
+            val (filtered, results) = performSearch(current.subjects, current.searchQuery, className)
+            current.copy(
+                selectedClass = className,
+                filteredSubjects = filtered,
+                searchResults = results
+            )
+        }
+    }
+
     fun onSearchQueryChanged(query: String) {
         val allSubs = _uiState.value.subjects
-        val (filtered, results) = performSearch(allSubs, query)
+        val (filtered, results) = performSearch(allSubs, query, _uiState.value.selectedClass)
         _uiState.update {
             it.copy(
                 searchQuery = query,
@@ -165,14 +176,24 @@ class SubjectSelectionViewModel(
 
     private fun performSearch(
         subjects: List<Subject>,
-        query: String
+        query: String,
+        selectedClass: String = "All Classes"
     ): Pair<List<Subject>, List<SearchResultItem>> {
-        val trimmed = query.trim().lowercase(Locale.ROOT)
-        if (trimmed.isEmpty()) {
-            return Pair(subjects, emptyList())
+        val classFiltered = if (selectedClass == "All Classes") {
+            subjects
+        } else {
+            subjects.filter {
+                it.category.equals(selectedClass, ignoreCase = true) ||
+                it.title.startsWith(selectedClass.take(4), ignoreCase = true)
+            }
         }
 
-        val matchingSubjects = subjects.filter { sub ->
+        val trimmed = query.trim().lowercase(Locale.ROOT)
+        if (trimmed.isEmpty()) {
+            return Pair(classFiltered, emptyList())
+        }
+
+        val matchingSubjects = classFiltered.filter { sub ->
             sub.title.lowercase(Locale.ROOT).contains(trimmed) ||
             sub.category.lowercase(Locale.ROOT).contains(trimmed) ||
             sub.chapters.any {
@@ -182,7 +203,7 @@ class SubjectSelectionViewModel(
         }
 
         val chapterResults = mutableListOf<SearchResultItem>()
-        for (sub in subjects) {
+        for (sub in classFiltered) {
             for (ch in sub.chapters) {
                 if (ch.title.lowercase(Locale.ROOT).contains(trimmed) ||
                     ch.summary.lowercase(Locale.ROOT).contains(trimmed) ||
@@ -244,5 +265,21 @@ class SubjectSelectionViewModel(
 
     fun onTabSelected(index: Int) {
         _uiState.update { it.copy(selectedTab = index) }
+    }
+
+    fun restartSubject(subjectId: String) {
+        _uiState.update { current ->
+            val updatedSubs = current.subjects.map { sub ->
+                if (sub.id.equals(subjectId, ignoreCase = true) || sub.title.equals(subjectId, ignoreCase = true)) {
+                    sub.copy(progressPercentage = 0)
+                } else sub
+            }
+            val (filtered, results) = performSearch(updatedSubs, current.searchQuery, current.selectedClass)
+            current.copy(
+                subjects = updatedSubs,
+                filteredSubjects = filtered,
+                searchResults = results
+            )
+        }
     }
 }

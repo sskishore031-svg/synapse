@@ -107,17 +107,35 @@ class QuizHomeViewModel(
             val fullActiveList = (baseList + addedList).distinctBy { it.id }
             val totalAvail = fullActiveList.sumOf { it.availableQuizzes }
             val totalAtt = fullActiveList.sumOf { it.attemptedQuizzes }
+            val currentClass = _uiState.value.selectedClass
+            val filtered = filterByClass(fullActiveList, currentClass)
+            val mistakes = try { quizDao.getMistakeCount() } catch (_: Throwable) { 0 }
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     errorMessage = null,
                     subjects = fullActiveList,
-                    totalQuizzes = if (totalAvail > 0) totalAvail else 24,
-                    totalAttempted = totalAtt
+                    filteredSubjects = filtered,
+                    totalQuizzes = if (totalAvail > 0) totalAvail else 248,
+                    totalAttempted = totalAtt,
+                    mistakeCount = mistakes
                 )
             }
         }
+    }
+
+    fun onClassSelected(className: String) {
+        _uiState.update { current ->
+            val filtered = filterByClass(current.subjects, className)
+            current.copy(selectedClass = className, filteredSubjects = filtered)
+        }
+    }
+
+    private fun filterByClass(list: List<QuizSubjectItemDto>, className: String): List<QuizSubjectItemDto> {
+        if (className == "All Classes") return list
+        val prefix = className.take(4)
+        return list.filter { it.name.startsWith(prefix, ignoreCase = true) }
     }
 }
 

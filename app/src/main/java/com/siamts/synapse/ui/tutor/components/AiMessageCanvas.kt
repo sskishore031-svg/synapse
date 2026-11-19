@@ -1,6 +1,8 @@
 package com.siamts.synapse.ui.tutor.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +60,8 @@ fun AiMessageCanvas(
     onSaveNote: () -> Unit,
     onElaborate: () -> Unit,
     modifier: Modifier = Modifier,
+    onFormatTwoMark: () -> Unit = {},
+    onFormatFiveMark: () -> Unit = {}
 ) {
     val isDark = LocalThemeIsDark.current
     val textColor = if (isDark) TextPrimary else Color(0xFF0F172A)
@@ -166,6 +170,42 @@ fun AiMessageCanvas(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Board Exam 2-Mark Format Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF))
+                        .clickable { onFormatTwoMark() }
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "2M",
+                        color = if (isDark) CyanGlow else BlueAccent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Board Exam 5-Mark Format Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF))
+                        .clickable { onFormatFiveMark() }
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "5M",
+                        color = if (isDark) CyanGlow else BlueAccent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(2.dp))
+
                 // 1. Male Voice TTS Listen
                 IconButton(
                     onClick = onSpeakClick,

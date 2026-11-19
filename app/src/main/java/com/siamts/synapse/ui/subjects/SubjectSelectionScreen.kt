@@ -71,6 +71,7 @@ fun SubjectSelectionScreen(
     SubjectSelectionContent(
         uiState = uiState,
         onSearchChange = { viewModel.onSearchQueryChanged(it) },
+        onClassSelect = { viewModel.onClassSelected(it) },
         onSubjectClick = { subjectId ->
             viewModel.onSubjectClicked(subjectId)
             onSubjectClick?.invoke(subjectId)
@@ -93,6 +94,7 @@ fun SubjectSelectionScreen(
 fun SubjectSelectionContent(
     uiState: SubjectSelectionUiState,
     onSearchChange: (String) -> Unit,
+    onClassSelect: (String) -> Unit,
     onSubjectClick: (String) -> Unit,
     onChapterClick: (Int) -> Unit,
     onOpenCatalog: () -> Unit,
@@ -173,6 +175,38 @@ fun SubjectSelectionContent(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Crisp Class Selector Filter Chips (10th Std, 11th Std, 12th Std)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        uiState.availableClasses.forEach { cls ->
+                            val isSelected = uiState.selectedClass == cls
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (isSelected) Brush.horizontalGradient(
+                                            listOf(Color(0xFF2563EB), Color(0xFF1D4ED8))
+                                        ) else Brush.horizontalGradient(
+                                            listOf(Color(0xFFF1F5F9), Color(0xFFE2E8F0))
+                                        ),
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                    .clickable { onClassSelect(cls) }
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
+                            ) {
+                                Text(
+                                    text = cls,
+                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
                     // 1. Live Search Box
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
@@ -454,7 +488,25 @@ fun SubjectSelectionContent(
                                                 fontWeight = FontWeight.Bold,
                                             )
 
-                                            if (subject.isInterested) {
+                                            if (subject.progressPercentage >= 100) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier
+                                                        .background(
+                                                            color = Color(0xFF10B981).copy(alpha = 0.15f),
+                                                            shape = RoundedCornerShape(6.dp)
+                                                        )
+                                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "✓ COMPLETED",
+                                                        color = Color(0xFF059669),
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            } else if (subject.isInterested) {
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
@@ -504,6 +556,48 @@ fun SubjectSelectionContent(
                                                 color = subject.progressColor,
                                                 trackColor = Color(0xFFF1F5F9),
                                             )
+
+                                            if (subject.progressPercentage >= 100) {
+                                                Spacer(modifier = Modifier.height(10.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    // Refer Again button
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                            .clickable { onSubjectClick(subject) }
+                                                            .padding(vertical = 7.dp),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = "Refer Again",
+                                                            color = BlueAccent,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+
+                                                    // Restart button
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                                            .clickable { viewModel.restartSubject(subject.id) }
+                                                            .padding(vertical = 7.dp),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = "Restart",
+                                                            color = Color(0xFF64748B),
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -729,6 +823,7 @@ fun SubjectSelectionScreenPreview() {
             onCloseCatalog = {},
             onToggleCatalogSubject = {},
             onTabSelect = {},
+            onClassSelect = {},
             modifier = Modifier.fillMaxSize(),
         )
     }

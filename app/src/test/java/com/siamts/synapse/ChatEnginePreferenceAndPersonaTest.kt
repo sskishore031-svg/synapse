@@ -115,11 +115,11 @@ class ChatEnginePreferenceAndPersonaTest {
     @Test
     fun testFarewell_bye() {
         val resp1 = engine.generateResponse("bye")
-        assertEquals("Okay, bye, Kishore! We'll continue our studies tomorrow. Take care!", resp1.paragraph1)
+        assertEquals("Okay bye, Kishore! We'll continue tomorrow.", resp1.paragraph1)
         assertTrue(resp1.isFarewell)
 
         val resp2 = engine.generateResponse("goodbye")
-        assertEquals("Okay, bye, Kishore! We'll continue our studies tomorrow. Take care!", resp2.paragraph1)
+        assertEquals("Okay bye, Kishore! We'll continue tomorrow.", resp2.paragraph1)
     }
 
     @Test
@@ -154,7 +154,7 @@ class ChatEnginePreferenceAndPersonaTest {
 
         // Farewell when name is blank
         val respBye = engine.generateResponse("bye")
-        assertEquals("Okay, bye! We'll continue our studies tomorrow. Take care!", respBye.paragraph1)
+        assertEquals("Okay bye! We'll continue tomorrow.", respBye.paragraph1)
 
         // Style preference confirmation when name is blank
         val respEmoji = engine.generateResponse("dont use emoji")
@@ -162,7 +162,7 @@ class ChatEnginePreferenceAndPersonaTest {
 
         // Out-of-scope response
         val respOos = engine.generateResponse("who is rajinikanth")
-        assertEquals("Sorry, I don't know about that—it's outside my study scope. Ask me any subject concept, quiz, or revision note instead.", respOos.paragraph1)
+        assertEquals("Sorry, that's not relatable to our 10th, 11th & 12th studies! Ask me any subject concept, quiz, or notes.", respOos.paragraph1)
     }
 
     @Test

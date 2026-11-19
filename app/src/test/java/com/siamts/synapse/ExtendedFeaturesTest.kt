@@ -24,19 +24,26 @@ class ExtendedFeaturesTest {
 
         val catalog = gson.fromJson(fileToRead.readText(), ExtendedCurriculumCatalog::class.java)
         assertNotNull(catalog)
-        assertEquals(10, catalog.subjects.size)
+        assertEquals(17, catalog.subjects.size)
 
         val expectedSubjectNames = listOf(
-            "Biology",
-            "World History",
-            "Economics & Finance",
-            "Environmental Science",
-            "Computer Networks",
-            "Cyber Security",
-            "Psychology",
-            "Business Management",
-            "Electrical Engineering",
-            "Astronomy & Astrophysics"
+            "10th Mathematics",
+            "10th Science",
+            "10th Social Science",
+            "11th Mathematics",
+            "11th Physics",
+            "11th Chemistry",
+            "11th Biology (Botany & Zoology)",
+            "11th Computer Science",
+            "11th Commerce & Accountancy",
+            "11th Economics",
+            "12th Mathematics",
+            "12th Physics",
+            "12th Chemistry",
+            "12th Biology (Botany & Zoology)",
+            "12th Computer Science",
+            "12th Commerce & Accountancy",
+            "12th Economics"
         )
 
         for (name in expectedSubjectNames) {
@@ -99,19 +106,19 @@ class ExtendedFeaturesTest {
         assertTrue("Should have initial base subjects", viewModel.uiState.value.subjects.isNotEmpty())
         assertEquals(viewModel.uiState.value.subjects.size, viewModel.uiState.value.filteredSubjects.size)
 
-        // 2. Search for "differentiation" (calculus topic)
-        viewModel.onSearchQueryChanged("differentiation")
+        // 2. Search for "calculus"
+        viewModel.onSearchQueryChanged("calculus")
         val diffState = viewModel.uiState.value
         assertTrue("Should match calculus in topics", diffState.searchResults.any {
-            it.chapterTitle?.contains("Derivatives", ignoreCase = true) == true ||
+            it.chapterTitle?.contains("Calculus", ignoreCase = true) == true ||
             it.subjectName.contains("Mathematics", ignoreCase = true)
         })
 
         // 3. Search for "wave" (physics)
         viewModel.onSearchQueryChanged("wave")
         val waveState = viewModel.uiState.value
-        assertTrue("Should match Physics waves", waveState.filteredSubjects.any { it.title.equals("Physics", ignoreCase = true) })
-        assertTrue("Should match Waves chapter", waveState.searchResults.any { it.chapterTitle?.contains("Waves", ignoreCase = true) == true })
+        assertTrue("Should match Physics waves", waveState.filteredSubjects.any { it.title.contains("Physics", ignoreCase = true) })
+        assertTrue("Should match Waves chapter", waveState.searchResults.any { it.chapterTitle?.contains("Wave", ignoreCase = true) == true })
 
         // 4. Search for "algorithms"
         viewModel.onSearchQueryChanged("algorithms")

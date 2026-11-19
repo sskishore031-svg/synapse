@@ -21,6 +21,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
+    private val inMemoryMistakes = CopyOnWriteArrayList<MistakeQuestionEntity>()
     private val inMemoryQuestions = java.util.concurrent.ConcurrentHashMap<String, List<com.siamts.synapse.data.model.QuizQuestionDto>>()
     private val inMemoryChapters = CopyOnWriteArrayList<ChapterEntity>()
     private val inMemoryTasks = CopyOnWriteArrayList<LearningTaskEntity>()
@@ -167,55 +168,50 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             )
             """.trimIndent()
         )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS mistake_vault (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject_id TEXT NOT NULL,
+                chapter_id TEXT NOT NULL,
+                question_text TEXT NOT NULL UNIQUE,
+                option_a TEXT NOT NULL,
+                option_b TEXT NOT NULL,
+                option_c TEXT NOT NULL,
+                option_d TEXT NOT NULL,
+                correct_option TEXT NOT NULL,
+                explanation TEXT,
+                question_json TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         try {
+            // Version 6/7 migration: Ensure mistake_vault and curriculum tables exist cleanly
             db.execSQL(
                 """
-                CREATE TABLE IF NOT EXISTS quiz_questions (
+                CREATE TABLE IF NOT EXISTS mistake_vault (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     subject_id TEXT NOT NULL,
                     chapter_id TEXT NOT NULL,
-                    question_text TEXT NOT NULL,
+                    question_text TEXT NOT NULL UNIQUE,
                     option_a TEXT NOT NULL,
                     option_b TEXT NOT NULL,
                     option_c TEXT NOT NULL,
                     option_d TEXT NOT NULL,
                     correct_option TEXT NOT NULL,
                     explanation TEXT,
-                    question_json TEXT NOT NULL
+                    question_json TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
                 )
                 """.trimIndent()
             )
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS chapter_lessons (
-                    chapter_id TEXT PRIMARY KEY,
-                    subject_id TEXT NOT NULL,
-                    title TEXT NOT NULL,
-                    part1_concept TEXT NOT NULL,
-                    part2_application TEXT NOT NULL,
-                    exam_tip TEXT,
-                    formulas_json TEXT,
-                    syllabus_json TEXT
-                )
-                """.trimIndent()
-            )
-            db.execSQL("CREATE TABLE IF NOT EXISTS chapter_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id TEXT NOT NULL, chapter_id TEXT NOT NULL, question_json TEXT NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS subject_chapters (id TEXT PRIMARY KEY, subject_id TEXT NOT NULL, chapter_order INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT, question_count INTEGER NOT NULL, estimated_minutes INTEGER NOT NULL, total_marks INTEGER NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS learning_plan_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, category TEXT NOT NULL, duration TEXT NOT NULL, is_completed INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT, created_at INTEGER NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS study_notes (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, subject_id TEXT, chapter_id INTEGER, title TEXT NOT NULL, content TEXT NOT NULL, category TEXT NOT NULL, created_at INTEGER NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS chat_sessions (session_id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, title TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)")
-            db.execSQL("CREATE TABLE IF NOT EXISTS chat_messages (id TEXT PRIMARY KEY, session_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time_ago TEXT NOT NULL, is_user INTEGER NOT NULL, paragraph2 TEXT, matched_subject TEXT, matched_chapter TEXT, matched_topic TEXT, is_concept_answer INTEGER NOT NULL DEFAULT 0, is_saved_note_card INTEGER NOT NULL DEFAULT 0, saved_note_title TEXT, action_command TEXT, timestamp INTEGER NOT NULL)")
+            onCreate(db)
         } catch (_: Throwable) {
-            // Fallback to destructive migration: drop and recreate cleanly
             try {
-                db.execSQL("DROP TABLE IF EXISTS quiz_questions")
-                db.execSQL("DROP TABLE IF EXISTS chapter_lessons")
-                db.execSQL("DROP TABLE IF EXISTS chapter_questions")
-                db.execSQL("DROP TABLE IF EXISTS subject_chapters")
                 onCreate(db)
             } catch (_: Throwable) {}
         }
@@ -420,6 +416,139 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                     db.endTransaction()
                 }
             } catch (_: Throwable) {}
+        }
+    }
+
+    override suspend fun insertMistake(mistake: MistakeQuestionEntity): Long = withContext(Dispatchers.IO) {
+        val assignedId = if (mistake.id > 0) mistake.id else System.currentTimeMillis()
+        val entry = mistake.copy(id = assignedId)
+        inMemoryMistakes.removeAll { it.questionText.trim().equals(mistake.questionText.trim(), ignoreCase = true) }
+        inMemoryMistakes.add(0, entry)
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("subject_id", mistake.subjectId)
+                    put("chapter_id", mistake.chapterId)
+                    put("question_text", mistake.questionText)
+                    put("option_a", mistake.optionA)
+                    put("option_b", mistake.optionB)
+                    put("option_c", mistake.optionC)
+                    put("option_d", mistake.optionD)
+                    put("correct_option", mistake.correctOption)
+                    put("explanation", mistake.explanation.orEmpty())
+                    put("question_json", mistake.questionJson)
+                    put("created_at", mistake.createdAt)
+                }
+                return@withContext db.insertWithOnConflict(
+                    "mistake_vault",
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_REPLACE
+                )
+            } catch (_: Throwable) {
+                return@withContext assignedId
+            }
+        }
+        assignedId
+    }
+
+    override suspend fun getAllMistakes(): List<MistakeQuestionEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryMistakes.toList()
+        }
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "mistake_vault",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "created_at DESC"
+            )
+            val list = mutableListOf<MistakeQuestionEntity>()
+            cursor.use { c ->
+                val idCol = c.getColumnIndex("id")
+                val subCol = c.getColumnIndex("subject_id")
+                val chapCol = c.getColumnIndex("chapter_id")
+                val qCol = c.getColumnIndex("question_text")
+                val aCol = c.getColumnIndex("option_a")
+                val bCol = c.getColumnIndex("option_b")
+                val cCol = c.getColumnIndex("option_c")
+                val dCol = c.getColumnIndex("option_d")
+                val ansCol = c.getColumnIndex("correct_option")
+                val expCol = c.getColumnIndex("explanation")
+                val jsonCol = c.getColumnIndex("question_json")
+                val timeCol = c.getColumnIndex("created_at")
+
+                while (c.moveToNext()) {
+                    list.add(
+                        MistakeQuestionEntity(
+                            id = if (idCol >= 0) c.getLong(idCol) else 0L,
+                            subjectId = if (subCol >= 0) c.getString(subCol) else "",
+                            chapterId = if (chapCol >= 0) c.getString(chapCol) else "1",
+                            questionText = if (qCol >= 0) c.getString(qCol) else "",
+                            optionA = if (aCol >= 0) c.getString(aCol) else "",
+                            optionB = if (bCol >= 0) c.getString(bCol) else "",
+                            optionC = if (cCol >= 0) c.getString(cCol) else "",
+                            optionD = if (dCol >= 0) c.getString(dCol) else "",
+                            correctOption = if (ansCol >= 0) c.getString(ansCol) else "A",
+                            explanation = if (expCol >= 0) c.getString(expCol) else null,
+                            questionJson = if (jsonCol >= 0) c.getString(jsonCol) else "",
+                            createdAt = if (timeCol >= 0) c.getLong(timeCol) else 0L
+                        )
+                    )
+                }
+            }
+            if (list.isEmpty() && inMemoryMistakes.isNotEmpty()) {
+                return@withContext inMemoryMistakes.toList()
+            }
+            list
+        } catch (_: Throwable) {
+            inMemoryMistakes.toList()
+        }
+    }
+
+    override suspend fun getMistakesBySubject(subjectId: String): List<MistakeQuestionEntity> = withContext(Dispatchers.IO) {
+        val trimmed = subjectId.trim()
+        val all = getAllMistakes()
+        all.filter { it.subjectId.equals(trimmed, ignoreCase = true) }
+    }
+
+    override suspend fun removeMistake(questionText: String): Int = withContext(Dispatchers.IO) {
+        val trimmed = questionText.trim()
+        val removedMemory = if (inMemoryMistakes.removeIf { it.questionText.trim().equals(trimmed, ignoreCase = true) }) 1 else 0
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val count = db.delete("mistake_vault", "question_text = ?", arrayOf(trimmed))
+                return@withContext if (count > 0) count else removedMemory
+            } catch (_: Throwable) {
+                return@withContext removedMemory
+            }
+        }
+        removedMemory
+    }
+
+    override suspend fun getMistakeCount(): Int = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryMistakes.size
+        }
+        try {
+            val db = readableDatabase
+            val cursor = db.rawQuery("SELECT COUNT(*) FROM mistake_vault", null)
+            cursor.use { c ->
+                if (c.moveToNext()) {
+                    val count = c.getInt(0)
+                    return@withContext if (count > 0) count else inMemoryMistakes.size
+                }
+            }
+            inMemoryMistakes.size
+        } catch (_: Throwable) {
+            inMemoryMistakes.size
         }
     }
 
@@ -1150,7 +1279,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
-        private const val DATABASE_VERSION = 5
+        private const val DATABASE_VERSION = 7
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null

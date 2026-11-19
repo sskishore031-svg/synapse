@@ -84,20 +84,21 @@ class SubjectCatalogRepository private constructor(context: Context) {
      */
     fun getAllCatalogSubjects(): List<CatalogSubject> {
         ensureCatalogLoaded()
-        return _catalogSubjects.value
+        return _catalogSubjects.value.ifEmpty { BaseCurriculumData.subjects }
     }
 
     /**
-     * Returns all subjects across the entire curriculum (6 base + 10 extended).
+     * Returns all subjects across the entire curriculum (17 Tamil Nadu State Board subjects).
      */
     fun getAllSubjects(): List<CatalogSubject> {
         ensureCatalogLoaded()
-        return BaseCurriculumData.subjects + _catalogSubjects.value
+        return _catalogSubjects.value.ifEmpty { BaseCurriculumData.subjects }
     }
 
     fun getAddedSubjects(): List<CatalogSubject> {
         ensureCatalogLoaded()
-        return _catalogSubjects.value.filter { it.isAdded }
+        val added = _catalogSubjects.value.filter { it.isAdded }
+        return if (added.isNotEmpty()) added else _catalogSubjects.value.ifEmpty { BaseCurriculumData.subjects }
     }
 
     fun addSubject(subjectId: String) {
@@ -307,58 +308,10 @@ class SubjectCatalogRepository private constructor(context: Context) {
     }
 
     /**
-     * Returns pre-seeded and catalog study notes ready for on-device display.
+     * Requirement 4: Start with 0 default notes (only user-created/saved notes exist).
      */
     fun getAllStudyNotes(): List<NoteItemDto> {
-        val allNotes = BaseCurriculumData.seededNotes.toMutableList()
-        var noteCounter = 5000
-
-        for (sub in _catalogSubjects.value) {
-            for (ch in sub.chapters) {
-                noteCounter++
-                allNotes.add(
-                    NoteItemDto(
-                        id = noteCounter,
-                        userId = 1,
-                        subjectId = sub.subjectId,
-                        chapterId = ch.chapterId,
-                        title = "${ch.title} Notes",
-                        content = buildString {
-                            appendLine("## ${ch.title}")
-                            appendLine("**Subject:** ${sub.name} | **Category:** ${sub.category}")
-                            appendLine()
-                            appendLine("### Chapter Summary")
-                            appendLine(ch.summary)
-                            appendLine()
-                            if (ch.coreFormulas.isNotEmpty()) {
-                                appendLine("### Core Formulas & Principles")
-                                ch.coreFormulas.forEach { f -> appendLine("- `$f`") }
-                                appendLine()
-                            }
-                            if (ch.syllabus.isNotEmpty()) {
-                                appendLine("### Syllabus Topics")
-                                ch.syllabus.forEach { s -> appendLine("- $s") }
-                                appendLine()
-                            }
-                            appendLine("### Exam Takeaways")
-                            appendLine("1. Review core definitions and key formulas before attempting quizzes.")
-                            appendLine("2. Pay attention to distinction between foundational theory and practical applications.")
-                        },
-                        category = "SUBJECT",
-                        isSaved = true,
-                        isDownloaded = true,
-                        subjectName = sub.name,
-                        subjectSlug = sub.slug,
-                        subjectIcon = sub.iconSymbol,
-                        subjectColor = sub.colorHex,
-                        chapterTitle = ch.title,
-                        createdAt = "2026-11-04 10:00:00",
-                        updatedAt = "2026-11-04 10:00:00"
-                    )
-                )
-            }
-        }
-        return allNotes
+        return emptyList()
     }
 
     companion object {

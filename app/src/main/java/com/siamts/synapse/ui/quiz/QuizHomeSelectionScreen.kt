@@ -47,7 +47,8 @@ fun QuizHomeSelectionScreen(
     viewModel: QuizHomeViewModel,
     onBackClick: () -> Unit,
     onSelectSubject: (Int, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenMistakeVault: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -129,6 +130,105 @@ fun QuizHomeSelectionScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         item {
+                            // Class Filter Chips Row (Class 10, Class 11, Class 12)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                uiState.availableClasses.forEach { cls ->
+                                    val isSelected = uiState.selectedClass == cls
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                if (isSelected) Brush.horizontalGradient(
+                                                    listOf(Color(0xFF2563EB), Color(0xFF1D4ED8))
+                                                ) else Brush.horizontalGradient(
+                                                    listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
+                                                ),
+                                                shape = RoundedCornerShape(20.dp)
+                                            )
+                                            .clickable { viewModel.onClassSelected(cls) }
+                                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                                    ) {
+                                        Text(
+                                            text = cls,
+                                            color = if (isSelected) Color.White else Color(0xFF334155),
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            // Mistake Vault Banner Card
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = uiState.mistakeCount > 0) {
+                                        onOpenMistakeVault()
+                                    },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (uiState.mistakeCount > 0) Color(0xFFFEF2F2) else Color(0xFFF1F5F9)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (uiState.mistakeCount > 0) Color(0xFFFCA5A5) else Color(0xFFE2E8F0)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "🎯",
+                                            fontSize = 22.sp
+                                        )
+                                        Column {
+                                            Text(
+                                                text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} Questions to Fix)" else "Mistake Vault (0 Questions to Fix)",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = if (uiState.mistakeCount > 0) Color(0xFF991B1B) else Color(0xFF475569)
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = if (uiState.mistakeCount > 0) "Tap to re-test your incorrect answers and master them!" else "Zero missed questions! Great job.",
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF64748B)
+                                            )
+                                        }
+                                    }
+                                    if (uiState.mistakeCount > 0) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFEF4444), RoundedCornerShape(12.dp))
+                                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = "Re-Test",
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
                             // Summary Banner
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -151,7 +251,7 @@ fun QuizHomeSelectionScreen(
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "Each subject has 5 dedicated chapter quizzes",
+                                            text = "Each subject has 10+ chapter practice quizzes & full revision tests",
                                             fontSize = 12.sp,
                                             color = Color(0xFF64748B)
                                         )
@@ -172,7 +272,8 @@ fun QuizHomeSelectionScreen(
                             }
                         }
 
-                        items(uiState.subjects) { subject ->
+                        val displayedSubjects = if (uiState.filteredSubjects.isNotEmpty()) uiState.filteredSubjects else uiState.subjects
+                        items(displayedSubjects) { subject ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()

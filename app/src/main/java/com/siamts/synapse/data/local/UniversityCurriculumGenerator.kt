@@ -20,18 +20,11 @@ import java.util.Locale
  * with 8 progressive chapters per subject, rich 2-part lessons, MCQs, and offline RAG knowledge chunks.
  */
 object UniversityCurriculumGenerator {
-    private const val TAG = "UniversityCurriculum"
+    private const val TAG = "SchoolCurriculum"
     private val gson = Gson()
 
     val coreSubjects: List<CatalogSubject> by lazy {
-        listOf(
-            CoreMathCurriculum.getMathSubject(),
-            CoreCsCurriculum.getCsSubject(),
-            CoreDsCurriculum.getDsSubject(),
-            CoreAiCurriculum.getAiSubject(),
-            CorePhysicsCurriculum.getPhysicsSubject(),
-            CoreChemistryCurriculum.getChemistrySubject()
-        )
+        SamacheerCurriculumData.subjects
     }
 
     @Volatile

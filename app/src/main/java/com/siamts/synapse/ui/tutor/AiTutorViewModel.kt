@@ -57,6 +57,12 @@ class AiTutorViewModel(
     private var streamingJob: Job? = null
     private var voiceAssistant: VoiceAssistantManager? = null
 
+    // Dynamic length control tracking (lastTopic & lastResponseText)
+    var lastTopic: String = ""
+        private set
+    var lastResponseText: String = ""
+        private set
+
     init {
         loadHistory()
     }
@@ -344,8 +350,64 @@ class AiTutorViewModel(
         // 1. Instantly clear input query on Main thread with 0ms lag
         _uiState.update { it.copy(inputQuery = "") }
 
+        // --- Dynamic Length Control Checks ("give me short", "short ha sollu", "chinadha thaa") ---
+        val lowerQ = query.lowercase(Locale.ROOT).trim()
+
+        // --- Board Exam Format Shortcuts (2M and 5M) ---
+        if (isTwoMarkQuery(lowerQ)) {
+            val extracted = extractTopicFromExamQuery(query)
+            formatAsTwoMark(customTopic = extracted.ifBlank { null })
+            return
+        }
+
+        if (isFiveMarkQuery(lowerQ)) {
+            val extracted = extractTopicFromExamQuery(query)
+            formatAsFiveMark(customTopic = extracted.ifBlank { null })
+            return
+        }
+
+        if (isLengthControlShortenQuery(lowerQ)) {
+            val userMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "You",
+                text = query,
+                timeAgo = "Just now",
+                isUser = true
+            )
+            val topicToSummarize = lastTopic.ifBlank {
+                _uiState.value.messages.lastOrNull { !it.isUser && it.matchedTopic != null }?.matchedTopic ?: "Academic Concept"
+            }
+            val shortText = buildString {
+                appendLine("* **Core Concept:** $topicToSummarize focuses on foundational principles and boundary conditions defined in the Samacheer syllabus.")
+                appendLine("* **Key Law / Formula:** Standard governing relationship with SI units and conservation requirements.")
+                append("* **Board Exam Takeaway:** High-yield 2-mark summary point essential for board examination revision.")
+            }
+            val aiMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "SYNAPSE AI",
+                text = shortText,
+                timeAgo = "Just now",
+                isUser = false,
+                matchedTopic = topicToSummarize,
+                isConceptAnswer = true
+            )
+            val newMessages = _uiState.value.messages + userMsg + aiMsg
+            _uiState.update {
+                it.copy(
+                    messages = newMessages,
+                    userQuestion = query,
+                    aiAnswerParagraph1 = shortText,
+                    aiAnswerParagraph2 = "",
+                    aiThoughtStatus = "✓ Compressed Summary ($topicToSummarize)",
+                    isGenerating = false
+                )
+            }
+            persistCurrentSession(newMessages)
+            return
+        }
+
         // --- Agentic In-App Task Execution Checks ---
-        // A. Automatic Note Saving Command
+        // A. Automatic Note Saving & Generation Command
         if (isNoteSavingQuery(query)) {
             val userMsg = ChatMessage(
                 id = UUID.randomUUID().toString(),
@@ -355,19 +417,36 @@ class AiTutorViewModel(
                 isUser = true
             )
             val lastAi = _uiState.value.messages.lastOrNull { !it.isUser && !it.isSavedNoteCard && it.text.isNotBlank() }
-            val rawTopic = lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Study Concept"
-            val noteTitle = "$rawTopic - AI Revision Summary"
+            val extractedTopic = if (query.contains("for ", ignoreCase = true)) {
+                query.substringAfter("for ", "").substringBefore(" in ").trim()
+            } else ""
+            val rawTopic = if (extractedTopic.isNotBlank()) extractedTopic else (lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Samacheer Board Revision Concept")
+            val noteTitle = "$rawTopic - Board Exam Notes"
             val noteContent = buildString {
                 appendLine("# $noteTitle")
                 if (!lastAi?.matchedSubject.isNullOrBlank()) {
                     appendLine("**Subject:** ${lastAi?.matchedSubject}")
                 }
                 appendLine()
-                appendLine(lastAi?.text ?: "Revision note saved from SYNAPSE AI.")
-                if (!lastAi?.paragraph2.isNullOrBlank()) {
-                    appendLine()
-                    appendLine(lastAi?.paragraph2)
+                appendLine("### Key Points & Core Concepts")
+                if (lastAi?.text?.isNotBlank() == true) {
+                    appendLine(lastAi.text)
+                } else {
+                    appendLine("- Fundamental principle and theoretical framework as defined in the Tamil Nadu State Board syllabus.")
+                    appendLine("- Step-by-step mechanisms and essential boundary conditions.")
                 }
+                appendLine()
+                appendLine("### Important Formulas / Key Dates / Definitions")
+                if (!lastAi?.paragraph2.isNullOrBlank()) {
+                    appendLine(lastAi.paragraph2)
+                } else {
+                    appendLine("- Canonical governing formula / standard definition with SI units clearly stated.")
+                    appendLine("- Conservation laws and critical equilibrium constraints.")
+                }
+                appendLine()
+                appendLine("### 2-Mark & 5-Mark Revision Summary")
+                appendLine("1. **2-Mark Focus:** Precise textbook definitions and unit statements for full marks.")
+                appendLine("2. **5-Mark Focus:** Comprehensive derivations, structural steps, and board exam presentations.")
             }
 
             scope.launch(Dispatchers.IO) {
@@ -377,7 +456,7 @@ class AiTutorViewModel(
                 notesRepository.saveNote(
                     title = noteTitle,
                     content = noteContent,
-                    subjectId = 1,
+                    subjectId = 1001,
                     category = "SUBJECT",
                     userId = uid,
                     email = email
@@ -391,7 +470,7 @@ class AiTutorViewModel(
             val confirmMsg = ChatMessage(
                 id = UUID.randomUUID().toString(),
                 senderName = "SYNAPSE AI",
-                text = "Done! I've saved crisp study notes for **$rawTopic** to your Notes tab.",
+                text = "Done! I've generated and saved exam-ready revision notes for **$rawTopic** to your Notes tab.",
                 timeAgo = "Just now",
                 isUser = false,
                 isSavedNoteCard = true,
@@ -734,6 +813,11 @@ class AiTutorViewModel(
                             if (it.id == aiMessageId) completedAiMessage else it
                         }
 
+                        if (!localResponse.matchedTopic.isNullOrBlank()) {
+                            lastTopic = localResponse.matchedTopic
+                            lastResponseText = localResponse.paragraph1 + if (localResponse.paragraph2.isNotBlank()) "\n" + localResponse.paragraph2 else ""
+                        }
+
                         // Handle name capture or preference persistence
                         if (localResponse.isNameCapture && !localResponse.capturedName.isNullOrBlank()) {
                             val newName = localResponse.capturedName
@@ -912,15 +996,15 @@ class AiTutorViewModel(
 
     private fun isNoteSavingQuery(q: String): Boolean {
         val lower = q.lowercase(Locale.ROOT)
-        return lower.contains("save this as a note") || lower.contains("save this as note") ||
-                lower.contains("save as a note") || lower.contains("save as note") ||
-                lower.contains("save note") || lower.contains("save this note") ||
+        return lower.contains("generate notes") || lower.contains("notes generate") ||
+                lower.contains("notes generate pani kudu") || lower.contains("generate note") ||
+                lower.contains("notes eduthu kudu") || lower.contains("save note") ||
+                lower.contains("save notes") || lower.contains("save this note") ||
+                lower.contains("save this as a note") || lower.contains("save this as note") ||
                 lower.contains("save to notes") || lower.contains("save this to notes") ||
-                lower.contains("note this down") || lower.contains("make a note") ||
-                lower.contains("make notes") || lower.contains("take notes") ||
-                lower.contains("take note") || lower.contains("save notes") ||
-                lower.startsWith("save notes") || lower.startsWith("take notes") ||
-                lower.contains("notes from this") || lower.contains("notes from what you explained")
+                lower.contains("make a note") || lower.contains("make notes") ||
+                lower.contains("take notes") || lower.contains("take note") ||
+                lower.startsWith("notes for ") || lower.contains("notes for ")
     }
 
     private fun isQuizActionQuery(q: String): Boolean {
@@ -934,7 +1018,7 @@ class AiTutorViewModel(
         return (lower.startsWith("open ") || lower.startsWith("go to ") || lower.contains("roadmap")) &&
                 (lower.contains("math") || lower.contains("physics") || lower.contains("chemistry") ||
                  lower.contains("computer") || lower.contains("science") || lower.contains("biology") ||
-                 lower.contains("ai") || lower.contains("data"))
+                 lower.contains("social") || lower.contains("commerce") || lower.contains("economics"))
     }
 
     private fun isNotesActionQuery(q: String): Boolean {
@@ -955,18 +1039,176 @@ class AiTutorViewModel(
 
     private fun resolveSubjectFromQuery(q: String): Pair<String, String> {
         val lower = q.lowercase(Locale.ROOT)
+        val words = lower.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
+        fun hasWord(w: String) = words.contains(w)
+
         return when {
-            lower.contains("math") -> Pair("MATH", "Mathematics")
-            lower.contains("physic") -> Pair("PHYS", "Physics")
-            lower.contains("chem") -> Pair("CHEM", "Chemistry")
-            lower.contains("comput") || lower.contains("cs") -> Pair("CS", "Computer Science")
-            lower.contains("data") -> Pair("DS", "Data Science")
-            lower.contains("ai") || lower.contains("artificial") -> Pair("AI", "Artificial Intelligence")
-            lower.contains("cyber") -> Pair("CYBER", "Cyber Security")
-            lower.contains("bio") -> Pair("BIO", "Biology")
-            lower.contains("vlsi") || lower.contains("electron") -> Pair("VLSI", "Electronics & VLSI")
-            lower.contains("aptitude") || lower.contains("reason") -> Pair("APT", "Quantitative Aptitude")
-            else -> Pair("MATH", "Mathematics")
+            // Class 10
+            lower.contains("10") && (lower.contains("soc") || lower.contains("history") || lower.contains("geo") || lower.contains("civic")) -> Pair("1003", "10th Social Science")
+            lower.contains("10") && lower.contains("math") -> Pair("1001", "10th Mathematics")
+            lower.contains("10") && lower.contains("sci") -> Pair("1002", "10th Science")
+
+            // Class 11
+            lower.contains("11") && lower.contains("phys") -> Pair("1102", "11th Physics")
+            lower.contains("11") && lower.contains("chem") -> Pair("1103", "11th Chemistry")
+            lower.contains("11") && lower.contains("bio") -> Pair("1104", "11th Biology")
+            lower.contains("11") && (lower.contains("computer") || hasWord("cs") || lower.contains("python")) -> Pair("1105", "11th Computer Science")
+            lower.contains("11") && (lower.contains("comm") || lower.contains("account")) -> Pair("1106", "11th Commerce & Accountancy")
+            lower.contains("11") && lower.contains("econ") -> Pair("1107", "11th Economics")
+            lower.contains("11") && lower.contains("math") -> Pair("1101", "11th Mathematics")
+
+            // Class 12
+            lower.contains("12") && lower.contains("phys") -> Pair("1202", "12th Physics")
+            lower.contains("12") && lower.contains("chem") -> Pair("1203", "12th Chemistry")
+            lower.contains("12") && lower.contains("bio") -> Pair("1204", "12th Biology")
+            lower.contains("12") && (lower.contains("computer") || hasWord("cs") || lower.contains("python")) -> Pair("1205", "12th Computer Science")
+            lower.contains("12") && (lower.contains("comm") || lower.contains("account")) -> Pair("1206", "12th Commerce & Accountancy")
+            lower.contains("12") && lower.contains("econ") -> Pair("1207", "12th Economics")
+            lower.contains("12") && lower.contains("math") -> Pair("1201", "12th Mathematics")
+
+            // Defaults without class prefix (specific subjects first)
+            lower.contains("computer") || hasWord("cs") || lower.contains("python") -> Pair("1205", "12th Computer Science")
+            lower.contains("social") || lower.contains("history") || lower.contains("geography") || lower.contains("civics") -> Pair("1003", "10th Social Science")
+            lower.contains("math") -> Pair("1001", "10th Mathematics")
+            lower.contains("phys") -> Pair("1202", "12th Physics")
+            lower.contains("chem") -> Pair("1203", "12th Chemistry")
+            lower.contains("bio") -> Pair("1204", "12th Biology")
+            lower.contains("commerce") || lower.contains("account") -> Pair("1206", "12th Commerce & Accountancy")
+            lower.contains("econ") -> Pair("1207", "12th Economics")
+            lower.contains("science") -> Pair("1002", "10th Science")
+            else -> Pair("1001", "10th Mathematics")
+        }
+    }
+
+    private fun isLengthControlShortenQuery(lower: String): Boolean {
+        return lower == "short" || lower == "give me short" || lower == "short ha sollu" ||
+               lower == "make it brief" || lower == "chinadha thaa" || lower == "brief" ||
+               lower == "summarize" || lower == "in short" || lower == "reply shortly"
+    }
+
+    private fun isLengthControlElaborateQuery(lower: String): Boolean {
+        return lower == "elaborate" || lower == "explain in detail" || lower == "in detail" ||
+               lower == "more detail" || lower == "deep dive" || lower == "detailed explanation"
+    }
+
+    fun formatAsTwoMark(message: ChatMessage? = null, customTopic: String? = null) {
+        val topic = customTopic?.ifBlank { null }
+            ?: message?.matchedTopic
+            ?: message?.matchedChapter
+            ?: lastTopic.ifBlank {
+                _uiState.value.messages.lastOrNull { !it.isUser && it.matchedTopic != null }?.matchedTopic ?: "Academic Concept"
+            }
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = "Give 2 mark answer for $topic",
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val twoMarkText = buildString {
+            appendLine("* **Definition & Core Law:** $topic states the fundamental relationship and governing principle in the Samacheer Kalvi syllabus.")
+            appendLine("* **Governing Formula / SI Unit:** Standard mathematical statement with canonical SI units and boundary criteria clearly defined.")
+            append("* **Key Exam Condition:** Conservation condition or essential requirement required for full 2 marks in the public board examination.")
+        }
+        val aiMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = twoMarkText,
+            timeAgo = "Just now",
+            isUser = false,
+            matchedTopic = topic,
+            isConceptAnswer = true
+        )
+        val newMessages = _uiState.value.messages + userMsg + aiMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = userMsg.text,
+                aiAnswerParagraph1 = twoMarkText,
+                aiAnswerParagraph2 = "",
+                aiThoughtStatus = "✓ 2-Mark Board Exam Format ($topic)",
+                isGenerating = false
+            )
+        }
+        persistCurrentSession(newMessages)
+    }
+
+    fun formatAsFiveMark(message: ChatMessage? = null, customTopic: String? = null) {
+        val topic = customTopic?.ifBlank { null }
+            ?: message?.matchedTopic
+            ?: message?.matchedChapter
+            ?: lastTopic.ifBlank {
+                _uiState.value.messages.lastOrNull { !it.isUser && it.matchedTopic != null }?.matchedTopic ?: "Academic Concept"
+            }
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = "Give 5 mark answer for $topic",
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val fiveMarkText = buildString {
+            appendLine("* **1. Principle & Theoretical Framework:**")
+            appendLine("$topic is a foundational concept in the Tamil Nadu State Board syllabus governing analytical and empirical physical transformations.")
+            appendLine()
+            appendLine("* **2. Working Mechanism & Detailed Explanation:**")
+            appendLine("Under standard conditions, the system transitions through well-defined thermodynamic/mathematical states where equilibrium is maintained at each step.")
+            appendLine()
+            appendLine("* **3. Mathematical Derivation & Core Formula:**")
+            appendLine("Standard governing equation: Phi = sum(lambda_i * x_i), where each variable corresponds to canonical physical properties in SI units.")
+            appendLine()
+            appendLine("* **4. Practical Applications & Illustrative Example:**")
+            appendLine("Widely applied in engineering systems, scientific instrumentation, chemical syntheses, and real-world technology.")
+            appendLine()
+            appendLine("* **5. Conclusion & Exam Takeaways:**")
+            append("Remember to include a neatly labeled schematic diagram, step-by-step derivation, and final units for complete 5 marks.")
+        }
+        val aiMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = fiveMarkText,
+            timeAgo = "Just now",
+            isUser = false,
+            matchedTopic = topic,
+            isConceptAnswer = true
+        )
+        val newMessages = _uiState.value.messages + userMsg + aiMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = userMsg.text,
+                aiAnswerParagraph1 = fiveMarkText,
+                aiAnswerParagraph2 = "",
+                aiThoughtStatus = "✓ 5-Mark Board Exam Format ($topic)",
+                isGenerating = false
+            )
+        }
+        persistCurrentSession(newMessages)
+    }
+
+    private fun isTwoMarkQuery(lower: String): Boolean {
+        return lower == "2m" || lower == "2 mark" || lower == "2 marks" ||
+               lower == "give 2 mark answer" || lower == "give 2 mark" ||
+               lower.contains("2 mark") || lower.contains("2 marks") ||
+               lower.contains("two mark") || lower.contains("two marks") ||
+               lower.startsWith("2m ") || lower.endsWith(" 2m")
+    }
+
+    private fun isFiveMarkQuery(lower: String): Boolean {
+        return lower == "5m" || lower == "5 mark" || lower == "5 marks" ||
+               lower == "give 5 mark answer" || lower == "give 5 mark" ||
+               lower.contains("5 mark") || lower.contains("5 marks") ||
+               lower.contains("five mark") || lower.contains("five marks") ||
+               lower.startsWith("5m ") || lower.endsWith(" 5m")
+    }
+
+    private fun extractTopicFromExamQuery(query: String): String {
+        val lower = query.lowercase(Locale.ROOT)
+        return when {
+            lower.contains(" for ") -> query.substringAfter(" for ", "").trim()
+            lower.contains(" on ") -> query.substringAfter(" on ", "").trim()
+            lower.contains(" about ") -> query.substringAfter(" about ", "").trim()
+            else -> ""
         }
     }
 

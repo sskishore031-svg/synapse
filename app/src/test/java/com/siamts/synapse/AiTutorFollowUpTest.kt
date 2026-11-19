@@ -51,7 +51,7 @@ class AiTutorFollowUpTest {
 
     @Test
     fun testFollowUpElaboration_deepensBreakdown() {
-        val conceptResp = engine.generateResponse("explain eigenvalues")
+        val conceptResp = engine.generateResponse("explain matrices")
         assertNotNull(conceptResp.matchedTopic)
 
         val elaborateQueries = listOf(

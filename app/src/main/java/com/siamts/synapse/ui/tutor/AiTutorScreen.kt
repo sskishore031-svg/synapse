@@ -540,7 +540,9 @@ fun AiTutorContent(
                                             onSpeakMessage(message.id, fullText)
                                         },
                                         onSaveNote = { onSaveNote(message) },
-                                        onElaborate = { onElaborate(message) }
+                                        onElaborate = { onElaborate(message) },
+                                        onFormatTwoMark = { viewModel.formatAsTwoMark(message) },
+                                        onFormatFiveMark = { viewModel.formatAsFiveMark(message) }
                                     )
                                 }
                             }
