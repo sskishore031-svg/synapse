@@ -2,6 +2,7 @@ package com.siamts.synapse.ui.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,12 +41,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -82,6 +89,8 @@ fun ForgotPasswordContent(
     onBackToLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -129,7 +138,7 @@ fun ForgotPasswordContent(
                             modifier = Modifier
                                 .size(60.dp)
                                 .background(
-                                    brush = Brush.linearGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
+                                    brush = Brush.linearGradient(listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)),
                                     shape = CircleShape
                                 )
                                 .padding(10.dp),
@@ -159,13 +168,13 @@ fun ForgotPasswordContent(
                 }
             }
 
-            // White Rounded Sheet Container Extending to Bottom
+            // Sheet Container Extending to Bottom
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -184,30 +193,30 @@ fun ForgotPasswordContent(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Registered Email Address",
-                                color = Color(0xFF1E293B),
+                                color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
                                 value = uiState.email,
-                                onValueChange = onEmailChange,
+                                onEmailChange = onEmailChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                                 trailingIcon = {
                                     Text(
                                         text = "✉",
                                         fontSize = 18.sp,
-                                        color = Color(0xFF64748B)
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B)
                                     )
                                 }
                             )
@@ -222,7 +231,7 @@ fun ForgotPasswordContent(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "New Password",
-                                color = Color(0xFF1E293B),
+                                color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -235,12 +244,12 @@ fun ForgotPasswordContent(
                                 visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                                 trailingIcon = {
@@ -248,7 +257,7 @@ fun ForgotPasswordContent(
                                         Text(
                                             text = if (uiState.isPasswordVisible) "👁" else "🙈",
                                             fontSize = 18.sp,
-                                            color = Color(0xFF64748B)
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B)
                                         )
                                     }
                                 }
@@ -264,7 +273,7 @@ fun ForgotPasswordContent(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Confirm Password",
-                                color = Color(0xFF1E293B),
+                                color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -277,12 +286,12 @@ fun ForgotPasswordContent(
                                 visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                                 trailingIcon = {
@@ -290,7 +299,7 @@ fun ForgotPasswordContent(
                                         Text(
                                             text = if (uiState.isPasswordVisible) "👁" else "🙈",
                                             fontSize = 18.sp,
-                                            color = Color(0xFF64748B)
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B)
                                         )
                                     }
                                 }
@@ -359,9 +368,9 @@ fun ForgotPasswordContent(
                                     .background(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
-                                                PurpleAccent,
-                                                BlueAccent,
-                                                CyanAccent,
+                                                SunsetOrange,
+                                                SunsetOrangeEnd,
+                                                AmberGold,
                                             )
                                         ),
                                         shape = RoundedCornerShape(16.dp),
@@ -397,14 +406,15 @@ fun ForgotPasswordContent(
                         ) {
                             Text(
                                 text = "Remembered your password? ",
-                                color = Color(0xFF64748B),
+                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                 fontSize = 13.sp,
                             )
                             Text(
                                 text = "Sign In",
-                                color = BlueAccent,
+                                color = SunsetOrange,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { onBackToLoginClick() },
                                 modifier = Modifier.clickable { onBackToLoginClick() },
                             )
                         }

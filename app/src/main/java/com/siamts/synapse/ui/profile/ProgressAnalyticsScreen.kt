@@ -1,9 +1,11 @@
 package com.siamts.synapse.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,12 +42,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -54,6 +62,7 @@ fun ProgressAnalyticsScreen(
     modifier: Modifier = Modifier,
     initialTab: Int = 1, // 0: Overview, 1: Subject, 2: Time, 3: Streaks
 ) {
+    val isDark = isSystemInDarkTheme()
     var selectedTab by remember { mutableStateOf(initialTab) }
 
     val pageTitle = when (selectedTab) {
@@ -95,19 +104,19 @@ fun ProgressAnalyticsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = pageTitle, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -126,7 +135,7 @@ fun ProgressAnalyticsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -137,21 +146,26 @@ fun ProgressAnalyticsScreen(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(34.dp)
-                                            .background(if (isSel) BlueAccent else Color.Transparent, RoundedCornerShape(8.dp))
+                                            .background(if (isSel) SunsetOrange else Color.Transparent, RoundedCornerShape(8.dp))
                                             .clickable { selectedTab = index },
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(text = tabName, color = if (isSel) Color.White else Color(0xFF64748B), fontSize = 11.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium)
+                                        Text(
+                                            text = tabName,
+                                            color = if (isSel) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
+                                        )
                                     }
                                 }
                             }
                         }
 
                         when (selectedTab) {
-                            1 -> SubjectAnalyticsContent()
-                            2 -> TimeAnalyticsContent()
-                            3 -> StreakAnalyticsContent()
-                            else -> OverviewAnalyticsContent()
+                            1 -> SubjectAnalyticsContent(isDark)
+                            2 -> TimeAnalyticsContent(isDark)
+                            3 -> StreakAnalyticsContent(isDark)
+                            else -> OverviewAnalyticsContent(isDark)
                         }
                     }
                 }
@@ -161,20 +175,25 @@ fun ProgressAnalyticsScreen(
 }
 
 @Composable
-private fun SubjectAnalyticsContent() {
+private fun SubjectAnalyticsContent(isDark: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // 1. Subjects Breakdown Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "Subjects Breakdown", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Subjects Breakdown", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     val subjects = listOf(
-                        Triple("Computer Science", 0.45f, Color(0xFF3B82F6)),
-                        Triple("AI & DS", 0.25f, Color(0xFF10B981)),
+                        Triple("Computer Science", 0.45f, SunsetOrange),
+                        Triple("AI & DS", 0.25f, AmberGold),
                         Triple("Mathematics", 0.18f, Color(0xFF8B5CF6)),
-                        Triple("Others", 0.12f, Color(0xFFF59E0B)),
+                        Triple("Others", 0.12f, Color(0xFF10B981)),
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -184,16 +203,16 @@ private fun SubjectAnalyticsContent() {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(modifier = Modifier.size(8.dp).background(sColor, CircleShape))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = sName, color = Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        Text(text = sName, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                     }
-                                    Text(text = "${(sPct * 100).toInt()}%", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "${(sPct * 100).toInt()}%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 LinearProgressIndicator(
                                     progress = { sPct },
                                     modifier = Modifier.fillMaxWidth().height(6.dp),
                                     color = sColor,
-                                    trackColor = Color(0xFFE2E8F0)
+                                    trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
                                 )
                             }
                         }
@@ -205,26 +224,31 @@ private fun SubjectAnalyticsContent() {
         // 2. Study Time by Subject Cards Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Study Time by Subject", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Study Time by Subject", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectTimeCard("Computer Science", "1h 33m", "💻", Modifier.weight(1f))
-                    SubjectTimeCard("AI & DS", "54m", "🧠", Modifier.weight(1f))
+                    SubjectTimeCard("Computer Science", "1h 33m", "💻", Modifier.weight(1f), isDark)
+                    SubjectTimeCard("AI & DS", "54m", "🧠", Modifier.weight(1f), isDark)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectTimeCard("Mathematics", "37m", "🧮", Modifier.weight(1f))
-                    SubjectTimeCard("Others", "21m", "📋", Modifier.weight(1f))
+                    SubjectTimeCard("Mathematics", "37m", "🧮", Modifier.weight(1f), isDark)
+                    SubjectTimeCard("Others", "21m", "📋", Modifier.weight(1f), isDark)
                 }
             }
         }
 
         // 3. Weekly Subject Comparison Canvas Bar Chart Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "Weekly Subject Comparison", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Weekly Subject Comparison", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
@@ -235,10 +259,10 @@ private fun SubjectAnalyticsContent() {
                             val spacing = w / days
                             val barW = 4.dp.toPx()
 
-                            val cCS = Color(0xFF3B82F6)
-                            val cAI = Color(0xFF10B981)
+                            val cCS = SunsetOrange
+                            val cAI = AmberGold
                             val cMath = Color(0xFF8B5CF6)
-                            val cOth = Color(0xFFF59E0B)
+                            val cOth = Color(0xFF10B981)
 
                             val csH = listOf(0.6f, 0.4f, 0.8f, 0.7f, 0.5f, 0.9f, 0.65f)
                             val aiH = listOf(0.4f, 0.3f, 0.5f, 0.6f, 0.4f, 0.7f, 0.5f)
@@ -257,7 +281,7 @@ private fun SubjectAnalyticsContent() {
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = Color(0xFF94A3B8), fontSize = 10.sp)
+                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
                         }
                     }
 
@@ -265,19 +289,19 @@ private fun SubjectAnalyticsContent() {
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(6.dp).background(Color(0xFF3B82F6), CircleShape))
+                            Box(modifier = Modifier.size(6.dp).background(SunsetOrange, CircleShape))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Computer Science", fontSize = 9.sp, color = Color(0xFF64748B))
+                            Text(text = "Computer Science", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(6.dp).background(Color(0xFF10B981), CircleShape))
+                            Box(modifier = Modifier.size(6.dp).background(AmberGold, CircleShape))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "AI & DS", fontSize = 9.sp, color = Color(0xFF64748B))
+                            Text(text = "AI & DS", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(6.dp).background(Color(0xFF8B5CF6), CircleShape))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Mathematics", fontSize = 9.sp, color = Color(0xFF64748B))
+                            Text(text = "Mathematics", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                         }
                     }
                 }
@@ -286,14 +310,24 @@ private fun SubjectAnalyticsContent() {
 
         // 4. Insights Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
+                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
+            ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "You spent the most time on Computer Science this week (45% of total study time). Keep it up!", color = Color(0xFF1E293B), fontSize = 11.sp, lineHeight = 15.sp)
+                    Text(
+                        text = "You spent the most time on Computer Science this week (45% of total study time). Keep it up!",
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }
@@ -301,39 +335,56 @@ private fun SubjectAnalyticsContent() {
 }
 
 @Composable
-private fun SubjectTimeCard(title: String, timeText: String, icon: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+private fun SubjectTimeCard(title: String, timeText: String, icon: String, modifier: Modifier = Modifier, isDark: Boolean = false) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+    ) {
         Row(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(28.dp).background(Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.size(28.dp).background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(text = icon, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text(text = title, color = Color(0xFF64748B), fontSize = 10.sp)
-                    Text(text = timeText, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = title, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
+                    Text(text = timeText, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
-            Text(text = "›", color = Color(0xFF94A3B8), fontSize = 16.sp)
+            Text(text = "›", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 16.sp)
         }
     }
 }
 
 @Composable
-private fun TimeAnalyticsContent() {
+private fun TimeAnalyticsContent(isDark: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Study Time Card with Weekly Bar Chart Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
-                            Text(text = "Study Time", color = Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "3h 25m", color = Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "3h 25m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
 
-                        Box(modifier = Modifier.background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                            Text(text = "This Week ▾", color = Color(0xFF64748B), fontSize = 11.sp)
+                        Box(
+                            modifier = Modifier
+                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(text = "This Week ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                         }
                     }
 
@@ -352,14 +403,14 @@ private fun TimeAnalyticsContent() {
                             for (i in days.indices) {
                                 val x = i * spacing + (spacing - barW) / 2f
                                 val barH = h * heights[i]
-                                drawRect(color = BlueAccent, topLeft = Offset(x, h - barH), size = Size(barW, barH))
+                                drawRect(color = SunsetOrange, topLeft = Offset(x, h - barH), size = Size(barW, barH))
                             }
                         }
                     }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = Color(0xFF94A3B8), fontSize = 10.sp)
+                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
                         }
                     }
                 }
@@ -369,27 +420,37 @@ private fun TimeAnalyticsContent() {
         // Metrics Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "⏱ ", fontSize = 12.sp)
-                            Text(text = "Average Daily Study Time", color = Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "Average Daily Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "29m", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "▲ 20% vs last week", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "29m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "▲ 20% vs last week", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "📊 ", fontSize = 12.sp)
-                            Text(text = "Most Productive Day", color = Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "Most Productive Day", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Saturday", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "56m spent", color = Color(0xFF64748B), fontSize = 10.sp)
+                        Text(text = "Saturday", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "56m spent", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                     }
                 }
             }
@@ -397,14 +458,19 @@ private fun TimeAnalyticsContent() {
 
         // Time Distribution Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "Time Distribution", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Time Distribution", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     val dist = listOf(
-                        Triple("Focused Study", 0.70f, BlueAccent),
-                        Triple("Practice (Quiz)", 0.20f, Color(0xFF10B981)),
+                        Triple("Focused Study", 0.70f, SunsetOrange),
+                        Triple("Practice (Quiz)", 0.20f, AmberGold),
                         Triple("Note Making", 0.10f, Color(0xFF8B5CF6)),
                     )
 
@@ -412,15 +478,15 @@ private fun TimeAnalyticsContent() {
                         dist.forEach { (dLabel, dPct, dColor) ->
                             Column {
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(text = dLabel, color = Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                    Text(text = "${(dPct * 100).toInt()}%", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = dLabel, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Text(text = "${(dPct * 100).toInt()}%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 LinearProgressIndicator(
                                     progress = { dPct },
                                     modifier = Modifier.fillMaxWidth().height(6.dp),
                                     color = dColor,
-                                    trackColor = Color(0xFFE2E8F0)
+                                    trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
                                 )
                             }
                         }
@@ -431,14 +497,24 @@ private fun TimeAnalyticsContent() {
 
         // Insights Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
+                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
+            ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "You studied 20% more this week compared to last week. Great progress!", color = Color(0xFF1E293B), fontSize = 11.sp, lineHeight = 15.sp)
+                    Text(
+                        text = "You studied 20% more this week compared to last week. Great progress!",
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }
@@ -446,35 +522,51 @@ private fun TimeAnalyticsContent() {
 }
 
 @Composable
-private fun StreakAnalyticsContent() {
+private fun StreakAnalyticsContent(isDark: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Streak Summary Cards Row Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).background(Color(0xFFFFF7ED), CircleShape), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.size(36.dp).background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFFFF7ED), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(text = "🔥", fontSize = 18.sp)
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text(text = "Current Streak", color = Color(0xFF64748B), fontSize = 10.sp)
-                            Text(text = "5 days", color = Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "Keep it going!", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                            Text(text = "Current Streak", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "5 days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Keep it going!", color = SunsetOrange, fontSize = 9.sp)
                         }
                     }
                 }
 
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).background(Color(0xFFFEF3C7), CircleShape), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.size(36.dp).background(if (isDark) AmberGold.copy(alpha = 0.2f) else Color(0xFFFEF3C7), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(text = "🏆", fontSize = 18.sp)
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text(text = "Best Streak", color = Color(0xFF64748B), fontSize = 10.sp)
-                            Text(text = "12 days", color = Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "Your highest streak", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                            Text(text = "Best Streak", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "12 days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Your highest streak", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 9.sp)
                         }
                     }
                 }
@@ -483,12 +575,21 @@ private fun StreakAnalyticsContent() {
 
         // Study Calendar Grid Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Study Calendar", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Box(modifier = Modifier.background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                            Text(text = "October 2026 ▾", color = Color(0xFF64748B), fontSize = 11.sp)
+                        Text(text = "Study Calendar", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Box(
+                            modifier = Modifier
+                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(text = "October 2026 ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                         }
                     }
 
@@ -497,7 +598,7 @@ private fun StreakAnalyticsContent() {
                     val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         daysOfWeek.forEach { day ->
-                            Text(text = day, color = Color(0xFF94A3B8), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
                         }
                     }
 
@@ -516,12 +617,12 @@ private fun StreakAnalyticsContent() {
                                             .weight(1f)
                                             .height(28.dp)
                                             .padding(2.dp)
-                                            .background(if (isActive) BlueAccent else Color.Transparent, CircleShape),
+                                            .background(if (isActive) SunsetOrange else Color.Transparent, CircleShape),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
                                             text = "$dNum",
-                                            color = if (isActive) Color.White else Color(0xFF64748B),
+                                            color = if (isActive) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                             fontSize = 11.sp,
                                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
                                         )
@@ -537,27 +638,37 @@ private fun StreakAnalyticsContent() {
         // Consistency Metrics Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "🎯 ", fontSize = 12.sp)
-                            Text(text = "Weekly Consistency", color = Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "Weekly Consistency", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "71%", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "▲ 15% vs last week", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "71%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "▲ 15% vs last week", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(text = "✅ ", fontSize = 12.sp)
-                            Text(text = "Completed Daily Goals", color = Color(0xFF64748B), fontSize = 10.sp)
+                            Text(text = "Completed Daily Goals", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "5 / 7", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "this week", color = Color(0xFF64748B), fontSize = 10.sp)
+                        Text(text = "5 / 7", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "this week", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                     }
                 }
             }
@@ -565,14 +676,24 @@ private fun StreakAnalyticsContent() {
 
         // Insights Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
+                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
+            ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "You have a 5-day study streak! Stay consistent to beat your best streak of 12 days.", color = Color(0xFF1E293B), fontSize = 11.sp, lineHeight = 15.sp)
+                    Text(
+                        text = "You have a 5-day study streak! Stay consistent to beat your best streak of 12 days.",
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }
@@ -580,20 +701,29 @@ private fun StreakAnalyticsContent() {
 }
 
 @Composable
-private fun OverviewAnalyticsContent() {
+private fun OverviewAnalyticsContent(isDark: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Study Time Card
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
-                            Text(text = "Study Time", color = Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "3h 25m", color = Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "3h 25m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
 
-                        Box(modifier = Modifier.background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                            Text(text = "This Week ▾", color = Color(0xFF64748B), fontSize = 11.sp)
+                        Box(
+                            modifier = Modifier
+                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(text = "This Week ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                         }
                     }
 
@@ -612,14 +742,14 @@ private fun OverviewAnalyticsContent() {
                             for (i in days.indices) {
                                 val x = i * spacing + (spacing - barW) / 2f
                                 val barH = h * heights[i]
-                                drawRect(color = BlueAccent, topLeft = Offset(x, h - barH), size = Size(barW, barH))
+                                drawRect(color = SunsetOrange, topLeft = Offset(x, h - barH), size = Size(barW, barH))
                             }
                         }
                     }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = Color(0xFF94A3B8), fontSize = 10.sp)
+                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
                         }
                     }
                 }
@@ -628,17 +758,22 @@ private fun OverviewAnalyticsContent() {
 
         // Subjects Breakdown Donut Chart Card Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "Subjects Breakdown", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Subjects Breakdown", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
 
                     Spacer(modifier = Modifier.height(10.dp))
 
                     val subjects = listOf(
-                        Triple("Computer Science", "45%", Color(0xFF3B82F6)),
-                        Triple("AI & DS", "25%", Color(0xFF10B981)),
+                        Triple("Computer Science", "45%", SunsetOrange),
+                        Triple("AI & DS", "25%", AmberGold),
                         Triple("Mathematics", "18%", Color(0xFF8B5CF6)),
-                        Triple("Others", "12%", Color(0xFFF59E0B)),
+                        Triple("Others", "12%", Color(0xFF10B981)),
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -647,9 +782,9 @@ private fun OverviewAnalyticsContent() {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(modifier = Modifier.size(10.dp).background(sColor, CircleShape))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = sName, color = Color(0xFF334155), fontSize = 12.sp)
+                                    Text(text = sName, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp)
                                 }
-                                Text(text = sPct, color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = sPct, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -659,14 +794,24 @@ private fun OverviewAnalyticsContent() {
 
         // Insights Card Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
+                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
+            ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "You studied 20% more this week compared to last week. Great progress!", color = Color(0xFF1E293B), fontSize = 11.sp, lineHeight = 15.sp)
+                    Text(
+                        text = "You studied 20% more this week compared to last week. Great progress!",
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }

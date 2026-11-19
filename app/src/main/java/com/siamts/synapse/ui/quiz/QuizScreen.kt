@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.quiz
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.data.model.QuizResultDataDto
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -51,6 +54,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -115,6 +123,8 @@ fun QuizContent(
     modifier: Modifier = Modifier,
     onRetryClick: (() -> Unit)? = null,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -154,7 +164,7 @@ fun QuizContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.topicTag,
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -171,7 +181,7 @@ fun QuizContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { onBackClick() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -185,13 +195,13 @@ fun QuizContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode to reveal deep background)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -207,21 +217,21 @@ fun QuizContent(
                             verticalArrangement = Arrangement.Center
                         ) {
                             CircularProgressIndicator(
-                                color = BlueAccent,
+                                color = SunsetOrange,
                                 modifier = Modifier.size(46.dp),
                                 strokeWidth = 3.5.dp
                             )
                             Spacer(modifier = Modifier.height(18.dp))
                             Text(
                                 text = "Loading Chapter Quiz...",
-                                color = Color(0xFF0F172A),
+                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "Retrieving chapter questions and verified options",
-                                color = Color(0xFF64748B),
+                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center
                             )
@@ -237,7 +247,10 @@ fun QuizContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isDark) SurfacePanelElevated else Color.White
+                            ),
+                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
@@ -251,21 +264,21 @@ fun QuizContent(
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     text = "Ready to Generate Quiz",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = uiState.errorMessage ?: "Tap below to assemble on-device curriculum MCQs for this chapter.",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 13.sp,
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(20.dp))
                                 Button(
                                     onClick = { onRetryClick?.invoke() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.height(44.dp)
                                 ) {
@@ -308,7 +321,7 @@ fun QuizContent(
                                     ) {
                                         Text(
                                             text = "Question $currentQ of $totalQ",
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -316,7 +329,7 @@ fun QuizContent(
                                             Text(text = "⏱ ", fontSize = 12.sp)
                                             Text(
                                                 text = uiState.timerText,
-                                                color = BlueAccent,
+                                                color = AmberGold,
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -330,199 +343,216 @@ fun QuizContent(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(6.dp),
-                                        color = BlueAccent,
-                                        trackColor = Color(0xFFE2E8F0),
+                                        color = SunsetOrange,
+                                        trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                     )
                                 }
                             }
 
-                        // 2. Question Header Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 10.dp
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                // Difficulty Badge
-                                Box(
-                                    modifier = Modifier
-                                        .background(Color(0xFFF3E8FF), RoundedCornerShape(12.dp))
-                                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = uiState.difficulty,
-                                        color = PurpleAccent,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Text(
-                                    text = uiState.questionText,
-                                    color = Color(0xFF0F172A),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    lineHeight = 26.sp,
-                                )
-
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                Text(
-                                    text = uiState.instructionText,
-                                    color = Color(0xFF64748B),
-                                    fontSize = 13.sp,
-                                )
-                            }
-                        }
-
-                        // 3. Answer Options Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 8.dp
-                        ) {
-                            Column(
+                            // 2. Question Header Box
+                            DashedBorderBox(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                contentPadding = 10.dp
                             ) {
-                                uiState.options.forEach { option ->
-                                    val isSelected = option.id == uiState.selectedOptionId
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    // Difficulty Badge
                                     Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
                                             .background(
-                                                color = if (isSelected) Color(0xFFEFF6FF) else Color.White,
-                                                shape = RoundedCornerShape(14.dp)
+                                                if (isDark) SurfacePanel else Color(0xFFF3E8FF),
+                                                RoundedCornerShape(12.dp)
                                             )
                                             .border(
-                                                width = if (isSelected) 2.dp else 1.dp,
-                                                color = if (isSelected) BlueAccent else Color(0xFFE2E8F0),
-                                                shape = RoundedCornerShape(14.dp)
+                                                1.dp,
+                                                if (isDark) SurfaceBorder else Color.Transparent,
+                                                RoundedCornerShape(12.dp)
                                             )
-                                            .clickable { onOptionSelect(option.id) }
-                                            .padding(12.dp)
+                                            .padding(horizontal = 12.dp, vertical = 4.dp)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            // Option Label Badge A, B, C, D
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .background(
-                                                        color = if (isSelected) BlueAccent else Color(0xFFF1F5F9),
-                                                        shape = CircleShape
-                                                    ),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Text(
-                                                    text = option.optionLabel,
-                                                    color = if (isSelected) Color.White else Color(0xFF64748B),
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold,
+                                        Text(
+                                            text = uiState.difficulty,
+                                            color = SunsetOrange,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        text = uiState.questionText,
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = 26.sp,
+                                    )
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Text(
+                                        text = uiState.instructionText,
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
+                                        fontSize = 13.sp,
+                                    )
+                                }
+                            }
+
+                            // 3. Answer Options Box
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 8.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    uiState.options.forEach { option ->
+                                        val isSelected = option.id == uiState.selectedOptionId
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    color = if (isSelected) {
+                                                        if (isDark) SunsetOrange.copy(alpha = 0.18f) else Color(0xFFEFF6FF)
+                                                    } else {
+                                                        if (isDark) SurfacePanelElevated else Color.White
+                                                    },
+                                                    shape = RoundedCornerShape(14.dp)
                                                 )
-                                            }
-
-                                            Spacer(modifier = Modifier.width(12.dp))
-
-                                            Text(
-                                                text = option.text,
-                                                color = if (isSelected) BlueAccent else Color(0xFF1E293B),
-                                                fontSize = 14.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                modifier = Modifier.weight(1f),
-                                            )
-
-                                            if (isSelected) {
+                                                .border(
+                                                    width = if (isSelected) 2.dp else 1.dp,
+                                                    color = if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                                                    shape = RoundedCornerShape(14.dp)
+                                                )
+                                                .clickable { onOptionSelect(option.id) }
+                                                .padding(12.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                // Option Label Badge A, B, C, D
                                                 Box(
                                                     modifier = Modifier
-                                                        .size(22.dp)
-                                                        .background(Color(0xFFEFF6FF), CircleShape)
-                                                        .border(1.5.dp, BlueAccent, CircleShape),
+                                                        .size(32.dp)
+                                                        .background(
+                                                            color = if (isSelected) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
+                                                            shape = CircleShape
+                                                        ),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     Text(
-                                                        text = "✓",
-                                                        color = BlueAccent,
-                                                        fontSize = 11.sp,
+                                                        text = option.optionLabel,
+                                                        color = if (isSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
+                                                        fontSize = 13.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
+                                                }
+
+                                                Spacer(modifier = Modifier.width(12.dp))
+
+                                                Text(
+                                                    text = option.text,
+                                                    color = if (isSelected) {
+                                                        if (isDark) AmberGold else SunsetOrange
+                                                    } else {
+                                                        if (isDark) TextPrimary else Color(0xFF1E293B)
+                                                    },
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    modifier = Modifier.weight(1f),
+                                                )
+
+                                                if (isSelected) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(22.dp)
+                                                            .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
+                                                            .border(1.5.dp, SunsetOrange, CircleShape),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Text(
+                                                            text = "✓",
+                                                            color = SunsetOrange,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
+
+                            // 4. AI Adaptive Quiz Note Box
+                            DashedBorderBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 6.dp
+                            ) {
+                                Text(
+                                    text = uiState.aiNoteText,
+                                    color = if (isDark) AmberGold else SunsetOrange,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
                         }
 
-                        // 4. AI Adaptive Quiz Note Box
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // 5. Action Button Box: Next Question Button
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 6.dp
+                            contentPadding = 4.dp
                         ) {
-                            Text(
-                                text = uiState.aiNoteText,
-                                color = BlueAccent,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 5. Action Button Box: Next Question Button
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 4.dp
-                    ) {
-                        Button(
-                            onClick = onNextClick,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Box(
+                            Button(
+                                onClick = onNextClick,
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                PurpleAccent,
-                                                BlueAccent,
-                                                CyanAccent,
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(16.dp),
-                                    ),
-                                contentAlignment = Alignment.Center,
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                contentPadding = PaddingValues(0.dp),
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val isLast = uiState.currentQuestionIndex >= uiState.totalQuestions
-                                    val btnText = when {
-                                        uiState.isSubmitting -> "Submitting..."
-                                        isLast -> "Submit Quiz ✓"
-                                        else -> "Next question"
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
+                                                )
+                                            ),
+                                            shape = RoundedCornerShape(16.dp),
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        val isLast = uiState.currentQuestionIndex >= uiState.totalQuestions
+                                        val btnText = when {
+                                            uiState.isSubmitting -> "Submitting..."
+                                            isLast -> "Submit Quiz ✓"
+                                            else -> "Next question"
+                                        }
+                                        Text(
+                                            text = if (isLast) "✓" else "→",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = btnText,
+                                            color = Color.White,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
                                     }
-                                    Text(
-                                        text = if (isLast) "✓" else "→",
-                                        color = Color.White,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = btnText,
-                                        color = Color.White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
                                 }
                             }
                         }
@@ -531,7 +561,6 @@ fun QuizContent(
             }
         }
     }
-}
 }
 
 @Preview(showBackground = true, showSystemUi = true)

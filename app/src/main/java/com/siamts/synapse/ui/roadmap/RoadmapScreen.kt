@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.roadmap
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -46,8 +49,15 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
+import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
@@ -97,6 +107,8 @@ fun RoadmapContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -135,7 +147,7 @@ fun RoadmapContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.headerTag,
-                            color = TextMuted,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -153,13 +165,13 @@ fun RoadmapContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -184,7 +196,10 @@ fun RoadmapContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                ),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -195,7 +210,10 @@ fun RoadmapContent(
                                     Box(
                                         modifier = Modifier
                                             .size(44.dp)
-                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(12.dp)),
+                                            .background(
+                                                if (isDark) SurfacePanel else Color(0xFFEFF6FF),
+                                                RoundedCornerShape(12.dp)
+                                            ),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(text = uiState.subjectIcon, fontSize = 22.sp)
@@ -211,13 +229,13 @@ fun RoadmapContent(
                                         ) {
                                             Text(
                                                 text = uiState.subjectName,
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                             Text(
                                                 text = "${uiState.progressPercentage}%",
-                                                color = BlueAccent,
+                                                color = SunsetOrange,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -230,15 +248,15 @@ fun RoadmapContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(6.dp),
-                                            color = BlueAccent,
-                                            trackColor = Color(0xFFE2E8F0),
+                                            color = SunsetOrange,
+                                            trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                         )
 
                                         Spacer(modifier = Modifier.height(6.dp))
 
                                         Text(
                                             text = uiState.milestoneSummary,
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -276,17 +294,20 @@ fun RoadmapContent(
                                                     Box(
                                                         modifier = Modifier
                                                             .size(32.dp)
-                                                            .background(Color(0xFFD1FAE5), CircleShape),
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFD1FAE5),
+                                                                CircleShape
+                                                            ),
                                                         contentAlignment = Alignment.Center,
                                                     ) {
-                                                        Text(text = "✓", color = Color(0xFF059669), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✓", color = if (isDark) AmberGold else Color(0xFF059669), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
                                                 MilestoneStatus.ACTIVE -> {
                                                     Box(
                                                         modifier = Modifier
                                                             .size(36.dp)
-                                                            .background(BlueAccent, CircleShape),
+                                                            .background(SunsetOrange, CircleShape),
                                                         contentAlignment = Alignment.Center,
                                                     ) {
                                                         Text(text = "▶", color = Color.White, fontSize = 12.sp)
@@ -296,8 +317,15 @@ fun RoadmapContent(
                                                     Box(
                                                         modifier = Modifier
                                                             .size(32.dp)
-                                                            .background(Color(0xFFF1F5F9), CircleShape)
-                                                            .border(1.dp, Color(0xFFCBD5E1), CircleShape),
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFF1F5F9),
+                                                                CircleShape
+                                                            )
+                                                            .border(
+                                                                1.dp,
+                                                                if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
+                                                                CircleShape
+                                                            ),
                                                         contentAlignment = Alignment.Center,
                                                     ) {
                                                         Text(text = "🔒", fontSize = 12.sp)
@@ -310,7 +338,7 @@ fun RoadmapContent(
                                                     modifier = Modifier
                                                         .width(2.dp)
                                                         .weight(1f)
-                                                        .background(Color(0xFFE2E8F0))
+                                                        .background(if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                                 )
                                             }
                                         }
@@ -323,12 +351,16 @@ fun RoadmapContent(
                                                 .weight(1f)
                                                 .padding(bottom = if (isLast) 0.dp else 12.dp)
                                                 .background(
-                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) Color(0xFFEFF6FF) else Color.White,
+                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) {
+                                                        if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF)
+                                                    } else {
+                                                        if (isDark) SurfacePanelElevated else Color.White
+                                                    },
                                                     shape = RoundedCornerShape(14.dp)
                                                 )
                                                 .border(
                                                     width = 1.dp,
-                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) BlueAccent else Color(0xFFE2E8F0),
+                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                                     shape = RoundedCornerShape(14.dp)
                                                 )
                                                 .padding(12.dp)
@@ -341,20 +373,26 @@ fun RoadmapContent(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = milestone.title,
-                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) BlueAccent else if (milestone.status == MilestoneStatus.LOCKED) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) {
+                                                            if (isDark) AmberGold else SunsetOrange
+                                                        } else if (milestone.status == MilestoneStatus.LOCKED) {
+                                                            if (isDark) TextSecondary else Color(0xFF94A3B8)
+                                                        } else {
+                                                            if (isDark) TextPrimary else Color(0xFF0F172A)
+                                                        },
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         text = milestone.subtitle,
-                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) BlueAccent else Color(0xFF64748B),
+                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                                         fontSize = 11.sp,
                                                     )
                                                 }
 
                                                 if (milestone.status == MilestoneStatus.ACTIVE) {
-                                                    Text(text = "›", color = BlueAccent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                                    Text(text = "›", color = SunsetOrange, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                                                 }
                                             }
                                         }
@@ -371,14 +409,17 @@ fun RoadmapContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isDark) SurfacePanelElevated else Color(0xFF0F172A)
+                                ),
+                                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.5f) else Color.Transparent),
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(text = "✨ ", fontSize = 14.sp)
                                         Text(
                                             text = "AI RECOMMENDED NEXT",
-                                            color = CyanGlow,
+                                            color = SunsetOrange,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 1.sp,
@@ -389,7 +430,7 @@ fun RoadmapContent(
 
                                     Text(
                                         text = uiState.aiRecommendation,
-                                        color = TextSecondary,
+                                        color = if (isDark) TextSecondary else TextSecondary,
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
                                     )
@@ -420,9 +461,9 @@ fun RoadmapContent(
                                     .background(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
-                                                PurpleAccent,
-                                                BlueAccent,
-                                                CyanAccent,
+                                                SunsetOrange,
+                                                SunsetOrangeEnd,
+                                                AmberGold,
                                             )
                                         ),
                                         shape = RoundedCornerShape(16.dp),

@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.flashcards
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -45,6 +48,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -78,6 +86,8 @@ fun FlashcardsContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -116,7 +126,7 @@ fun FlashcardsContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.headerTag,
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -133,7 +143,7 @@ fun FlashcardsContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -145,13 +155,13 @@ fun FlashcardsContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -181,13 +191,13 @@ fun FlashcardsContent(
                                 ) {
                                     Text(
                                         text = uiState.deckName,
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "${uiState.currentCardIndex} / ${uiState.totalCards} cards",
-                                        color = Color(0xFF64748B),
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -199,8 +209,8 @@ fun FlashcardsContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
+                                    color = SunsetOrange,
+                                    trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                 )
                             }
                         }
@@ -215,7 +225,10 @@ fun FlashcardsContent(
                                     .fillMaxWidth()
                                     .clickable { onFlipCard() },
                                 shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isDark) SurfacePanelElevated else Color(0xFF0F172A)
+                                ),
+                                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.5f) else Color.Transparent),
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -254,10 +267,10 @@ fun FlashcardsContent(
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Text(text = "✢ ", color = CyanGlow, fontSize = 14.sp)
+                                        Text(text = "✢ ", color = AmberGold, fontSize = 14.sp)
                                         Text(
                                             text = uiState.flipInstruction,
-                                            color = CyanGlow,
+                                            color = AmberGold,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
                                         )
@@ -274,12 +287,15 @@ fun FlashcardsContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                ),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color.Transparent),
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Text(
                                         text = uiState.answerLabel,
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.sp,
@@ -289,7 +305,7 @@ fun FlashcardsContent(
 
                                     Text(
                                         text = uiState.answerText,
-                                        color = Color(0xFF1E293B),
+                                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                         fontSize = 13.sp,
                                         lineHeight = 18.sp,
                                     )
@@ -304,7 +320,7 @@ fun FlashcardsContent(
                         ) {
                             Text(
                                 text = uiState.swipeHelperText,
-                                color = Color(0xFF94A3B8),
+                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
@@ -325,17 +341,17 @@ fun FlashcardsContent(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(48.dp)
-                                        .background(Color.White, RoundedCornerShape(16.dp))
-                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                                        .background(if (isDark) SurfacePanel else Color.White, RoundedCornerShape(16.dp))
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
                                         .clickable { onPreviousCard() },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "←", color = BlueAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "←", color = SunsetOrange, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "Previous",
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -358,9 +374,9 @@ fun FlashcardsContent(
                                             .background(
                                                 brush = Brush.horizontalGradient(
                                                     colors = listOf(
-                                                        PurpleAccent,
-                                                        BlueAccent,
-                                                        CyanAccent,
+                                                        SunsetOrange,
+                                                        SunsetOrangeEnd,
+                                                        AmberGold,
                                                     )
                                                 ),
                                                 shape = RoundedCornerShape(16.dp),
@@ -391,8 +407,8 @@ fun FlashcardsContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onToggleDifficult() },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -404,7 +420,7 @@ fun FlashcardsContent(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = if (uiState.isMarkedDifficult) "Marked as Difficult" else "Mark as Difficult",
-                                        color = BlueAccent,
+                                        color = if (uiState.isMarkedDifficult) SunsetOrange else (if (isDark) TextSecondary else SunsetOrange),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -419,7 +435,7 @@ fun FlashcardsContent(
                         ) {
                             Text(
                                 text = uiState.aiNoteText,
-                                color = BlueAccent,
+                                color = if (isDark) AmberGold else SunsetOrange,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,

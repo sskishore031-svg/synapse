@@ -134,12 +134,12 @@ class QuizHomeViewModel(
 
     private fun filterByClass(list: List<QuizSubjectItemDto>, className: String): List<QuizSubjectItemDto> {
         if (className == "All Tracks" || className == "All Classes") return list
-        val key = when (className.lowercase()) {
-            "python" -> "python"
-            "sql" -> "sql"
-            "ai & tech" -> "ai"
-            "aptitude" -> "aptitude"
-            else -> className.lowercase()
+        val key = when (val c = className.lowercase()) {
+            "python", "python & coding" -> "python"
+            "sql", "sql & database" -> "sql"
+            "ai", "ai & tech" -> "ai"
+            "aptitude", "aptitude & prep" -> "aptitude"
+            else -> if (c.contains("python")) "python" else if (c.contains("sql")) "sql" else if (c.contains("ai")) "ai" else if (c.contains("aptitude")) "aptitude" else c
         }
         return list.filter { it.name.lowercase().contains(key) || it.slug.lowercase().contains(key) }
     }

@@ -50,14 +50,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.siamts.synapse.data.remote.RetrofitClient
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
-import com.siamts.synapse.ui.theme.PurpleAccent
-import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
+import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 import java.io.File
 import java.io.FileOutputStream
@@ -152,7 +156,7 @@ fun PersonalInfoScreen(
                     Column {
                         Text(
                             text = "PROFILE SETTINGS",
-                            color = TextMuted,
+                            color = AmberGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -168,15 +172,12 @@ fun PersonalInfoScreen(
                 }
             }
 
-            // Light Form Sheet
+            // Dark Form Content
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(Color.Transparent)
             ) {
                 Column(
                     modifier = Modifier
@@ -190,7 +191,7 @@ fun PersonalInfoScreen(
                         ) {
                             Text(
                                 text = errorMessage,
-                                color = Color(0xFFDC2626),
+                                color = Color(0xFFEF4444),
                                 fontSize = 12.sp,
                                 modifier = Modifier.padding(4.dp)
                             )
@@ -215,8 +216,8 @@ fun PersonalInfoScreen(
                                     modifier = Modifier
                                         .size(76.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFE0E7FF), CircleShape)
-                                        .border(2.dp, BlueAccent.copy(alpha = 0.5f), CircleShape)
+                                        .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
+                                        .border(2.dp, SunsetOrange, CircleShape)
                                         .clickable {
                                             photoPickerLauncher.launch(
                                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -224,8 +225,8 @@ fun PersonalInfoScreen(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    val resolvedPhoto = RetrofitClient.formatPhotoUrl(photoUri) ?: photoUri
-                                    if (!resolvedPhoto.isNullOrEmpty()) {
+                                    val resolvedPhoto = RetrofitClient.resolveImageModel(photoUri) ?: photoUri
+                                    if (resolvedPhoto != null && (resolvedPhoto !is String || resolvedPhoto.isNotEmpty())) {
                                         AsyncImage(
                                             model = resolvedPhoto,
                                             contentDescription = "Profile Picture",
@@ -235,7 +236,7 @@ fun PersonalInfoScreen(
                                     } else {
                                         Text(
                                             text = initials,
-                                            color = Color(0xFF3730A3),
+                                            color = SunsetOrange,
                                             fontSize = 26.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -246,7 +247,7 @@ fun PersonalInfoScreen(
 
                                 Text(
                                     text = "Change Profile Picture",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.clickable {
@@ -261,7 +262,7 @@ fun PersonalInfoScreen(
                         // Edit Name
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Full Name", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Full Name", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
                                     value = name,
@@ -269,12 +270,13 @@ fun PersonalInfoScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                                        focusedContainerColor = SurfacePanel,
+                                        unfocusedContainerColor = SurfacePanel,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = SurfaceBorder,
+                                        cursorColor = SunsetOrange
                                     ),
                                     singleLine = true
                                 )
@@ -284,7 +286,7 @@ fun PersonalInfoScreen(
                         // Edit Email
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Email Address", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Email Address", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
                                     value = email,
@@ -292,12 +294,13 @@ fun PersonalInfoScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                                        focusedContainerColor = SurfacePanel,
+                                        unfocusedContainerColor = SurfacePanel,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = SurfaceBorder,
+                                        cursorColor = SunsetOrange
                                     ),
                                     singleLine = true
                                 )
@@ -307,7 +310,7 @@ fun PersonalInfoScreen(
                         // Phone Number
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Phone Number", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Phone Number", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
                                     value = phone,
@@ -315,12 +318,13 @@ fun PersonalInfoScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                                        focusedContainerColor = SurfacePanel,
+                                        unfocusedContainerColor = SurfacePanel,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = SurfaceBorder,
+                                        cursorColor = SunsetOrange
                                     ),
                                     singleLine = true
                                 )
@@ -330,7 +334,7 @@ fun PersonalInfoScreen(
                         // Bio
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Bio (Optional)", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Bio (Optional)", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
                                     value = bio,
@@ -338,12 +342,13 @@ fun PersonalInfoScreen(
                                     modifier = Modifier.fillMaxWidth().height(90.dp),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0)
+                                        focusedContainerColor = SurfacePanel,
+                                        unfocusedContainerColor = SurfacePanel,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary,
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = SurfaceBorder,
+                                        cursorColor = SunsetOrange
                                     )
                                 )
                             }
@@ -365,7 +370,7 @@ fun PersonalInfoScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)), RoundedCornerShape(14.dp)),
+                                    .background(Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)), RoundedCornerShape(14.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (isSaving) {
@@ -394,8 +399,8 @@ fun PersonalInfoScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(14.dp))
-                                    .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(14.dp))
+                                    .background(SurfacePanel, RoundedCornerShape(14.dp))
+                                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                                     .clickable {
                                         photoUri = null
                                         isPhotoRemoved = true
@@ -408,7 +413,7 @@ fun PersonalInfoScreen(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Remove Profile Picture",
-                                        color = Color(0xFFDC2626),
+                                        color = Color(0xFFEF4444),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold
                                     )

@@ -21,12 +21,12 @@ enum class ThemeMode(
     DARK(
         value = "DARK",
         title = "Dark Mode",
-        description = "Futuristic cyberpunk dark neon theme"
+        description = "Sunset Amber & Orange dark theme"
     );
 
     companion object {
         fun fromValue(value: String?): ThemeMode {
-            return entries.find { it.value.equals(value, ignoreCase = true) } ?: SYSTEM
+            return entries.find { it.value.equals(value, ignoreCase = true) } ?: DARK
         }
     }
 }

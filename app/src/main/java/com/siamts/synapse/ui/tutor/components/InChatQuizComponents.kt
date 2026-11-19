@@ -35,12 +35,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
-import com.siamts.synapse.ui.theme.CyanGlow
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
-import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.tutor.ChatMessage
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 
@@ -55,10 +58,10 @@ fun InChatQuizQuestionCard(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) Color(0xFF0F172A) else Color(0xFFF8FAFC)
-    val cardBorder = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0)
+    val cardBg = if (isDark) SurfacePanel else Color(0xFFF8FAFC)
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE2E8F0)
     val textPrimary = if (isDark) TextPrimary else Color(0xFF0F172A)
-    val textSecondary = Color(0xFF64748B)
+    val textSecondary = TextSecondary
 
     Column(
         modifier = modifier
@@ -83,7 +86,7 @@ fun InChatQuizQuestionCard(
                     modifier = Modifier
                         .size(26.dp)
                         .background(
-                            brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
+                            brush = Brush.linearGradient(listOf(SunsetOrange, AmberGold)),
                             shape = CircleShape
                         )
                         .padding(4.dp),
@@ -94,7 +97,7 @@ fun InChatQuizQuestionCard(
 
                 Text(
                     text = "QUESTION ${message.quizQuestionIndex + 1} OF ${message.quizTotalQuestions}",
-                    color = if (isDark) CyanGlow else BlueAccent,
+                    color = if (isDark) AmberGold else SunsetOrange,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
@@ -105,14 +108,15 @@ fun InChatQuizQuestionCard(
                 Box(
                     modifier = Modifier
                         .background(
-                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+                            color = if (isDark) SurfacePanelElevated else Color(0xFFEFF6FF),
                             shape = RoundedCornerShape(8.dp)
                         )
+                        .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = message.matchedSubject,
-                        color = Color(0xFF64748B),
+                        color = TextSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -141,8 +145,8 @@ fun InChatQuizQuestionCard(
         ) {
             optionKeys.forEach { key ->
                 val optionText = options[key] ?: return@forEach
-                val optionBg = if (isDark) Color(0xFF162032) else Color(0xFFFFFFFF)
-                val optionBorder = if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
+                val optionBg = if (isDark) SurfacePanelElevated else Color(0xFFFFFFFF)
+                val optionBorder = if (isDark) SurfaceBorder else Color(0xFFCBD5E1)
 
                 Row(
                     modifier = Modifier
@@ -159,15 +163,15 @@ fun InChatQuizQuestionCard(
                         modifier = Modifier
                             .size(28.dp)
                             .background(
-                                color = if (isDark) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+                                color = if (isDark) SurfacePanel else Color(0xFFEFF6FF),
                                 shape = CircleShape
                             )
-                            .border(1.dp, if (isDark) CyanGlow.copy(alpha = 0.4f) else BlueAccent.copy(alpha = 0.4f), CircleShape),
+                            .border(1.dp, SunsetOrange.copy(alpha = 0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = key,
-                            color = if (isDark) CyanGlow else BlueAccent,
+                            color = SunsetOrange,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -193,7 +197,7 @@ fun InChatQuizQuestionCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "💡 Tap an option or speak A, B, C, D",
+                text = "Tap an option or speak A, B, C, D",
                 color = textSecondary,
                 fontSize = 11.sp
             )
@@ -218,10 +222,10 @@ fun InChatQuizScorecardCard(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) Color(0xFF0F172A) else Color(0xFFF8FAFC)
-    val cardBorder = if (isDark) PurpleAccent.copy(alpha = 0.5f) else BlueAccent.copy(alpha = 0.4f)
+    val cardBg = if (isDark) SurfacePanel else Color(0xFFF8FAFC)
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE2E8F0)
     val textPrimary = if (isDark) TextPrimary else Color(0xFF0F172A)
-    val textSecondary = Color(0xFF64748B)
+    val textSecondary = TextSecondary
 
     val score = message.quizScore
     val total = if (message.quizTotal > 0) message.quizTotal else 10
@@ -250,7 +254,7 @@ fun InChatQuizScorecardCard(
                     modifier = Modifier
                         .size(36.dp)
                         .background(
-                            brush = Brush.linearGradient(listOf(PurpleAccent, CyanGlow)),
+                            brush = Brush.linearGradient(listOf(SunsetOrange, AmberGold)),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -303,14 +307,14 @@ fun InChatQuizScorecardCard(
 
         // Performance Assessment Text
         val gradeText = when {
-            pct >= 90 -> "🌟 Outstanding Mastery! Placement Assessment Ready."
-            pct >= 70 -> "👍 Great Performance! Solid Conceptual Foundation."
-            pct >= 50 -> "📈 Good Effort — Review weak areas to master the topic."
-            else -> "📚 Needs Revision — Re-read the chapter guides and retry."
+            pct >= 90 -> "Outstanding Mastery! Placement Assessment Ready."
+            pct >= 70 -> "Great Performance! Solid Conceptual Foundation."
+            pct >= 50 -> "Good Effort — Review weak areas to master the topic."
+            else -> "Needs Revision — Re-read the chapter guides and retry."
         }
         Text(
             text = gradeText,
-            color = if (isDark) CyanGlow else BlueAccent,
+            color = if (isDark) AmberGold else SunsetOrange,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
@@ -331,7 +335,7 @@ fun InChatQuizScorecardCard(
             enabled = !message.isQuizScoreSaved,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (message.isQuizScoreSaved) Color(0xFF059669) else BlueAccent,
+                containerColor = if (message.isQuizScoreSaved) Color(0xFF059669) else SunsetOrange,
                 disabledContainerColor = Color(0xFF059669)
             ),
             modifier = Modifier
@@ -349,7 +353,7 @@ fun InChatQuizScorecardCard(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = if (message.isQuizScoreSaved) "✓ Saved to Notes Organizer" else "📝 Save Score & Mistakes to Notes",
+                    text = if (message.isQuizScoreSaved) "✓ Saved to Notes Organizer" else "Save Score & Mistakes to Notes",
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold

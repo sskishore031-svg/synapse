@@ -37,10 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -101,7 +104,7 @@ fun SubjectQuizSelectionScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "${subjectName.uppercase()} QUIZZES",
-                            color = CyanAccent,
+                            color = AmberGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -119,19 +122,16 @@ fun SubjectQuizSelectionScreen(
                 }
             }
 
-            // Light Body
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(Color.Transparent)
             ) {
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BlueAccent)
+                        CircularProgressIndicator(color = SunsetOrange)
                     }
                 } else if (uiState.quizzes.isEmpty()) {
                     Box(
@@ -140,7 +140,7 @@ fun SubjectQuizSelectionScreen(
                     ) {
                         Text(
                             text = "No chapter quizzes found for this subject.",
-                            color = Color(0xFF64748B),
+                            color = TextSecondary,
                             fontSize = 14.sp
                         )
                     }
@@ -155,10 +155,11 @@ fun SubjectQuizSelectionScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
                                     .clickable { onStartQuiz(0, subjectId.toString()) },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -172,12 +173,12 @@ fun SubjectQuizSelectionScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFF38BDF8).copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                                .background(AmberGold.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                         ) {
                                             Text(
-                                                text = "FULL SYLLABUS REVISION",
-                                                color = CyanAccent,
+                                                text = "FULL TRACK REVISION",
+                                                color = AmberGold,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -185,7 +186,7 @@ fun SubjectQuizSelectionScreen(
 
                                         Text(
                                             text = "50 MCQs",
-                                            color = Color.White.copy(alpha = 0.8f),
+                                            color = TextSecondary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -197,16 +198,16 @@ fun SubjectQuizSelectionScreen(
                                         text = "$subjectName · Comprehensive Revision Test",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        color = Color.White
+                                        color = TextPrimary
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
 
                                     Text(
-                                        text = "Comprehensive 50-Question Board Exam Level Practice across all chapters.",
+                                        text = "Comprehensive 50-Question Placement Level Practice across all chapters.",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Normal,
-                                        color = Color(0xFF94A3B8)
+                                        color = TextSecondary
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -215,7 +216,7 @@ fun SubjectQuizSelectionScreen(
                                         onClick = { onStartQuiz(0, subjectId.toString()) },
                                         modifier = Modifier.fillMaxWidth().height(42.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = BlueAccent
+                                            containerColor = SunsetOrange
                                         ),
                                         shape = RoundedCornerShape(10.dp)
                                     ) {
@@ -234,9 +235,10 @@ fun SubjectQuizSelectionScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
                                     .clickable { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
@@ -251,12 +253,13 @@ fun SubjectQuizSelectionScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                .background(SurfacePanel, RoundedCornerShape(8.dp))
+                                                .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
                                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                         ) {
                                             Text(
                                                 text = "CHAPTER ${quiz.chapterOrder}",
-                                                color = BlueAccent,
+                                                color = SunsetOrange,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -265,12 +268,12 @@ fun SubjectQuizSelectionScreen(
                                         if (quiz.isAttempted && quiz.bestScore != null) {
                                             Box(
                                                 modifier = Modifier
-                                                    .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                                    .background(Color(0xFF22C55E).copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
                                                     text = "Best: ${quiz.bestScore}%",
-                                                    color = Color(0xFF059669),
+                                                    color = Color(0xFF4ADE80),
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
@@ -284,7 +287,7 @@ fun SubjectQuizSelectionScreen(
                                         text = quiz.chapterTitle.ifBlank { quiz.quizTitle },
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        color = Color(0xFF0F172A)
+                                        color = TextPrimary
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -293,7 +296,7 @@ fun SubjectQuizSelectionScreen(
                                         text = "${quiz.questionCount.coerceAtLeast(5)} Questions • Multiple Choice",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF64748B)
+                                        color = TextSecondary
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -302,8 +305,9 @@ fun SubjectQuizSelectionScreen(
                                         onClick = { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                         modifier = Modifier.fillMaxWidth().height(42.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (quiz.isAttempted) Color(0xFF1E293B) else BlueAccent
+                                            containerColor = if (quiz.isAttempted) SurfacePanel else SunsetOrange
                                         ),
+                                        border = if (quiz.isAttempted) androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder) else null,
                                         shape = RoundedCornerShape(10.dp)
                                     ) {
                                         Text(

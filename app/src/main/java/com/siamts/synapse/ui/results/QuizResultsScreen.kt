@@ -1,6 +1,8 @@
 package com.siamts.synapse.ui.results
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -48,6 +51,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -84,6 +92,8 @@ fun QuizResultsContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -121,7 +131,7 @@ fun QuizResultsContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.headerTag,
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -138,7 +148,7 @@ fun QuizResultsContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { onShareClick() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -150,13 +160,13 @@ fun QuizResultsContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -186,18 +196,18 @@ fun QuizResultsContent(
                                 Canvas(modifier = Modifier.fillMaxWidth().height(60.dp)) {
                                     val w = size.width
                                     val h = size.height
-                                    drawCircle(CyanGlow, 4f, Offset(w * 0.2f, h * 0.3f))
-                                    drawCircle(PurpleGlow, 5f, Offset(w * 0.8f, h * 0.25f))
-                                    drawCircle(BlueAccent, 4f, Offset(w * 0.35f, h * 0.75f))
-                                    drawCircle(PurpleAccent, 5f, Offset(w * 0.72f, h * 0.8f))
+                                    drawCircle(SunsetOrange, 4f, Offset(w * 0.2f, h * 0.3f))
+                                    drawCircle(AmberGold, 5f, Offset(w * 0.8f, h * 0.25f))
+                                    drawCircle(SunsetOrangeEnd, 4f, Offset(w * 0.35f, h * 0.75f))
+                                    drawCircle(SunsetOrange, 5f, Offset(w * 0.72f, h * 0.8f))
                                 }
 
                                 // Trophy Badge
                                 Box(
                                     modifier = Modifier
                                         .size(64.dp)
-                                        .background(Color(0xFFF3E8FF), CircleShape)
-                                        .border(2.dp, Color(0xFFE9D5FF), CircleShape),
+                                        .background(if (isDark) SurfacePanel else Color(0xFFF3E8FF), CircleShape)
+                                        .border(2.dp, if (isDark) SurfaceBorder else Color(0xFFE9D5FF), CircleShape),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(text = "🏆", fontSize = 28.sp)
@@ -216,14 +226,14 @@ fun QuizResultsContent(
                             ) {
                                 Text(
                                     text = uiState.headline,
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = uiState.subHeadline,
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 13.sp,
                                 )
                             }
@@ -247,13 +257,13 @@ fun QuizResultsContent(
                                         CircularProgressIndicator(
                                             progress = { uiState.scorePercentage / 100f },
                                             modifier = Modifier.fillMaxSize(),
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             strokeWidth = 7.dp,
-                                            trackColor = Color(0xFFE2E8F0),
+                                            trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                         )
                                         Text(
                                             text = "${uiState.scorePercentage}%",
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontSize = 20.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -264,14 +274,14 @@ fun QuizResultsContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = uiState.resultTitle,
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = uiState.resultMessage,
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 12.sp,
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -279,12 +289,13 @@ fun QuizResultsContent(
                                         // XP Badge
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                                .background(if (isDark) SurfacePanel else Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                                .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(12.dp))
                                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                                         ) {
                                             Text(
                                                 text = "⚡ +${uiState.xpEarned} XP earned",
-                                                color = Color(0xFF059669),
+                                                color = if (isDark) AmberGold else Color(0xFF059669),
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -301,7 +312,7 @@ fun QuizResultsContent(
                                 ) {
                                     Text(
                                         text = "✓ ${uiState.correctAnswers} correct",
-                                        color = Color(0xFF059669),
+                                        color = if (isDark) AmberGold else Color(0xFF059669),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -315,7 +326,7 @@ fun QuizResultsContent(
                             }
                         }
 
-                        // 4. Summary Metrics Cards (3 White Cards)
+                        // 4. Summary Metrics Cards (3 Cards)
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 2.dp
@@ -328,7 +339,10 @@ fun QuizResultsContent(
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(12.dp),
@@ -336,13 +350,13 @@ fun QuizResultsContent(
                                     ) {
                                         Text(
                                             text = uiState.accuracy,
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = "Accuracy",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -352,7 +366,10 @@ fun QuizResultsContent(
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(12.dp),
@@ -360,13 +377,13 @@ fun QuizResultsContent(
                                     ) {
                                         Text(
                                             text = uiState.timeTaken,
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = "Time taken",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -376,7 +393,10 @@ fun QuizResultsContent(
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(12.dp),
@@ -384,13 +404,13 @@ fun QuizResultsContent(
                                     ) {
                                         Text(
                                             text = "+${uiState.xpEarned}",
-                                            color = Color(0xFF0F172A),
+                                            color = SunsetOrange,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = "XP points",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -406,14 +426,14 @@ fun QuizResultsContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = uiState.feedbackTitle,
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) AmberGold else Color(0xFF0F172A),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = uiState.feedbackText,
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 12.sp,
                                 )
                             }
@@ -436,8 +456,8 @@ fun QuizResultsContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.6f) else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onReviewAnswersClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -446,7 +466,7 @@ fun QuizResultsContent(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "Review Answers",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -469,9 +489,9 @@ fun QuizResultsContent(
                                         .background(
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
-                                                    PurpleAccent,
-                                                    BlueAccent,
-                                                    CyanAccent,
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
                                                 )
                                             ),
                                             shape = RoundedCornerShape(16.dp),

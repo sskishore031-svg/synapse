@@ -358,34 +358,68 @@ object RetrofitClient {
 
     /**
      * Resolves and formats profile photo URLs so they load reliably across Emulator (10.0.2.2),
-     * physical mobile devices (LAN IP), and local storage URIs.
+     * physical mobile devices (LAN IP), local storage URIs, and Base64 data URIs.
      */
     fun formatPhotoUrl(rawUrl: String?): String? {
         if (rawUrl.isNullOrBlank()) return null
-        if (rawUrl.startsWith("content://") || rawUrl.startsWith("file://") || rawUrl.startsWith("/")) return rawUrl
+        val trimmed = rawUrl.trim()
+        if (trimmed.startsWith("data:image", ignoreCase = true) ||
+            trimmed.startsWith("base64,", ignoreCase = true) ||
+            trimmed.startsWith("content://") ||
+            trimmed.startsWith("file://") ||
+            trimmed.startsWith("/") ||
+            (trimmed.length > 300 && !trimmed.contains("/") && !trimmed.contains(" ") && !trimmed.contains("."))
+        ) {
+            return trimmed
+        }
         val baseUrl = getBaseUrl()
-        return if (rawUrl.startsWith("http://", ignoreCase = true) || rawUrl.startsWith("https://", ignoreCase = true)) {
+        return if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
             try {
                 val currentHost = java.net.URI(baseUrl).host
-                val parsedUri = java.net.URI(rawUrl)
+                val parsedUri = java.net.URI(trimmed)
                 if (parsedUri.host.equals("localhost", ignoreCase = true) || parsedUri.host.equals("127.0.0.1")) {
                     val portStr = if (parsedUri.port > 0 && parsedUri.port != 80 && parsedUri.port != 443) ":${parsedUri.port}" else ""
                     "${parsedUri.scheme}://$currentHost$portStr${parsedUri.rawPath}"
                 } else {
-                    rawUrl
+                    trimmed
                 }
             } catch (_: Exception) {
-                rawUrl
+                trimmed
             }
         } else {
             val cleanBase = baseUrl.trimEnd('/')
-            val cleanPath = rawUrl.trimStart('/')
+            val cleanPath = trimmed.trimStart('/')
             "$cleanBase/$cleanPath"
         }
     }
 
     fun resolveImageModel(rawUrl: String?): Any? {
-        val formatted = formatPhotoUrl(rawUrl) ?: return null
+        if (rawUrl.isNullOrBlank()) return null
+        val trimmed = rawUrl.trim()
+        if (trimmed.startsWith("data:image", ignoreCase = true)) {
+            val base64Data = if (trimmed.contains(",")) trimmed.substringAfter(",") else trimmed
+            return try {
+                android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            } catch (_: Exception) {
+                trimmed
+            }
+        }
+        if (trimmed.startsWith("base64,", ignoreCase = true)) {
+            val base64Data = trimmed.substringAfter(",")
+            return try {
+                android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            } catch (_: Exception) {
+                trimmed
+            }
+        }
+        if (trimmed.length > 300 && !trimmed.contains("/") && !trimmed.contains(" ") && !trimmed.contains(".")) {
+            return try {
+                android.util.Base64.decode(trimmed, android.util.Base64.DEFAULT)
+            } catch (_: Exception) {
+                trimmed
+            }
+        }
+        val formatted = formatPhotoUrl(trimmed) ?: return null
         return if (formatted.startsWith("/") && !formatted.startsWith("//")) {
             java.io.File(formatted)
         } else if (formatted.startsWith("file://")) {

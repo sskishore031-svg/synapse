@@ -47,17 +47,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.siamts.synapse.data.remote.RetrofitClient
-import com.siamts.synapse.ui.theme.BlueAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.DarkBackground
-import com.siamts.synapse.ui.theme.LightBackground
-import com.siamts.synapse.ui.theme.LightTextPrimary
-import com.siamts.synapse.ui.theme.LightTextSecondary
-import com.siamts.synapse.ui.theme.LocalThemeIsDark
-import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
+import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -132,14 +133,10 @@ fun ProfileContent(
     onSettingsClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
 ) {
-    val isDark = LocalThemeIsDark.current
+    val isDark = true
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val pageBgGradient = if (isDark) {
-        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
-    } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
-    }
-    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+    val pageBgGradient = listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    val headerTextColor = TextPrimary
 
     Box(
         modifier = modifier
@@ -162,7 +159,7 @@ fun ProfileContent(
                     Column {
                         Text(
                             text = uiState.headerTag,
-                            color = if (isDark) TextMuted else BlueAccent,
+                            color = AmberGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -194,27 +191,24 @@ fun ProfileContent(
                 }
             }
 
-            // Light Sheet Container
+            // Main Content Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(Color.Transparent)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     if (uiState.isLoading) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(3.dp),
-                            color = BlueAccent
+                            color = SunsetOrange
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                     }
@@ -233,13 +227,13 @@ fun ProfileContent(
                             ) {
                                 Text(
                                     text = uiState.errorMessage,
-                                    color = Color(0xFFDC2626),
+                                    color = Color(0xFFEF4444),
                                     fontSize = 12.sp,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
                                     text = "Retry",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.clickable { onRetryClick?.invoke() }
@@ -263,9 +257,11 @@ fun ProfileContent(
                             contentPadding = 8.dp
                         ) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(18.dp)),
                                 shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -282,7 +278,8 @@ fun ProfileContent(
                                             modifier = Modifier
                                                 .size(50.dp)
                                                 .clip(CircleShape)
-                                                .background(Color(0xFFE0E7FF), CircleShape),
+                                                .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
+                                                .border(1.dp, SurfaceBorder, CircleShape),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
@@ -300,12 +297,12 @@ fun ProfileContent(
                                                     when {
                                                         parts.size >= 2 -> "${parts.first().first()}${parts.last().first()}".uppercase()
                                                         parts.isNotEmpty() -> parts.first().take(2).uppercase()
-                                                        else -> "ST"
+                                                        else -> "K"
                                                     }
                                                 }
                                                 Text(
                                                     text = initials,
-                                                    color = Color(0xFF3730A3),
+                                                    color = SunsetOrange,
                                                     fontSize = 18.sp,
                                                     fontWeight = FontWeight.Bold,
                                                 )
@@ -317,21 +314,22 @@ fun ProfileContent(
                                         Column {
                                             Text(
                                                 text = uiState.userName,
-                                                color = Color(0xFF0F172A),
+                                                color = TextPrimary,
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = uiState.userEmail,
-                                                color = Color(0xFF64748B),
+                                                color = TextSecondary,
                                                 fontSize = 12.sp,
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = uiState.userStreak,
-                                                color = Color(0xFF94A3B8),
+                                                color = AmberGold,
                                                 fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
                                             )
                                         }
                                     }
@@ -339,7 +337,8 @@ fun ProfileContent(
                                     Box(
                                         modifier = Modifier
                                             .size(32.dp)
-                                            .background(Color(0xFFF1F5F9), CircleShape)
+                                            .background(SurfacePanelElevated, CircleShape)
+                                            .border(1.dp, SurfaceBorder, CircleShape)
                                             .clickable { onMyProfileClick?.invoke() },
                                         contentAlignment = Alignment.Center,
                                     ) {
@@ -355,9 +354,11 @@ fun ProfileContent(
                             contentPadding = 8.dp
                         ) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(18.dp)),
                                 shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -415,7 +416,7 @@ fun ProfileContent(
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = "Notifications",
-                                                color = Color(0xFF0F172A),
+                                                color = TextPrimary,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                             )
@@ -426,7 +427,7 @@ fun ProfileContent(
                                             onCheckedChange = onToggleNotifications,
                                             colors = SwitchDefaults.colors(
                                                 checkedThumbColor = Color.White,
-                                                checkedTrackColor = BlueAccent,
+                                                checkedTrackColor = SunsetOrange,
                                             )
                                         )
                                     }
@@ -450,14 +451,14 @@ fun ProfileContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(46.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                     .clickable { onProgressAnalyticsClick?.invoke() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = "Progress & Analytics",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -473,8 +474,8 @@ fun ProfileContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(46.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFFEE2E2), RoundedCornerShape(12.dp))
+                                    .background(SurfacePanel, RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                                     .clickable { showLogoutDialog = true },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -500,8 +501,8 @@ fun ProfileContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(46.dp)
-                                        .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+                                        .background(SurfacePanel, RoundedCornerShape(12.dp))
+                                        .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                                         .clickable { onRemoveProfilePictureClick?.invoke() },
                                     contentAlignment = Alignment.Center,
                                 ) {
@@ -525,7 +526,7 @@ fun ProfileContent(
                         ) {
                             Text(
                                 text = uiState.appVersionText,
-                                color = Color(0xFF94A3B8),
+                                color = TextSecondary,
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
@@ -539,7 +540,7 @@ fun ProfileContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(DarkBackgroundBottom)
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -563,11 +564,11 @@ fun ProfileContent(
                         Text(
                             text = icon,
                             fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
+                            color = if (isSelected) SunsetOrange else TextSecondary
                         )
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else TextSecondary,
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
@@ -583,13 +584,13 @@ fun ProfileContent(
                     Text(
                         text = "Confirm Logout",
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = TextPrimary
                     )
                 },
                 text = {
                     Text(
                         text = "Are you sure you want to log out of your SYNAPSE AI account?",
-                        color = Color(0xFF334155),
+                        color = TextSecondary,
                         fontSize = 14.sp
                     )
                 },
@@ -607,10 +608,10 @@ fun ProfileContent(
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancel", color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                        Text("Cancel", color = TextSecondary, fontWeight = FontWeight.Medium)
                     }
                 },
-                containerColor = Color.White,
+                containerColor = SurfacePanelElevated,
                 shape = RoundedCornerShape(16.dp)
             )
         }
@@ -637,7 +638,7 @@ private fun ProfileOptionRow(
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
-                color = Color(0xFF0F172A),
+                color = TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -647,14 +648,14 @@ private fun ProfileOptionRow(
             if (trailingText != null) {
                 Text(
                     text = trailingText,
-                    color = Color(0xFF94A3B8),
+                    color = TextSecondary,
                     fontSize = 12.sp,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
                 text = "›",
-                color = Color(0xFF94A3B8),
+                color = TextSecondary,
                 fontSize = 18.sp,
             )
         }

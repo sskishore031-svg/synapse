@@ -1,8 +1,10 @@
 package com.siamts.synapse.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,11 +37,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -61,6 +68,7 @@ fun NotificationCenterPreviewScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
     var selectedFilter by remember { mutableStateOf(0) } // 0: All, 1: Reminders, 2: Achievements, 3: System
 
     val notifications = listOf(
@@ -147,7 +155,7 @@ fun NotificationCenterPreviewScreen(
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "UPDATES & REMINDERS", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(text = "UPDATES & REMINDERS", color = SunsetOrange, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Notifications", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -155,21 +163,21 @@ fun NotificationCenterPreviewScreen(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "✓✓", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "✓✓", color = if (isDark) SunsetOrange else TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -189,7 +197,7 @@ fun NotificationCenterPreviewScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -200,13 +208,13 @@ fun NotificationCenterPreviewScreen(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(34.dp)
-                                            .background(if (isSel) BlueAccent else Color.Transparent, RoundedCornerShape(8.dp))
+                                            .background(if (isSel) SunsetOrange else Color.Transparent, RoundedCornerShape(8.dp))
                                             .clickable { selectedFilter = idx },
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
                                             text = fName,
-                                            color = if (isSel) Color.White else Color(0xFF64748B),
+                                            color = if (isSel) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                             fontSize = 11.sp,
                                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
                                         )
@@ -223,8 +231,8 @@ fun NotificationCenterPreviewScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(text = "Recent Notifications", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = "2 Unread", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Recent Notifications", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "2 Unread", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
 
                                 notifications.forEach { item ->
@@ -232,8 +240,9 @@ fun NotificationCenterPreviewScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(
-                                            containerColor = if (item.isUnread) Color(0xFFEFF6FF) else Color.White
+                                            containerColor = if (item.isUnread) (if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)) else (if (isDark) SurfacePanelElevated else Color.White)
                                         ),
+                                        border = BorderStroke(1.dp, if (item.isUnread) (if (isDark) SunsetOrange.copy(alpha = 0.35f) else Color(0xFFBFDBFE)) else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
                                     ) {
                                         Column(modifier = Modifier.padding(12.dp)) {
                                             Row(
@@ -243,28 +252,28 @@ fun NotificationCenterPreviewScreen(
                                             ) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Box(
-                                                        modifier = Modifier.size(30.dp).background(Color(0xFFE0F2FE), CircleShape),
+                                                        modifier = Modifier.size(30.dp).background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFE0F2FE), CircleShape),
                                                         contentAlignment = Alignment.Center,
                                                     ) {
                                                         Text(text = item.iconEmoji, fontSize = 14.sp)
                                                     }
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    Text(text = item.title, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                                    Text(text = item.title, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
 
                                                     if (item.isUnread) {
                                                         Spacer(modifier = Modifier.width(6.dp))
-                                                        Box(modifier = Modifier.size(7.dp).background(BlueAccent, CircleShape))
+                                                        Box(modifier = Modifier.size(7.dp).background(SunsetOrange, CircleShape))
                                                     }
                                                 }
 
-                                                Text(text = item.timeAgo, color = Color(0xFF94A3B8), fontSize = 10.sp)
+                                                Text(text = item.timeAgo, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
                                             }
 
                                             Spacer(modifier = Modifier.height(6.dp))
 
                                             Text(
                                                 text = item.message,
-                                                color = Color(0xFF334155),
+                                                color = if (isDark) TextSecondary else Color(0xFF334155),
                                                 fontSize = 12.sp,
                                                 lineHeight = 16.sp
                                             )
@@ -278,15 +287,15 @@ fun NotificationCenterPreviewScreen(
                                             ) {
                                                 Box(
                                                     modifier = Modifier
-                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                        .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
                                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                                 ) {
-                                                    Text(text = item.tagText, color = Color(0xFF64748B), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                                                    Text(text = item.tagText, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp, fontWeight = FontWeight.Medium)
                                                 }
 
                                                 Text(
                                                     text = item.actionText,
-                                                    color = BlueAccent,
+                                                    color = SunsetOrange,
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     modifier = Modifier.clickable { }
@@ -304,12 +313,12 @@ fun NotificationCenterPreviewScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(42.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(text = "✓ Mark All as Read", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "✓ Mark All as Read", color = SunsetOrange, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

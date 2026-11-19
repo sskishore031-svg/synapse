@@ -1,7 +1,9 @@
 package com.siamts.synapse.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,12 +39,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.siamts.synapse.ui.theme.BlueAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -52,6 +58,7 @@ fun StudyGoalsScreen(
     initialGoal: String = "25 min / day",
     onGoalSelected: (String) -> Unit = {},
 ) {
+    val isDark = isSystemInDarkTheme()
     var selectedGoal by remember { mutableStateOf(initialGoal) }
 
     val goalOptions = listOf(
@@ -93,7 +100,7 @@ fun StudyGoalsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Study Goals", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -105,7 +112,7 @@ fun StudyGoalsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -121,12 +128,20 @@ fun StudyGoalsScreen(
                     ) {
                         // Daily Goal Progress Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(14.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Box(modifier = Modifier.size(44.dp).background(Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+                                    Box(
+                                        modifier = Modifier.size(44.dp).background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Text(text = "🎯", fontSize = 22.sp)
                                     }
 
@@ -138,19 +153,19 @@ fun StudyGoalsScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            Text(text = "Target Study Goal", color = Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                            Text(text = selectedGoal, color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "Target Study Goal", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = selectedGoal, color = SunsetOrange, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
 
-                                        Text(text = "Synced automatically to your profile", color = Color(0xFF64748B), fontSize = 12.sp)
+                                        Text(text = "Synced automatically to your profile", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 12.sp)
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
                                         LinearProgressIndicator(
                                             progress = { 0.75f },
                                             modifier = Modifier.fillMaxWidth().height(6.dp),
-                                            color = BlueAccent,
-                                            trackColor = Color(0xFFE2E8F0),
+                                            color = SunsetOrange,
+                                            trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0),
                                         )
                                     }
                                 }
@@ -159,7 +174,12 @@ fun StudyGoalsScreen(
 
                         // Goal Options
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                                     goalOptions.forEach { (goalStr, desc) ->
                                         val isSel = selectedGoal.equals(goalStr, ignoreCase = true)
@@ -170,15 +190,20 @@ fun StudyGoalsScreen(
                                                     selectedGoal = goalStr
                                                     onGoalSelected(goalStr)
                                                 }
-                                                .background(if (isSel) Color(0xFFEFF6FF) else Color.Transparent)
+                                                .background(if (isSel) (if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF)) else Color.Transparent)
                                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Column(modifier = Modifier.weight(1f)) {
-                                                Text(text = goalStr, color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold)
+                                                Text(
+                                                    text = goalStr,
+                                                    color = if (isSel) (if (isDark) AmberGold else Color(0xFF0F172A)) else (if (isDark) TextPrimary else Color(0xFF0F172A)),
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold
+                                                )
                                                 Spacer(modifier = Modifier.height(2.dp))
-                                                Text(text = desc, color = Color(0xFF64748B), fontSize = 11.sp)
+                                                Text(text = desc, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                             }
 
                                             RadioButton(
@@ -187,7 +212,10 @@ fun StudyGoalsScreen(
                                                     selectedGoal = goalStr
                                                     onGoalSelected(goalStr)
                                                 },
-                                                colors = RadioButtonDefaults.colors(selectedColor = BlueAccent)
+                                                colors = RadioButtonDefaults.colors(
+                                                    selectedColor = SunsetOrange,
+                                                    unselectedColor = if (isDark) TextSecondary else Color(0xFF94A3B8)
+                                                )
                                             )
                                         }
                                     }

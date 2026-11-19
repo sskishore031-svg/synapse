@@ -1,7 +1,9 @@
 package com.siamts.synapse.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,12 +36,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.siamts.synapse.ui.theme.BlueAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -49,6 +55,7 @@ fun LanguageSelectionScreen(
     initialLanguage: String = "English",
     onLanguageSelected: (String) -> Unit = {},
 ) {
+    val isDark = isSystemInDarkTheme()
     var selectedLanguage by remember { mutableStateOf(initialLanguage) }
 
     val languages = listOf(
@@ -92,7 +99,7 @@ fun LanguageSelectionScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Language", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -104,7 +111,7 @@ fun LanguageSelectionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -119,7 +126,12 @@ fun LanguageSelectionScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                                     languages.forEach { (langName, flag, code) ->
                                         val isSel = selectedLanguage.equals(code, ignoreCase = true)
@@ -130,7 +142,7 @@ fun LanguageSelectionScreen(
                                                     selectedLanguage = code
                                                     onLanguageSelected(code)
                                                 }
-                                                .background(if (isSel) Color(0xFFEFF6FF) else Color.Transparent)
+                                                .background(if (isSel) (if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF)) else Color.Transparent)
                                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically,
@@ -138,7 +150,12 @@ fun LanguageSelectionScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(text = flag, fontSize = 18.sp)
                                                 Spacer(modifier = Modifier.width(12.dp))
-                                                Text(text = langName, color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium)
+                                                Text(
+                                                    text = langName,
+                                                    color = if (isSel) (if (isDark) AmberGold else Color(0xFF0F172A)) else (if (isDark) TextPrimary else Color(0xFF0F172A)),
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
+                                                )
                                             }
 
                                             RadioButton(
@@ -147,7 +164,10 @@ fun LanguageSelectionScreen(
                                                     selectedLanguage = code
                                                     onLanguageSelected(code)
                                                 },
-                                                colors = RadioButtonDefaults.colors(selectedColor = BlueAccent)
+                                                colors = RadioButtonDefaults.colors(
+                                                    selectedColor = SunsetOrange,
+                                                    unselectedColor = if (isDark) TextSecondary else Color(0xFF94A3B8)
+                                                )
                                             )
                                         }
                                     }

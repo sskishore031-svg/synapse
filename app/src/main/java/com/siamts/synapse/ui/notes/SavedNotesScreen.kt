@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.notes
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,10 +43,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -88,6 +96,7 @@ fun SavedNotesContent(
     onToggleDownload: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     var selected3DNote by remember { mutableStateOf<NoteItemDto?>(null) }
 
     Box(
@@ -145,13 +154,13 @@ fun SavedNotesContent(
                 }
             }
 
-            // Light Sheet Container
+            // Body Sheet Container (Dark mode transparent to show gradient)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -179,19 +188,19 @@ fun SavedNotesContent(
                                 placeholder = {
                                     Text(
                                         text = "Search by topic or subject",
-                                        color = Color(0xFF94A3B8),
+                                        color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                         fontSize = 14.sp,
                                     )
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                             )
@@ -210,13 +219,13 @@ fun SavedNotesContent(
                                 ) {
                                     Text(
                                         text = "Saved Notes",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "${uiState.savedNotes.size} notes",
-                                        color = Color(0xFF94A3B8),
+                                        color = if (isDark) AmberGold else Color(0xFF94A3B8),
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -242,7 +251,10 @@ fun SavedNotesContent(
                                                     )
                                                 },
                                             shape = RoundedCornerShape(14.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                            ),
+                                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -254,20 +266,20 @@ fun SavedNotesContent(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = note.title,
-                                                        color = Color(0xFF0F172A),
+                                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         text = note.subtitle,
-                                                        color = Color(0xFF64748B),
+                                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                         fontSize = 11.sp,
                                                     )
                                                     Spacer(modifier = Modifier.height(4.dp))
                                                     Text(
                                                         text = note.statusText,
-                                                        color = BlueAccent,
+                                                        color = SunsetOrange,
                                                         fontSize = 11.sp,
                                                         fontWeight = FontWeight.Medium,
                                                     )
@@ -279,17 +291,27 @@ fun SavedNotesContent(
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFEFF6FF),
+                                                                RoundedCornerShape(6.dp)
+                                                            )
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
-                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = SunsetOrange, fontWeight = FontWeight.Bold)
                                                     }
 
                                                     // Share with Friend Button
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
-                                                            .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFE0F2FE),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
+                                                            .border(
+                                                                1.dp,
+                                                                if (isDark) SurfaceBorder else Color(0xFFBAE6FD),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
                                                             .clickable {
                                                                 val noteContent = "${note.subtitle}\n\nKey Concepts & High-Yield Summary:\n• Core principle and definition: Comprehensive study notes for ${note.title}.\n• Detailed mathematical formulations, worked examples, and formulas.\n• High-yield takeaways and problem-solving steps."
                                                                 val subject = note.subtitle.split("·").firstOrNull()?.trim() ?: "Saved Notes"
@@ -309,7 +331,7 @@ fun SavedNotesContent(
                                                             Spacer(modifier = Modifier.width(3.dp))
                                                             Text(
                                                                 text = "Share",
-                                                                color = Color(0xFF0284C7),
+                                                                color = SunsetOrange,
                                                                 fontSize = 11.sp,
                                                                 fontWeight = FontWeight.Bold,
                                                             )
@@ -318,8 +340,15 @@ fun SavedNotesContent(
 
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color.White, RoundedCornerShape(12.dp))
-                                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color.White,
+                                                                RoundedCornerShape(12.dp)
+                                                            )
+                                                            .border(
+                                                                1.dp,
+                                                                if (isDark) SunsetOrange.copy(alpha = 0.6f) else Color(0xFFE2E8F0),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
                                                             .clickable {
                                                                 if (note.buttonAction == "Open") {
                                                                     selected3DNote = NoteItemDto(
@@ -341,7 +370,7 @@ fun SavedNotesContent(
                                                     ) {
                                                         Text(
                                                             text = note.buttonAction,
-                                                            color = BlueAccent,
+                                                            color = SunsetOrange,
                                                             fontSize = 12.sp,
                                                             fontWeight = FontWeight.Bold,
                                                         )
@@ -367,13 +396,13 @@ fun SavedNotesContent(
                                 ) {
                                     Text(
                                         text = "Downloaded Notes",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "${uiState.downloadedFiles.size} files",
-                                        color = Color(0xFF94A3B8),
+                                        color = if (isDark) AmberGold else Color(0xFF94A3B8),
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -399,7 +428,10 @@ fun SavedNotesContent(
                                                     )
                                                 },
                                             shape = RoundedCornerShape(14.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                            ),
+                                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -411,26 +443,29 @@ fun SavedNotesContent(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = file.title,
-                                                        color = Color(0xFF0F172A),
+                                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         text = file.subtitle,
-                                                        color = Color(0xFF64748B),
+                                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                         fontSize = 11.sp,
                                                     )
                                                     Spacer(modifier = Modifier.height(4.dp))
 
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFD1FAE5),
+                                                                RoundedCornerShape(8.dp)
+                                                            )
                                                             .padding(horizontal = 8.dp, vertical = 2.dp)
                                                     ) {
                                                         Text(
                                                             text = "✓ ${file.offlineBadge}",
-                                                            color = Color(0xFF059669),
+                                                            color = if (isDark) AmberGold else Color(0xFF059669),
                                                             fontSize = 10.sp,
                                                             fontWeight = FontWeight.Bold,
                                                         )
@@ -443,17 +478,27 @@ fun SavedNotesContent(
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFEFF6FF),
+                                                                RoundedCornerShape(6.dp)
+                                                            )
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
-                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = SunsetOrange, fontWeight = FontWeight.Bold)
                                                     }
 
                                                     // Share with Friend Button for Downloaded File
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
-                                                            .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color(0xFFE0F2FE),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
+                                                            .border(
+                                                                1.dp,
+                                                                if (isDark) SurfaceBorder else Color(0xFFBAE6FD),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
                                                             .clickable {
                                                                 val noteContent = "${file.subtitle}\n\nOffline Cached Syllabus Notes:\n• Full offline curriculum study notes for ${file.title}.\n• Comprehensive worked examples, diagrams, formulas, and cheat sheet.\n• High-yield exam revision accessible completely offline."
                                                                 val subject = file.subtitle.split("·").firstOrNull()?.trim() ?: "Downloaded Notes"
@@ -473,7 +518,7 @@ fun SavedNotesContent(
                                                             Spacer(modifier = Modifier.width(3.dp))
                                                             Text(
                                                                 text = "Share",
-                                                                color = Color(0xFF0284C7),
+                                                                color = SunsetOrange,
                                                                 fontSize = 11.sp,
                                                                 fontWeight = FontWeight.Bold,
                                                             )
@@ -482,8 +527,15 @@ fun SavedNotesContent(
 
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color.White, RoundedCornerShape(12.dp))
-                                                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                                            .background(
+                                                                if (isDark) SurfacePanel else Color.White,
+                                                                RoundedCornerShape(12.dp)
+                                                            )
+                                                            .border(
+                                                                1.dp,
+                                                                if (isDark) SunsetOrange.copy(alpha = 0.6f) else Color(0xFFE2E8F0),
+                                                                RoundedCornerShape(12.dp)
+                                                            )
                                                             .clickable {
                                                                 selected3DNote = NoteItemDto(
                                                                     id = file.id.toIntOrNull() ?: file.title.hashCode(),
@@ -501,7 +553,7 @@ fun SavedNotesContent(
                                                     ) {
                                                         Text(
                                                             text = file.buttonAction,
-                                                            color = BlueAccent,
+                                                            color = SunsetOrange,
                                                             fontSize = 12.sp,
                                                             fontWeight = FontWeight.Bold,
                                                         )
@@ -521,7 +573,7 @@ fun SavedNotesContent(
                         ) {
                             Text(
                                 text = uiState.disclaimer,
-                                color = Color(0xFF94A3B8),
+                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
@@ -535,7 +587,8 @@ fun SavedNotesContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(if (isDark) DarkBackgroundBottom else Color.White)
+                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -547,6 +600,30 @@ fun SavedNotesContent(
                     Triple("Notes", "📝", 3),
                     Triple("Profile", "👤", 4)
                 )
+
+                navItems.forEach { (label, icon, index) ->
+                    val isSelected = index == uiState.selectedTab
+                    Column(
+                        modifier = Modifier
+                            .clickable { onTabSelect(index) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = icon,
+                            fontSize = 18.sp,
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8)
+                        )
+                        Text(
+                            text = label,
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8),
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
 
                 navItems.forEach { (label, icon, index) ->
                     val isSelected = index == uiState.selectedTab

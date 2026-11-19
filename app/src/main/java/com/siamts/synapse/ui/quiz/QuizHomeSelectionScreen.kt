@@ -33,10 +33,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.lazy.LazyRow
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
+import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -108,19 +116,16 @@ fun QuizHomeSelectionScreen(
                 }
             }
 
-            // Light Body Container
+            // Content Container (Design 4 Seamless Dark Theme)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(color = Color.Transparent)
             ) {
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BlueAccent)
+                        CircularProgressIndicator(color = SunsetOrange)
                     }
                 } else {
                     LazyColumn(
@@ -130,31 +135,36 @@ fun QuizHomeSelectionScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         item {
-                            // Class Filter Chips Row (Class 10, Class 11, Class 12)
-                            Row(
+                            // High-Demand Track Filter Chips in LazyRow (resolves Aptitude chip clipping)
+                            LazyRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                uiState.availableClasses.forEach { cls ->
+                                items(uiState.availableClasses) { cls ->
                                     val isSelected = uiState.selectedClass == cls
                                     Box(
                                         modifier = Modifier
                                             .background(
                                                 if (isSelected) Brush.horizontalGradient(
-                                                    listOf(Color(0xFF2563EB), Color(0xFF1D4ED8))
-                                                ) else Brush.horizontalGradient(
-                                                    listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
+                                                    listOf(SunsetOrange, SunsetOrangeEnd)
+                                                ) else Brush.linearGradient(
+                                                    listOf(SurfacePanelElevated, SurfacePanelElevated)
                                                 ),
                                                 shape = RoundedCornerShape(20.dp)
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (isSelected) SunsetOrange else SurfaceBorder,
+                                                RoundedCornerShape(20.dp)
                                             )
                                             .clickable { viewModel.onClassSelected(cls) }
                                             .padding(horizontal = 14.dp, vertical = 7.dp)
                                     ) {
                                         Text(
                                             text = cls,
-                                            color = if (isSelected) Color.White else Color(0xFF334155),
+                                            color = if (isSelected) Color.White else TextSecondary,
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                         )
@@ -163,21 +173,99 @@ fun QuizHomeSelectionScreen(
                             }
                         }
 
+                        // 1. 4 High-demand tracker cards show immediately at top
+                        val displayedSubjects = if (uiState.filteredSubjects.isNotEmpty()) uiState.filteredSubjects else uiState.subjects
+                        items(displayedSubjects) { subject ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelectSubject(subject.id, subject.name) },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .background(
+                                                SurfacePanelElevated,
+                                                CircleShape
+                                            )
+                                            .border(1.dp, SurfaceBorder, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = subject.iconSymbol, fontSize = 24.sp)
+                                    }
+
+                                    Spacer(modifier = Modifier.width(14.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = subject.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = TextPrimary
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${subject.availableQuizzes} Micro-Lessons · 25 MCQs",
+                                            fontSize = 12.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+
+                                    if (subject.attemptedQuizzes > 0) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(AmberGold.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                                .border(1.dp, AmberGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Avg ${subject.averageScore}%",
+                                                color = AmberGold,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(SunsetOrange.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                                .border(1.dp, SunsetOrange.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Start →",
+                                                color = SunsetOrange,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. Mistake Vault (0 to Master) moved to bottom
                         item {
-                            // Mistake Vault Banner Card
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(enabled = uiState.mistakeCount > 0) {
                                         onOpenMistakeVault()
                                     },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (uiState.mistakeCount > 0) Color(0xFFFEF2F2) else Color(0xFFF1F5F9)
-                                ),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    if (uiState.mistakeCount > 0) Color(0xFFFCA5A5) else Color(0xFFE2E8F0)
+                                    if (uiState.mistakeCount > 0) SunsetOrange.copy(alpha = 0.6f) else SurfaceBorder
                                 )
                             ) {
                                 Row(
@@ -189,31 +277,35 @@ fun QuizHomeSelectionScreen(
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.weight(1f)
                                     ) {
                                         Text(
                                             text = "🎯",
-                                            fontSize = 22.sp
+                                            fontSize = 24.sp
                                         )
                                         Column {
                                             Text(
-                                                text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} to Master)" else "Mistake Vault (Empty - Great job!)",
+                                                text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} to Master)" else "Mistake Vault (0 to Master)",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
-                                                color = if (uiState.mistakeCount > 0) Color(0xFF991B1B) else Color(0xFF475569)
+                                                color = if (uiState.mistakeCount > 0) SunsetOrange else TextPrimary
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = if (uiState.mistakeCount > 0) "Tap to practice your incorrect questions and master them!" else "Zero missed questions! Great job.",
                                                 fontSize = 12.sp,
-                                                color = Color(0xFF64748B)
+                                                color = TextSecondary
                                             )
                                         }
                                     }
                                     if (uiState.mistakeCount > 0) {
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFEF4444), RoundedCornerShape(12.dp))
+                                                .background(
+                                                    Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
+                                                    RoundedCornerShape(12.dp)
+                                                )
                                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                                         ) {
                                             Text(
@@ -228,17 +320,18 @@ fun QuizHomeSelectionScreen(
                             }
                         }
 
+                        // 3. Compact 'Subject-Wise Quizzes' banner (without extra space/vertical gap)
                         item {
-                            // Summary Banner
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(14.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -246,95 +339,25 @@ fun QuizHomeSelectionScreen(
                                         Text(
                                             text = "Subject-Wise Quizzes",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp,
-                                            color = Color(0xFF1E293B)
+                                            fontSize = 15.sp,
+                                            color = TextPrimary
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Each subject has 10+ chapter practice quizzes & full revision tests",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
+                                            text = "Placement interview practice & revision tests",
+                                            fontSize = 11.sp,
+                                            color = TextSecondary
                                         )
                                     }
                                     Box(
                                         modifier = Modifier
-                                            .background(BlueAccent, RoundedCornerShape(12.dp))
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                            .background(SunsetOrange, RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 10.dp, vertical = 5.dp)
                                     ) {
                                         Text(
                                             text = "${uiState.totalAttempted}/${uiState.totalQuizzes} done",
                                             color = Color.White,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        val displayedSubjects = if (uiState.filteredSubjects.isNotEmpty()) uiState.filteredSubjects else uiState.subjects
-                        items(displayedSubjects) { subject ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelectSubject(subject.id, subject.name) },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .background(
-                                                Color(android.graphics.Color.parseColor(subject.colorHex.ifEmpty { "#3B82F6" })).copy(alpha = 0.15f),
-                                                CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(text = subject.iconSymbol, fontSize = 22.sp)
-                                    }
-
-                                    Spacer(modifier = Modifier.width(14.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = subject.name,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp,
-                                            color = Color(0xFF0F172A)
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "${subject.availableQuizzes} Chapter Quizzes · ${subject.attemptedQuizzes} completed",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                    }
-
-                                    if (subject.attemptedQuizzes > 0) {
-                                        Box(
-                                            modifier = Modifier
-                                                .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                        ) {
-                                            Text(
-                                                text = "Avg ${subject.averageScore}%",
-                                                color = Color(0xFF059669),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    } else {
-                                        Text(
-                                            text = "Start →",
-                                            color = BlueAccent,
-                                            fontSize = 13.sp,
+                                            fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }

@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.subjects
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,6 +50,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -107,6 +115,7 @@ fun SubjectSelectionContent(
     onRestartSubject: ((String) -> Unit)? = null,
 ) {
     val isSearching = uiState.searchQuery.isNotBlank()
+    val isDark = isSystemInDarkTheme()
 
     Box(
         modifier = modifier
@@ -136,7 +145,7 @@ fun SubjectSelectionContent(
                     Column {
                         Text(
                             text = uiState.headerTag,
-                            color = TextMuted,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -153,7 +162,7 @@ fun SubjectSelectionContent(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { onOpenCatalog() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -162,13 +171,13 @@ fun SubjectSelectionContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -192,18 +201,25 @@ fun SubjectSelectionContent(
                                 modifier = Modifier
                                     .background(
                                         if (isSelected) Brush.horizontalGradient(
-                                            listOf(Color(0xFF2563EB), Color(0xFF1D4ED8))
+                                            listOf(SunsetOrange, SunsetOrangeEnd)
+                                        ) else if (isDark) Brush.horizontalGradient(
+                                            listOf(SurfacePanelElevated, SurfacePanel)
                                         ) else Brush.horizontalGradient(
                                             listOf(Color(0xFFF1F5F9), Color(0xFFE2E8F0))
                                         ),
                                         shape = RoundedCornerShape(20.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else Color.Transparent),
+                                        RoundedCornerShape(20.dp)
                                     )
                                     .clickable { onClassSelect(cls) }
                                     .padding(horizontal = 14.dp, vertical = 7.dp)
                             ) {
                                 Text(
                                     text = cls,
-                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    color = if (isSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF475569)),
                                     fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                 )
@@ -222,19 +238,19 @@ fun SubjectSelectionContent(
                             placeholder = {
                                 Text(
                                     text = "Search subjects, topics (e.g. Differentiation, Waves, Networks)",
-                                    color = Color(0xFF94A3B8),
+                                    color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                     fontSize = 13.sp,
                                 )
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BlueAccent,
-                                unfocusedBorderColor = Color(0xFFE2E8F0),
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
-                                focusedTextColor = Color(0xFF0F172A),
-                                unfocusedTextColor = Color(0xFF0F172A),
+                                focusedBorderColor = SunsetOrange,
+                                unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                             ),
                             singleLine = true,
                             leadingIcon = {
@@ -248,7 +264,7 @@ fun SubjectSelectionContent(
                                 if (uiState.searchQuery.isNotEmpty()) {
                                     Text(
                                         text = "✕",
-                                        color = Color(0xFF94A3B8),
+                                        color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                         modifier = Modifier.clickable { onSearchChange("") }
                                     )
                                 }
@@ -269,27 +285,34 @@ fun SubjectSelectionContent(
                             Column {
                                 Text(
                                     text = if (isSearching) "Search Results" else uiState.subtitle,
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 Text(
                                     text = if (isSearching) "${uiState.searchResults.size} topics found" else "${uiState.filteredSubjects.size} subjects available",
-                                    color = Color(0xFF94A3B8),
+                                    color = if (isDark) AmberGold else Color(0xFF94A3B8),
                                     fontSize = 11.sp,
                                 )
                             }
 
                             Button(
                                 onClick = onOpenCatalog,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF)),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isDark) SurfacePanel else Color(0xFFEFF6FF)
+                                ),
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = "➕ Add Subject",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -325,7 +348,10 @@ fun SubjectSelectionContent(
                                                 }
                                             },
                                         shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                        ),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                                     ) {
                                         Row(
@@ -335,7 +361,7 @@ fun SubjectSelectionContent(
                                             Box(
                                                 modifier = Modifier
                                                     .size(36.dp)
-                                                    .background(item.color.copy(alpha = 0.12f), CircleShape),
+                                                    .background(if (isDark) SurfacePanel else item.color.copy(alpha = 0.12f), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(text = item.iconSymbol, fontSize = 16.sp)
@@ -348,17 +374,17 @@ fun SubjectSelectionContent(
                                                     text = item.chapterTitle ?: item.subjectName,
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFF0F172A)
+                                                    color = if (isDark) TextPrimary else Color(0xFF0F172A)
                                                 )
                                                 Text(
                                                     text = "${item.subjectName} · ${item.snippet}",
                                                     fontSize = 11.sp,
-                                                    color = Color(0xFF64748B),
+                                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                     maxLines = 1
                                                 )
                                             }
 
-                                            Text(text = "→", fontSize = 16.sp, color = BlueAccent)
+                                            Text(text = "→", fontSize = 16.sp, color = SunsetOrange)
                                         }
                                     }
                                 }
@@ -370,7 +396,7 @@ fun SubjectSelectionContent(
                                     text = "Matched Subjects",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF64748B)
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B)
                                 )
 
                                 uiState.filteredSubjects.forEach { subject ->
@@ -379,7 +405,10 @@ fun SubjectSelectionContent(
                                             .fillMaxWidth()
                                             .clickable { onSubjectClick(subject.id) },
                                         shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                        ),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(12.dp),
@@ -392,15 +421,15 @@ fun SubjectSelectionContent(
                                                     text = subject.title,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 14.sp,
-                                                    color = Color(0xFF0F172A)
+                                                    color = if (isDark) TextPrimary else Color(0xFF0F172A)
                                                 )
                                                 Text(
                                                     text = "${subject.category} • ${subject.chapters.size} chapters",
                                                     fontSize = 11.sp,
-                                                    color = Color(0xFF64748B)
+                                                    color = if (isDark) TextSecondary else Color(0xFF64748B)
                                                 )
                                             }
-                                            Text(text = "Open →", color = subject.progressColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "Open →", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -418,13 +447,13 @@ fun SubjectSelectionContent(
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
                                             text = "No topics matched \"${uiState.searchQuery}\"",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 13.sp
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = "Try searching in the '+ Add Subject' catalog!",
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.clickable { onOpenCatalog() }
@@ -453,7 +482,10 @@ fun SubjectSelectionContent(
                                             .fillMaxWidth()
                                             .clickable { onSubjectClick(subject.id) },
                                         shape = RoundedCornerShape(18.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                        ),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                     ) {
                                         Column(modifier = Modifier.padding(14.dp)) {
                                             Row(
@@ -464,20 +496,23 @@ fun SubjectSelectionContent(
                                                 Box(
                                                     modifier = Modifier
                                                         .size(38.dp)
-                                                        .background(subject.progressColor.copy(alpha = 0.12f), CircleShape),
+                                                        .background(
+                                                            if (isDark) SurfacePanel else subject.progressColor.copy(alpha = 0.12f),
+                                                            CircleShape
+                                                        ),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     Text(
                                                         text = subject.iconSymbol,
                                                         fontSize = 18.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = subject.progressColor,
+                                                        color = SunsetOrange,
                                                     )
                                                 }
 
                                                 Text(
                                                     text = subject.category,
-                                                    color = Color(0xFF94A3B8),
+                                                    color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Medium
                                                 )
@@ -487,7 +522,7 @@ fun SubjectSelectionContent(
 
                                             Text(
                                                 text = subject.title,
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -516,14 +551,14 @@ fun SubjectSelectionContent(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     modifier = Modifier
                                                         .background(
-                                                            color = BlueAccent.copy(alpha = 0.12f),
+                                                            color = SunsetOrange.copy(alpha = 0.15f),
                                                             shape = RoundedCornerShape(6.dp)
                                                         )
                                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                                 ) {
                                                     Text(
                                                         text = "★ Interested",
-                                                        color = BlueAccent,
+                                                        color = SunsetOrange,
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold
                                                     )
@@ -539,12 +574,12 @@ fun SubjectSelectionContent(
                                             ) {
                                                 Text(
                                                     text = "${subject.chapters.size} Chapters",
-                                                    color = Color(0xFF94A3B8),
+                                                    color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                     fontSize = 11.sp,
                                                 )
                                                 Text(
                                                     text = "${subject.progressPercentage}%",
-                                                    color = subject.progressColor,
+                                                    color = SunsetOrange,
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold,
                                                 )
@@ -555,6 +590,11 @@ fun SubjectSelectionContent(
                                             LinearProgressIndicator(
                                                 progress = { subject.progressPercentage / 100f },
                                                 modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(6.dp),
+                                                color = SunsetOrange,
+                                                trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                            )
                                                     .fillMaxWidth()
                                                     .height(5.dp),
                                                 color = subject.progressColor,

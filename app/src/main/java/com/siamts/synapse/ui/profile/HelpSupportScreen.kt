@@ -1,7 +1,9 @@
 package com.siamts.synapse.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,11 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -41,6 +48,8 @@ fun HelpSupportScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -73,7 +82,7 @@ fun HelpSupportScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Help & Support", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -85,7 +94,7 @@ fun HelpSupportScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -100,13 +109,18 @@ fun HelpSupportScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                                    HelpItemRow("FAQs", "Find answers to common questions", "❓")
-                                    HelpItemRow("Contact Support", "Get help from our team", "💬")
-                                    HelpItemRow("Report a Problem", "Let us know if something isn't working", "⚠️")
-                                    HelpItemRow("Feature Request", "Suggest a new feature", "💡")
-                                    HelpItemRow("App Guide", "Learn how to use Synapse AI", "📖")
+                                    HelpItemRow("FAQs", "Find answers to common questions", "❓", isDark)
+                                    HelpItemRow("Contact Support", "Get help from our team", "💬", isDark)
+                                    HelpItemRow("Report a Problem", "Let us know if something isn't working", "⚠️", isDark)
+                                    HelpItemRow("Feature Request", "Suggest a new feature", "💡", isDark)
+                                    HelpItemRow("App Guide", "Learn how to use Synapse AI", "📖", isDark)
                                 }
                             }
                         }
@@ -122,6 +136,7 @@ private fun HelpItemRow(
     title: String,
     subtitle: String,
     icon: String,
+    isDark: Boolean = false,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable { }.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -132,11 +147,11 @@ private fun HelpItemRow(
             Text(text = icon, fontSize = 16.sp)
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(text = title, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(text = subtitle, color = Color(0xFF64748B), fontSize = 11.sp)
+                Text(text = title, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = subtitle, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
             }
         }
-        Text(text = "›", color = Color(0xFF94A3B8), fontSize = 18.sp)
+        Text(text = "›", color = if (isDark) SunsetOrange else Color(0xFF94A3B8), fontSize = 18.sp)
     }
 }
 

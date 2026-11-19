@@ -222,15 +222,15 @@ fun DashboardContent(
                         Spacer(modifier = Modifier.width(10.dp))
 
                         // Top Right Corner Profile Icon (Photo or K Avatar)
-                        val formattedPhoto = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri)
-                        if (!formattedPhoto.isNullOrBlank()) {
+                        val photoModel = RetrofitClient.resolveImageModel(uiState.profilePhotoUri)
+                        if (photoModel != null) {
                             AsyncImage(
-                                model = formattedPhoto,
+                                model = photoModel,
                                 contentDescription = "Profile Photo",
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .border(1.5.dp, Color(0xFFBAE6FD), CircleShape)
+                                    .border(1.5.dp, SunsetOrange, CircleShape)
                                     .clickable { onProfileClick?.invoke() },
                                 contentScale = ContentScale.Crop
                             )
@@ -238,13 +238,14 @@ fun DashboardContent(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(Color(0xFFE0F2FE), CircleShape)
+                                    .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
+                                    .border(1.dp, SurfaceBorder, CircleShape)
                                     .clickable { onProfileClick?.invoke() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = uiState.userName.trim().firstOrNull()?.uppercase() ?: "S",
-                                    color = Color(0xFF0284C7),
+                                    text = uiState.userName.trim().firstOrNull()?.uppercase() ?: "K",
+                                    color = SunsetOrange,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -330,12 +331,12 @@ fun DashboardContent(
                         }
                     }
 
-                    // 2. Stats Grid (3 White Cards)
+                    // 2. Stats Grid (3 Design 4 Cards)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Card 1
+                        // Card 1: Topics done
                         DashedBorderBox(
                             modifier = Modifier.weight(1f),
                             contentPadding = 2.dp
@@ -343,25 +344,26 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = "${uiState.topicsDone}",
-                                        color = Color(0xFF0F172A),
+                                        color = TextPrimary,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "Topics done",
-                                        color = Color(0xFF64748B),
+                                        color = TextSecondary,
                                         fontSize = 11.sp,
                                     )
                                 }
                             }
                         }
 
-                        // Card 2
+                        // Card 2: Quiz score
                         DashedBorderBox(
                             modifier = Modifier.weight(1f),
                             contentPadding = 2.dp
@@ -369,25 +371,26 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = "${uiState.quizScore}%",
-                                        color = Color(0xFF0F172A),
+                                        color = AmberGold,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "Quiz score",
-                                        color = Color(0xFF64748B),
+                                        color = TextSecondary,
                                         fontSize = 11.sp,
                                     )
                                 }
                             }
                         }
 
-                        // Card 3
+                        // Card 3: Study streak
                         DashedBorderBox(
                             modifier = Modifier.weight(1f),
                             contentPadding = 2.dp
@@ -395,18 +398,19 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = "${uiState.studyStreakDays} days",
-                                        color = Color(0xFF0F172A),
+                                        color = SunsetOrange,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "Study streak",
-                                        color = Color(0xFF64748B),
+                                        color = TextSecondary,
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -422,7 +426,8 @@ fun DashboardContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -430,28 +435,30 @@ fun DashboardContent(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "Today's Learning Plan",
-                                        color = Color(0xFF0F172A),
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column {
                                         Text(
-                                            text = uiState.todayPlanTotalTime,
-                                            color = Color(0xFF64748B),
-                                            fontSize = 12.sp,
+                                            text = "Today's Task",
+                                            color = TextPrimary,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Organize daily tasks & placement goals",
+                                            color = TextSecondary,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                                                .border(1.dp, SunsetOrange.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+                                                .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
                                                 .clickable { showAddTaskDialog = true }
-                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                .padding(horizontal = 10.dp, vertical = 5.dp)
                                         ) {
                                             Text(
-                                                text = "+ Add",
-                                                color = BlueAccent,
+                                                text = "+ Add a task",
+                                                color = SunsetOrange,
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -471,27 +478,28 @@ fun DashboardContent(
                                         Text(text = "📝", fontSize = 28.sp)
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
-                                            text = "No learning tasks planned for today.",
-                                            color = Color(0xFF64748B),
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium
+                                            text = "No tasks added yet",
+                                            color = TextPrimary,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Create custom tasks to track your daily study goals.",
-                                            color = Color(0xFF94A3B8),
+                                            text = "Tap '+ Add a task' to plan your 2-min micro-lessons for today!",
+                                            color = TextSecondary,
                                             fontSize = 11.sp
                                         )
                                         Spacer(modifier = Modifier.height(12.dp))
-                                        Button(
-                                            onClick = { showAddTaskDialog = true },
-                                            colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.height(38.dp)
+                                        Box(
+                                            modifier = Modifier
+                                                .border(1.dp, SunsetOrange.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                                                .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                                                .clickable { showAddTaskDialog = true }
+                                                .padding(horizontal = 14.dp, vertical = 8.dp)
                                         ) {
                                             Text(
                                                 text = "+ Add Today's Plan",
-                                                color = Color.White,
+                                                color = SunsetOrange,
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -504,9 +512,10 @@ fun DashboardContent(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .background(
-                                                        color = if (item.isCompleted) Color(0xFFF1F5F9) else Color(0xFFF8FAFC),
+                                                        color = SurfacePanelElevated,
                                                         shape = RoundedCornerShape(12.dp)
                                                     )
+                                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
                                                     .padding(10.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -515,12 +524,12 @@ fun DashboardContent(
                                                     modifier = Modifier
                                                         .size(24.dp)
                                                         .background(
-                                                            color = if (item.isCompleted) Color(0xFF10B981) else Color.White,
+                                                            color = if (item.isCompleted) SunsetOrange else Color.Transparent,
                                                             shape = CircleShape
                                                         )
                                                         .border(
                                                             width = 1.5.dp,
-                                                            color = if (item.isCompleted) Color(0xFF10B981) else Color(0xFFCBD5E1),
+                                                            color = if (item.isCompleted) SunsetOrange else Color(0xFF6B7280),
                                                             shape = CircleShape
                                                         )
                                                         .clickable { onToggleTask(item.id, !item.isCompleted) },
@@ -540,7 +549,7 @@ fun DashboardContent(
                                                 ) {
                                                     Text(
                                                         text = item.title,
-                                                        color = if (item.isCompleted) Color(0xFF94A3B8) else Color(0xFF0F172A),
+                                                        color = if (item.isCompleted) Color(0xFF6B7280) else TextPrimary,
                                                         fontSize = 13.sp,
                                                         fontWeight = FontWeight.SemiBold,
                                                         textDecoration = if (item.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
@@ -548,7 +557,7 @@ fun DashboardContent(
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         text = "${item.category} • ${item.duration}",
-                                                        color = Color(0xFF64748B),
+                                                        color = AmberGold,
                                                         fontSize = 11.sp
                                                     )
                                                 }
@@ -567,7 +576,6 @@ fun DashboardContent(
                             }
                         }
                     }
-
                     // 5. AI Tutor Banner Card (Clean Right-Aligned Pill with Zero Overlap)
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
@@ -576,9 +584,10 @@ fun DashboardContent(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onAskAiClick() },
+                                .clickable { onAskAiClick?.invoke() },
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -591,18 +600,18 @@ fun DashboardContent(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(text = "✨", fontSize = 22.sp)
+                                    Text(text = "🤖", fontSize = 24.sp)
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "A question on your mind?",
-                                            color = BlueAccent,
+                                            color = TextPrimary,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = "Your AI Tutor is one tap away.",
-                                            color = Color(0xFF64748B),
+                                            color = TextSecondary,
                                             fontSize = 12.sp,
                                         )
                                     }
@@ -613,15 +622,14 @@ fun DashboardContent(
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            brush = Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
+                                            brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .clickable { onAskAiClick() }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        .clickable { onAskAiClick?.invoke() }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "🤖 ", fontSize = 13.sp)
                                         Text(
                                             text = "Chat with SYNAPSE",
                                             color = Color.White,
@@ -640,8 +648,9 @@ fun DashboardContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(vertical = 8.dp, horizontal = 8.dp),
+                    .background(DarkBackgroundBottom)
+                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -664,16 +673,40 @@ fun DashboardContent(
                         Text(
                             text = icon,
                             fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8)
                         )
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
+            }
+        }
+
+        // Floating Sunset Amber Chat Integration Button (never overlaps left column text)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 68.dp, end = 16.dp)
+                .background(
+                    brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
+                    shape = RoundedCornerShape(24.dp)
+                )
+                .border(1.dp, AmberGold.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                .clickable { onAskAiClick?.invoke() }
+                .padding(horizontal = 14.dp, vertical = 9.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "🤖 ", fontSize = 14.sp)
+                Text(
+                    text = "Chat with SYNAPSE",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

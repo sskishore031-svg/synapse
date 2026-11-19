@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.subjects
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,11 +38,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -83,6 +92,8 @@ fun SubjectDetailContent(
     onRoadmapClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -121,7 +132,7 @@ fun SubjectDetailContent(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = uiState.category.uppercase(),
-                            color = TextMuted,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -137,7 +148,7 @@ fun SubjectDetailContent(
                     Box(
                         modifier = Modifier
                             .size(46.dp)
-                            .background(uiState.color.copy(alpha = 0.2f), CircleShape),
+                            .background(if (isDark) SurfacePanel else uiState.color.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = uiState.iconSymbol, fontSize = 22.sp)
@@ -148,20 +159,20 @@ fun SubjectDetailContent(
 
                 Text(
                     text = uiState.overview,
-                    color = Color(0xFFCBD5E1),
+                    color = if (isDark) TextSecondary else Color(0xFFCBD5E1),
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(start = 4.dp, end = 4.dp)
                 )
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -185,13 +196,13 @@ fun SubjectDetailContent(
                             ) {
                                 Text(
                                     text = "Curriculum Progress",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "${uiState.completedChapters} of ${uiState.totalChapters} completed",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) AmberGold else Color(0xFF64748B),
                                     fontSize = 12.sp
                                 )
                             }
@@ -207,8 +218,8 @@ fun SubjectDetailContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp),
-                                color = uiState.color,
-                                trackColor = Color(0xFFE2E8F0)
+                                color = SunsetOrange,
+                                trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0)
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -220,14 +231,16 @@ fun SubjectDetailContent(
                             ) {
                                 Button(
                                     onClick = onNotesClick,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF)),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isDark) SurfacePanel else Color(0xFFEFF6FF)
+                                    ),
                                     shape = RoundedCornerShape(10.dp),
                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(
                                         text = "📝 Notes",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -235,14 +248,16 @@ fun SubjectDetailContent(
 
                                 Button(
                                     onClick = onRoadmapClick,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isDark) SurfacePanel else Color(0xFFF1F5F9)
+                                    ),
                                     shape = RoundedCornerShape(10.dp),
                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(
                                         text = "🗺 Roadmap",
-                                        color = Color(0xFF334155),
+                                        color = if (isDark) TextPrimary else Color(0xFF334155),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -251,7 +266,7 @@ fun SubjectDetailContent(
                                 if (uiState.chapters.isNotEmpty()) {
                                     Button(
                                         onClick = { onQuizClick(uiState.chapters.first().chapterId) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = uiState.color),
+                                        colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                                         shape = RoundedCornerShape(10.dp),
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                         modifier = Modifier.weight(1f)
@@ -276,13 +291,13 @@ fun SubjectDetailContent(
                     ) {
                         Text(
                             text = "Chapters & Modules",
-                            color = Color(0xFF0F172A),
+                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "${uiState.chapters.size} topics available",
-                            color = Color(0xFF94A3B8),
+                            color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                             fontSize = 12.sp
                         )
                     }
@@ -294,7 +309,10 @@ fun SubjectDetailContent(
                                 .fillMaxWidth()
                                 .clickable { onChapterClick(chapter.chapterId) },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isDark) SurfacePanelElevated else Color.White
+                            ),
+                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
@@ -309,12 +327,15 @@ fun SubjectDetailContent(
                                     Box(
                                         modifier = Modifier
                                             .size(34.dp)
-                                            .background(uiState.color.copy(alpha = 0.12f), CircleShape),
+                                            .background(
+                                                if (isDark) SurfacePanel else uiState.color.copy(alpha = 0.12f),
+                                                CircleShape
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "%02d".format(chapter.order),
-                                            color = uiState.color,
+                                            color = SunsetOrange,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         )
@@ -325,7 +346,7 @@ fun SubjectDetailContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = chapter.title,
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -335,17 +356,17 @@ fun SubjectDetailContent(
                                         ) {
                                             Text(
                                                 text = "⏱ ${chapter.estimatedMinutes} min",
-                                                color = Color(0xFF64748B),
+                                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                 fontSize = 11.sp
                                             )
                                             Text(
                                                 text = "•",
-                                                color = Color(0xFFCBD5E1),
+                                                color = if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
                                                 fontSize = 11.sp
                                             )
                                             Text(
                                                 text = "❓ ${chapter.questionCount} MCQs",
-                                                color = Color(0xFF64748B),
+                                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                 fontSize = 11.sp
                                             )
                                         }
@@ -356,7 +377,7 @@ fun SubjectDetailContent(
 
                                 Text(
                                     text = chapter.summary,
-                                    color = Color(0xFF475569),
+                                    color = if (isDark) TextSecondary else Color(0xFF475569),
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp
                                 )
@@ -370,13 +391,16 @@ fun SubjectDetailContent(
                                 ) {
                                     Button(
                                         onClick = { onQuizClick(chapter.chapterId) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF8FAFC)),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isDark) SurfacePanel else Color(0xFFF8FAFC)
+                                        ),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                                     ) {
                                         Text(
                                             text = "Quiz",
-                                            color = uiState.color,
+                                            color = SunsetOrange,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
@@ -386,7 +410,7 @@ fun SubjectDetailContent(
 
                                     Button(
                                         onClick = { onChapterClick(chapter.chapterId) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = uiState.color),
+                                        colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                                     ) {

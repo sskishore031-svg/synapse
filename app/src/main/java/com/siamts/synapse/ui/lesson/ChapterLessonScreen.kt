@@ -60,6 +60,13 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
+import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -201,12 +208,12 @@ fun ChapterLessonScreen(
                         Box(
                             modifier = Modifier
                                 .background(
-                                    if (uiState.isCompleted) Color(0xFF059669).copy(alpha = 0.2f) else Color(0xFF1E293B),
+                                    if (uiState.isCompleted) Color(0xFF059669).copy(alpha = 0.2f) else SurfacePanelElevated,
                                     RoundedCornerShape(12.dp)
                                 )
                                 .border(
                                     1.dp,
-                                    if (uiState.isCompleted) Color(0xFF059669) else Color(0xFF334155),
+                                    if (uiState.isCompleted) Color(0xFF059669) else SurfaceBorder,
                                     RoundedCornerShape(12.dp)
                                 )
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -214,7 +221,7 @@ fun ChapterLessonScreen(
                         ) {
                             Text(
                                 text = if (uiState.isCompleted) "✓ Completed" else "${uiState.durationMinutes} min",
-                                color = if (uiState.isCompleted) Color(0xFF34D399) else TextSecondary,
+                                color = if (uiState.isCompleted) Color(0xFF34D399) else SunsetOrange,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
@@ -224,26 +231,24 @@ fun ChapterLessonScreen(
                     }
                 }
 
-                // Light Content Card
+                // Content Container (Design 4 Seamless Dark Theme)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .background(
-                            color = Color(0xFFF8FAFC),
-                            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                        )
+                        .background(color = Color.Transparent)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         // High-Utility Mode Toggle: Full Concept Guide | Quick Cheat Sheet
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                                .background(SurfacePanelElevated, RoundedCornerShape(14.dp))
+                                .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
                                 .padding(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -252,7 +257,7 @@ fun ChapterLessonScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isFull) BlueAccent else Color.Transparent,
+                                        if (isFull) Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { viewModel.setCheatSheetMode(false) }
@@ -261,7 +266,7 @@ fun ChapterLessonScreen(
                             ) {
                                 Text(
                                     text = "Full Concept Guide",
-                                    color = if (isFull) Color.White else Color(0xFF64748B),
+                                    color = if (isFull) Color.White else TextSecondary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
@@ -272,7 +277,7 @@ fun ChapterLessonScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isCheat) Brush.horizontalGradient(listOf(Color(0xFFD97706), Color(0xFFB45309))) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                                        if (isCheat) Brush.horizontalGradient(listOf(AmberGold, AmberGoldEnd)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { viewModel.setCheatSheetMode(true) }
@@ -281,7 +286,7 @@ fun ChapterLessonScreen(
                             ) {
                                 Text(
                                     text = "⚡ Quick Cheat Sheet",
-                                    color = if (isCheat) Color.White else Color(0xFF64748B),
+                                    color = if (isCheat) Color.White else TextSecondary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
@@ -291,7 +296,7 @@ fun ChapterLessonScreen(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         if (!uiState.isCheatSheetMode) {
-                            // Spacious Full-Width Educational Reader (4 Structured Sections)
+                            // Spacious Full-Width Educational Reader (4 Structured Sections, 16.sp & 24.sp line-height)
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
@@ -303,21 +308,21 @@ fun ChapterLessonScreen(
                                 SectionHeader(title = "1. Concept Overview & Real-Life Analogy", icon = "💡")
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                    border = BorderStroke(1.dp, SurfaceBorder)
                                 ) {
                                     Column(modifier = Modifier.padding(18.dp)) {
                                         Text(
                                             text = uiState.chapterTitle.ifEmpty { "Core Concept" },
-                                            color = Color(0xFF0F172A),
+                                            color = TextPrimary,
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Spacer(modifier = Modifier.height(10.dp))
                                         Text(
                                             text = uiState.part1Content,
-                                            color = Color(0xFF334155),
+                                            color = Color(0xFFF8FAFC),
                                             fontSize = 16.sp,
                                             lineHeight = 24.sp
                                         )
@@ -328,9 +333,9 @@ fun ChapterLessonScreen(
                                 SectionHeader(title = "2. Core Syntax / Formula / Code Example", icon = "⚡")
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF08090C)),
+                                    border = BorderStroke(1.dp, SurfaceBorder)
                                 ) {
                                     Column(modifier = Modifier.padding(18.dp)) {
                                         Row(
@@ -340,14 +345,14 @@ fun ChapterLessonScreen(
                                         ) {
                                             Text(
                                                 text = "CODE / FORMULA SPECIFICATION",
-                                                color = CyanAccent,
+                                                color = SunsetOrange,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 letterSpacing = 1.sp
                                             )
                                             Text(
                                                 text = "SYNTAX",
-                                                color = Color(0xFF64748B),
+                                                color = AmberGold,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -360,7 +365,7 @@ fun ChapterLessonScreen(
                                         }
                                         Text(
                                             text = codeOrFormulaText,
-                                            color = Color(0xFFE2E8F0),
+                                            color = Color(0xFFF8FAFC),
                                             fontSize = 14.sp,
                                             lineHeight = 22.sp,
                                             fontFamily = FontFamily.Monospace
@@ -372,9 +377,9 @@ fun ChapterLessonScreen(
                                 SectionHeader(title = "3. Key Takeaways & Placement Interview Tips", icon = "🎯")
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
-                                    border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                    border = BorderStroke(1.dp, AmberGold.copy(alpha = 0.4f))
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(18.dp),
@@ -385,7 +390,7 @@ fun ChapterLessonScreen(
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = "High-Yield Placement Principles",
-                                                color = Color(0xFF1E3A8A),
+                                                color = AmberGold,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -393,14 +398,14 @@ fun ChapterLessonScreen(
                                         if (uiState.syllabus.isNotEmpty()) {
                                             uiState.syllabus.forEach { point ->
                                                 Row(verticalAlignment = Alignment.Top) {
-                                                    Text(text = "• ", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                                    Text(text = point, color = Color(0xFF1E293B), fontSize = 14.sp, lineHeight = 20.sp)
+                                                    Text(text = "• ", color = SunsetOrange, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                    Text(text = point, color = TextPrimary, fontSize = 14.sp, lineHeight = 20.sp)
                                                 }
                                             }
                                         } else {
                                             Text(
                                                 text = "Master time & space complexity, edge-case validation, and clean idioms for technical interview coding rounds.",
-                                                color = Color(0xFF1E293B),
+                                                color = TextSecondary,
                                                 fontSize = 14.sp,
                                                 lineHeight = 22.sp
                                             )
@@ -422,9 +427,11 @@ fun ChapterLessonScreen(
                             )
                         }
 
-                        // Bottom Actions Bar
+                        // Bottom Actions Bar (with 12.dp margin and natural flat orange color gradient buttons)
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Row 1: Save to Smart Notes + Listen (TTS)
@@ -450,8 +457,8 @@ fun ChapterLessonScreen(
                                             .background(
                                                 Brush.horizontalGradient(
                                                     listOf(
-                                                        Color(0xFF2563EB),
-                                                        Color(0xFF7C3AED)
+                                                        SunsetOrange,
+                                                        SunsetOrangeEnd
                                                     )
                                                 ),
                                                 RoundedCornerShape(12.dp)
@@ -494,8 +501,9 @@ fun ChapterLessonScreen(
                                         .weight(1f)
                                         .height(44.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isTtsSpeaking) Color(0xFFEF4444) else Color(0xFF0F172A)
+                                        containerColor = if (isTtsSpeaking) Color(0xFFEF4444) else SurfacePanelElevated
                                     ),
+                                    border = BorderStroke(1.dp, SurfaceBorder),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(
@@ -520,7 +528,7 @@ fun ChapterLessonScreen(
                                         .weight(1f)
                                         .height(44.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (uiState.isCompleted) Color(0xFF059669) else BlueAccent
+                                        containerColor = if (uiState.isCompleted) Color(0xFF059669) else SunsetOrange
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                     enabled = !uiState.isMarkingComplete
@@ -542,15 +550,31 @@ fun ChapterLessonScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(44.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
                                 ) {
-                                    Text(
-                                        text = "Take 5-Min Quiz ✍️",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        AmberGold,
+                                                        AmberGoldEnd
+                                                    )
+                                                ),
+                                                RoundedCornerShape(12.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Take 5-Min Quiz ✍️",
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
                                 }
                             }
 
@@ -974,8 +998,8 @@ fun ChapterCheatSheetView(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7)),
-            border = BorderStroke(1.dp, Color(0xFFFDE68A))
+            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+            border = BorderStroke(1.dp, AmberGold.copy(alpha = 0.5f))
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -985,59 +1009,59 @@ fun ChapterCheatSheetView(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "5-Minute Board Exam Cheat Sheet",
+                        text = "5-Minute Placement Cheat Sheet",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color(0xFF92400E)
+                        color = AmberGold
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "High-speed last-minute revision · Key formulas, definitions & 2M/5M questions",
+                        text = "High-speed last-minute revision · Key code patterns, syntax & interview questions",
                         fontSize = 11.sp,
-                        color = Color(0xFFB45309)
+                        color = TextSecondary
                     )
                 }
             }
         }
 
-        // Section 1: Must-Know Formulas / Equations / Key Historical Dates
+        // Section 1: Must-Know Formulas / Equations / Code Patterns
         val formulas = uiState.coreFormulas.ifEmpty {
             listOf(
-                "Fundamental governing equation for ${uiState.chapterTitle}",
-                "Standard boundary and equilibrium conditions",
-                "Conservation principles and SI unit relationships"
+                "Core syntax pattern for ${uiState.chapterTitle}",
+                "Time & space complexity invariants",
+                "Edge-case validation and error bounds"
             )
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "⚡", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Must-Know Formulas & Key Equations",
+                        text = "Must-Know Syntax & Key Patterns",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = Color(0xFF0F172A)
+                        color = TextPrimary
                     )
                 }
                 formulas.forEach { f ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC), RoundedCornerShape(10.dp))
-                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
+                            .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                            .border(1.dp, SurfaceBorder, RoundedCornerShape(10.dp))
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = f,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF1E293B)
+                            color = Color(0xFFF8FAFC)
                         )
                     }
                 }
@@ -1047,26 +1071,26 @@ fun ChapterCheatSheetView(
         // Section 2: One-Line Textbook Definitions
         val definitions = uiState.syllabus.ifEmpty {
             listOf(
-                "${uiState.chapterTitle} Definition: Core topic in the Samacheer Kalvi syllabus.",
-                "Key Principle: Governs state transformations and analytical solutions.",
-                "Standard Unit: Expressed in canonical SI units according to board guidelines."
+                "${uiState.chapterTitle}: Fundamental concept in career tracks.",
+                "Core Principle: Essential for technical coding rounds and data operations.",
+                "Production Standard: Modern clean architecture and optimal complexity."
             )
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "📖", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "One-Line Textbook Definitions",
+                        text = "One-Line Core Definitions",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = Color(0xFF0F172A)
+                        color = TextPrimary
                     )
                 }
                 definitions.forEach { d ->
@@ -1074,11 +1098,11 @@ fun ChapterCheatSheetView(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(text = "•", color = BlueAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "•", color = SunsetOrange, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(
                             text = d,
                             fontSize = 13.sp,
-                            color = Color(0xFF334155),
+                            color = Color(0xFFF8FAFC),
                             lineHeight = 18.sp
                         )
                     }
@@ -1090,79 +1114,81 @@ fun ChapterCheatSheetView(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "💡", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Memory Tricks & Mnemonics",
+                        text = "Placement Tips & Trivia",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = Color(0xFF0F172A)
+                        color = AmberGold
                     )
                 }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                        .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                        .border(1.dp, SurfaceBorder, RoundedCornerShape(10.dp))
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = "Rule of Thumb: Always verify boundary conditions and check that physical units balance on both sides of every equation before proceeding with calculations.",
+                        text = "Interview Pro-Tip: State the brute force approach first, then explain the optimal time/space tradeoff before writing code.",
                         fontSize = 12.sp,
-                        color = Color(0xFF1E40AF),
+                        color = TextPrimary,
                         lineHeight = 18.sp
                     )
                 }
             }
         }
 
-        // Section 4: Top Expected Public Exam Questions (2M & 5M)
+        // Section 4: Top Expected Placement Interview Questions
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "🎯", fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Top Expected Public Exam Questions",
+                        text = "Top Expected Placement Interview Questions",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = Color(0xFF0F172A)
+                        color = SunsetOrange
                     )
                 }
-                // 2-Mark Question
+                // High-Yield Question
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                        .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                        .border(1.dp, SurfaceBorder, RoundedCornerShape(10.dp))
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = "2-Mark Question:",
+                        text = "Core Technical Question:",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0284C7)
+                        color = SunsetOrange
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Define the core principle of ${uiState.chapterTitle} and state its SI unit / mathematical statement.",
+                        text = "Explain the fundamental mechanism of ${uiState.chapterTitle} and how it handles edge cases in production.",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF0F172A)
+                        color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Write precise definition · State governing formula · Include correct SI units for 2 full marks.",
+                        text = "• Highlight time & space complexity · Mention edge case validations for full placement score.",
                         fontSize = 11.sp,
-                        color = Color(0xFF64748B)
+                        color = TextSecondary
                     )
                 }
 

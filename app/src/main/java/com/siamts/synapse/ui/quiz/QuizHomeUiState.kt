@@ -8,7 +8,7 @@ data class QuizHomeUiState(
     val subjects: List<QuizSubjectItemDto> = emptyList(),
     val filteredSubjects: List<QuizSubjectItemDto> = emptyList(),
     val selectedClass: String = "All Tracks",
-    val availableClasses: List<String> = listOf("All Tracks", "Python", "SQL", "AI & Tech", "Aptitude"),
+    val availableClasses: List<String> = listOf("All Tracks", "Python & Coding", "SQL & Database", "AI & Tech", "Aptitude & Prep"),
     val totalQuizzes: Int = 30,
     val totalAttempted: Int = 0,
     val mistakeCount: Int = 0

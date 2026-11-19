@@ -2,6 +2,8 @@ package com.siamts.synapse.ui.results
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,10 +46,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siamts.synapse.data.local.BaseCurriculumData
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.PurpleGlow
@@ -73,6 +81,7 @@ fun QuizResultScreen(
     subjectTitle: String? = null,
     chapterTitle: String? = null,
 ) {
+    val isDark = isSystemInDarkTheme()
     val totalQuestions = total.coerceAtLeast(1)
     val scorePercentage = ((score.toFloat() / totalQuestions.toFloat()) * 100f).toInt().coerceIn(0, 100)
 
@@ -84,9 +93,9 @@ fun QuizResultScreen(
         ?: "Chapter Quiz"
 
     val (badgeText, badgeColor, badgeBg) = when {
-        scorePercentage >= 80 -> Triple("Mastered 🌟", Color(0xFF059669), Color(0xFFD1FAE5))
-        scorePercentage >= 50 -> Triple("Good Effort 👍", Color(0xFFD97706), Color(0xFFFEF3C7))
-        else -> Triple("Needs Revision 📚", Color(0xFFE11D48), Color(0xFFFFE4E6))
+        scorePercentage >= 80 -> Triple("Mastered 🌟", if (isDark) AmberGold else Color(0xFF059669), if (isDark) SurfacePanel else Color(0xFFD1FAE5))
+        scorePercentage >= 50 -> Triple("Good Effort 👍", if (isDark) SunsetOrange else Color(0xFFD97706), if (isDark) SurfacePanel else Color(0xFFFEF3C7))
+        else -> Triple("Needs Revision 📚", Color(0xFFE11D48), if (isDark) SurfacePanel else Color(0xFFFFE4E6))
     }
 
     var animationTarget by remember { mutableFloatStateOf(0f) }
@@ -137,7 +146,7 @@ fun QuizResultScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "${resolvedSubjectName.uppercase()} · CHAPTER $chapterId",
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -155,13 +164,13 @@ fun QuizResultScreen(
                 }
             }
 
-            // 2. Light Sheet Container
+            // 2. Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -190,8 +199,8 @@ fun QuizResultScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(64.dp)
-                                        .background(Color(0xFFEFF6FF), CircleShape)
-                                        .border(2.dp, Color(0xFFBFDBFE), CircleShape),
+                                        .background(if (isDark) SurfacePanel else Color(0xFFEFF6FF), CircleShape)
+                                        .border(2.dp, if (isDark) SurfaceBorder else Color(0xFFBFDBFE), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(text = if (scorePercentage >= 60) "🏆" else "🎯", fontSize = 30.sp)
@@ -199,14 +208,14 @@ fun QuizResultScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = if (scorePercentage >= 80) "Outstanding Performance!" else if (scorePercentage >= 50) "Well Done!" else "Keep Practicing!",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Quiz completed for $resolvedChapterName",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 13.sp
                                 )
                             }
@@ -230,13 +239,13 @@ fun QuizResultScreen(
                                         CircularProgressIndicator(
                                             progress = { animatedProgress },
                                             modifier = Modifier.fillMaxSize(),
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             strokeWidth = 8.dp,
-                                            trackColor = Color(0xFFE2E8F0),
+                                            trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                         )
                                         Text(
                                             text = "$scorePercentage%",
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontSize = 22.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -247,14 +256,14 @@ fun QuizResultScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "You Scored: $score / $totalQuestions",
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = if (scorePercentage >= 60) "Passing benchmark achieved" else "Passing threshold is 60%",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 12.sp
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -263,6 +272,7 @@ fun QuizResultScreen(
                                         Box(
                                             modifier = Modifier
                                                 .background(badgeBg, RoundedCornerShape(12.dp))
+                                                .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(12.dp))
                                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                                         ) {
                                             Text(
@@ -284,7 +294,7 @@ fun QuizResultScreen(
                                 ) {
                                     Text(
                                         text = "✓ $score correct",
-                                        color = Color(0xFF059669),
+                                        color = if (isDark) AmberGold else Color(0xFF059669),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -296,7 +306,7 @@ fun QuizResultScreen(
                                     )
                                     Text(
                                         text = "📝 $totalQuestions questions",
-                                        color = Color(0xFF64748B),
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -316,35 +326,44 @@ fun QuizResultScreen(
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(10.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(text = "$scorePercentage%", color = Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Accuracy", color = Color(0xFF64748B), fontSize = 11.sp)
+                                        Text(text = "$scorePercentage%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Accuracy", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                     }
                                 }
 
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(10.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(text = "+${score * 20} XP", color = Color(0xFF7C3AED), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "XP Earned", color = Color(0xFF64748B), fontSize = 11.sp)
+                                        Text(text = "+${score * 20} XP", color = SunsetOrange, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "XP Earned", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                     }
                                 }
 
                                 Card(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color.White
+                                    ),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(10.dp),
@@ -352,11 +371,11 @@ fun QuizResultScreen(
                                     ) {
                                         Text(
                                             text = if (scorePercentage >= 60) "PASSED" else "RETRY",
-                                            color = if (scorePercentage >= 60) Color(0xFF059669) else Color(0xFFDC2626),
+                                            color = if (scorePercentage >= 60) (if (isDark) AmberGold else Color(0xFF059669)) else Color(0xFFDC2626),
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold
                                         )
-                                        Text(text = "Outcome", color = Color(0xFF64748B), fontSize = 11.sp)
+                                        Text(text = "Outcome", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -370,7 +389,7 @@ fun QuizResultScreen(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = if (scorePercentage >= 80) "🌟 Conceptual Mastery" else if (scorePercentage >= 50) "📖 Solid Foundation" else "⚡ Recommended Review",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) AmberGold else Color(0xFF0F172A),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -382,7 +401,7 @@ fun QuizResultScreen(
                                         "Good effort! Review the detailed answer explanations to turn your missed questions into strengths."
                                     else
                                         "We recommend reviewing the chapter lesson concepts and worked examples before retaking the quiz.",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 12.sp,
                                     lineHeight = 18.sp
                                 )
@@ -406,8 +425,8 @@ fun QuizResultScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(46.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, BlueAccent, RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.6f) else BlueAccent, RoundedCornerShape(12.dp))
                                     .clickable { onReviewAnswers() },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -416,7 +435,7 @@ fun QuizResultScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "Review Answers & Explanations",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -431,7 +450,9 @@ fun QuizResultScreen(
                                 Button(
                                     onClick = onRetakeQuiz,
                                     modifier = Modifier.weight(1f).height(46.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF475569)),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isDark) SurfacePanelElevated else Color(0xFF475569)
+                                    ),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -454,9 +475,9 @@ fun QuizResultScreen(
                                             .background(
                                                 brush = Brush.horizontalGradient(
                                                     colors = listOf(
-                                                        PurpleAccent,
-                                                        BlueAccent,
-                                                        CyanAccent,
+                                                        SunsetOrange,
+                                                        SunsetOrangeEnd,
+                                                        AmberGold,
                                                     )
                                                 ),
                                                 shape = RoundedCornerShape(12.dp)

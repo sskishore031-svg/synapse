@@ -50,7 +50,7 @@ class ThemePreferences private constructor(context: Context) {
      * Synchronously returns cached theme mode to prevent cold-start UI flicker.
      */
     fun getCachedThemeMode(): ThemeMode {
-        val cachedValue = sharedPrefs.getString(SP_KEY_THEME_MODE, ThemeMode.SYSTEM.value)
+        val cachedValue = sharedPrefs.getString(SP_KEY_THEME_MODE, ThemeMode.DARK.value)
         return ThemeMode.fromValue(cachedValue)
     }
 

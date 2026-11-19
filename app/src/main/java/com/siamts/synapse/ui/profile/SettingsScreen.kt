@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siamts.synapse.data.local.ThemeMode
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -79,6 +80,11 @@ import com.siamts.synapse.ui.theme.LightBorder
 import com.siamts.synapse.ui.theme.LightTextPrimary
 import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.theme.ThemeViewModel
@@ -114,11 +120,11 @@ fun SettingsScreen(
     }
 
     val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF8FAFC)
-    val cardBgColor = if (isDark) Color(0xFF131C38) else Color.White
-    val cardBorderColor = if (isDark) Color(0xFF1E2B58) else LightBorder
+    val cardBgColor = if (isDark) SurfacePanel else Color.White
+    val cardBorderColor = if (isDark) SurfaceBorder else LightBorder
     val primaryTextColor = if (isDark) TextPrimary else LightTextPrimary
     val secondaryTextColor = if (isDark) TextSecondary else LightTextSecondary
-    val sectionHeaderColor = if (isDark) CyanAccent else BlueAccent
+    val sectionHeaderColor = if (isDark) AmberGold else SunsetOrange
 
     val sessionManager = remember {
         SessionManager.getInstanceOrNull() ?: SessionManager.init(context)
@@ -676,7 +682,7 @@ fun SettingsScreen(
             ModalBottomSheet(
                 onDismissRequest = { showThemeModal = false },
                 sheetState = sheetState,
-                containerColor = if (isDark) Color(0xFF0C132C) else Color.White,
+                containerColor = if (isDark) SurfacePanelElevated else Color.White,
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             ) {
                 Column(
@@ -695,7 +701,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Interactive 3D Preview Cards · Instant Recomposition",
+                            text = "Sunset Amber & Orange Theme · Instant Recomposition",
                             fontSize = 12.sp,
                             color = secondaryTextColor
                         )
@@ -715,16 +721,16 @@ fun SettingsScreen(
                         }
                     )
 
-                    // 2. Dark Mode 3D Preview Card
+                    // 2. Dark Mode 3D Preview Card (Sunset Amber & Orange)
                     ThemePreview3DCard(
                         title = "Dark Mode",
-                        subtitle = "Sleek cyber-neon dark aesthetic with glowing accents",
+                        subtitle = "Vibrant Sunset Amber & Orange dark theme with glowing panels",
                         icon = "🌙",
                         isSelected = activeTheme == ThemeMode.DARK,
                         previewMode = ThemeMode.DARK,
                         onSelect = {
                             themeViewModel.setThemeMode(ThemeMode.DARK)
-                            Toast.makeText(context, "Theme set to Dark Mode", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Theme set to Sunset Amber Dark Mode", Toast.LENGTH_SHORT).show()
                             coroutineScope.launch { sheetState.hide(); showThemeModal = false }
                         }
                     )
@@ -732,7 +738,7 @@ fun SettingsScreen(
                     // 3. System Default Split/Dual-Tone 3D Card
                     ThemePreview3DCard(
                         title = "System Default",
-                        subtitle = "Auto dual-tone mode synchronized with device appearance",
+                        subtitle = "Auto mode synchronized with device appearance",
                         icon = "⚙️",
                         isSelected = activeTheme == ThemeMode.SYSTEM,
                         previewMode = ThemeMode.SYSTEM,
@@ -808,16 +814,16 @@ private fun ThemePreview3DCard(
     val cardShape = RoundedCornerShape(18.dp)
 
     val cardBorder = when {
-        isSelected && previewMode == ThemeMode.DARK -> androidx.compose.foundation.BorderStroke(2.dp, CyanGlow)
-        isSelected && previewMode == ThemeMode.LIGHT -> androidx.compose.foundation.BorderStroke(2.dp, BlueAccent)
-        isSelected -> androidx.compose.foundation.BorderStroke(2.dp, PurpleAccent)
-        else -> androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155).copy(alpha = 0.3f))
+        isSelected && previewMode == ThemeMode.DARK -> androidx.compose.foundation.BorderStroke(2.dp, SunsetOrange)
+        isSelected && previewMode == ThemeMode.LIGHT -> androidx.compose.foundation.BorderStroke(2.dp, SunsetOrangeEnd)
+        isSelected -> androidx.compose.foundation.BorderStroke(2.dp, AmberGold)
+        else -> androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
     }
 
     val cardBg = when (previewMode) {
         ThemeMode.LIGHT -> Color(0xFFFFFFFF)
-        ThemeMode.DARK -> Color(0xFF0F172E)
-        ThemeMode.SYSTEM -> Color(0xFF1E293B)
+        ThemeMode.DARK -> SurfacePanel
+        ThemeMode.SYSTEM -> SurfacePanelElevated
     }
 
     Box(
@@ -827,8 +833,8 @@ private fun ThemePreview3DCard(
             .shadow(
                 elevation = if (isSelected) 8.dp else 3.dp,
                 shape = cardShape,
-                ambientColor = if (previewMode == ThemeMode.DARK) CyanGlow else Color.Black,
-                spotColor = if (isSelected) BlueAccent else Color.Gray
+                ambientColor = if (previewMode == ThemeMode.DARK) SunsetOrange else Color.Black,
+                spotColor = if (isSelected) SunsetOrange else Color.Gray
             )
             .background(cardBg, cardShape)
             .border(cardBorder, cardShape)
@@ -855,7 +861,7 @@ private fun ThemePreview3DCard(
                         Text(
                             text = subtitle,
                             fontSize = 11.sp,
-                            color = if (previewMode == ThemeMode.LIGHT) Color(0xFF64748B) else Color(0xFF94A3B8)
+                            color = if (previewMode == ThemeMode.LIGHT) Color(0xFF64748B) else TextSecondary
                         )
                     }
                 }
@@ -866,14 +872,14 @@ private fun ThemePreview3DCard(
                         modifier = Modifier
                             .size(26.dp)
                             .background(
-                                color = if (previewMode == ThemeMode.DARK) CyanGlow else BlueAccent,
+                                color = if (previewMode == ThemeMode.DARK) SunsetOrange else SunsetOrangeEnd,
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "✓",
-                            color = if (previewMode == ThemeMode.DARK) Color.Black else Color.White,
+                            color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )

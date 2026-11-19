@@ -93,6 +93,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.ai.VoiceState
 import com.siamts.synapse.data.local.ChatSessionEntity
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -104,6 +105,11 @@ import com.siamts.synapse.ui.theme.LightTextPrimary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.tutor.components.AiMessageCanvas
 import com.siamts.synapse.ui.tutor.components.ChatHistoryBottomSheet
@@ -681,16 +687,16 @@ fun AiTutorContent(
                                             .clip(CircleShape)
                                             .background(
                                                 brush = if (isHoldingMic) {
-                                                    Brush.radialGradient(listOf(Color(0xFF00F0FF), Color(0xFF2563EB)))
+                                                    Brush.radialGradient(listOf(SunsetOrange, AmberGold))
                                                 } else {
                                                     Brush.radialGradient(
-                                                        listOf(CyanGlow.copy(alpha = 0.25f), Color(0xFF2563EB).copy(alpha = 0.15f))
+                                                        listOf(SunsetOrange.copy(alpha = 0.25f), AmberGold.copy(alpha = 0.15f))
                                                     )
                                                 }
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isHoldingMic) Color(0xFF00F0FF) else CyanGlow.copy(alpha = 0.4f),
+                                                if (isHoldingMic) SunsetOrange else SunsetOrange.copy(alpha = 0.4f),
                                                 CircleShape
                                             )
                                             .pointerInput(Unit) {
@@ -729,7 +735,7 @@ fun AiTutorContent(
                                         Icon(
                                             imageVector = Icons.Rounded.Mic,
                                             contentDescription = "Hold to talk or tap for Live Voice",
-                                            tint = if (isHoldingMic) Color.White else if (isDark) CyanGlow else BlueAccent,
+                                            tint = if (isHoldingMic) Color.White else if (isDark) AmberGold else SunsetOrange,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -743,7 +749,7 @@ fun AiTutorContent(
                                             .clip(CircleShape)
                                             .background(
                                                 brush = if (canSend) {
-                                                    Brush.horizontalGradient(listOf(Color(0xFF00F0FF), Color(0xFF8B5CF6)))
+                                                    Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd, AmberGold))
                                                 } else {
                                                     Brush.horizontalGradient(
                                                         listOf(

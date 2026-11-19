@@ -190,7 +190,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         try {
-            // Version 9 migration: Recreate curriculum, questions, and in-chat quiz tables for 4 placement tracks
+            // Version 10 migration: Recreate curriculum, questions, and in-chat quiz tables for 4 placement tracks with fresh zero-default state
             db.execSQL("DROP TABLE IF EXISTS quiz_questions")
             db.execSQL("DROP TABLE IF EXISTS subject_chapters")
             db.execSQL("DROP TABLE IF EXISTS chapter_lessons")
@@ -1264,7 +1264,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
-        private const val DATABASE_VERSION = 9
+        private const val DATABASE_VERSION = 10
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null

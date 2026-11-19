@@ -2,6 +2,7 @@ package com.siamts.synapse.ui.brainmap
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,12 +39,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
@@ -78,6 +86,7 @@ fun BrainMapContent(
     onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
     val fallbackNodes = defaultNodes()
     val node1 = uiState.nodes.getOrNull(0) ?: fallbackNodes[0]
     val node2 = uiState.nodes.getOrNull(1) ?: fallbackNodes[1]
@@ -123,7 +132,7 @@ fun BrainMapContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = uiState.headerTag,
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -140,7 +149,7 @@ fun BrainMapContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { onRetryClick() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -148,7 +157,7 @@ fun BrainMapContent(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = CyanGlow
+                                color = SunsetOrange
                             )
                         } else {
                             Text(
@@ -160,13 +169,13 @@ fun BrainMapContent(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container (Transparent in Dark Mode)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -203,7 +212,7 @@ fun BrainMapContent(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "Retry",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.clickable { onRetryClick() }
@@ -225,13 +234,13 @@ fun BrainMapContent(
                                 ) {
                                     Text(
                                         text = "Overall knowledge",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "${uiState.overallKnowledgePercentage}%",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -244,15 +253,15 @@ fun BrainMapContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
+                                    color = SunsetOrange,
+                                    trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                 )
 
                                 Spacer(modifier = Modifier.height(6.dp))
 
                                 Text(
                                     text = uiState.overallKnowledgeText,
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 12.sp,
                                 )
                             }
@@ -268,7 +277,9 @@ fun BrainMapContent(
                                     .fillMaxWidth()
                                     .height(280.dp),
                                 shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isDark) SurfacePanel else Color(0xFF0D1430)
+                                ),
                             ) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -291,7 +302,7 @@ fun BrainMapContent(
 
                                         nodeOffsets.forEach { nodePos ->
                                             drawLine(
-                                                color = Color(0xFF38BDF8).copy(alpha = 0.5f),
+                                                color = SunsetOrange.copy(alpha = 0.45f),
                                                 start = center,
                                                 end = nodePos,
                                                 strokeWidth = 2f
@@ -303,8 +314,11 @@ fun BrainMapContent(
                                     Box(
                                         modifier = Modifier
                                             .size(76.dp)
-                                            .background(Color(0xFF0F172A), CircleShape)
-                                            .border(2.dp, CyanGlow, CircleShape)
+                                            .background(
+                                                if (isDark) SurfacePanelElevated else Color(0xFF0F172A),
+                                                CircleShape
+                                            )
+                                            .border(2.dp, SunsetOrange, CircleShape)
                                             .padding(6.dp),
                                         contentAlignment = Alignment.Center,
                                     ) {
@@ -369,24 +383,24 @@ fun BrainMapContent(
                                 horizontalArrangement = Arrangement.SpaceAround,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(8.dp).background(Color(0xFF38BDF8), CircleShape))
+                                    Box(modifier = Modifier.size(8.dp).background(SunsetOrange, CircleShape))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "Strong", color = Color(0xFF64748B), fontSize = 11.sp)
+                                    Text(text = "Strong", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(8.dp).background(Color(0xFF8B5CF6), CircleShape))
+                                    Box(modifier = Modifier.size(8.dp).background(AmberGold, CircleShape))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "Learning", color = Color(0xFF64748B), fontSize = 11.sp)
+                                    Text(text = "Learning", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(modifier = Modifier.size(8.dp).background(Color(0xFFEF4444), CircleShape))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "Weak", color = Color(0xFF64748B), fontSize = 11.sp)
+                                    Text(text = "Weak", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(8.dp).background(Color(0xFFD97706), CircleShape))
+                                    Box(modifier = Modifier.size(8.dp).background(SunsetOrangeEnd, CircleShape))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(text = "Need Revision", color = Color(0xFF64748B), fontSize = 11.sp)
+                                    Text(text = "Need Revision", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
                                 }
                             }
                         }
@@ -401,7 +415,7 @@ fun BrainMapContent(
                                     Text(text = "✨ ", fontSize = 14.sp)
                                     Text(
                                         text = uiState.recommendationTitle,
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) AmberGold else Color(0xFF0F172A),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -411,7 +425,7 @@ fun BrainMapContent(
 
                                 Text(
                                     text = uiState.recommendationText,
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 12.sp,
                                     lineHeight = 16.sp,
                                 )
@@ -425,7 +439,8 @@ fun BrainMapContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(if (isDark) DarkBackgroundBottom else Color.White)
+                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -449,11 +464,11 @@ fun BrainMapContent(
                         Text(
                             text = icon,
                             fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8)
                         )
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
@@ -471,10 +486,14 @@ private fun NodeBox(
     borderColor: Color,
     onClick: () -> Unit,
 ) {
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .width(110.dp)
-            .background(Color(0xFF0F172A).copy(alpha = 0.9f), RoundedCornerShape(12.dp))
+            .background(
+                if (isDark) SurfacePanelElevated.copy(alpha = 0.95f) else Color(0xFF0F172A).copy(alpha = 0.9f),
+                RoundedCornerShape(12.dp)
+            )
             .border(1.dp, borderColor.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
             .clickable { onClick() }
             .padding(8.dp)

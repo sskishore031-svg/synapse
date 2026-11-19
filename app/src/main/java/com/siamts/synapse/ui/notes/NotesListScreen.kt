@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,11 +46,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
 import com.siamts.synapse.ui.notes.components.threeDTouchEffect
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -112,7 +118,7 @@ fun NotesListScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "CATEGORY ARCHIVE",
-                            color = CyanAccent,
+                            color = AmberGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -130,24 +136,30 @@ fun NotesListScreen(
                 }
             }
 
-            // Light Content Body
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
+                    .background(Color.Transparent)
             ) {
                 Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
                     // Search Bar
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        placeholder = { Text("Search notes by title or keyword...", color = Color(0xFF94A3B8), fontSize = 13.sp) },
+                        placeholder = { Text("Search notes by title or keyword...", color = TextSecondary, fontSize = 13.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = SurfacePanel,
+                            unfocusedContainerColor = SurfacePanel,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = SunsetOrange,
+                            unfocusedBorderColor = SurfaceBorder,
+                            cursorColor = SunsetOrange
+                        ),
                         singleLine = true
                     )
 
@@ -155,7 +167,7 @@ fun NotesListScreen(
 
                     if (uiState.isLoading) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = BlueAccent)
+                            CircularProgressIndicator(color = SunsetOrange)
                         }
                     } else if (uiState.notes.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -165,7 +177,7 @@ fun NotesListScreen(
                                 Text(
                                     text = if (uiState.searchQuery.isNotBlank()) "No notes match your search" else "No notes found in this category",
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF475569),
+                                    color = TextSecondary,
                                     fontSize = 16.sp
                                 )
                             }
@@ -180,10 +192,11 @@ fun NotesListScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .threeDTouchEffect()
+                                        .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
                                         .clickable { selected3DNote = note },
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -198,12 +211,13 @@ fun NotesListScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Box(
                                                     modifier = Modifier
-                                                        .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                        .background(SurfacePanel, RoundedCornerShape(8.dp))
+                                                        .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
                                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                                 ) {
                                                     Text(
                                                         text = "${note.subjectIcon} ${note.subjectName}",
-                                                        color = BlueAccent,
+                                                        color = SunsetOrange,
                                                         fontSize = 11.sp,
                                                         fontWeight = FontWeight.Bold
                                                     )
@@ -211,10 +225,11 @@ fun NotesListScreen(
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Box(
                                                     modifier = Modifier
-                                                        .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                        .background(SurfacePanel, RoundedCornerShape(6.dp))
+                                                        .border(1.dp, SurfaceBorder, RoundedCornerShape(6.dp))
                                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                                 ) {
-                                                    Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                    Text(text = "✨ 3D", fontSize = 10.sp, color = AmberGold, fontWeight = FontWeight.Bold)
                                                 }
                                             }
 
@@ -294,7 +309,7 @@ fun NotesListScreen(
                                             text = note.title,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp,
-                                            color = Color(0xFF0F172A)
+                                            color = TextPrimary
                                         )
 
                                         if (!note.chapterTitle.isNullOrBlank()) {
@@ -302,7 +317,7 @@ fun NotesListScreen(
                                             Text(
                                                 text = "Chapter: ${note.chapterTitle}",
                                                 fontSize = 12.sp,
-                                                color = Color(0xFF64748B)
+                                                color = AmberGold
                                             )
                                         }
 
@@ -311,7 +326,7 @@ fun NotesListScreen(
                                         Text(
                                             text = note.content,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF334155),
+                                            color = TextSecondary,
                                             lineHeight = 18.sp
                                         )
                                     }
@@ -328,7 +343,7 @@ fun NotesListScreen(
     if (noteToEdit != null) {
         AlertDialog(
             onDismissRequest = { noteToEdit = null },
-            title = { Text("Edit Note", fontWeight = FontWeight.Bold) },
+            title = { Text("Edit Note", fontWeight = FontWeight.Bold, color = TextPrimary) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -355,16 +370,18 @@ fun NotesListScreen(
                         }
                         noteToEdit = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
                 ) {
-                    Text("Save Changes")
+                    Text("Save Changes", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { noteToEdit = null }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextSecondary)
                 }
-            }
+            },
+            containerColor = SurfacePanelElevated,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 
@@ -372,24 +389,26 @@ fun NotesListScreen(
     if (noteToDelete != null) {
         AlertDialog(
             onDismissRequest = { noteToDelete = null },
-            title = { Text("Delete Note", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to delete '${noteToDelete?.title}'? This action cannot be undone.") },
+            title = { Text("Delete Note", fontWeight = FontWeight.Bold, color = TextPrimary) },
+            text = { Text("Are you sure you want to delete '${noteToDelete?.title}'? This action cannot be undone.", color = TextSecondary) },
             confirmButton = {
                 Button(
                     onClick = {
                         noteToDelete?.let { viewModel.deleteNote(it.id) }
                         noteToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
                 ) {
                     Text("Delete", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { noteToDelete = null }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextSecondary)
                 }
-            }
+            },
+            containerColor = SurfacePanelElevated,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 

@@ -71,6 +71,7 @@ import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.AmberAccent
 import com.siamts.synapse.ui.theme.AmberGlow
 import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
@@ -143,6 +144,7 @@ fun HomeScreen(
             viewModel.setAddTaskDialogVisible(false)
         },
         onDismissAddTask = { viewModel.setAddTaskDialogVisible(false) },
+        onAiChatClick = { onAiChatClick?.invoke() },
         modifier = modifier,
     )
 }
@@ -163,6 +165,7 @@ fun HomeContent(
     onTaskDelete: (Long) -> Unit = {},
     onConfirmAddTask: (String, String) -> Unit = { _, _ -> },
     onDismissAddTask: () -> Unit = {},
+    onAiChatClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalThemeIsDark.current
@@ -1072,12 +1075,12 @@ fun HomeContent(
 
         AlertDialog(
             onDismissRequest = onDismissAddTask,
-            containerColor = Color.White,
+            containerColor = if (isDark) SurfacePanelElevated else Color.White,
             shape = RoundedCornerShape(20.dp),
             title = {
                 Text(
                     text = "Add Daily Study Task",
-                    color = Color(0xFF0F172A),
+                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -1086,7 +1089,7 @@ fun HomeContent(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Task Title / Concept",
-                        color = Color(0xFF475569),
+                        color = if (isDark) TextSecondary else Color(0xFF475569),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -1094,14 +1097,14 @@ fun HomeContent(
                     OutlinedTextField(
                         value = taskTitleInput,
                         onValueChange = { taskTitleInput = it },
-                        placeholder = { Text(text = "e.g. Master Python List Comprehensions", color = Color(0xFF94A3B8)) },
+                        placeholder = { Text(text = "e.g. Master Python List Comprehensions", color = if (isDark) TextSecondary else Color(0xFF94A3B8)) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF0F172A),
-                            unfocusedTextColor = Color(0xFF0F172A),
-                            focusedBorderColor = BlueAccent,
-                            unfocusedBorderColor = Color(0xFFCBD5E1),
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                            unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                            focusedBorderColor = SunsetOrange,
+                            unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
+                            focusedContainerColor = if (isDark) SurfacePanel else Color(0xFFF8FAFC),
+                            unfocusedContainerColor = if (isDark) SurfacePanel else Color(0xFFF8FAFC)
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
@@ -1112,7 +1115,7 @@ fun HomeContent(
 
                     Text(
                         text = "Estimated Study Duration",
-                        color = Color(0xFF475569),
+                        color = if (isDark) TextSecondary else Color(0xFF475569),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -1127,7 +1130,7 @@ fun HomeContent(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isSel) BlueAccent else Color(0xFFF1F5F9),
+                                        if (isSel) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { selectedDuration = dur }
@@ -1136,7 +1139,7 @@ fun HomeContent(
                             ) {
                                 Text(
                                     text = dur,
-                                    color = if (isSel) Color.White else Color(0xFF334155),
+                                    color = if (isSel) Color.White else (if (isDark) TextSecondary else Color(0xFF334155)),
                                     fontSize = 11.sp,
                                     fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
                                 )
@@ -1152,7 +1155,7 @@ fun HomeContent(
                             onConfirmAddTask(taskTitleInput, selectedDuration)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                     shape = RoundedCornerShape(10.dp),
                     enabled = taskTitleInput.isNotBlank()
                 ) {
@@ -1161,7 +1164,7 @@ fun HomeContent(
             },
             dismissButton = {
                 TextButton(onClick = onDismissAddTask) {
-                    Text(text = "Cancel", color = Color(0xFF64748B))
+                    Text(text = "Cancel", color = if (isDark) TextSecondary else Color(0xFF64748B))
                 }
             }
         )

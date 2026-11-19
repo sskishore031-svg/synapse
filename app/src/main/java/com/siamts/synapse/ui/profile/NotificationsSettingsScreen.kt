@@ -7,9 +7,11 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,12 +57,19 @@ import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.UserPreferencesRepository
 import com.siamts.synapse.notification.StudyReminderScheduler
 import com.siamts.synapse.notification.SynapseNotificationHelper
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 import kotlinx.coroutines.launch
 
@@ -71,6 +80,7 @@ fun NotificationsSettingsScreen(
     initialEnabled: Boolean = true,
     onToggleNotifications: (Boolean) -> Unit = {},
 ) {
+    val isDark = isSystemInDarkTheme()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val sessionManager = remember {
@@ -151,7 +161,7 @@ fun NotificationsSettingsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Notifications", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -163,7 +173,7 @@ fun NotificationsSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -179,15 +189,20 @@ fun NotificationsSettingsScreen(
                     ) {
                         // Master Toggle
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Column {
-                                        Text(text = "Enable Notifications", color = Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Receive learning updates and reminders", color = Color(0xFF64748B), fontSize = 12.sp)
+                                        Text(text = "Enable Notifications", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Receive learning updates and reminders", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 12.sp)
                                     }
                                     Switch(
                                         checked = enableAll,
@@ -209,7 +224,11 @@ fun NotificationsSettingsScreen(
                                                 SynapseNotificationHelper.cancelStudyReminders(context)
                                             }
                                         },
-                                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = BlueAccent)
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = SunsetOrange,
+                                            uncheckedTrackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
+                                        )
                                     )
                                 }
                             }
@@ -217,13 +236,19 @@ fun NotificationsSettingsScreen(
 
                         // Specific Notifications
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     NotificationToggleRow(
                                         title = "Daily Study Reminders",
                                         subtitle = "Gentle prompts to keep your learning streak",
                                         checked = studyReminders && enableAll,
                                         enabled = enableAll,
+                                        isDark = isDark,
                                         onCheckedChange = { isChecked ->
                                             studyReminders = isChecked
                                             coroutineScope.launch {
@@ -271,8 +296,8 @@ fun NotificationsSettingsScreen(
                                                         false
                                                     ).show()
                                                 }
-                                                .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
-                                                .border(1.dp, BlueAccent.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                                                .border(1.dp, if (isDark) SurfaceBorder else SunsetOrange.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
                                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
@@ -281,17 +306,17 @@ fun NotificationsSettingsScreen(
                                                 Text(text = "⏰", fontSize = 18.sp)
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 Column {
-                                                    Text(text = "Preferred Study Time", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
-                                                    Text(text = "Exact alarm & daily alert", fontSize = 10.sp, color = Color(0xFF64748B))
+                                                    Text(text = "Preferred Study Time", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (isDark) TextPrimary else Color(0xFF0F172A))
+                                                    Text(text = "Exact alarm & daily alert", fontSize = 10.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                                                 }
                                             }
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Box(
                                                     modifier = Modifier
-                                                        .background(BlueAccent.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                                        .background(SunsetOrange.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                                 ) {
-                                                    Text(text = formattedStudyTime, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = BlueAccent)
+                                                    Text(text = formattedStudyTime, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SunsetOrange)
                                                 }
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(text = "✏️", fontSize = 12.sp)
@@ -304,6 +329,7 @@ fun NotificationsSettingsScreen(
                                         subtitle = "Notifications when fresh content is unlocked",
                                         checked = newContent && enableAll,
                                         enabled = enableAll,
+                                        isDark = isDark,
                                         onCheckedChange = { newContent = it }
                                     )
 
@@ -312,6 +338,7 @@ fun NotificationsSettingsScreen(
                                         subtitle = "Alerts when you earn badges or level up",
                                         checked = achievements && enableAll,
                                         enabled = enableAll,
+                                        isDark = isDark,
                                         onCheckedChange = { achievements = it }
                                     )
                                 }
@@ -339,7 +366,7 @@ fun NotificationsSettingsScreen(
                                     .fillMaxWidth()
                                     .height(48.dp),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                                colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
                             ) {
                                 Text(
                                     text = "⚡ Send Test Notification",
@@ -369,6 +396,7 @@ private fun NotificationToggleRow(
     subtitle: String,
     checked: Boolean,
     enabled: Boolean,
+    isDark: Boolean = false,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
@@ -377,14 +405,23 @@ private fun NotificationToggleRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, color = if (enabled) Color(0xFF0F172A) else Color(0xFF94A3B8), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text(text = subtitle, color = Color(0xFF94A3B8), fontSize = 11.sp)
+            Text(
+                text = title,
+                color = if (enabled) (if (isDark) TextPrimary else Color(0xFF0F172A)) else (if (isDark) TextSecondary else Color(0xFF94A3B8)),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(text = subtitle, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 11.sp)
         }
         Switch(
             checked = checked,
             enabled = enabled,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = BlueAccent)
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = SunsetOrange,
+                uncheckedTrackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
+            )
         )
     }
 }

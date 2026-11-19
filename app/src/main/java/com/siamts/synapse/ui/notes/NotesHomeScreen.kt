@@ -52,8 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
 import com.siamts.synapse.ui.notes.components.threeDTouchEffect
-import com.siamts.synapse.ui.theme.BlueAccent
-import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.DarkBackground
@@ -61,7 +60,13 @@ import com.siamts.synapse.ui.theme.LightBackground
 import com.siamts.synapse.ui.theme.LightTextPrimary
 import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
@@ -154,7 +159,7 @@ fun NotesHomeScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NOTES & STUDY GUIDES",
-                            color = if (isDark) CyanAccent else BlueAccent,
+                            color = if (isDark) AmberGold else SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -174,19 +179,19 @@ fun NotesHomeScreen(
                 }
             }
 
-            // Light Body
+            // Body Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BlueAccent)
+                        CircularProgressIndicator(color = SunsetOrange)
                     }
                 } else {
                     LazyColumn(
@@ -219,10 +224,12 @@ fun NotesHomeScreen(
                         // 1. Stats Overview Bar
                         item {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(16.dp)),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -230,10 +237,10 @@ fun NotesHomeScreen(
                                         .padding(14.dp),
                                     horizontalArrangement = Arrangement.SpaceAround
                                 ) {
-                                    StatItem("Subject", subjectDisplayCount.toString(), "📚")
-                                    StatItem("Common", commonDisplayCount.toString(), "📝")
-                                    StatItem("Saved", savedDisplayCount.toString(), "🔖")
-                                    StatItem("Offline", offlineDisplayCount.toString(), "💾")
+                                    StatItem("Subject", subjectDisplayCount.toString(), "📚", isDark)
+                                    StatItem("Common", commonDisplayCount.toString(), "📝", isDark)
+                                    StatItem("Saved", savedDisplayCount.toString(), "🔖", isDark)
+                                    StatItem("Offline", offlineDisplayCount.toString(), "💾", isDark)
                                 }
                             }
                         }
@@ -259,12 +266,12 @@ fun NotesHomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(
-                                                color = if (isSelected) BlueAccent else Color.White,
+                                                color = if (isSelected) SunsetOrange else if (isDark) SurfacePanelElevated else Color.White,
                                                 shape = RoundedCornerShape(20.dp)
                                             )
                                             .border(
                                                 width = 1.dp,
-                                                color = if (isSelected) BlueAccent else Color(0xFFE2E8F0),
+                                                color = if (isSelected) SunsetOrange else if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                                 shape = RoundedCornerShape(20.dp)
                                             )
                                             .clickable { viewModel.setFilter(filterKey) }
@@ -277,7 +284,7 @@ fun NotesHomeScreen(
                                                 text = label,
                                                 fontSize = 12.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isSelected) Color.White else Color(0xFF1E293B)
+                                                color = if (isSelected) Color.White else if (isDark) TextPrimary else Color(0xFF1E293B)
                                             )
                                         }
                                     }
@@ -294,7 +301,8 @@ fun NotesHomeScreen(
                                     subtitle = "Notes organized strictly by academic subjects and chapters.",
                                     icon = "📚",
                                     countBadge = "$subjectDisplayCount Notes",
-                                    iconBgColor = Color(0xFFEFF6FF),
+                                    iconBgColor = if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF),
+                                    isDark = isDark,
                                     onClick = { onOpenNotesList("subject", null, "Subject Notes") }
                                 )
                             }
@@ -306,7 +314,8 @@ fun NotesHomeScreen(
                                     subtitle = "General notes, study strategies, and shared concepts across topics.",
                                     icon = "📝",
                                     countBadge = "$commonDisplayCount Notes",
-                                    iconBgColor = Color(0xFFF5F3FF),
+                                    iconBgColor = if (isDark) AmberGold.copy(alpha = 0.15f) else Color(0xFFF5F3FF),
+                                    isDark = isDark,
                                     onClick = { onOpenNotesList("common", null, "Common Notes") }
                                 )
                             }
@@ -318,7 +327,8 @@ fun NotesHomeScreen(
                                     subtitle = "Touch to view your bookmarked notes in interactive 3D perspective.",
                                     icon = "🔖",
                                     countBadge = "$savedDisplayCount Saved (3D)",
-                                    iconBgColor = Color(0xFFFEF3C7),
+                                    iconBgColor = if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFFEF3C7),
+                                    isDark = isDark,
                                     onClick = { onOpenNotesList("saved", null, "Saved Notes") }
                                 )
                             }
@@ -330,7 +340,8 @@ fun NotesHomeScreen(
                                     subtitle = "Offline-cached notes available anytime without internet.",
                                     icon = "💾",
                                     countBadge = "$offlineDisplayCount Offline",
-                                    iconBgColor = Color(0xFFD1FAE5),
+                                    iconBgColor = if (isDark) Color(0xFF059669).copy(alpha = 0.2f) else Color(0xFFD1FAE5),
+                                    isDark = isDark,
                                     onClick = { onOpenNotesList("downloaded", null, "Downloaded Notes") }
                                 )
                             }
@@ -341,7 +352,7 @@ fun NotesHomeScreen(
                                     text = "Browse Notes by Subject",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                                 )
                             }
@@ -350,10 +361,11 @@ fun NotesHomeScreen(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                         .clickable { onOpenNotesList("subject", sub.id, "${sub.name} Notes") },
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -367,13 +379,13 @@ fun NotesHomeScreen(
                                             text = sub.name,
                                             fontWeight = FontWeight.SemiBold,
                                             fontSize = 14.sp,
-                                            color = Color(0xFF1E293B),
+                                            color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                             modifier = Modifier.weight(1f)
                                         )
                                         Text(
                                             text = "${sub.notesCount} notes →",
                                             fontSize = 12.sp,
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -387,7 +399,7 @@ fun NotesHomeScreen(
                                         text = "Saved & Recent Notes (${uiState.allNotes.size})",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                                     )
                                 }
@@ -395,6 +407,7 @@ fun NotesHomeScreen(
                                 items(uiState.allNotes, key = { "recent_note_" + it.id }) { note ->
                                     NoteRowItemCard(
                                         note = note,
+                                        isDark = isDark,
                                         onClick = { selected3DNote = note },
                                         onToggleSave = { viewModel.toggleSave(note.id) },
                                         onToggleDownload = { viewModel.toggleDownload(note.id) }
@@ -411,15 +424,17 @@ fun NotesHomeScreen(
                                             .height(200.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator(color = BlueAccent)
+                                        CircularProgressIndicator(color = SunsetOrange)
                                     }
                                 }
                             } else if (uiState.filteredNotes.isEmpty()) {
                                 item {
                                     Card(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(16.dp)),
                                         shape = RoundedCornerShape(16.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                                        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White)
                                     ) {
                                         Column(
                                             modifier = Modifier
@@ -438,13 +453,13 @@ fun NotesHomeScreen(
                                                 else "No ${uiState.activeFilter.lowercase()} notes found",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 16.sp,
-                                                color = Color(0xFF0F172A)
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A)
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = "Tap the '➕' button above to create and save new notes.",
                                                 fontSize = 13.sp,
-                                                color = Color(0xFF64748B)
+                                                color = if (isDark) TextSecondary else Color(0xFF64748B)
                                             )
                                         }
                                     }
@@ -453,6 +468,7 @@ fun NotesHomeScreen(
                                 items(uiState.filteredNotes, key = { it.id }) { note ->
                                     NoteRowItemCard(
                                         note = note,
+                                        isDark = isDark,
                                         onClick = { selected3DNote = note },
                                         onToggleSave = { viewModel.toggleSave(note.id) },
                                         onToggleDownload = { viewModel.toggleDownload(note.id) }
@@ -460,6 +476,9 @@ fun NotesHomeScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
                     }
                 }
             }
@@ -626,12 +645,12 @@ fun NotesHomeScreen(
 }
 
 @Composable
-private fun StatItem(label: String, count: String, icon: String) {
+private fun StatItem(label: String, count: String, icon: String, isDark: Boolean = LocalThemeIsDark.current) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = icon, fontSize = 18.sp)
         Spacer(modifier = Modifier.height(2.dp))
-        Text(text = count, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-        Text(text = label, fontSize = 11.sp, color = Color(0xFF64748B))
+        Text(text = count, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = if (isDark) TextPrimary else Color(0xFF0F172A))
+        Text(text = label, fontSize = 11.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
     }
 }
 
@@ -642,16 +661,18 @@ private fun NoteCategoryCard(
     icon: String,
     countBadge: String,
     iconBgColor: Color,
+    isDark: Boolean = LocalThemeIsDark.current,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .threeDTouchEffect()
+            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 3.dp)
     ) {
         Row(
             modifier = Modifier
@@ -675,13 +696,13 @@ private fun NoteCategoryCard(
                     text = title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color(0xFF0F172A)
+                    color = if (isDark) TextPrimary else Color(0xFF0F172A)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     fontSize = 12.sp,
-                    color = Color(0xFF64748B),
+                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                     lineHeight = 16.sp
                 )
             }
@@ -690,12 +711,16 @@ private fun NoteCategoryCard(
 
             Box(
                 modifier = Modifier
-                    .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                    .background(
+                        color = if (isDark) SurfacePanelElevated else Color(0xFFEFF6FF),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = countBadge,
-                    color = BlueAccent,
+                    color = SunsetOrange,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -707,6 +732,7 @@ private fun NoteCategoryCard(
 @Composable
 private fun NoteRowItemCard(
     note: NoteItemDto,
+    isDark: Boolean = LocalThemeIsDark.current,
     onClick: () -> Unit,
     onToggleSave: () -> Unit,
     onToggleDownload: () -> Unit
@@ -715,10 +741,11 @@ private fun NoteRowItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .threeDTouchEffect()
+            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -737,7 +764,7 @@ private fun NoteRowItemCard(
                         text = note.subjectName,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0284C7)
+                        color = if (isDark) AmberGold else SunsetOrange
                     )
                 }
 
@@ -747,10 +774,14 @@ private fun NoteRowItemCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                            .background(
+                                color = if (isDark) SurfacePanel else Color(0xFFEFF6FF),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(6.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                        Text(text = "✨ 3D", fontSize = 10.sp, color = SunsetOrange, fontWeight = FontWeight.Bold)
                     }
 
                     // Save icon toggle
@@ -764,7 +795,7 @@ private fun NoteRowItemCard(
                         text = if (note.isDownloaded) "💾 Offline" else "⬇️ Download",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (note.isDownloaded) Color(0xFF16A34A) else BlueAccent,
+                        color = if (note.isDownloaded) Color(0xFF16A34A) else SunsetOrange,
                         modifier = Modifier.clickable { onToggleDownload() }
                     )
                 }
@@ -776,7 +807,7 @@ private fun NoteRowItemCard(
                 text = note.title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = Color(0xFF0F172A)
+                color = if (isDark) TextPrimary else Color(0xFF0F172A)
             )
 
             if (note.content.isNotBlank()) {
@@ -784,7 +815,7 @@ private fun NoteRowItemCard(
                 Text(
                     text = note.content,
                     fontSize = 13.sp,
-                    color = Color(0xFF475569),
+                    color = if (isDark) TextSecondary else Color(0xFF475569),
                     maxLines = 3,
                     lineHeight = 17.sp
                 )
