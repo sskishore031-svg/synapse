@@ -24,7 +24,7 @@ data class DashboardUiState(
     val overallProgress: Int = 0,
     val progressMessage: String = "Welcome! Every lesson builds your foundation.",
     val topicsDone: Int = 0,
-    val totalTopics: Int = 24,
+    val totalTopics: Int = 20,
     val quizScore: Int = 0,
     val quizzesAttempted: Int = 0,
     val studyStreakDays: Int = 0,

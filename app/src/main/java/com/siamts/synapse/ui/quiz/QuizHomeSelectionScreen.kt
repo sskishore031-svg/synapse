@@ -197,14 +197,14 @@ fun QuizHomeSelectionScreen(
                                         )
                                         Column {
                                             Text(
-                                                text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} Questions to Fix)" else "Mistake Vault (0 Questions to Fix)",
+                                                text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} to Master)" else "Mistake Vault (Empty - Great job!)",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
                                                 color = if (uiState.mistakeCount > 0) Color(0xFF991B1B) else Color(0xFF475569)
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = if (uiState.mistakeCount > 0) "Tap to re-test your incorrect answers and master them!" else "Zero missed questions! Great job.",
+                                                text = if (uiState.mistakeCount > 0) "Tap to practice your incorrect questions and master them!" else "Zero missed questions! Great job.",
                                                 fontSize = 12.sp,
                                                 color = Color(0xFF64748B)
                                             )

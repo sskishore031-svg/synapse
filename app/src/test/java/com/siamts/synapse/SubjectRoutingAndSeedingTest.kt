@@ -25,40 +25,28 @@ import org.junit.Test
 class SubjectRoutingAndSeedingTest {
 
     @Test
-    fun testBaseCurriculumContainsAll17SamacheerSubjectsWith10MCQsPerChapter() {
+    fun testBaseCurriculumContainsAll4PlacementTracksWith5MCQsPerChapter() {
         val baseSubjects = BaseCurriculumData.subjects
-        assertEquals("Must have 17 Samacheer Kalvi core curriculum subjects", 17, baseSubjects.size)
+        assertEquals("Must have 4 placement & micro-learning tracks", 4, baseSubjects.size)
 
         val totalChapters = baseSubjects.sumOf { it.chapters.size }
-        assertEquals("Must have exactly 248 total syllabus chapters across Class 10, 11 & 12", 248, totalChapters)
+        assertEquals("Must have exactly 20 total syllabus chapters (5 per track)", 20, totalChapters)
 
         val expectedSubjects = listOf(
-            "10th Mathematics",
-            "10th Science",
-            "10th Social Science",
-            "11th Mathematics",
-            "11th Physics",
-            "11th Chemistry",
-            "11th Biology (Botany & Zoology)",
-            "11th Computer Science",
-            "11th Commerce & Accountancy",
-            "11th Economics",
-            "12th Mathematics",
-            "12th Physics",
-            "12th Chemistry",
-            "12th Biology (Botany & Zoology)",
-            "12th Computer Science",
-            "12th Commerce & Accountancy",
-            "12th Economics"
+            "Python & Coding Logic",
+            "SQL & Database Management",
+            "AI & Modern Tech Concepts",
+            "Aptitude & Interview Prep"
         )
 
         for (name in expectedSubjects) {
             val sub = baseSubjects.firstOrNull { it.name.equals(name, ignoreCase = true) }
             assertNotNull("Base subject $name must exist", sub)
             assertTrue("Subject $name must have chapters", sub!!.chapters.isNotEmpty())
+            assertEquals("Subject $name must have 5 chapters", 5, sub.chapters.size)
 
             for (ch in sub.chapters) {
-                assertTrue("Chapter ${ch.title} must have 10 MCQs", ch.mcqs.size >= 10)
+                assertEquals("Chapter ${ch.title} must have exactly 5 MCQs", 5, ch.mcqs.size)
                 for (mcq in ch.mcqs) {
                     assertTrue("MCQ question text must not be blank", mcq.question.isNotBlank())
                     assertEquals("MCQ must have 4 options", 4, mcq.options.size)
@@ -72,7 +60,7 @@ class SubjectRoutingAndSeedingTest {
 
     @Test
     fun testPreSeededStudyNotesAreGeneratedForAllChapters() {
-        // Requirement 6: Start with 0 default notes; on-demand note generation
+        // Zero default notes; on-demand note generation
         val seededNotes = BaseCurriculumData.seededNotes
         assertEquals("Must start with 0 default pre-seeded notes (on-demand generation)", 0, seededNotes.size)
     }
@@ -82,38 +70,38 @@ class SubjectRoutingAndSeedingTest {
         runBlocking {
             val viewModel = SubjectDetailViewModel(externalScope = CoroutineScope(Dispatchers.Unconfined))
 
-            // 1. Load 10th Mathematics
-            viewModel.loadSubject("1001")
-            val mathState = viewModel.uiState.value
-            assertEquals("10th Mathematics", mathState.title)
-            assertEquals("10th Std", mathState.category)
-            assertEquals("📐", mathState.iconSymbol)
-            assertEquals(8, mathState.chapters.size)
-            assertEquals("Relations & Functions", mathState.chapters.first().title)
+            // 1. Load Python & Coding Logic
+            viewModel.loadSubject("101")
+            val pyState = viewModel.uiState.value
+            assertEquals("Python & Coding Logic", pyState.title)
+            assertEquals("Placement Prep", pyState.category)
+            assertEquals("🐍", pyState.iconSymbol)
+            assertEquals(5, pyState.chapters.size)
+            assertEquals("Variables, Data Types & Dynamic Typing", pyState.chapters.first().title)
 
-            // 2. Load 11th Physics
-            viewModel.loadSubject("1102")
-            val phyState = viewModel.uiState.value
-            assertEquals("11th Physics", phyState.title)
-            assertEquals("11th Std", phyState.category)
-            assertEquals(11, phyState.chapters.size)
-            assertEquals("Nature of Physical World & Measurement", phyState.chapters.first().title)
+            // 2. Load SQL & Database Management
+            viewModel.loadSubject("102")
+            val sqlState = viewModel.uiState.value
+            assertEquals("SQL & Database Management", sqlState.title)
+            assertEquals("Placement Prep", sqlState.category)
+            assertEquals(5, sqlState.chapters.size)
+            assertEquals("Relational Databases, Tables & Keys (Primary/Foreign)", sqlState.chapters.first().title)
 
-            // 3. Load 12th Chemistry
-            viewModel.loadSubject("1203")
-            val chemState = viewModel.uiState.value
-            assertEquals("12th Chemistry", chemState.title)
-            assertEquals("12th Std", chemState.category)
-            assertEquals(14, chemState.chapters.size)
-            assertEquals("Metallurgy", chemState.chapters.first().title)
+            // 3. Load AI & Modern Tech Concepts
+            viewModel.loadSubject("103")
+            val aiState = viewModel.uiState.value
+            assertEquals("AI & Modern Tech Concepts", aiState.title)
+            assertEquals("Placement Prep", aiState.category)
+            assertEquals(5, aiState.chapters.size)
+            assertEquals("Large Language Models (LLMs) & Tokens", aiState.chapters.first().title)
 
-            // 4. Load 12th Computer Science
-            viewModel.loadSubject("1205")
-            val csState = viewModel.uiState.value
-            assertEquals("12th Computer Science", csState.title)
-            assertEquals("12th Std", csState.category)
-            assertEquals(16, csState.chapters.size)
-            assertEquals("Function", csState.chapters.first().title)
+            // 4. Load Aptitude & Interview Prep
+            viewModel.loadSubject("104")
+            val aptState = viewModel.uiState.value
+            assertEquals("Aptitude & Interview Prep", aptState.title)
+            assertEquals("Placement Prep", aptState.category)
+            assertEquals(5, aptState.chapters.size)
+            assertEquals("Quantitative: Percentages, Profit & Loss", aptState.chapters.first().title)
         }
     }
 
@@ -122,32 +110,32 @@ class SubjectRoutingAndSeedingTest {
         runBlocking {
             val viewModel = RoadmapViewModel(externalScope = CoroutineScope(Dispatchers.Unconfined))
 
-            // Test 10th Mathematics Roadmap
-            viewModel.loadSubjectRoadmap("1001")
-            val mathState = viewModel.uiState.value
-            assertEquals("10th Mathematics", mathState.subjectName)
-            assertEquals("10th Mathematics Roadmap", mathState.title)
-            assertEquals("📐", mathState.subjectIcon)
-            assertEquals(8, mathState.milestones.size)
-            assertEquals("Relations & Functions", mathState.milestones.first().title)
-            assertEquals(100101, mathState.activeChapterId)
-            assertTrue(mathState.milestoneSummary.contains("8 milestones"))
+            // Test Python Roadmap
+            viewModel.loadSubjectRoadmap("101")
+            val pyState = viewModel.uiState.value
+            assertEquals("Python & Coding Logic", pyState.subjectName)
+            assertEquals("Python & Coding Logic Roadmap", pyState.title)
+            assertEquals("🐍", pyState.subjectIcon)
+            assertEquals(5, pyState.milestones.size)
+            assertEquals("Variables, Data Types & Dynamic Typing", pyState.milestones.first().title)
+            assertEquals(10101, pyState.activeChapterId)
+            assertTrue(pyState.milestoneSummary.contains("5 milestones"))
 
-            // Test 11th Physics Roadmap
-            viewModel.loadSubjectRoadmap("1102")
-            val phyState = viewModel.uiState.value
-            assertEquals("11th Physics", phyState.subjectName)
-            assertEquals("11th Physics Roadmap", phyState.title)
-            assertEquals(11, phyState.milestones.size)
-            assertEquals("Nature of Physical World & Measurement", phyState.milestones.first().title)
+            // Test SQL Roadmap
+            viewModel.loadSubjectRoadmap("102")
+            val sqlState = viewModel.uiState.value
+            assertEquals("SQL & Database Management", sqlState.subjectName)
+            assertEquals("SQL & Database Management Roadmap", sqlState.title)
+            assertEquals(5, sqlState.milestones.size)
+            assertEquals("Relational Databases, Tables & Keys (Primary/Foreign)", sqlState.milestones.first().title)
 
-            // Test 12th Computer Science Roadmap
-            viewModel.loadSubjectRoadmap("1205")
-            val csState = viewModel.uiState.value
-            assertEquals("12th Computer Science", csState.subjectName)
-            assertEquals("12th Computer Science Roadmap", csState.title)
-            assertEquals(16, csState.milestones.size)
-            assertEquals("Function", csState.milestones.first().title)
+            // Test AI Tech Roadmap
+            viewModel.loadSubjectRoadmap("103")
+            val aiState = viewModel.uiState.value
+            assertEquals("AI & Modern Tech Concepts", aiState.subjectName)
+            assertEquals("AI & Modern Tech Concepts Roadmap", aiState.title)
+            assertEquals(5, aiState.milestones.size)
+            assertEquals("Large Language Models (LLMs) & Tokens", aiState.milestones.first().title)
         }
     }
 
@@ -156,11 +144,11 @@ class SubjectRoutingAndSeedingTest {
         runBlocking {
             val viewModel = ChapterLessonViewModel(externalScope = CoroutineScope(Dispatchers.Unconfined))
 
-            // Load Relations and Functions (chapterId = 100101)
-            viewModel.loadChapterLesson(chapterId = 100101)
+            // Load Python Core Essentials (chapterId = 10101)
+            viewModel.loadChapterLesson(chapterId = 10101)
             val state = viewModel.uiState.value
 
-            assertEquals("Relations & Functions", state.chapterTitle)
+            assertEquals("Variables, Data Types & Dynamic Typing", state.chapterTitle)
             assertFalse("Placeholder text must be completely eliminated", state.part1Content.contains("Welcome to this chapter lesson"))
             assertTrue("Part 1 must contain real definitions", state.part1Content.isNotBlank())
             assertTrue("Part 2 must contain worked examples", state.part2Content.isNotBlank())
@@ -171,19 +159,19 @@ class SubjectRoutingAndSeedingTest {
 
     @Test
     fun testBaseCurriculumResolvesAllSubjectNumericIdsCorrectly() {
-        assertEquals(1001, BaseCurriculumData.resolveSubjectNumericId("1001"))
-        assertEquals(1001, BaseCurriculumData.resolveSubjectNumericId("10th Mathematics"))
-        assertEquals(1002, BaseCurriculumData.resolveSubjectNumericId("1002"))
-        assertEquals(1002, BaseCurriculumData.resolveSubjectNumericId("10th Science"))
-        assertEquals(1003, BaseCurriculumData.resolveSubjectNumericId("1003"))
-        assertEquals(1003, BaseCurriculumData.resolveSubjectNumericId("10th Social Science"))
-        assertEquals(1101, BaseCurriculumData.resolveSubjectNumericId("1101"))
-        assertEquals(1102, BaseCurriculumData.resolveSubjectNumericId("1102"))
-        assertEquals(1103, BaseCurriculumData.resolveSubjectNumericId("1103"))
-        assertEquals(1201, BaseCurriculumData.resolveSubjectNumericId("1201"))
-        assertEquals(1202, BaseCurriculumData.resolveSubjectNumericId("1202"))
-        assertEquals(1205, BaseCurriculumData.resolveSubjectNumericId("1205"))
-        assertEquals(1001, BaseCurriculumData.resolveSubjectNumericId("unknown_xyz"))
+        assertEquals(101, BaseCurriculumData.resolveSubjectNumericId("101"))
+        assertEquals(101, BaseCurriculumData.resolveSubjectNumericId("python"))
+        assertEquals(101, BaseCurriculumData.resolveSubjectNumericId("Python & Coding Logic"))
+        assertEquals(102, BaseCurriculumData.resolveSubjectNumericId("102"))
+        assertEquals(102, BaseCurriculumData.resolveSubjectNumericId("sql"))
+        assertEquals(102, BaseCurriculumData.resolveSubjectNumericId("SQL & Database Management"))
+        assertEquals(103, BaseCurriculumData.resolveSubjectNumericId("103"))
+        assertEquals(103, BaseCurriculumData.resolveSubjectNumericId("ai_tech"))
+        assertEquals(103, BaseCurriculumData.resolveSubjectNumericId("AI & Modern Tech Concepts"))
+        assertEquals(104, BaseCurriculumData.resolveSubjectNumericId("104"))
+        assertEquals(104, BaseCurriculumData.resolveSubjectNumericId("aptitude"))
+        assertEquals(104, BaseCurriculumData.resolveSubjectNumericId("Aptitude & Interview Prep"))
+        assertEquals(101, BaseCurriculumData.resolveSubjectNumericId("unknown_xyz"))
     }
 
     @Test
@@ -195,12 +183,12 @@ class SubjectRoutingAndSeedingTest {
                 externalScope = CoroutineScope(Dispatchers.Unconfined)
             )
 
-            // 1. Load Chapter Quiz for chapterId = 100101 (10th Math Ch 1)
-            viewModel.loadChapterQuiz(100101)
+            // 1. Load Chapter Quiz for chapterId = 10101 (Python Ch 1)
+            viewModel.loadChapterQuiz(10101)
             val state = viewModel.uiState.value
-            assertEquals(10, state.totalQuestions)
-            assertEquals("10_MATH", viewModel.currentSubjectId)
-            assertEquals("100101", viewModel.currentChapterId)
+            assertEquals(5, state.totalQuestions)
+            assertEquals("PYTHON", viewModel.currentSubjectId)
+            assertEquals("10101", viewModel.currentChapterId)
 
             // 2. Select option for question 1
             viewModel.selectOption("A")
@@ -226,25 +214,25 @@ class SubjectRoutingAndSeedingTest {
             // Verify score calculation
             assertNotNull(callbackResultCaptured)
             val result = callbackResultCaptured!!
-            assertEquals(10, result.totalQuestions)
+            assertEquals(5, result.totalQuestions)
             assertEquals(result.score, result.correctAnswers)
-            assertEquals(10 - result.score, result.incorrectAnswers)
-            assertEquals((result.score * 100) / 10, result.percentage)
+            assertEquals(5 - result.score, result.incorrectAnswers)
+            assertEquals((result.score * 100) / 5, result.percentage)
 
             // Verify local database persistence in 'quiz_records'
             val records = db.getAllRecords()
             assertTrue("Database must contain at least 1 record", records.isNotEmpty())
             val latest = records.first()
-            assertEquals("10_MATH", latest.subjectId)
-            assertEquals("100101", latest.chapterId)
+            assertEquals("PYTHON", latest.subjectId)
+            assertEquals("10101", latest.chapterId)
         }
     }
 
     @Test
     fun testCurriculumRepositoryNormalizesSubjectIdentifiersCorrectly() {
-        assertEquals("1001", CurriculumRepository.normalizeSubjectId("1001"))
-        assertEquals("10th mathematics", CurriculumRepository.normalizeSubjectId("10th Mathematics"))
-        assertEquals("12th physics", CurriculumRepository.normalizeSubjectId("12th%20Physics"))
+        assertEquals("101", CurriculumRepository.normalizeSubjectId("101"))
+        assertEquals("python & coding logic", CurriculumRepository.normalizeSubjectId("Python & Coding Logic"))
+        assertEquals("sql & database management", CurriculumRepository.normalizeSubjectId("SQL%20&%20Database%20Management"))
     }
 
     @Test
@@ -252,22 +240,22 @@ class SubjectRoutingAndSeedingTest {
         runBlocking {
             val repo = CurriculumRepository()
 
-            // 1. Check known base curriculum subject (10th Mathematics)
-            val mathChapters = repo.getChaptersForSubject("1001", "10th Mathematics")
-            assertTrue("Mathematics chapters must not be empty", mathChapters.isNotEmpty())
-            assertTrue("Mathematics must have at least 8 chapters", mathChapters.size >= 8)
-            assertEquals("Relations & Functions", mathChapters.first().title)
+            // 1. Check known base curriculum track (Python & Coding Logic)
+            val pyChapters = repo.getChaptersForSubject("101", "Python & Coding Logic")
+            assertTrue("Python chapters must not be empty", pyChapters.isNotEmpty())
+            assertEquals("Python must have exactly 5 chapters", 5, pyChapters.size)
+            assertEquals("Variables, Data Types & Dynamic Typing", pyChapters.first().title)
 
-            val mathQuizzes = repo.getSubjectQuizzes("1001", "10th Mathematics")
-            assertTrue("Mathematics quizzes must not be empty", mathQuizzes.isNotEmpty())
-            assertTrue("Quiz question count must be 10", mathQuizzes.first().questionCount >= 10)
+            val pyQuizzes = repo.getSubjectQuizzes("101", "Python & Coding Logic")
+            assertTrue("Python quizzes must not be empty", pyQuizzes.isNotEmpty())
+            assertEquals("Quiz question count must be 5", 5, pyQuizzes.first().questionCount)
 
             // 2. Check completely unknown / arbitrary subject - dynamic generation fallback
-            val dynamicChapters = repo.getChaptersForSubject("unknown_subject_99", "Environmental Engineering")
+            val dynamicChapters = repo.getChaptersForSubject("unknown_subject_99", "Rust Systems Programming")
             assertTrue("Dynamic chapters must never be empty", dynamicChapters.isNotEmpty())
             assertEquals("Must generate exactly 3 fallback chapters", 3, dynamicChapters.size)
 
-            val dynamicQuizzes = repo.getSubjectQuizzes("unknown_subject_99", "Environmental Engineering")
+            val dynamicQuizzes = repo.getSubjectQuizzes("unknown_subject_99", "Rust Systems Programming")
             assertTrue("Dynamic quizzes must never be empty", dynamicQuizzes.isNotEmpty())
             assertEquals(3, dynamicQuizzes.size)
             assertEquals(5, dynamicQuizzes.first().questionCount)
@@ -284,12 +272,12 @@ class SubjectRoutingAndSeedingTest {
             )
 
             // Test loading via subject name
-            viewModel.loadSubjectQuiz("10th Mathematics")
-            assertEquals("10_MATH", viewModel.currentSubjectId)
+            viewModel.loadSubjectQuiz("Python & Coding Logic")
+            assertEquals("PYTHON", viewModel.currentSubjectId)
             val state = viewModel.uiState.value
             assertFalse(state.isLoading)
-            assertTrue("10th Mathematics quiz questions must not be empty", state.questions.isNotEmpty())
-            assertTrue(state.topicTag.contains("10TH MATHEMATICS"))
+            assertTrue("Python quiz questions must not be empty", state.questions.isNotEmpty())
+            assertTrue(state.topicTag.contains("PYTHON"))
         }
     }
 }

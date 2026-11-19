@@ -287,7 +287,7 @@ fun ProfileContent(
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
                                                 AsyncImage(
-                                                    model = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri) ?: uiState.profilePhotoUri,
+                                                    model = RetrofitClient.resolveImageModel(uiState.profilePhotoUri) ?: uiState.profilePhotoUri,
                                                     contentDescription = "Profile Photo",
                                                     modifier = Modifier
                                                         .fillMaxSize()

@@ -121,40 +121,42 @@ class QuizViewModel(
 
         val isMistakeVault = chapterId == -999 || decodedSub.equals("MISTAKE_VAULT", ignoreCase = true)
         if (isMistakeVault) {
-            val mistakes = quizDao.getAllMistakes()
-            val vaultQuestions = mistakes.map { it.toQuizQuestionDto() }
-            val fQ = vaultQuestions.firstOrNull() ?: QuizQuestionDto(
-                id = 1,
-                questionNumber = 1,
-                question = "All caught up! Zero missed questions remaining in your Mistake Vault.",
-                options = mapOf(
-                    "A" to "Keep practicing quizzes to reinforce concepts.",
-                    "B" to "Review previous chapters.",
-                    "C" to "Well done!",
-                    "D" to "All of the above"
-                ),
-                correctOption = "D",
-                explanation = "Your Mistake Vault automatically tracks questions you answer incorrectly and clears them once answered correctly."
-            )
-            val qList = if (vaultQuestions.isNotEmpty()) vaultQuestions else listOf(fQ)
-            currentSubjectId = "MISTAKE_VAULT"
-            currentChapterId = "-999"
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = null,
-                    chapterId = -999,
-                    currentQuestionIndex = 1,
-                    topicTag = "MISTAKE VAULT · RE-TEST",
-                    title = "Mistake Vault Re-Test (${qList.size} Questions)",
-                    questions = qList,
-                    totalQuestions = qList.size,
-                    questionText = qList.first().question,
-                    options = buildOptionsFromDto(qList.first()),
-                    selectedOptionId = null,
-                    answersMap = emptyMap(),
-                    submissionResult = null
+            scope.launch {
+                val mistakes = quizDao.getAllMistakes()
+                val vaultQuestions = mistakes.map { it.toQuizQuestionDto() }
+                val fQ = vaultQuestions.firstOrNull() ?: QuizQuestionDto(
+                    id = 1,
+                    questionNumber = 1,
+                    question = "All caught up! Zero missed questions remaining in your Mistake Vault.",
+                    options = mapOf(
+                        "A" to "Keep practicing quizzes to reinforce concepts.",
+                        "B" to "Review previous chapters.",
+                        "C" to "Well done!",
+                        "D" to "All of the above"
+                    ),
+                    correctOption = "D",
+                    explanation = "Your Mistake Vault automatically tracks questions you answer incorrectly and clears them once answered correctly."
                 )
+                val qList = if (vaultQuestions.isNotEmpty()) vaultQuestions else listOf(fQ)
+                currentSubjectId = "MISTAKE_VAULT"
+                currentChapterId = "-999"
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        chapterId = -999,
+                        currentQuestionIndex = 1,
+                        topicTag = "MISTAKE VAULT · RE-TEST",
+                        title = "Mistake Vault Re-Test (${qList.size} Questions)",
+                        questions = qList,
+                        totalQuestions = qList.size,
+                        questionText = qList.first().question,
+                        options = buildOptionsFromDto(qList.first()),
+                        selectedOptionId = null,
+                        answersMap = emptyMap(),
+                        submissionResult = null
+                    )
+                }
             }
             return
         }
@@ -239,6 +241,18 @@ class QuizViewModel(
 
                 // Step 2: Crucial Fallback if Room DB returns 0 questions
                 if (finalQuestions.isEmpty()) {
+                    // Check if Full Track Mock Quiz
+                    val isFullTrackMock = targetChapterId <= 0 || targetChapterId == 999 || decodedSub.contains("MOCK", ignoreCase = true)
+                    if (isFullTrackMock) {
+                        val trackSub = BaseCurriculumData.getSubjectById(currentSubjectId)
+                        val allTrackQuestions = trackSub?.chapters?.flatMap { it.mcqs } ?: emptyList()
+                        if (allTrackQuestions.isNotEmpty()) {
+                            finalQuestions = allTrackQuestions.shuffled().take(25)
+                            topicTag = "${trackSub?.name ?: currentSubjectId} FULL TRACK MOCK".uppercase()
+                            quizTitle = "${trackSub?.name ?: "Track"} 25Q Mock Exam"
+                        }
+                    }
+
                     // A. Check BaseCurriculumData
                     if (baseChapter != null && baseChapter.mcqs.isNotEmpty()) {
                         finalQuestions = baseChapter.mcqs

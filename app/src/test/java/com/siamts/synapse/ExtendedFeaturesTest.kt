@@ -18,42 +18,30 @@ class ExtendedFeaturesTest {
     private val assetsCatalogFile = File("src/main/assets/extended_curriculum_catalog.json")
 
     @Test
-    fun testExtendedCurriculumCatalogHas10ProductionGradeSubjects() {
+    fun testExtendedCurriculumCatalogHas4PlacementTracks() {
         val fileToRead = if (assetsCatalogFile.exists()) assetsCatalogFile else File("app/src/main/assets/extended_curriculum_catalog.json")
         assertTrue("Catalog file must exist", fileToRead.exists())
 
         val catalog = gson.fromJson(fileToRead.readText(), ExtendedCurriculumCatalog::class.java)
         assertNotNull(catalog)
-        assertEquals(17, catalog.subjects.size)
+        assertEquals(4, catalog.subjects.size)
 
         val expectedSubjectNames = listOf(
-            "10th Mathematics",
-            "10th Science",
-            "10th Social Science",
-            "11th Mathematics",
-            "11th Physics",
-            "11th Chemistry",
-            "11th Biology (Botany & Zoology)",
-            "11th Computer Science",
-            "11th Commerce & Accountancy",
-            "11th Economics",
-            "12th Mathematics",
-            "12th Physics",
-            "12th Chemistry",
-            "12th Biology (Botany & Zoology)",
-            "12th Computer Science",
-            "12th Commerce & Accountancy",
-            "12th Economics"
+            "Python & Coding Logic",
+            "SQL & Database Management",
+            "AI & Modern Tech Concepts",
+            "Aptitude & Interview Prep"
         )
 
         for (name in expectedSubjectNames) {
             val sub = catalog.subjects.firstOrNull { it.name.equals(name, ignoreCase = true) }
             assertNotNull("Subject $name must exist in catalog", sub)
             assertTrue("Subject $name must have chapters", sub!!.chapters.isNotEmpty())
+            assertEquals("Subject $name must have 5 chapters", 5, sub.chapters.size)
 
             for (ch in sub.chapters) {
                 assertTrue("Chapter title must not be blank", ch.title.isNotBlank())
-                assertTrue("Chapter must have at least 5 MCQs", ch.mcqs.size >= 5)
+                assertEquals("Chapter must have exactly 5 MCQs", 5, ch.mcqs.size)
 
                 for (mcq in ch.mcqs) {
                     assertTrue("Question must not be blank", mcq.question.isNotBlank())
@@ -106,24 +94,26 @@ class ExtendedFeaturesTest {
         assertTrue("Should have initial base subjects", viewModel.uiState.value.subjects.isNotEmpty())
         assertEquals(viewModel.uiState.value.subjects.size, viewModel.uiState.value.filteredSubjects.size)
 
-        // 2. Search for "calculus"
-        viewModel.onSearchQueryChanged("calculus")
-        val diffState = viewModel.uiState.value
-        assertTrue("Should match calculus in topics", diffState.searchResults.any {
-            it.chapterTitle?.contains("Calculus", ignoreCase = true) == true ||
-            it.subjectName.contains("Mathematics", ignoreCase = true)
+        // 2. Search for "python"
+        viewModel.onSearchQueryChanged("python")
+        val pyState = viewModel.uiState.value
+        assertTrue("Should match Python in subjects or topics", pyState.filteredSubjects.any {
+            it.title.contains("Python", ignoreCase = true)
         })
 
-        // 3. Search for "wave" (physics)
-        viewModel.onSearchQueryChanged("wave")
-        val waveState = viewModel.uiState.value
-        assertTrue("Should match Physics waves", waveState.filteredSubjects.any { it.title.contains("Physics", ignoreCase = true) })
-        assertTrue("Should match Waves chapter", waveState.searchResults.any { it.chapterTitle?.contains("Wave", ignoreCase = true) == true })
+        // 3. Search for "sql"
+        viewModel.onSearchQueryChanged("sql")
+        val sqlState = viewModel.uiState.value
+        assertTrue("Should match SQL in subjects or topics", sqlState.filteredSubjects.any {
+            it.title.contains("SQL", ignoreCase = true)
+        })
 
-        // 4. Search for "algorithms"
-        viewModel.onSearchQueryChanged("algorithms")
-        val csState = viewModel.uiState.value
-        assertTrue("Should match Computer Science", csState.filteredSubjects.any { it.title.contains("Computer Science", ignoreCase = true) })
+        // 4. Search for "ai"
+        viewModel.onSearchQueryChanged("ai")
+        val aiState = viewModel.uiState.value
+        assertTrue("Should match AI in subjects or topics", aiState.filteredSubjects.any {
+            it.title.contains("AI", ignoreCase = true)
+        })
 
         // 5. Clear search query
         viewModel.onSearchQueryChanged("")

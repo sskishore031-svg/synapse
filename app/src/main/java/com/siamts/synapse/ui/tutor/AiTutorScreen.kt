@@ -223,6 +223,12 @@ fun AiTutorScreen(
             onElaborate = { message ->
                 viewModel.onElaborateClicked(message)
             },
+            onFormatTwoMark = { message ->
+                viewModel.formatAsTwoMark(message)
+            },
+            onFormatFiveMark = { message ->
+                viewModel.formatAsFiveMark(message)
+            },
             onOpenNotes = {
                 onNavigateToNotes?.invoke()
             },
@@ -344,6 +350,8 @@ fun AiTutorContent(
     onSpeakMessage: (messageId: String, text: String) -> Unit = { _, _ -> },
     onSaveNote: (ChatMessage) -> Unit = {},
     onElaborate: (ChatMessage) -> Unit = {},
+    onFormatTwoMark: (ChatMessage) -> Unit = {},
+    onFormatFiveMark: (ChatMessage) -> Unit = {},
     onOpenNotes: () -> Unit = {},
     onBackClick: () -> Unit,
     onMicTouchDown: () -> Boolean = { true },
@@ -541,8 +549,8 @@ fun AiTutorContent(
                                         },
                                         onSaveNote = { onSaveNote(message) },
                                         onElaborate = { onElaborate(message) },
-                                        onFormatTwoMark = { viewModel.formatAsTwoMark(message) },
-                                        onFormatFiveMark = { viewModel.formatAsFiveMark(message) }
+                                        onFormatTwoMark = { onFormatTwoMark(message) },
+                                        onFormatFiveMark = { onFormatFiveMark(message) }
                                     )
                                 }
                             }

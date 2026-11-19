@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,11 +44,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ai.LocalAIEngine
+import com.siamts.synapse.ai.VoiceAssistantManager
+import com.siamts.synapse.data.local.BaseCurriculumData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.siamts.synapse.ui.theme.BlueAccent
@@ -118,8 +123,17 @@ fun ChapterLessonScreen(
     var isSavingSmartNote by remember { mutableStateOf(false) }
     var isNotesSavedTemporarily by remember { mutableStateOf(false) }
     var saveFeedbackMessage by remember { mutableStateOf<String?>(null) }
+    var isTtsSpeaking by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                VoiceAssistantManager.getInstance(context).stopSpeaking()
+            } catch (_: Throwable) {}
+        }
+    }
 
     LaunchedEffect(chapterId, subjectId) {
         if (chapterId > 0 && (uiState.chapterId != chapterId || uiState.part1Content.isBlank())) {
@@ -195,14 +209,16 @@ fun ChapterLessonScreen(
                                     if (uiState.isCompleted) Color(0xFF059669) else Color(0xFF334155),
                                     RoundedCornerShape(12.dp)
                                 )
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (uiState.isCompleted) "✓ Completed" else "${uiState.durationMinutes} min",
                                 color = if (uiState.isCompleted) Color(0xFF34D399) else TextSecondary,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -223,7 +239,7 @@ fun ChapterLessonScreen(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        // High-Utility Mode Toggle: Full A-to-Z Lesson | 5-Min Cheat Sheet
+                        // High-Utility Mode Toggle: Full Concept Guide | Quick Cheat Sheet
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -244,7 +260,7 @@ fun ChapterLessonScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Full A-to-Z Lesson",
+                                    text = "Full Concept Guide",
                                     color = if (isFull) Color.White else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
@@ -256,7 +272,7 @@ fun ChapterLessonScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isCheat) Brush.horizontalGradient(listOf(Color(0xFFD97706), Color(0xFFB45309))) else Color.Transparent,
+                                        if (isCheat) Brush.horizontalGradient(listOf(Color(0xFFD97706), Color(0xFFB45309))) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { viewModel.setCheatSheetMode(true) }
@@ -264,60 +280,8 @@ fun ChapterLessonScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "⚡ 5-Min Cheat Sheet",
+                                    text = "⚡ Quick Cheat Sheet",
                                     color = if (isCheat) Color.White else Color(0xFF64748B),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        if (!uiState.isCheatSheetMode) {
-                        // Part 1 / Part 2 Tabs
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            val isPart1 = uiState.currentPartIndex == 0
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(
-                                        if (isPart1) BlueAccent else Color.Transparent,
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .clickable { viewModel.selectPart(0) }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Part 1: A-to-Z Concepts & Formulas",
-                                    color = if (isPart1) Color.White else Color(0xFF64748B),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
-
-                            val isPart2 = uiState.currentPartIndex == 1
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(
-                                        if (isPart2) BlueAccent else Color.Transparent,
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .clickable { viewModel.selectPart(1) }
-                                    .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Part 2: Worked Examples & Board Q&A",
-                                    color = if (isPart2) Color.White else Color(0xFF64748B),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
@@ -326,177 +290,224 @@ fun ChapterLessonScreen(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Scrollable Educational Content
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            val currentTitle = if (uiState.currentPartIndex == 0) uiState.part1Title else uiState.part2Title
-                            val currentContent = if (uiState.currentPartIndex == 0) uiState.part1Content else uiState.part2Content
+                        if (!uiState.isCheatSheetMode) {
+                            // Spacious Full-Width Educational Reader (4 Structured Sections)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Section 1: Concept Overview & Real-Life Analogy
+                                SectionHeader(title = "1. Concept Overview & Real-Life Analogy", icon = "💡")
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(18.dp)) {
+                                        Text(
+                                            text = uiState.chapterTitle.ifEmpty { "Core Concept" },
+                                            color = Color(0xFF0F172A),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Text(
+                                            text = uiState.part1Content,
+                                            color = Color(0xFF334155),
+                                            fontSize = 16.sp,
+                                            lineHeight = 24.sp
+                                        )
+                                    }
+                                }
 
-                            Text(
-                                text = currentTitle,
-                                color = Color(0xFF0F172A),
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
+                                // Section 2: Core Syntax / Formula / Code Example
+                                SectionHeader(title = "2. Core Syntax / Formula / Code Example", icon = "⚡")
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(18.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "CODE / FORMULA SPECIFICATION",
+                                                color = CyanAccent,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            )
+                                            Text(
+                                                text = "SYNTAX",
+                                                color = Color(0xFF64748B),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        val codeOrFormulaText = if (uiState.coreFormulas.isNotEmpty()) {
+                                            uiState.coreFormulas.joinToString("\n\n") { "• $it" }
+                                        } else {
+                                            uiState.part2Content
+                                        }
+                                        Text(
+                                            text = codeOrFormulaText,
+                                            color = Color(0xFFE2E8F0),
+                                            fontSize = 14.sp,
+                                            lineHeight = 22.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+
+                                // Section 3: Key Takeaways & Placement Interview Tips
+                                SectionHeader(title = "3. Key Takeaways & Placement Interview Tips", icon = "🎯")
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                                    border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(text = "🎯", fontSize = 18.sp)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "High-Yield Placement Principles",
+                                                color = Color(0xFF1E3A8A),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        if (uiState.syllabus.isNotEmpty()) {
+                                            uiState.syllabus.forEach { point ->
+                                                Row(verticalAlignment = Alignment.Top) {
+                                                    Text(text = "• ", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                    Text(text = point, color = Color(0xFF1E293B), fontSize = 14.sp, lineHeight = 20.sp)
+                                                }
+                                            }
+                                        } else {
+                                            Text(
+                                                text = "Master time & space complexity, edge-case validation, and clean idioms for technical interview coding rounds.",
+                                                color = Color(0xFF1E293B),
+                                                fontSize = 14.sp,
+                                                lineHeight = 22.sp
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Section 4: Quick Self-Check Q&A
+                                SectionHeader(title = "4. Quick Self-Check Q&A", icon = "❓")
+                                QuickSelfCheckSection(chapterId = uiState.chapterId)
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        } else {
+                            // 5-Min Quick Revision Cheat Sheet
+                            ChapterCheatSheetView(
+                                uiState = uiState,
+                                modifier = Modifier.weight(1f)
                             )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = currentContent,
-                                        color = Color(0xFF334155),
-                                        fontSize = 15.sp,
-                                        lineHeight = 24.sp
-                                    )
-                                }
-                            }
-
-                            if (uiState.currentPartIndex == 0 && uiState.syllabus.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(14.dp))
-                                Text(
-                                    text = "Syllabus Objectives",
-                                    color = Color(0xFF0F172A),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        uiState.syllabus.forEach { topic ->
-                                            Row(verticalAlignment = Alignment.Top) {
-                                                Text(text = "• ", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                                Text(text = topic, color = Color(0xFF334155), fontSize = 13.sp, lineHeight = 20.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (uiState.currentPartIndex == 1 && uiState.coreFormulas.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(14.dp))
-                                Text(
-                                    text = "Core Formulas & Rules",
-                                    color = Color(0xFF0F172A),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        uiState.coreFormulas.forEach { formula ->
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(text = "⚡ ", fontSize = 14.sp)
-                                                Text(
-                                                    text = formula,
-                                                    color = Color(0xFF92400E),
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Key Takeaways Box
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(text = "💡", fontSize = 20.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "Read both parts carefully before testing your skills in the chapter quiz.",
-                                        color = BlueAccent,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(20.dp))
                         }
-                    } else {
-                        // 5-Min Quick Revision Cheat Sheet
-                        ChapterCheatSheetView(
-                            uiState = uiState,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
 
                         // Bottom Actions Bar
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // AI Smart Notes Generator Button
-                            Button(
-                                onClick = {
-                                    saveFeedbackMessage = null
-                                    showSmartNotesDialog = true
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(46.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                            // Row 1: Save to Smart Notes + Listen (TTS)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(
+                                Button(
+                                    onClick = {
+                                        saveFeedbackMessage = null
+                                        showSmartNotesDialog = true
+                                    },
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.horizontalGradient(
-                                                listOf(
-                                                    Color(0xFF2563EB),
-                                                    Color(0xFF7C3AED),
-                                                    Color(0xFF06B6D4)
-                                                )
+                                        .weight(1f)
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        Color(0xFF2563EB),
+                                                        Color(0xFF7C3AED)
+                                                    )
+                                                ),
+                                                RoundedCornerShape(12.dp)
                                             ),
-                                            RoundedCornerShape(12.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "📝 Save Smart Notes",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+
+                                Button(
+                                    onClick = {
+                                        val tts = VoiceAssistantManager.getInstance(context)
+                                        if (isTtsSpeaking) {
+                                            tts.stopSpeaking()
+                                            isTtsSpeaking = false
+                                        } else {
+                                            val rawText = if (uiState.isCheatSheetMode) {
+                                                "${uiState.chapterTitle}. Key Concepts: " + uiState.coreFormulas.joinToString(". ")
+                                            } else if (uiState.currentPartIndex == 0) {
+                                                "${uiState.part1Title}. ${uiState.part1Content}"
+                                            } else {
+                                                "${uiState.part2Title}. ${uiState.part2Content}"
+                                            }
+                                            val cleanText = rawText.replace(Regex("[#*`•⚡💡✨📘🎯]"), "").trim()
+                                            if (cleanText.isNotBlank()) {
+                                                isTtsSpeaking = true
+                                                tts.speak(cleanText) {
+                                                    isTtsSpeaking = false
+                                                }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isTtsSpeaking) Color(0xFFEF4444) else Color(0xFF0F172A)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(
-                                        text = "📝 Save A-to-Z Notes",
+                                        text = if (isTtsSpeaking) "⏹️ Stop Audio" else "🔊 Listen (TTS)",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        fontSize = 12.sp
                                     )
                                 }
                             }
 
+                            // Row 2: Mark Done + Take 5-Min Quiz
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -505,7 +516,9 @@ fun ChapterLessonScreen(
                                     onClick = {
                                         viewModel.markAsCompleted()
                                     },
-                                    modifier = Modifier.weight(1f).height(46.dp),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (uiState.isCompleted) Color(0xFF059669) else BlueAccent
                                     ),
@@ -513,29 +526,94 @@ fun ChapterLessonScreen(
                                     enabled = !uiState.isMarkingComplete
                                 ) {
                                     if (uiState.isMarkingComplete) {
-                                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
                                     } else {
                                         Text(
-                                            text = if (uiState.isCompleted) "✓ Completed" else "Mark as Completed",
+                                            text = if (uiState.isCompleted) "✓ Mark Done" else "Mark Done",
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
+                                            fontSize = 12.sp
                                         )
                                     }
                                 }
 
                                 Button(
                                     onClick = { onTakeQuiz(uiState.chapterId) },
-                                    modifier = Modifier.weight(1f).height(46.dp),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Text(
-                                        text = "Take Quiz ✍️",
+                                        text = "Take 5-Min Quiz ✍️",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        fontSize = 12.sp
                                     )
+                                }
+                            }
+
+                            // Track Completion State
+                            if (uiState.nextChapterId == null && uiState.isCompleted) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD1FAE5))
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "✓ TRACK COMPLETED!",
+                                            color = Color(0xFF065F46),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "You've completed all lessons in ${uiState.subjectName}!",
+                                            color = Color(0xFF047857),
+                                            fontSize = 11.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            val firstChapterId = BaseCurriculumData.getSubjectById(
+                                                uiState.subjectSlug.ifBlank { uiState.subjectId.toString() }
+                                            )?.chapters?.firstOrNull()?.chapterId ?: (uiState.chapterId - 4)
+
+                                            Button(
+                                                onClick = { onNavigateToChapter(firstChapterId) },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(36.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text("Review Again", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+
+                                            Button(
+                                                onClick = {
+                                                    viewModel.resetTrackCompletion()
+                                                },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(36.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64748B)),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text("Reset Track", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -654,14 +732,14 @@ fun ChapterLessonScreen(
                         }
                     }
 
-                    // 2-Mark & 5-Mark Samacheer Revision Points Card
+                    // High-Yield Placement & Interview Revision Points Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFAF5FF))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "💡 2-Mark & 5-Mark Samacheer Revision Points", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = "💡 High-Yield Placement & Interview Revision Points", color = PurpleAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             smartNotes.examTakeaways.forEachIndexed { idx, takeaway ->
                                 Text(text = "${idx + 1}. $takeaway", color = Color(0xFF1E293B), fontSize = 12.sp, lineHeight = 17.sp)
@@ -765,6 +843,115 @@ fun ChapterLessonScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, icon: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+    ) {
+        Text(text = icon, fontSize = 18.sp)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            color = Color(0xFF0F172A),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun QuickSelfCheckSection(chapterId: Int) {
+    val quizData = remember(chapterId) {
+        BaseCurriculumData.getChapterById(chapterId)?.mcqs?.take(2).orEmpty()
+    }
+
+    if (quizData.isEmpty()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Q: What is the core invariant of this topic?",
+                    color = Color(0xFF0F172A),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "A: State must be kept consistent, edge cases handled, and algorithmic complexity minimized.",
+                    color = Color(0xFF059669),
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp
+                )
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            quizData.forEachIndexed { idx, q ->
+                var revealed by remember(q.id) { mutableStateOf(false) }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Check ${idx + 1}: ${q.question}",
+                            color = Color(0xFF0F172A),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            lineHeight = 20.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (!revealed) {
+                            TextButton(
+                                onClick = { revealed = true },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                            ) {
+                                Text(
+                                    text = "💡 Tap to reveal answer",
+                                    color = BlueAccent,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFECFDF5), RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "✓ Correct Answer: Option ${q.correctOption}",
+                                        color = Color(0xFF065F46),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (!q.explanation.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = q.explanation.orEmpty(),
+                                            color = Color(0xFF047857),
+                                            fontSize = 12.sp,
+                                            lineHeight = 18.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

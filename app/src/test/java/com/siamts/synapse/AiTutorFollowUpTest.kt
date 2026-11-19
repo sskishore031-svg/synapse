@@ -31,7 +31,7 @@ class AiTutorFollowUpTest {
 
     @Test
     fun testFollowUpShortening_compressesPreviousTopic() {
-        val conceptResp = engine.generateResponse("what is newton law?")
+        val conceptResp = engine.generateResponse("what is python mutability and memory model?")
         assertNotNull(conceptResp.matchedTopic)
 
         val shortenQueries = listOf(
@@ -51,7 +51,7 @@ class AiTutorFollowUpTest {
 
     @Test
     fun testFollowUpElaboration_deepensBreakdown() {
-        val conceptResp = engine.generateResponse("explain matrices")
+        val conceptResp = engine.generateResponse("explain sql join mechanics")
         assertNotNull(conceptResp.matchedTopic)
 
         val elaborateQueries = listOf(

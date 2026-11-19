@@ -59,18 +59,14 @@ class SubjectDetailViewModel(
             null
         }
 
-        val subject = repo?.getSubjectById(trimmed) ?: BaseCurriculumData.subjects.firstOrNull {
-            it.id.equals(trimmed, ignoreCase = true) ||
-            it.name.equals(trimmed, ignoreCase = true) ||
-            it.slug.equals(trimmed, ignoreCase = true) ||
-            it.subjectId.toString() == trimmed ||
-            (trimmed.lowercase(Locale.ROOT) == "math" && it.id == "MATH") ||
-            (trimmed.lowercase(Locale.ROOT) == "cs" && it.id == "CS") ||
-            (trimmed.lowercase(Locale.ROOT) == "ds" && it.id == "DS") ||
-            (trimmed.lowercase(Locale.ROOT) == "ai" && it.id == "AI") ||
-            (trimmed.lowercase(Locale.ROOT) == "phy" && it.id == "PHY") ||
-            (trimmed.lowercase(Locale.ROOT) == "chem" && it.id == "CHEM")
-        }
+        val subject = repo?.getSubjectById(trimmed)
+            ?: BaseCurriculumData.getSubjectById(trimmed)
+            ?: BaseCurriculumData.subjects.firstOrNull {
+                it.id.equals(trimmed, ignoreCase = true) ||
+                it.name.equals(trimmed, ignoreCase = true) ||
+                it.slug.equals(trimmed, ignoreCase = true) ||
+                it.subjectId.toString() == trimmed
+            }
 
         if (subject != null) {
             val parsedColor = try {

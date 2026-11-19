@@ -3,6 +3,7 @@ package com.siamts.synapse.ui.subjects
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -86,6 +87,7 @@ fun SubjectSelectionScreen(
             viewModel.onTabSelected(index)
             onTabSelect(index)
         },
+        onRestartSubject = { viewModel.restartSubject(it) },
         modifier = modifier,
     )
 }
@@ -102,6 +104,7 @@ fun SubjectSelectionContent(
     onToggleCatalogSubject: (String) -> Unit,
     onTabSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onRestartSubject: ((String) -> Unit)? = null,
 ) {
     val isSearching = uiState.searchQuery.isNotBlank()
 
@@ -175,10 +178,11 @@ fun SubjectSelectionContent(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Crisp Class Selector Filter Chips (10th Std, 11th Std, 12th Std)
+                    // Crisp Track Selector Filter Chips (All Tracks, Python, SQL, AI & Tech, Aptitude)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
                             .padding(vertical = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -563,34 +567,34 @@ fun SubjectSelectionContent(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                                 ) {
-                                                    // Refer Again button
+                                                    // Review Again button
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
                                                             .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                            .clickable { onSubjectClick(subject) }
+                                                            .clickable { onSubjectClick(subject.id) }
                                                             .padding(vertical = 7.dp),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Text(
-                                                            text = "Refer Again",
+                                                            text = "Review Again",
                                                             color = BlueAccent,
                                                             fontSize = 11.sp,
                                                             fontWeight = FontWeight.Bold
                                                         )
                                                     }
 
-                                                    // Restart button
+                                                    // Reset Track button
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
                                                             .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                                            .clickable { viewModel.restartSubject(subject.id) }
+                                                            .clickable { onRestartSubject?.invoke(subject.id) }
                                                             .padding(vertical = 7.dp),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Text(
-                                                            text = "Restart",
+                                                            text = "Reset Track",
                                                             color = Color(0xFF64748B),
                                                             fontSize = 11.sp,
                                                             fontWeight = FontWeight.Bold

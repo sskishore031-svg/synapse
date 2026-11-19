@@ -362,7 +362,7 @@ object RetrofitClient {
      */
     fun formatPhotoUrl(rawUrl: String?): String? {
         if (rawUrl.isNullOrBlank()) return null
-        if (rawUrl.startsWith("content://") || rawUrl.startsWith("file://")) return rawUrl
+        if (rawUrl.startsWith("content://") || rawUrl.startsWith("file://") || rawUrl.startsWith("/")) return rawUrl
         val baseUrl = getBaseUrl()
         return if (rawUrl.startsWith("http://", ignoreCase = true) || rawUrl.startsWith("https://", ignoreCase = true)) {
             try {
@@ -381,6 +381,17 @@ object RetrofitClient {
             val cleanBase = baseUrl.trimEnd('/')
             val cleanPath = rawUrl.trimStart('/')
             "$cleanBase/$cleanPath"
+        }
+    }
+
+    fun resolveImageModel(rawUrl: String?): Any? {
+        val formatted = formatPhotoUrl(rawUrl) ?: return null
+        return if (formatted.startsWith("/") && !formatted.startsWith("//")) {
+            java.io.File(formatted)
+        } else if (formatted.startsWith("file://")) {
+            java.io.File(formatted.removePrefix("file://"))
+        } else {
+            formatted
         }
     }
 }

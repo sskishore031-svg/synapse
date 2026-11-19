@@ -33,48 +33,21 @@ object BaseCurriculumData {
     fun resolveSubjectNumericId(identifier: String): Int {
         val trimmed = identifier.trim().lowercase(Locale.ROOT)
         return when {
-            // Class 10
-            trimmed in setOf("10_math", "1001", "10th math", "10th maths", "10th mathematics", "math 10", "maths 10", "math", "maths", "mathematics", "algebra", "sub_math") -> 1001
-            trimmed in setOf("10_sci", "1002", "10th sci", "10th science", "science 10", "science", "physics & chemistry", "sub_science") -> 1002
-            trimmed in setOf("10_soc", "1003", "10th soc", "10th social", "10th social science", "social science", "social", "history & geography", "sub_social") -> 1003
-
-            // Class 11
-            trimmed in setOf("11_math", "1101", "11th math", "11th maths", "11th mathematics", "math 11", "maths 11") -> 1101
-            trimmed in setOf("11_phy", "1102", "11th phy", "11th physics", "physics 11") -> 1102
-            trimmed in setOf("11_chem", "1103", "11th chem", "11th chemistry", "chemistry 11") -> 1103
-            trimmed in setOf("11_bio", "1104", "11th bio", "11th biology", "biology 11", "botany 11", "zoology 11") -> 1104
-            trimmed in setOf("11_cs", "1105", "11th cs", "11th computer science", "cs 11", "computer science 11") -> 1105
-            trimmed in setOf("11_comm", "1106", "11th comm", "11th commerce", "11th accountancy", "commerce 11") -> 1106
-            trimmed in setOf("11_econ", "1107", "11th econ", "11th economics", "economics 11") -> 1107
-
-            // Class 12
-            trimmed in setOf("12_math", "1201", "12th math", "12th maths", "12th mathematics", "math 12", "maths 12") -> 1201
-            trimmed in setOf("12_phy", "1202", "12th phy", "12th physics", "physics 12") -> 1202
-            trimmed in setOf("12_chem", "1203", "12th chem", "12th chemistry", "chemistry 12") -> 1203
-            trimmed in setOf("12_bio", "1204", "12th bio", "12th biology", "biology 12", "botany 12", "zoology 12") -> 1204
-            trimmed in setOf("12_cs", "1205", "12th cs", "12th computer science", "cs 12", "computer science 12") -> 1205
-            trimmed in setOf("12_comm", "1206", "12th comm", "12th commerce", "12th accountancy", "commerce 12") -> 1206
-            trimmed in setOf("12_econ", "1207", "12th econ", "12th economics", "economics 12") -> 1207
+            // Track 1: Python & Coding Logic
+            trimmed in setOf("python", "101", "py", "coding", "logic", "python & coding logic", "python-coding-logic", "sub_python", "sub_py") -> 101
+            // Track 2: SQL & Database Management
+            trimmed in setOf("sql", "102", "db", "database", "rdbms", "sql & database management", "sql-database-management", "sub_sql", "sub_db") -> 102
+            // Track 3: AI & Modern Tech Concepts
+            trimmed in setOf("ai_tech", "103", "ai", "tech", "genai", "llm", "modern tech", "ai & modern tech concepts", "ai-modern-tech-concepts", "sub_ai") -> 103
+            // Track 4: Aptitude & Interview Prep
+            trimmed in setOf("aptitude", "104", "quant", "logical", "interview", "prep", "aptitude & interview prep", "aptitude-interview-prep", "sub_aptitude") -> 104
 
             // Fallback numeric parsing
-            trimmed == "1" -> 1001
-            trimmed == "2" -> 1002
-            trimmed == "3" -> 1003
-            trimmed == "4" -> 1101
-            trimmed == "5" -> 1102
-            trimmed == "6" -> 1103
-            trimmed == "7" -> 1104
-            trimmed == "8" -> 1105
-            trimmed == "9" -> 1106
-            trimmed == "10" -> 1107
-            trimmed == "11" -> 1201
-            trimmed == "12" -> 1202
-            trimmed == "13" -> 1203
-            trimmed == "14" -> 1204
-            trimmed == "15" -> 1205
-            trimmed == "16" -> 1206
-            trimmed == "17" -> 1207
-            else -> trimmed.toIntOrNull() ?: 1001
+            trimmed == "1" -> 101
+            trimmed == "2" -> 102
+            trimmed == "3" -> 103
+            trimmed == "4" -> 104
+            else -> trimmed.toIntOrNull() ?: 101
         }
     }
 

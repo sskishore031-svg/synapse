@@ -46,6 +46,6 @@ data class SubjectSelectionUiState(
     val isCatalogSheetOpen: Boolean = false,
     val selectedTab: Int = 1,
     val userInterests: List<String> = emptyList(),
-    val selectedClass: String = "All Classes",
-    val availableClasses: List<String> = listOf("All Classes", "10th Std", "11th Std", "12th Std")
+    val selectedClass: String = "All Tracks",
+    val availableClasses: List<String> = listOf("All Tracks", "Python", "SQL", "AI & Tech", "Aptitude")
 )

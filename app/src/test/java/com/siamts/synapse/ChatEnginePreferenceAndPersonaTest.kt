@@ -162,7 +162,7 @@ class ChatEnginePreferenceAndPersonaTest {
 
         // Out-of-scope response
         val respOos = engine.generateResponse("who is rajinikanth")
-        assertEquals("Sorry, that's not relatable to our 10th, 11th & 12th studies! Ask me any subject concept, quiz, or notes.", respOos.paragraph1)
+        assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, respOos.paragraph1)
     }
 
     @Test

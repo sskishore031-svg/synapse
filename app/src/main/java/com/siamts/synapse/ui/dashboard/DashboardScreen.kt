@@ -562,7 +562,7 @@ fun DashboardContent(
                         }
                     }
 
-                    // 5. AI Tutor Banner Card
+                    // 5. AI Tutor Banner Card (Clean Right-Aligned Pill with Zero Overlap)
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 2.dp
@@ -577,7 +577,7 @@ fun DashboardContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -586,8 +586,8 @@ fun DashboardContent(
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text(text = "✨", fontSize = 22.sp)
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "A question on your mind?",
                                             color = BlueAccent,
@@ -602,38 +602,30 @@ fun DashboardContent(
                                     }
                                 }
 
-                                Text(
-                                    text = "↗",
-                                    color = BlueAccent,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            brush = Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
+                                            shape = RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable { onAskAiClick() }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "🤖 ", fontSize = 13.sp)
+                                        Text(
+                                            text = "Chat with SYNAPSE",
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-
-                // Floating FRIDAY AI Chat Button overlay
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = 12.dp, end = 16.dp)
-                        .background(
-                            brush = Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                        .clickable { onAskAiClick() }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🤖 ", fontSize = 14.sp)
-                        Text(
-                            text = "Chat with SYNAPSE",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
                     }
                 }
             }

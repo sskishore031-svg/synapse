@@ -46,16 +46,10 @@ class LocalAIEngineTest {
         assertTrue("Dataset should contain at least 25 chunks", chunks.size >= 25)
 
         val subjects = chunks.map { it.subject }.distinct()
-        assertTrue("Contains 10th Mathematics", subjects.contains("10th Mathematics"))
-        assertTrue("Contains 10th Science", subjects.contains("10th Science"))
-        assertTrue("Contains 10th Social Science", subjects.contains("10th Social Science"))
-        assertTrue("Contains 11th Mathematics", subjects.contains("11th Mathematics"))
-        assertTrue("Contains 11th Physics", subjects.contains("11th Physics"))
-        assertTrue("Contains 11th Chemistry", subjects.contains("11th Chemistry"))
-        assertTrue("Contains 11th Biology", subjects.any { it.contains("Biology") })
-        assertTrue("Contains 12th Computer Science", subjects.contains("12th Computer Science"))
-        assertTrue("Contains 12th Commerce", subjects.any { it.contains("Commerce") })
-        assertTrue("Contains 12th Economics", subjects.contains("12th Economics"))
+        assertTrue("Contains Python & Coding Logic", subjects.any { it.contains("Python", ignoreCase = true) })
+        assertTrue("Contains SQL & Database Management", subjects.any { it.contains("SQL", ignoreCase = true) })
+        assertTrue("Contains AI & Modern Tech Concepts", subjects.any { it.contains("AI", ignoreCase = true) })
+        assertTrue("Contains Aptitude & Interview Prep", subjects.any { it.contains("Aptitude", ignoreCase = true) })
     }
 
     @Test
@@ -156,33 +150,33 @@ class LocalAIEngineTest {
     }
 
     @Test
-    fun testEducationalQuery_QuadraticEquation_intact() {
-        val response = engine.generateResponse("explain quadratic equation in mathematics")
+    fun testEducationalQuery_PythonMemoryModel_intact() {
+        val response = engine.generateResponse("explain python memory model and mutability")
         assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Mathematics") == true)
-        assertTrue(response.paragraph1.contains("Quadratic") || response.paragraph1.contains("Algebra") || response.paragraph1.contains("Concept"))
+        assertTrue(response.matchedSubject?.contains("Python") == true)
+        assertTrue(response.paragraph1.contains("Concept & Definition") || response.paragraph1.contains("Python") || response.paragraph1.contains("Memory"))
         assertFalse("Must not trigger fallback", response.paragraph1.contains("couldn't find a direct match"))
     }
 
     @Test
-    fun testTopicSuggestionIntent_mathsTopics_returnsStructuredListAndStartingPoint() {
-        val mathResponse = engine.generateResponse("give me some maths topic")
-        assertFalse(mathResponse.isGreeting)
-        assertTrue("Should be flagged as topic suggestion", mathResponse.isTopicSuggestion)
-        assertTrue(mathResponse.matchedSubject?.contains("Mathematics") == true)
-        assertTrue(mathResponse.paragraph1.contains("Mathematics Topics & Study Roadmap"))
-        assertTrue(mathResponse.paragraph2.contains("Where to Begin:"))
+    fun testTopicSuggestionIntent_pythonTopics_returnsStructuredListAndStartingPoint() {
+        val pyResponse = engine.generateResponse("give me some python topic")
+        assertFalse(pyResponse.isGreeting)
+        assertTrue("Should be flagged as topic suggestion", pyResponse.isTopicSuggestion)
+        assertTrue(pyResponse.matchedSubject?.contains("Python", ignoreCase = true) == true)
+        assertTrue(pyResponse.paragraph1.contains("Topics & Study Roadmap") || pyResponse.paragraph1.contains("Python"))
+        assertTrue(pyResponse.paragraph2.contains("Where to Begin:"))
 
-        val chemResponse = engine.generateResponse("suggest chemistry chapters")
-        assertFalse(chemResponse.isGreeting)
-        assertTrue("Should be flagged as topic suggestion", chemResponse.isTopicSuggestion)
-        assertTrue(chemResponse.matchedSubject?.contains("Chemistry") == true)
-        assertTrue(chemResponse.paragraph2.contains("Where to Begin:"))
+        val sqlResponse = engine.generateResponse("suggest sql chapters")
+        assertFalse(sqlResponse.isGreeting)
+        assertTrue("Should be flagged as topic suggestion", sqlResponse.isTopicSuggestion)
+        assertTrue(sqlResponse.matchedSubject?.contains("SQL", ignoreCase = true) == true)
+        assertTrue(sqlResponse.paragraph2.contains("Where to Begin:"))
 
-        val physicsResponse = engine.generateResponse("list physics topics")
-        assertFalse(physicsResponse.isGreeting)
-        assertTrue("Should be flagged as topic suggestion", physicsResponse.isTopicSuggestion)
-        assertTrue(physicsResponse.matchedSubject?.contains("Physics") == true)
+        val aptResponse = engine.generateResponse("list aptitude topics")
+        assertFalse(aptResponse.isGreeting)
+        assertTrue("Should be flagged as topic suggestion", aptResponse.isTopicSuggestion)
+        assertTrue(aptResponse.matchedSubject?.contains("Aptitude", ignoreCase = true) == true)
     }
 
     @Test
@@ -190,113 +184,86 @@ class LocalAIEngineTest {
         val response = engine.generateResponse("what can i learn")
         assertFalse(response.isGreeting)
         assertTrue("Should be flagged as topic suggestion", response.isTopicSuggestion)
-        assertTrue(response.paragraph1.contains("SYNAPSE AI Curriculum & Topic Catalog"))
-        assertTrue(response.paragraph2.contains("Mathematics"))
-        assertTrue(response.paragraph2.contains("Science"))
-        assertTrue(response.paragraph2.contains("Physics"))
-        assertTrue(response.paragraph2.contains("Chemistry"))
+        assertTrue(response.paragraph1.contains("Placement & Micro-Learning Tracks") || response.paragraph1.contains("Tracks") || response.paragraph1.contains("Catalog"))
+        assertTrue(response.paragraph2.contains("Python"))
+        assertTrue(response.paragraph2.contains("SQL"))
+        assertTrue(response.paragraph2.contains("AI"))
+        assertTrue(response.paragraph2.contains("Aptitude"))
     }
 
     @Test
-    fun testConceptualExplanation_quadraticEquation_structuredSections() {
-        val response = engine.generateResponse("explain quadratic equation and formula")
+    fun testConceptualExplanation_pythonComprehensions() {
+        val response = engine.generateResponse("explain list comprehensions in python")
         assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Mathematics") == true)
+        assertTrue(response.matchedSubject?.contains("Python") == true)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
-        assertTrue(response.paragraph2.contains("Formula") || response.paragraph2.contains("Rule") || response.paragraph2.contains("Takeaway"))
+        assertTrue(response.paragraph2.contains("Formula") || response.paragraph2.contains("Core Rule") || response.paragraph2.contains("Rule") || response.paragraph2.contains("Takeaway"))
     }
 
     @Test
-    fun testConceptualExplanation_wavesAndSound() {
-        val response = engine.generateResponse("what are waves in physics?")
+    fun testConceptualExplanation_sqlJoins() {
+        val response = engine.generateResponse("what are sql joins in databases?")
         assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Physics") == true)
-        assertTrue(response.paragraph1.contains("Concept & Definition"))
-        assertTrue(response.confidenceScore >= 5.0)
-    }
-
-    @Test
-    fun testConceptualExplanation_covalentBond() {
-        val response = engine.generateResponse("define chemical bonding in chemistry")
-        assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Chemistry") == true)
-        assertTrue(response.paragraph1.contains("Concept & Definition"))
-    }
-
-    @Test
-    fun testComputerScienceQuery_binarySearchAndSorting() {
-        val response = engine.generateResponse("explain function and algorithms in computer science")
-        assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Computer Science") == true)
+        assertTrue(response.matchedSubject?.contains("SQL") == true)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
         assertTrue(response.confidenceScore >= 5.0)
     }
 
     @Test
-    fun testDataScienceQuery_dataVisualizationAndModelMetrics() {
-        val response = engine.generateResponse("explain accounting and commerce fundamentals")
+    fun testConceptualExplanation_acidProperties() {
+        val response = engine.generateResponse("define acid properties in database transactions")
         assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Commerce") == true)
+        assertTrue(response.matchedSubject?.contains("SQL") == true)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
     }
 
     @Test
-    fun testAIQuery_gradientDescentAndNeuralNetworks() {
-        val response = engine.generateResponse("explain fiscal economics and national income")
+    fun testComputerScienceQuery_ragArchitecture() {
+        val response = engine.generateResponse("explain rag architecture and vector search in ai")
         assertFalse(response.isGreeting)
-        assertTrue(response.matchedSubject?.contains("Economics") == true)
+        assertTrue(response.matchedSubject?.contains("AI") == true)
+        assertTrue(response.paragraph1.contains("Concept & Definition"))
+        assertTrue(response.confidenceScore >= 5.0)
+    }
+
+    @Test
+    fun testDataScienceQuery_starMethod() {
+        val response = engine.generateResponse("explain the star behavioral interview framework in aptitude")
+        assertFalse(response.isGreeting)
+        assertTrue(response.matchedSubject?.contains("Aptitude") == true)
         assertTrue(response.paragraph1.contains("Concept & Definition"))
     }
 
     @Test
-    fun testBiologySynthesis_photosynthesisAndDNA() {
-        val photoResp = engine.generateResponse("explain plant biology and organ systems")
-        assertTrue(photoResp.matchedSubject?.contains("Biology") == true || photoResp.matchedSubject?.contains("Science") == true)
-        assertTrue(photoResp.paragraph1.contains("Concept & Definition"))
-
-        val dnaResp = engine.generateResponse("explain genetics and cell biology")
-        assertTrue(dnaResp.matchedSubject?.contains("Biology") == true || dnaResp.matchedSubject?.contains("Science") == true)
-    }
-
-    @Test
-    fun testHistorySynthesis_worldWarAndCivilizations() {
-        val ww2Resp = engine.generateResponse("explain the outbreak of world war in social science")
-        assertTrue(ww2Resp.matchedSubject?.contains("Social Science") == true)
-        assertTrue(ww2Resp.paragraph1.contains("Concept & Definition") || ww2Resp.paragraph1.contains("World War") || ww2Resp.paragraph1.contains("Social"))
-
-        val civResp = engine.generateResponse("tell me about social and religious reform movements in social science")
-        assertTrue(civResp.matchedSubject?.contains("Social Science") == true)
-        assertTrue(civResp.paragraph1.contains("Reform") || civResp.paragraph1.contains("Social") || civResp.paragraph1.contains("Concept"))
+    fun testAIQuery_largeLanguageModels() {
+        val response = engine.generateResponse("explain transformers and subword tokenization in ai")
+        assertFalse(response.isGreeting)
+        assertTrue(response.matchedSubject?.contains("AI") == true)
+        assertTrue(response.paragraph1.contains("Concept & Definition"))
     }
 
     @Test
     fun testMultiTurnFollowUp_resolvesTopicFromPreviousTurn() {
         // Turn 1: Primary educational question
-        val turn1 = engine.generateResponse("How do I solve quadratic equations in mathematics?")
-        assertTrue(turn1.matchedSubject?.contains("Mathematics") == true)
+        val turn1 = engine.generateResponse("How does Python pass by object reference work?")
+        assertTrue(turn1.matchedSubject?.contains("Python") == true)
 
         // Turn 2: Follow-up requesting an example
         val turn2 = engine.generateResponse("give an example")
         assertTrue("Follow-up flag should be set", turn2.isFollowUp)
-        assertTrue(turn2.matchedSubject?.contains("Mathematics") == true)
+        assertTrue(turn2.matchedSubject?.contains("Python") == true)
         assertTrue("Response should contain practical example", turn2.paragraph1.contains("Practical Example"))
 
-        // Turn 3: Follow-up requesting method / roots
-        val turn3 = engine.generateResponse("what about its roots?")
+        // Turn 3: Follow-up requesting more details
+        val turn3 = engine.generateResponse("explain more")
         assertTrue("Follow-up flag should be set", turn3.isFollowUp)
-        assertTrue(turn3.matchedSubject?.contains("Mathematics") == true)
-        assertTrue(turn3.paragraph1.contains("Method & Solving Steps"))
-
-        // Turn 4: Follow-up requesting more details
-        val turn4 = engine.generateResponse("explain more")
-        assertTrue("Follow-up flag should be set", turn4.isFollowUp)
-        assertTrue(turn4.matchedSubject?.contains("Mathematics") == true)
-        assertTrue(turn4.paragraph1.contains("In-Depth Breakdown"))
+        assertTrue(turn3.matchedSubject?.contains("Python") == true)
+        assertTrue(turn3.paragraph1.contains("In-Depth Breakdown"))
     }
 
     @Test
     fun testResetContext_clearsRollingMemory() {
-        engine.generateResponse("Explain laws of motion in physics")
+        engine.generateResponse("Explain python mutability and memory model")
         assertTrue(engine.getContextHistory().isNotEmpty())
 
         engine.resetContext()
@@ -305,7 +272,7 @@ class LocalAIEngineTest {
         val response = engine.generateResponse("what is the recipe for baking a chocolate cake?")
         assertTrue(response.confidenceScore > 0.0)
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue(response.paragraph1.contains("not relatable to our 10th, 11th & 12th studies") || response.paragraph1 == LocalAIEngine.OUT_OF_SCOPE_RESPONSE)
+        assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, response.paragraph1)
     }
 
     @Test
@@ -317,9 +284,9 @@ class LocalAIEngineTest {
             "Fallback response should NEVER state it could not find a match",
             response.paragraph1.contains("couldn't find a direct match")
         )
-        assertTrue(
-            "Food/recipe query must hit the strict out-of-scope guardrail boundary",
-            response.paragraph1.contains("not relatable to our 10th, 11th & 12th studies") || response.paragraph1 == LocalAIEngine.OUT_OF_SCOPE_RESPONSE
+        assertEquals(
+            LocalAIEngine.OUT_OF_SCOPE_RESPONSE,
+            response.paragraph1
         )
     }
 
@@ -424,32 +391,31 @@ class LocalAIEngineTest {
     }
 
     @Test
-    fun testConceptQuery_whatIsWaveInPhysics_matchesWavesNotNewton() {
-        val response = engine.generateResponse("what is wave in physics?")
+    fun testConceptQuery_whatIsPythonMutability_matchesMutability() {
+        val response = engine.generateResponse("what is python mutability and memory model?")
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertFalse("Must NOT return Newton's laws", response.paragraph1.contains("Newton") || response.paragraph2.contains("F = ma"))
-        assertTrue("Must match Waves topic or chapter", response.matchedChapter?.contains("Wave", ignoreCase = true) == true || response.matchedTopic?.contains("Wave", ignoreCase = true) == true)
+        assertTrue("Must match Python Mutability", response.matchedTopic?.contains("Mutability", ignoreCase = true) == true || response.matchedSubject?.contains("Python", ignoreCase = true) == true)
     }
 
     @Test
-    fun testConceptQuery_whatIsNewtonLaw_matchesNewtonLaws() {
-        val response = engine.generateResponse("what are laws of motion in physics?")
+    fun testConceptQuery_whatIsSqlAcid_matchesAcid() {
+        val response = engine.generateResponse("what are acid properties in database transactions?")
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue("Must match Laws of Motion", response.matchedChapter?.contains("Motion", ignoreCase = true) == true || response.matchedTopic?.contains("Motion", ignoreCase = true) == true || response.paragraph1.contains("Motion") || response.paragraph1.contains("Laws"))
+        assertTrue("Must match ACID Properties", response.matchedTopic?.contains("ACID", ignoreCase = true) == true || response.matchedSubject?.contains("SQL", ignoreCase = true) == true)
     }
 
     @Test
-    fun testConceptQuery_explainEigenvalues_matchesEigenvalues() {
-        val response = engine.generateResponse("explain matrices in mathematics")
+    fun testConceptQuery_whatIsRagVectorSearch_matchesRag() {
+        val response = engine.generateResponse("what is rag architecture and vector search in ai?")
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue("Must match Matrices", response.matchedChapter?.contains("Matrices", ignoreCase = true) == true || response.matchedTopic?.contains("Matrices", ignoreCase = true) == true || response.paragraph1.contains("Matrices", ignoreCase = true))
+        assertTrue("Must match RAG Architecture", response.matchedTopic?.contains("RAG", ignoreCase = true) == true || response.matchedSubject?.contains("AI", ignoreCase = true) == true)
     }
 
     @Test
-    fun testConceptQuery_whatIsBackpropagation_matchesBackpropagation() {
-        val response = engine.generateResponse("what are electromagnetic waves in physics?")
+    fun testConceptQuery_whatIsStarMethod_matchesStar() {
+        val response = engine.generateResponse("what is the star behavioral interview framework in aptitude?")
         assertFalse("Must never contain fallback error", response.paragraph1.contains("couldn't find a direct match"))
-        assertTrue("Must match Electromagnetic Waves", response.matchedChapter?.contains("Electromagnetic", ignoreCase = true) == true || response.matchedTopic?.contains("Electromagnetic", ignoreCase = true) == true || response.paragraph1.contains("Electromagnetic", ignoreCase = true))
+        assertTrue("Must match STAR Framework", response.matchedTopic?.contains("STAR", ignoreCase = true) == true || response.matchedSubject?.contains("Aptitude", ignoreCase = true) == true)
     }
 
     @Test

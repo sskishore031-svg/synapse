@@ -816,9 +816,12 @@ class LocalAIEngine private constructor(context: Context?) {
      */
     private fun checkTopicSuggestionIntent(lowerQuery: String): LocalAiResponse? {
         val q = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        if (q.contains("list comprehension") || q.contains("linked list") || q.contains("adjacency list")) {
+            return null
+        }
 
         val suggestionTriggers = listOf(
-            "give me", "suggest", "list", "topics", "topic", "chapters", "chapter",
+            "give me", "suggest", "list topics", "list chapters", "list of", "topics", "topic", "chapters", "chapter",
             "what can i learn", "what should i learn", "what can you teach", "show me topics",
             "syllabus", "curriculum", "what topics", "some topic", "some topics"
         )
@@ -828,10 +831,13 @@ class LocalAIEngine private constructor(context: Context?) {
 
         // Detect subject keyword
         val detectedSubjectKey = when {
+            q.contains("python") || q.contains("coding") || q.contains("programming") || q.contains("logic") -> "python"
+            q.contains("sql") || q.contains("database") || q.contains("dbms") || q.contains("rdbms") -> "sql"
+            q.contains("artificial intelligence") || q.contains(" ai") || q.startsWith("ai ") || q == "ai" || q.contains("tech") || q.contains("llm") -> "ai_tech"
+            q.contains("aptitude") || q.contains("quant") || q.contains("interview") || q.contains("puzzle") -> "aptitude"
             q.contains("math") || q.contains("maths") || q.contains("mathematics") -> "mathematics"
-            q.contains("computer science") || q.contains(" cs") || q.startsWith("cs ") || q == "cs" || q.contains("coding") || q.contains("programming") -> "computer_science"
+            q.contains("computer science") || q.contains(" cs") || q.startsWith("cs ") || q == "cs" -> "computer_science"
             q.contains("data science") || q.contains(" ds") || q.startsWith("ds ") || q == "ds" || q.contains("analytics") -> "data_science"
-            q.contains("artificial intelligence") || q.contains(" ai") || q.startsWith("ai ") || q == "ai" || q.contains("machine learning") || q.contains("deep learning") -> "artificial_intelligence"
             q.contains("physics") -> "physics"
             q.contains("chemistry") -> "chemistry"
             q.contains("biology") || q.contains("bio") -> "biology"
@@ -871,17 +877,13 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // General topic suggestion without specific subject: return all subjects catalog
-        val p1 = "📚 **SYNAPSE AI Curriculum & Topic Catalog**\n\nHere are the core academic disciplines and chapters you can learn on-device with SYNAPSE AI:"
-        val p2 = "• 📐 **Mathematics**: Quadratic Equations, Calculus (Derivatives & Integrals), Linear Algebra, Probability\n" +
-                "• 💻 **Computer Science**: Algorithms (Big-O), Data Structures (Trees, Stacks, Queues), Operating Systems, Networks\n" +
-                "• 📊 **Data Science**: Data Visualization, Exploratory Data Analysis, Supervised & Unsupervised Learning\n" +
-                "• 🤖 **Artificial Intelligence**: Neural Networks, Backpropagation, Transformers, RAG\n" +
-                "• ⚡ **Physics**: Waves & Sound, Newton's Laws of Motion, Thermodynamics, Electromagnetism\n" +
-                "• 🧪 **Chemistry**: Chemical Bonding, Acids and Bases, Periodic Table, Stoichiometry\n" +
-                "• 🧬 **Biology**: Cell Structure, Photosynthesis, Molecular Genetics & DNA\n" +
-                "• 🏛️ **World History**: Ancient Civilizations, Industrial Revolution, World Wars, Indian Freedom Movement\n\n" +
-                "💡 **Where to Begin:**\nTell me which subject interests you, or ask: *\"Suggest Mathematics topics\"* to explore a detailed learning roadmap!"
+        // General topic suggestion without specific subject: return all 4 placement tracks catalog
+        val p1 = "📚 **SYNAPSE AI Placement & Micro-Learning Tracks**\n\nHere are the 4 high-impact career and technical tracks you can master with SYNAPSE AI:"
+        val p2 = "• 🐍 **Python & Coding Logic**: Variables, Data Types, Control Flow, OOP, Exceptions & File I/O\n" +
+                "• 🗄️ **SQL & Database Management**: Relational Keys, SELECT Queries, Joins, Normalization, Transactions & ACID\n" +
+                "• 🧠 **AI & Modern Tech Concepts**: LLMs, Prompt Engineering, RAG Architecture, REST APIs, Cloud & Cybersecurity\n" +
+                "• 🎯 **Aptitude & Interview Prep**: Quantitative Shortcuts, Logical Puzzles, STAR Interview Framework, Technical Resumes\n\n" +
+                "💡 **Where to Begin:**\nTell me which track interests you, or ask: *\"Explain Python memory model\"* or *\"What are SQL joins?\"* to get started!"
 
         return LocalAiResponse(
             paragraph1 = p1,
@@ -1274,16 +1276,16 @@ class LocalAIEngine private constructor(context: Context?) {
         val isTwoMark = clean.contains("2 mark") || clean.contains("2 marks") || clean == "2m" || clean.contains("two mark")
         if (isTwoMark) {
             val lastChunk = getLastActiveChunk()
-            val topic = lastChunk?.topic ?: "Academic Concept"
+            val topic = lastChunk?.topic ?: "Technical Concept"
             val text = buildString {
-                appendLine("* **Definition & Core Law:** $topic states the fundamental relationship and governing principle in the Samacheer Kalvi syllabus.")
-                appendLine("* **Governing Formula / SI Unit:** Standard mathematical statement with canonical SI units and boundary criteria clearly defined.")
-                append("* **Key Exam Condition:** Conservation condition or essential requirement required for full 2 marks in the public board examination.")
+                appendLine("* **Definition & Core Rule:** $topic states the fundamental syntax, logic, or principle essential for placement technical rounds.")
+                appendLine("* **Core Syntax / Formula:** Canonical programming expression or mathematical formulation with clear parameters.")
+                append("* **Placement Interview Key:** The critical edge-case or efficiency trade-off interviewers evaluate.")
             }
             return LocalAiResponse(
                 paragraph1 = text,
                 paragraph2 = "",
-                matchedSubject = lastChunk?.subject ?: "Samacheer Core",
+                matchedSubject = lastChunk?.subject ?: "Placement Prep",
                 matchedChapter = lastChunk?.chapter ?: "Chapter",
                 matchedTopic = topic,
                 confidenceScore = 95.0
@@ -1293,27 +1295,27 @@ class LocalAIEngine private constructor(context: Context?) {
         val isFiveMark = clean.contains("5 mark") || clean.contains("5 marks") || clean == "5m" || clean.contains("five mark")
         if (isFiveMark) {
             val lastChunk = getLastActiveChunk()
-            val topic = lastChunk?.topic ?: "Academic Concept"
+            val topic = lastChunk?.topic ?: "Technical Concept"
             val text = buildString {
-                appendLine("* **1. Principle & Theoretical Framework:**")
-                appendLine("$topic is a foundational concept in the Tamil Nadu State Board syllabus governing analytical and empirical physical transformations.")
+                appendLine("* **1. Principle & Architecture:**")
+                appendLine("$topic is a foundational concept in placement technical rounds, governing computational logic and modern system design.")
                 appendLine()
-                appendLine("* **2. Working Mechanism & Detailed Explanation:**")
-                appendLine("Under standard conditions, the system transitions through well-defined thermodynamic/mathematical states where equilibrium is maintained at each step.")
+                appendLine("* **2. Mechanics & In-Depth Explanation:**")
+                appendLine("Explains internal data structures, state transitions, and how the underlying runtime or database engine optimizes performance.")
                 appendLine()
-                appendLine("* **3. Mathematical Derivation & Core Formula:**")
-                appendLine("Standard governing equation: Phi = sum(lambda_i * x_i), where each variable corresponds to canonical physical properties in SI units.")
+                appendLine("* **3. Syntax / Formula & Time Complexity:**")
+                appendLine("Core implementation details, asymptotic complexity (Time: O(log N) or O(N), Space: O(1)), and memory efficiency considerations.")
                 appendLine()
-                appendLine("* **4. Practical Applications & Illustrative Example:**")
-                appendLine("Widely applied in engineering systems, scientific instrumentation, chemical syntheses, and real-world technology.")
+                appendLine("* **4. Real-World Applications & Industry Use:**")
+                appendLine("Widely applied in production microservices, data processing pipelines, scalable cloud infrastructure, and distributed databases.")
                 appendLine()
-                appendLine("* **5. Conclusion & Exam Takeaways:**")
-                append("Remember to include a neatly labeled schematic diagram, step-by-step derivation, and final units for complete 5 marks.")
+                appendLine("* **5. Placement Interview Takeaways:**")
+                append("Highlight real-world examples, boundary edge cases, and why this design choice outperforms naive alternatives.")
             }
             return LocalAiResponse(
                 paragraph1 = text,
                 paragraph2 = "",
-                matchedSubject = lastChunk?.subject ?: "Samacheer Core",
+                matchedSubject = lastChunk?.subject ?: "Placement Prep",
                 matchedChapter = lastChunk?.chapter ?: "Chapter",
                 matchedTopic = topic,
                 confidenceScore = 95.0
@@ -3025,7 +3027,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "Sorry, that's not relatable to our 10th, 11th & 12th studies! Ask me any subject concept, quiz, or notes."
+            "That falls outside my placement and technical scope. I'm SYNAPSE AI—built specifically to help you master Python, SQL, Modern AI concepts, and Placement Aptitude!"
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

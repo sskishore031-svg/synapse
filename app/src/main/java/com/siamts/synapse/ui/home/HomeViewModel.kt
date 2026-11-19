@@ -18,7 +18,8 @@ class HomeViewModel(
     private val repository: HomeRepository = HomeRepositoryImpl(),
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
     private val quizDao: com.siamts.synapse.data.local.QuizDao = com.siamts.synapse.data.local.QuizLocalDatabase.getInstance(),
-    private val chapterDao: com.siamts.synapse.data.local.ChapterDao = com.siamts.synapse.data.local.QuizLocalDatabase.getChapterDao()
+    private val chapterDao: com.siamts.synapse.data.local.ChapterDao = com.siamts.synapse.data.local.QuizLocalDatabase.getChapterDao(),
+    private val taskDao: com.siamts.synapse.data.local.LearningTaskDao = com.siamts.synapse.data.local.QuizLocalDatabase.getLearningTaskDao()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = false))
@@ -27,6 +28,7 @@ class HomeViewModel(
     init {
         observeUserSession()
         loadLocalStats()
+        loadDailyTasks()
         loadHomeData()
     }
 
@@ -72,7 +74,7 @@ class HomeViewModel(
                 0
             }
 
-            val totalTopics = 24
+            val totalTopics = 20
             val overallPercent = if (totalTopics > 0) {
                 ((distinctTopicsDone.toFloat() / totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
             } else {
@@ -93,6 +95,63 @@ class HomeViewModel(
         }
     }
 
+    fun loadDailyTasks() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val tasks = try { taskDao.getAllTasks() } catch (_: Throwable) { emptyList() }
+            val completedCount = tasks.count { it.isCompleted }
+            val goalPct = if (tasks.isNotEmpty()) {
+                ((completedCount.toFloat() / tasks.size.toFloat()) * 100).toInt().coerceIn(0, 100)
+            } else if (_uiState.value.topicsDone > 0) {
+                ((_uiState.value.topicsDone.toFloat() / _uiState.value.totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
+            } else {
+                0
+            }
+            _uiState.update { current ->
+                current.copy(
+                    dailyTasks = tasks,
+                    todayGoalPercent = goalPct
+                )
+            }
+        }
+    }
+
+    fun addStudyTask(title: String, duration: String = "15 min") {
+        if (title.isBlank()) return
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val newTask = com.siamts.synapse.data.local.LearningTaskEntity(
+                title = title.trim(),
+                duration = duration.trim(),
+                isCompleted = false
+            )
+            try {
+                taskDao.insertTask(newTask)
+            } catch (_: Throwable) {}
+            loadDailyTasks()
+        }
+    }
+
+    fun toggleStudyTask(taskId: Long, isCompleted: Boolean) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                taskDao.updateTaskCompletion(taskId, isCompleted)
+            } catch (_: Throwable) {}
+            loadDailyTasks()
+        }
+    }
+
+    fun deleteStudyTask(taskId: Long) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                taskDao.deleteTask(taskId)
+            } catch (_: Throwable) {}
+            loadDailyTasks()
+        }
+    }
+
+    fun setAddTaskDialogVisible(visible: Boolean) {
+        _uiState.update { it.copy(showAddTaskDialog = visible) }
+    }
+
     fun loadHomeData(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -104,11 +163,11 @@ class HomeViewModel(
                     val student = data.student
                     val studentName = user?.name?.takeIf { it.isNotBlank() } ?: student?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
                     val photoUrl = user?.photoUrl ?: student?.photoUrl ?: student?.profilePhoto
-                    val courseText = user?.course?.takeIf { it.isNotBlank() } ?: student?.course?.takeIf { it.isNotBlank() } ?: "B.Tech Computer Science · Year 3"
+                    val courseText = user?.course?.takeIf { it.isNotBlank() } ?: student?.course?.takeIf { it.isNotBlank() } ?: "Placement & Micro-Learning Prep"
                     val interestsText = if (!student?.interests.isNullOrEmpty()) {
                         "Interests: " + student?.interests?.joinToString(", ")
                     } else {
-                        "Interests: Computer Science, AI, Math"
+                        "Interests: Python, SQL, AI, Aptitude"
                     }
 
                     val sessions = data.recentSessions.map { s ->
@@ -143,7 +202,7 @@ class HomeViewModel(
                             errorMessage = null,
                             userName = studentName,
                             greeting = data.greeting.ifBlank { "Welcome Back," },
-                            mindPower = if (current.overallProgress > 0) current.overallProgress else data.mindPower,
+                            mindPower = current.overallProgress,
                             profilePhotoUri = photoUrl,
                             course = courseText,
                             interests = interestsText,

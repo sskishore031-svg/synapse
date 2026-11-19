@@ -372,6 +372,13 @@ class VoiceAssistantManager(
     }
 
     /**
+     * Speaks text directly (used e.g. when tapping "Read Aloud" on a message card or lesson).
+     */
+    fun speak(text: String, onFinished: (() -> Unit)? = null) {
+        speakDirect(text, onFinished)
+    }
+
+    /**
      * Speaks text directly (used e.g. when tapping "Read Aloud" on a message card).
      */
     fun speakDirect(text: String, onFinished: (() -> Unit)? = null) {
@@ -425,6 +432,14 @@ class VoiceAssistantManager(
     fun cleanTextForSpeech(text: String): String = Companion.cleanTextForSpeech(text)
 
     companion object {
+        @Volatile
+        private var INSTANCE: VoiceAssistantManager? = null
+
+        fun getInstance(context: Context): VoiceAssistantManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: VoiceAssistantManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
         /**
          * Strips Markdown formatting, symbols, and emojis for natural, fluent spoken English.
          */

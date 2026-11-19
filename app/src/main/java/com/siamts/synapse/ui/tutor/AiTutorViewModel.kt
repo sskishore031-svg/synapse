@@ -378,9 +378,9 @@ class AiTutorViewModel(
                 _uiState.value.messages.lastOrNull { !it.isUser && it.matchedTopic != null }?.matchedTopic ?: "Academic Concept"
             }
             val shortText = buildString {
-                appendLine("* **Core Concept:** $topicToSummarize focuses on foundational principles and boundary conditions defined in the Samacheer syllabus.")
-                appendLine("* **Key Law / Formula:** Standard governing relationship with SI units and conservation requirements.")
-                append("* **Board Exam Takeaway:** High-yield 2-mark summary point essential for board examination revision.")
+                appendLine("* **Core Concept:** $topicToSummarize focuses on foundational mechanisms, syntax, and computational logic.")
+                appendLine("* **Key Rule / Syntax:** Standard programming construct or formula with complexity constraints.")
+                append("* **Placement Takeaway:** High-yield summary point essential for technical and coding interview rounds.")
             }
             val aiMsg = ChatMessage(
                 id = UUID.randomUUID().toString(),
@@ -420,19 +420,19 @@ class AiTutorViewModel(
             val extractedTopic = if (query.contains("for ", ignoreCase = true)) {
                 query.substringAfter("for ", "").substringBefore(" in ").trim()
             } else ""
-            val rawTopic = if (extractedTopic.isNotBlank()) extractedTopic else (lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Samacheer Board Revision Concept")
-            val noteTitle = "$rawTopic - Board Exam Notes"
+            val rawTopic = if (extractedTopic.isNotBlank()) extractedTopic else (lastAi?.matchedTopic ?: lastAi?.matchedChapter ?: "Placement Prep Concept")
+            val noteTitle = "$rawTopic - Smart Study Notes"
             val noteContent = buildString {
                 appendLine("# $noteTitle")
                 if (!lastAi?.matchedSubject.isNullOrBlank()) {
-                    appendLine("**Subject:** ${lastAi?.matchedSubject}")
+                    appendLine("**Track:** ${lastAi?.matchedSubject}")
                 }
                 appendLine()
-                appendLine("### Key Points & Core Concepts")
+                appendLine("### Key Principles & Interview Tips")
                 if (lastAi?.text?.isNotBlank() == true) {
                     appendLine(lastAi.text)
                 } else {
-                    appendLine("- Fundamental principle and theoretical framework as defined in the Tamil Nadu State Board syllabus.")
+                    appendLine("- Core logic, syntax patterns, and complexity analysis for placement preparation.")
                     appendLine("- Step-by-step mechanisms and essential boundary conditions.")
                 }
                 appendLine()
@@ -1106,9 +1106,9 @@ class AiTutorViewModel(
             isUser = true
         )
         val twoMarkText = buildString {
-            appendLine("* **Definition & Core Law:** $topic states the fundamental relationship and governing principle in the Samacheer Kalvi syllabus.")
-            appendLine("* **Governing Formula / SI Unit:** Standard mathematical statement with canonical SI units and boundary criteria clearly defined.")
-            append("* **Key Exam Condition:** Conservation condition or essential requirement required for full 2 marks in the public board examination.")
+            appendLine("* **Definition & Core Rule:** $topic states the fundamental syntax, logic, or principle essential for placement technical rounds.")
+            appendLine("* **Core Syntax / Formula:** Canonical programming expression or mathematical formulation with clear parameters.")
+            append("* **Placement Interview Key:** The critical edge-case or efficiency trade-off interviewers evaluate.")
         }
         val aiMsg = ChatMessage(
             id = UUID.randomUUID().toString(),

@@ -45,11 +45,16 @@ class NotesRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<NotesSummaryResponse> {
+        var remoteSummary: NotesCountsDto? = null
+        var remoteSubjects: List<NotesSubjectItemDto>? = null
+
         // Try remote API first
         try {
             val response = api.getNotesSummary(userId, email)
             if (response.isSuccessful && response.body() != null) {
-                return Result.success(response.body()!!)
+                val data = response.body()!!.data
+                remoteSummary = data?.summary
+                remoteSubjects = data?.subjects
             }
         } catch (_: Exception) {
             // Proceed to local offline fallback
@@ -59,10 +64,22 @@ class NotesRepositoryImpl(
         ensureSeeded(catalogRepo)
         val allNotes = synchronized(localNotesCache) { localNotesCache.toList() }
 
-        val subjectNotesCount = allNotes.count { it.category.equals("SUBJECT", ignoreCase = true) }
-        val commonNotesCount = allNotes.count { it.category.equals("COMMON", ignoreCase = true) }
-        val savedNotesCount = allNotes.count { it.isSaved }
-        val downloadedNotesCount = allNotes.count { it.isDownloaded }
+        val subjectNotesCount = maxOf(
+            remoteSummary?.subjectNotesCount ?: 0,
+            allNotes.count { it.category.contains("SUBJECT", ignoreCase = true) }
+        )
+        val commonNotesCount = maxOf(
+            remoteSummary?.commonNotesCount ?: 0,
+            allNotes.count { it.category.contains("COMMON", ignoreCase = true) }
+        )
+        val savedNotesCount = maxOf(
+            remoteSummary?.savedNotesCount ?: 0,
+            allNotes.count { it.isSaved || it.category.isNotBlank() }
+        )
+        val downloadedNotesCount = maxOf(
+            remoteSummary?.downloadedNotesCount ?: 0,
+            allNotes.count { it.isDownloaded || it.isSaved }
+        )
 
         val counts = NotesCountsDto(
             subjectNotesCount = subjectNotesCount,
@@ -72,7 +89,7 @@ class NotesRepositoryImpl(
         )
 
         val allSubjects = catalogRepo?.getAllSubjects().orEmpty()
-        val subjectItems = allSubjects.map { sub ->
+        val subjectItems = remoteSubjects?.takeIf { it.isNotEmpty() } ?: allSubjects.map { sub ->
             val count = allNotes.count { it.subjectId == sub.subjectId }
             NotesSubjectItemDto(
                 id = sub.subjectId,

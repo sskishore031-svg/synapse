@@ -104,7 +104,7 @@ class DashboardViewModel(
                 0
             }
 
-            val totalTopics = (24 + (catalogRepo?.getAddedSubjects()?.size ?: 0) * 4).coerceAtLeast(24)
+            val totalTopics = 20
             val overallPercent = if (totalTopics > 0) {
                 ((distinctTopicsDone.toFloat() / totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
             } else {
@@ -237,8 +237,8 @@ class DashboardViewModel(
 
             repository.getHomeDashboard(userId = user?.id, email = user?.email).fold(
                 onSuccess = { data ->
-                    val recTitle = data.brainMap?.recommendationTitle ?: "Linear algebra essentials"
-                    val recSub = data.brainMap?.recommendationSubtitle ?: "Build a stronger foundation · 15 min"
+                    val recTitle = data.brainMap?.recommendationTitle ?: "Python & Coding Logic"
+                    val recSub = data.brainMap?.recommendationSubtitle ?: "Start your 2-minute daily concept lessons · 15 min"
 
                     _uiState.update { current ->
                         current.copy(

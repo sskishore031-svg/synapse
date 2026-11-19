@@ -14,6 +14,7 @@ data class NotesHomeUiState(
     val subjects: List<NotesSubjectItemDto> = emptyList(),
     val activeFilter: String = "ALL", // "ALL", "SUBJECT", "COMMON", "SAVED", "DOWNLOADED"
     val filteredNotes: List<NoteItemDto> = emptyList(),
+    val allNotes: List<NoteItemDto> = emptyList(),
     val isFilteredLoading: Boolean = false,
     val searchQuery: String = ""
 )

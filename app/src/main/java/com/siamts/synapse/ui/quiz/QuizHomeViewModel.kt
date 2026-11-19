@@ -117,7 +117,7 @@ class QuizHomeViewModel(
                     errorMessage = null,
                     subjects = fullActiveList,
                     filteredSubjects = filtered,
-                    totalQuizzes = if (totalAvail > 0) totalAvail else 248,
+                    totalQuizzes = if (totalAvail > 0) totalAvail else 20,
                     totalAttempted = totalAtt,
                     mistakeCount = mistakes
                 )
@@ -133,9 +133,15 @@ class QuizHomeViewModel(
     }
 
     private fun filterByClass(list: List<QuizSubjectItemDto>, className: String): List<QuizSubjectItemDto> {
-        if (className == "All Classes") return list
-        val prefix = className.take(4)
-        return list.filter { it.name.startsWith(prefix, ignoreCase = true) }
+        if (className == "All Tracks" || className == "All Classes") return list
+        val key = when (className.lowercase()) {
+            "python" -> "python"
+            "sql" -> "sql"
+            "ai & tech" -> "ai"
+            "aptitude" -> "aptitude"
+            else -> className.lowercase()
+        }
+        return list.filter { it.name.lowercase().contains(key) || it.slug.lowercase().contains(key) }
     }
 }
 

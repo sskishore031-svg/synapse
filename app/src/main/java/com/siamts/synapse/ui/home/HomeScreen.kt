@@ -20,17 +20,24 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -119,6 +127,14 @@ fun HomeScreen(
         onRetryClick = {
             viewModel.retry()
         },
+        onAddTaskClick = { viewModel.setAddTaskDialogVisible(true) },
+        onTaskToggle = { taskId, isCompleted -> viewModel.toggleStudyTask(taskId, isCompleted) },
+        onTaskDelete = { taskId -> viewModel.deleteStudyTask(taskId) },
+        onConfirmAddTask = { title, duration ->
+            viewModel.addStudyTask(title, duration)
+            viewModel.setAddTaskDialogVisible(false)
+        },
+        onDismissAddTask = { viewModel.setAddTaskDialogVisible(false) },
         modifier = modifier,
     )
 }
@@ -134,6 +150,11 @@ fun HomeContent(
     onBrainMapCardClick: () -> Unit = {},
     onProfileCardClick: () -> Unit = {},
     onRetryClick: () -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
+    onTaskToggle: (Long, Boolean) -> Unit = { _, _ -> },
+    onTaskDelete: (Long) -> Unit = {},
+    onConfirmAddTask: (String, String) -> Unit = { _, _ -> },
+    onDismissAddTask: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalThemeIsDark.current
@@ -262,8 +283,8 @@ fun HomeContent(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.clickable { onProfileCardClick() }
                                 ) {
-                                    val formattedPhoto = RetrofitClient.formatPhotoUrl(uiState.profilePhotoUri)
-                                    if (!formattedPhoto.isNullOrBlank()) {
+                                    val formattedPhoto = RetrofitClient.resolveImageModel(uiState.profilePhotoUri)
+                                    if (formattedPhoto != null) {
                                         AsyncImage(
                                             model = formattedPhoto,
                                             contentDescription = "Profile Photo",
@@ -369,6 +390,269 @@ fun HomeContent(
                         }
                     }
                 } else {
+                    // 1. Top Micro-Learning Goal & Stats Card
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E293B))
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "TODAY'S MICRO-LEARNING GOAL",
+                                            color = CyanAccent,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${uiState.todayGoalPercent}% Completed",
+                                            color = Color.White,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = if (uiState.todayGoalPercent == 100) "Goal achieved! Outstanding discipline." else "Master 2-min daily concepts & tasks",
+                                            color = Color(0xFF94A3B8),
+                                            fontSize = 12.sp
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier.size(60.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            progress = { (uiState.todayGoalPercent / 100f).coerceIn(0f, 1f) },
+                                            modifier = Modifier.fillMaxSize(),
+                                            color = CyanGlow,
+                                            trackColor = Color(0xFF1E293B),
+                                            strokeWidth = 6.dp
+                                        )
+                                        Text(
+                                            text = "${uiState.todayGoalPercent}%",
+                                            color = Color.White,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                // 3 Metric Badges
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Metric 1: Micro-Lessons Done
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .padding(vertical = 10.dp, horizontal = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "${uiState.topicsDone}/20",
+                                                color = Color.White,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = "Lessons Done",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Metric 2: Average Quiz Score
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .padding(vertical = 10.dp, horizontal = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "${uiState.quizScore}%",
+                                                color = CyanGlow,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = "Avg Quiz",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Metric 3: Study Streak
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .background(Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                                            .padding(vertical = 10.dp, horizontal = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "${uiState.studyStreakDays}d 🔥",
+                                                color = Color(0xFFF59E0B),
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = "Streak",
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Daily Study Tasks Organizer
+                    item {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Today's Study Plan",
+                                        color = TextPrimary,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Organize daily tasks & placement goals",
+                                        color = TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                }
+
+                                Button(
+                                    onClick = onAddTaskClick,
+                                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "+ Add Task",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            if (uiState.dailyTasks.isEmpty()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E293B))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = "📋", fontSize = 24.sp)
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = "No study tasks scheduled yet",
+                                                color = TextPrimary,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = "Tap '+ Add Task' to plan your 2-min micro-lessons for today!",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    uiState.dailyTasks.forEach { task ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
+                                            border = androidx.compose.foundation.BorderStroke(
+                                                1.dp,
+                                                if (task.isCompleted) Color(0xFF059669) else Color(0xFF1E293B)
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Checkbox(
+                                                    checked = task.isCompleted,
+                                                    onCheckedChange = { isChecked ->
+                                                        onTaskToggle(task.id, isChecked)
+                                                    },
+                                                    colors = CheckboxDefaults.colors(
+                                                        checkedColor = Color(0xFF059669),
+                                                        uncheckedColor = Color(0xFF64748B)
+                                                    )
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = task.title,
+                                                        color = if (task.isCompleted) Color(0xFF64748B) else TextPrimary,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = if (task.isCompleted) FontWeight.Normal else FontWeight.SemiBold,
+                                                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                                                    )
+                                                    Text(
+                                                        text = "⏱ ${task.duration} · ${task.category}",
+                                                        color = if (task.isCompleted) Color(0xFF059669) else CyanAccent,
+                                                        fontSize = 11.sp
+                                                    )
+                                                }
+                                                Text(
+                                                    text = "✕",
+                                                    color = Color(0xFF94A3B8),
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier
+                                                        .clickable { onTaskDelete(task.id) }
+                                                        .padding(8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Quick AI Modules
                     item {
                         Column {
@@ -734,6 +1018,109 @@ fun HomeContent(
                 }
             }
         }
+    }
+
+    // Add Daily Study Task Dialog
+    if (uiState.showAddTaskDialog) {
+        var taskTitleInput by remember { mutableStateOf("") }
+        var selectedDuration by remember { mutableStateOf("15 min") }
+        val durationOptions = listOf("10 min", "15 min", "30 min", "45 min")
+
+        AlertDialog(
+            onDismissRequest = onDismissAddTask,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = "Add Daily Study Task",
+                    color = Color(0xFF0F172A),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Task Title / Concept",
+                        color = Color(0xFF475569),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = taskTitleInput,
+                        onValueChange = { taskTitleInput = it },
+                        placeholder = { Text(text = "e.g. Master Python List Comprehensions", color = Color(0xFF94A3B8)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF0F172A),
+                            focusedBorderColor = BlueAccent,
+                            unfocusedBorderColor = Color(0xFFCBD5E1),
+                            focusedContainerColor = Color(0xFFF8FAFC),
+                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = "Estimated Study Duration",
+                        color = Color(0xFF475569),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        durationOptions.forEach { dur ->
+                            val isSel = selectedDuration == dur
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(
+                                        if (isSel) BlueAccent else Color(0xFFF1F5F9),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable { selectedDuration = dur }
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = dur,
+                                    color = if (isSel) Color.White else Color(0xFF334155),
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (taskTitleInput.isNotBlank()) {
+                            onConfirmAddTask(taskTitleInput, selectedDuration)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = taskTitleInput.isNotBlank()
+                ) {
+                    Text(text = "Add Task", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissAddTask) {
+                    Text(text = "Cancel", color = Color(0xFF64748B))
+                }
+            }
+        )
     }
 }
 

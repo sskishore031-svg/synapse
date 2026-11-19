@@ -190,25 +190,10 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         try {
-            // Version 6/7 migration: Ensure mistake_vault and curriculum tables exist cleanly
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS mistake_vault (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    subject_id TEXT NOT NULL,
-                    chapter_id TEXT NOT NULL,
-                    question_text TEXT NOT NULL UNIQUE,
-                    option_a TEXT NOT NULL,
-                    option_b TEXT NOT NULL,
-                    option_c TEXT NOT NULL,
-                    option_d TEXT NOT NULL,
-                    correct_option TEXT NOT NULL,
-                    explanation TEXT,
-                    question_json TEXT NOT NULL,
-                    created_at INTEGER NOT NULL
-                )
-                """.trimIndent()
-            )
+            // Version 8 migration: Recreate curriculum and question tables for the 4 placement tracks
+            db.execSQL("DROP TABLE IF EXISTS quiz_questions")
+            db.execSQL("DROP TABLE IF EXISTS subject_chapters")
+            db.execSQL("DROP TABLE IF EXISTS chapter_lessons")
             onCreate(db)
         } catch (_: Throwable) {
             try {
@@ -1279,7 +1264,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
-        private const val DATABASE_VERSION = 7
+        private const val DATABASE_VERSION = 8
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null

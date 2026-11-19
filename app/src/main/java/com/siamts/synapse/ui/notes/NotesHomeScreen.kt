@@ -65,6 +65,23 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
 @Composable
+fun NotesScreen(
+    viewModel: NotesHomeViewModel,
+    onBackClick: () -> Unit,
+    onOpenNotesList: (type: String, subjectId: Int?, title: String) -> Unit,
+    modifier: Modifier = Modifier,
+    initialFilter: String = "ALL"
+) {
+    NotesHomeScreen(
+        viewModel = viewModel,
+        onBackClick = onBackClick,
+        onOpenNotesList = onOpenNotesList,
+        modifier = modifier,
+        initialFilter = initialFilter
+    )
+}
+
+@Composable
 fun NotesHomeScreen(
     viewModel: NotesHomeViewModel,
     onBackClick: () -> Unit,
@@ -178,6 +195,27 @@ fun NotesHomeScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        // Live Reactive Room Counts
+                        val subjectDisplayCount = maxOf(
+                            uiState.summary.subjectNotesCount,
+                            uiState.allNotes.count {
+                                it.category.contains("SUBJECT", ignoreCase = true) ||
+                                it.category.contains("Subject Notes", ignoreCase = true)
+                            }
+                        )
+                        val commonDisplayCount = maxOf(
+                            uiState.summary.commonNotesCount,
+                            uiState.allNotes.count { it.category.contains("COMMON", ignoreCase = true) }
+                        )
+                        val savedDisplayCount = maxOf(
+                            uiState.summary.savedNotesCount,
+                            uiState.allNotes.count { it.isSaved || it.category.isNotBlank() }
+                        )
+                        val offlineDisplayCount = maxOf(
+                            uiState.summary.downloadedNotesCount,
+                            uiState.allNotes.count { it.isDownloaded || it.isSaved }
+                        )
+
                         // 1. Stats Overview Bar
                         item {
                             Card(
@@ -192,10 +230,10 @@ fun NotesHomeScreen(
                                         .padding(14.dp),
                                     horizontalArrangement = Arrangement.SpaceAround
                                 ) {
-                                    StatItem("Subject", uiState.summary.subjectNotesCount.toString(), "📚")
-                                    StatItem("Common", uiState.summary.commonNotesCount.toString(), "📝")
-                                    StatItem("Saved", uiState.summary.savedNotesCount.toString(), "🔖")
-                                    StatItem("Offline", uiState.summary.downloadedNotesCount.toString(), "💾")
+                                    StatItem("Subject", subjectDisplayCount.toString(), "📚")
+                                    StatItem("Common", commonDisplayCount.toString(), "📝")
+                                    StatItem("Saved", savedDisplayCount.toString(), "🔖")
+                                    StatItem("Offline", offlineDisplayCount.toString(), "💾")
                                 }
                             }
                         }
@@ -255,7 +293,7 @@ fun NotesHomeScreen(
                                     title = "Option A: Subject Notes",
                                     subtitle = "Notes organized strictly by academic subjects and chapters.",
                                     icon = "📚",
-                                    countBadge = "${uiState.summary.subjectNotesCount} Notes",
+                                    countBadge = "$subjectDisplayCount Notes",
                                     iconBgColor = Color(0xFFEFF6FF),
                                     onClick = { onOpenNotesList("subject", null, "Subject Notes") }
                                 )
@@ -267,7 +305,7 @@ fun NotesHomeScreen(
                                     title = "Option B: Common Notes",
                                     subtitle = "General notes, study strategies, and shared concepts across topics.",
                                     icon = "📝",
-                                    countBadge = "${uiState.summary.commonNotesCount} Notes",
+                                    countBadge = "$commonDisplayCount Notes",
                                     iconBgColor = Color(0xFFF5F3FF),
                                     onClick = { onOpenNotesList("common", null, "Common Notes") }
                                 )
@@ -279,7 +317,7 @@ fun NotesHomeScreen(
                                     title = "Option C: Saved Notes 🌟",
                                     subtitle = "Touch to view your bookmarked notes in interactive 3D perspective.",
                                     icon = "🔖",
-                                    countBadge = "${uiState.summary.savedNotesCount} Saved (3D)",
+                                    countBadge = "$savedDisplayCount Saved (3D)",
                                     iconBgColor = Color(0xFFFEF3C7),
                                     onClick = { onOpenNotesList("saved", null, "Saved Notes") }
                                 )
@@ -291,7 +329,7 @@ fun NotesHomeScreen(
                                     title = "Option D: Downloaded Notes",
                                     subtitle = "Offline-cached notes available anytime without internet.",
                                     icon = "💾",
-                                    countBadge = "${uiState.summary.downloadedNotesCount} Offline",
+                                    countBadge = "$offlineDisplayCount Offline",
                                     iconBgColor = Color(0xFFD1FAE5),
                                     onClick = { onOpenNotesList("downloaded", null, "Downloaded Notes") }
                                 )
@@ -339,6 +377,28 @@ fun NotesHomeScreen(
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
+                                }
+                            }
+
+                            if (uiState.allNotes.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = "Saved & Recent Notes (${uiState.allNotes.size})",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = Color(0xFF0F172A),
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                    )
+                                }
+
+                                items(uiState.allNotes, key = { "recent_note_" + it.id }) { note ->
+                                    NoteRowItemCard(
+                                        note = note,
+                                        onClick = { selected3DNote = note },
+                                        onToggleSave = { viewModel.toggleSave(note.id) },
+                                        onToggleDownload = { viewModel.toggleDownload(note.id) }
+                                    )
                                 }
                             }
                         } else {

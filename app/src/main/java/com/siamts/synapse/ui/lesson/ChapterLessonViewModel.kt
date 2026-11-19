@@ -210,4 +210,8 @@ class ChapterLessonViewModel(
             }
         }
     }
+
+    fun resetTrackCompletion() {
+        _uiState.update { it.copy(isCompleted = false) }
+    }
 }

@@ -177,14 +177,18 @@ class SubjectSelectionViewModel(
     private fun performSearch(
         subjects: List<Subject>,
         query: String,
-        selectedClass: String = "All Classes"
+        selectedClass: String = "All Tracks"
     ): Pair<List<Subject>, List<SearchResultItem>> {
-        val classFiltered = if (selectedClass == "All Classes") {
+        val classFiltered = if (selectedClass == "All Classes" || selectedClass == "All Tracks") {
             subjects
         } else {
             subjects.filter {
-                it.category.equals(selectedClass, ignoreCase = true) ||
-                it.title.startsWith(selectedClass.take(4), ignoreCase = true)
+                it.category.contains(selectedClass, ignoreCase = true) ||
+                it.title.contains(selectedClass, ignoreCase = true) ||
+                (selectedClass == "Python" && (it.id.equals("PYTHON", ignoreCase = true) || it.id == "101" || it.title.contains("Python", ignoreCase = true))) ||
+                (selectedClass == "SQL" && (it.id.equals("SQL", ignoreCase = true) || it.id == "102" || it.title.contains("SQL", ignoreCase = true))) ||
+                (selectedClass.contains("AI", ignoreCase = true) && (it.id.equals("AI_TECH", ignoreCase = true) || it.id == "103" || it.title.contains("AI", ignoreCase = true))) ||
+                (selectedClass.contains("Aptitude", ignoreCase = true) && (it.id.equals("APTITUDE", ignoreCase = true) || it.id == "104" || it.title.contains("Aptitude", ignoreCase = true)))
             }
         }
 
