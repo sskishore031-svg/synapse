@@ -358,7 +358,7 @@ class MainActivity : ComponentActivity() {
                                 is AppScreen.TermsOfService -> AppScreen.AboutSynapse
                                 is AppScreen.PrivacyPolicy -> AppScreen.AboutSynapse
                                 is AppScreen.OpenSourceLicenses -> AppScreen.AboutSynapse
-                                is AppScreen.ProgressAnalytics -> AppScreen.Profile
+                                is AppScreen.ProgressAnalytics -> AppScreen.Dashboard
                                 is AppScreen.AiTutor -> AppScreen.Dashboard
                                 is AppScreen.QuizHomeSelection -> AppScreen.Dashboard
                                 is AppScreen.SubjectQuizSelection -> AppScreen.QuizHomeSelection
@@ -600,6 +600,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onNotificationClick = {
                                         navigateTo(AppScreen.NotificationsSettings)
+                                    },
+                                    onProgressAnalyticsClick = {
+                                        navigateTo(AppScreen.ProgressAnalytics)
                                     },
                                     onContinueLessonClick = { subjectSlug, _ ->
                                         when (subjectSlug.lowercase()) {
@@ -1415,9 +1418,6 @@ class MainActivity : ComponentActivity() {
                                     onAboutSynapseClick = {
                                         navigateTo(AppScreen.AboutSynapse)
                                     },
-                                    onProgressAnalyticsClick = {
-                                        navigateTo(AppScreen.ProgressAnalytics)
-                                    },
                                     onTabSelect = { tabIndex ->
                                         when (tabIndex) {
                                             0 -> switchTab(AppScreen.Dashboard)
@@ -1702,6 +1702,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onBrainMapClick = {
                                         navigateTo(AppScreen.BrainMap)
+                                    },
+                                    onProgressAnalyticsClick = {
+                                        navigateTo(AppScreen.ProgressAnalytics)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

@@ -442,29 +442,6 @@ fun ProfileContent(
                             }
                         }
 
-                        // 3. Progress & Analytics Button Box
-                        DashedBorderBox(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 4.dp
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(46.dp)
-                                    .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
-                                    .clickable { onProgressAnalyticsClick?.invoke() },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = "Progress & Analytics",
-                                    color = SunsetOrange,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-
                         // 4. Logout Button Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),

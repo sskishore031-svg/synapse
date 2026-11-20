@@ -85,6 +85,7 @@ fun DashboardScreen(
     onNotesTabClick: (() -> Unit)? = null,
     onProfileTabClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
+    onProgressAnalyticsClick: (() -> Unit)? = null,
     onContinueLessonClick: ((subjectSlug: String, chapterId: Int) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -143,6 +144,7 @@ fun DashboardScreen(
         onDeleteTask = { id ->
             viewModel.deleteLearningTask(id)
         },
+        onProgressAnalyticsClick = onProgressAnalyticsClick,
         modifier = modifier,
     )
 }
@@ -157,6 +159,7 @@ fun DashboardContent(
     onBrainMapClick: (() -> Unit)? = null,
     onNotificationClick: (() -> Unit)? = null,
     onProfileClick: (() -> Unit)? = null,
+    onProgressAnalyticsClick: (() -> Unit)? = null,
     onAddTask: (title: String, category: String, duration: String) -> Unit = { _, _, _ -> },
     onToggleTask: (id: String, completed: Boolean) -> Unit = { _, _ -> },
     onDeleteTask: (id: String) -> Unit = {},
@@ -637,6 +640,76 @@ fun DashboardContent(
                                             fontWeight = FontWeight.Bold,
                                         )
                                     }
+                                }
+                            }
+                        }
+                    }
+
+                    // 6. Progress & Analytics Card (Home Screen Bottom Option)
+                    DashedBorderBox(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = 2.dp
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onProgressAnalyticsClick?.invoke() },
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .background(SunsetOrange.copy(alpha = 0.15f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "📊", fontSize = 18.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Progress & Analytics",
+                                            color = TextPrimary,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Study time, tracks breakdown & streaks",
+                                            color = TextSecondary,
+                                            fontSize = 11.sp,
+                                        )
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
+                                            shape = RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable { onProgressAnalyticsClick?.invoke() }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "View Analytics ›",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
                         }
