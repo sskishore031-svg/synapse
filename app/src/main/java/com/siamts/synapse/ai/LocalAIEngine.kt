@@ -124,6 +124,17 @@ data class ConversationTurn(
 )
 
 /**
+ * Result of analyzing a pasted Python code snippet or SQL query.
+ */
+data class CodeSnippetAnalysis(
+    val language: String,
+    val logicBreakdown: String,
+    val timeComplexity: String,
+    val spaceComplexity: String,
+    val interviewEdgeCases: String
+)
+
+/**
  * 100% on-device Real Generative AI & Reasoning Engine with multi-turn rolling context memory.
  * Grounded on local educational datasets, RAG retrieval, and on-device knowledge synthesis without cloud APIs.
  */
@@ -146,7 +157,7 @@ class LocalAIEngine private constructor(context: Context?) {
     private val genericSubjectWords = setOf(
         "physics", "math", "maths", "mathematics", "chemistry", "computer", "computers",
         "science", "sciences", "biology", "history", "economics", "engineering", "ai",
-        "data"
+        "data", "python", "sql", "coding", "programming", "database", "databases", "dbms", "rdbms", "aptitude"
     )
 
     private val stemCache = ConcurrentHashMap<String, String>()
@@ -635,6 +646,17 @@ class LocalAIEngine private constructor(context: Context?) {
             return appFeatureResp
         }
 
+        // 4. STAGE 4: Explicit Out-of-Scope & Casual Slang Guardrails (Evaluated before code analysis)
+        if (isOutOfScopeQuery(normalized)) {
+            consecutiveUnclearCount = 0
+            return buildOutOfScopeResponse()
+        }
+
+        val casualSlangResp = checkCasualSlangIntent(lowerQuery, normalized)
+        if (casualSlangResp != null) {
+            return casualSlangResp
+        }
+
         val codeAnalysis = analyzeCodeOrQuerySnippet(query)
         if (codeAnalysis != null) {
             consecutiveUnclearCount = 0
@@ -662,22 +684,18 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 4. STAGE 4: Explicit Out-of-Scope & Casual Slang Guardrails
-        if (isOutOfScopeQuery(normalized)) {
-            consecutiveUnclearCount = 0
-            return buildOutOfScopeResponse()
-        }
-
-        val casualSlangResp = checkCasualSlangIntent(lowerQuery, normalized)
-        if (casualSlangResp != null) {
-            return casualSlangResp
-        }
-
         // 4B. STAGE 4B: Subject Overview Intent ("what about biology", "uses of math", etc.)
         val subjectOverviewResp = checkSubjectOverviewIntent(lowerQuery, normalized)
         if (subjectOverviewResp != null) {
             consecutiveUnclearCount = 0
             return subjectOverviewResp
+        }
+
+        // 4C. STAGE 4C: Direct Question Intent (Origin / Trivia, VS Comparisons, Code Snippets, Core Overviews)
+        val directQuestionResp = checkDirectQuestionIntent(query, lowerQuery, normalized)
+        if (directQuestionResp != null) {
+            consecutiveUnclearCount = 0
+            return directQuestionResp
         }
 
         // Lazy asset load fallback if not loaded yet
@@ -1746,6 +1764,306 @@ class LocalAIEngine private constructor(context: Context?) {
         )
     }
 
+    private fun checkDirectQuestionIntent(
+        rawQuery: String,
+        lowerQuery: String,
+        normalized: String
+    ): LocalAiResponse? {
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9+\\-=><\\s]"), " ").trim()
+        val norm = normalized.trim().lowercase(Locale.ROOT)
+
+        // 1. Python Snake / Naming Origin
+        val isSnakeQuestion = (clean.contains("python") && (clean.contains("snake") || clean.contains("reptile") || clean.contains("animal") || clean.contains("means snake"))) ||
+                Regex("(?:is\\s+)?python\\s+(?:means?|named\\s+after|a|the)?\\s*snake").containsMatchIn(clean) ||
+                Regex("why\\s+(?:is\\s+it\\s+called|named)\\s+python").containsMatchIn(clean) ||
+                clean == "python means snake" || clean == "why python" || clean.contains("python name origin")
+
+        if (isSnakeQuestion) {
+            val p1 = "* **No, Python is not named after the snake!**\n\nIn computer science, **Python** is a popular high-level programming language—not the reptile. Guido van Rossum created it in 1991 and named it after the famous BBC comedy series **'Monty Python\\'s Flying Circus'**, because he wanted a short, unique, and slightly mysterious name."
+            val p2 = "* **Core Placement Concept:**\nPython is an interpreted, dynamically typed language emphasizing code readability and developer velocity.\n\n* **Key Placement Topics to Explore:**\n1. **Memory Model & Mutability** (`id()`, object references, mutable vs immutable)\n2. **List vs Tuple** (memory layout & performance)\n3. **Global Interpreter Lock (GIL)** (threading vs multiprocessing)\n4. **Generators & Iterators** (lazy evaluation with `yield`)"
+            val sub = "Python & Coding Logic"
+            val ch = "Python Fundamentals"
+            val top = "Python Language Origin & Overview"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 2. Creator of Python
+        val isPythonCreator = (clean.contains("who") && (clean.contains("created") || clean.contains("invented") || clean.contains("made") || clean.contains("developed") || clean.contains("designed") || clean.contains("father")) && clean.contains("python")) ||
+                clean.contains("father of python") || clean == "who created python" || clean == "who invented python"
+        if (isPythonCreator) {
+            val p1 = "* **Creator of Python:**\n**Guido van Rossum**, a Dutch computer programmer, created Python in 1989 and officially released it in **February 1991** at Centrum Wiskunde & Informatica (CWI) in the Netherlands. For decades he was recognized as Python's 'Benevolent Dictator For Life' (BDFL)."
+            val p2 = "* **Design Philosophy:**\nGuido designed Python around \"The Zen of Python\" (PEP 20): *\"Simple is better than complex. Readability counts.\"* It has become the dominant language for Data Science, AI/ML, and rapid backend service development."
+            val sub = "Python & Coding Logic"
+            val ch = "Python Fundamentals"
+            val top = "Python History & Guido van Rossum"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 3. Creator of SQL
+        val isSqlCreator = (clean.contains("who") && (clean.contains("created") || clean.contains("invented") || clean.contains("made") || clean.contains("developed") || clean.contains("designed") || clean.contains("father")) && clean.contains("sql")) ||
+                clean.contains("father of sql") || clean == "who created sql" || clean == "who invented sql"
+        if (isSqlCreator) {
+            val p1 = "* **Creators of SQL:**\n**Donald D. Chamberlin** and **Raymond F. Boyce** developed SQL at IBM's San Jose Research Laboratory in the **early 1970s**. It was originally named **SEQUEL** (*Structured English QUEry Language*) designed to manipulate and retrieve data stored in IBM's original System R relational database."
+            val p2 = "* **Placement Importance:**\nStandardized by ANSI in 1986 and ISO in 1987, SQL remains the universal standard declarative language across all major RDBMS engines (PostgreSQL, MySQL, Oracle, Microsoft SQL Server)."
+            val sub = "SQL & Database Management"
+            val ch = "SQL Fundamentals"
+            val top = "SQL History & IBM Origins"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 4. Full Form of SQL
+        val isSqlFullForm = (clean.contains("sql") && (clean.contains("full form") || clean.contains("stand for") || clean.contains("meaning of sql") || clean.contains("what does sql stand for") || clean.contains("abbreviation"))) ||
+                clean == "sql full form" || clean == "full form of sql"
+        if (isSqlFullForm) {
+            val p1 = "* **Full Form of SQL:**\n**Structured Query Language** (pronounced either as individual letters *S-Q-L* or as *Sequel*).\n\nOriginally named **SEQUEL** (*Structured English QUEry Language*) at IBM, the name was shortened to **SQL** due to trademark issues."
+            val p2 = "* **Core Command Subsets:**\n• **DDL** (Data Definition): `CREATE`, `ALTER`, `DROP`, `TRUNCATE`\n• **DML** (Data Manipulation): `SELECT`, `INSERT`, `UPDATE`, `DELETE`\n• **DCL** (Data Control): `GRANT`, `REVOKE`\n• **TCL** (Transaction Control): `COMMIT`, `ROLLBACK`, `SAVEPOINT`"
+            val sub = "SQL & Database Management"
+            val ch = "SQL Fundamentals"
+            val top = "SQL Full Form & Command Categories"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 5. Full Form of LLM
+        val isLlmFullForm = (clean.contains("llm") && (clean.contains("full form") || clean.contains("stand for") || clean.contains("meaning of llm") || clean.contains("abbreviation"))) ||
+                clean == "llm full form" || clean == "full form of llm" || clean == "what does llm stand for"
+        if (isLlmFullForm) {
+            val p1 = "* **Full Form of LLM:**\n**Large Language Model**.\n\nLLMs are foundational deep learning systems trained on hundreds of billions of text and code tokens using Transformer neural networks (multi-head self-attention mechanisms) to understand, generate, and reason across natural language."
+            val p2 = "* **Core Production Workflow:**\n• **Pre-training:** Self-supervised next-token prediction across trillions of tokens.\n• **Fine-Tuning (SFT):** Instruction tuning on curated prompt-response datasets.\n• **Alignment (RLHF / DPO):** Optimizing model safety and adherence to human preferences.\n• **RAG (Retrieval-Augmented Generation):** Connecting LLMs to dynamic external vector databases."
+            val sub = "AI & Modern Tech Concepts"
+            val ch = "Generative AI & LLMs"
+            val top = "LLM (Large Language Model) Overview"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 6. What is SQL / SQL Overview
+        val isWhatIsSql = norm in setOf("what is sql", "what is sql language", "what is sql database", "explain sql", "what sql", "tell me about sql", "sql overview")
+        if (isWhatIsSql) {
+            val p1 = "* **What is SQL?**\n**Structured Query Language (SQL)** is the standard declarative programming language used to manage, query, and manipulate data in Relational Database Management Systems (RDBMS).\n\nUnlike procedural languages, SQL is **declarative**: you specify *what* records you require (`SELECT ... FROM ... WHERE ...`), and the database query engine optimizes the underlying physical retrieval execution plan."
+            val p2 = "* **Key Placement Topics in SQL:**\n• **Joins:** `INNER JOIN`, `LEFT JOIN`, `FULL OUTER JOIN`, `CROSS JOIN`\n• **Aggregation & Filtering:** `GROUP BY`, `HAVING`, `WHERE` execution order\n• **Indexing & Performance:** B-Tree indexes, clustered vs non-clustered, query cost\n• **ACID Transactions:** Atomicity, Consistency, Isolation, Durability\n• **Normalization:** 1NF, 2NF, 3NF, BCNF"
+            val sub = "SQL & Database Management"
+            val ch = "SQL Fundamentals"
+            val top = "SQL Architecture & Core Concepts"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 7. What is Python / Python Overview
+        val isWhatIsPython = norm in setOf("what is python", "what is python language", "what is python programming", "explain python", "what python", "tell me about python", "python overview")
+        if (isWhatIsPython) {
+            val p1 = "* **What is Python?**\n**Python** is a high-level, general-purpose, interpreted programming language designed with an emphasis on code readability and developer velocity.\n\nIt natively supports multiple programming paradigms including Object-Oriented, Functional, and Procedural styles. It powers modern industry workflows across Data Science, Machine Learning, Backend Web Services (FastAPI, Django), and Cloud Automation."
+            val p2 = "* **Key Placement Topics in Python:**\n• **Memory Model & Mutability:** Immutable types (`int`, `str`, `tuple`) vs mutable types (`list`, `dict`, `set`)\n• **Concurrency & GIL:** Global Interpreter Lock implications on multithreading vs multiprocessing\n• **Advanced Idioms:** List/Dict comprehensions, generators (`yield`), decorators (`@`)\n• **Data Structures & Complexity:** Hash map lookup O(1), Timsort algorithm O(N log N)"
+            val sub = "Python & Coding Logic"
+            val ch = "Python Fundamentals"
+            val top = "Python Language Overview & Core Concepts"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 8. What is AI / Artificial Intelligence
+        val isWhatIsAi = norm in setOf("what is ai", "what is artificial intelligence", "explain ai", "tell me about ai", "define ai", "what is ai in computer science")
+        if (isWhatIsAi) {
+            val p1 = "* **What is Artificial Intelligence (AI)?**\n**Artificial Intelligence** is the branch of computer science dedicated to building computational systems capable of performing tasks that historically required human intelligence—such as pattern recognition, visual perception, natural language understanding, and complex decision-making."
+            val p2 = "* **The AI Hierarchy (Placement Framework):**\n• **Artificial Intelligence (AI):** The overarching field of intelligent machines and algorithms.\n• **Machine Learning (ML):** A subset of AI where systems learn statistical patterns from data.\n• **Deep Learning (DL):** A subset of ML utilizing multi-layered artificial neural networks.\n• **Generative AI & LLMs:** Modern deep models synthesizing new text, code, or images."
+            val sub = "AI & Modern Tech Concepts"
+            val ch = "Artificial Intelligence Fundamentals"
+            val top = "AI Hierarchy & Overview"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 9. What is LLM
+        val isWhatIsLlm = norm in setOf("what is llm", "what is a large language model", "what is large language model", "explain llm", "tell me about llm")
+        if (isWhatIsLlm) {
+            val p1 = "* **What is a Large Language Model (LLM)?**\nA **Large Language Model** is an advanced artificial intelligence system built upon deep neural network architectures—specifically the **Transformer** self-attention mechanism—and trained on hundreds of billions of words.\n\nLLMs excel at natural language understanding, text synthesis, contextual reasoning, code generation, and conversational problem-solving."
+            val p2 = "* **Key LLM Placement Concepts:**\n• **Self-Attention Mechanism:** Computes contextual relevance between every pair of tokens in a sequence (Q, K, V).\n• **Context Window:** The token buffer length the model can process simultaneously (e.g. 8k to 1M tokens).\n• **Hallucination Mitigation:** Using **RAG** (Retrieval-Augmented Generation) to ground generation with verified database records."
+            val sub = "AI & Modern Tech Concepts"
+            val ch = "Generative AI & LLMs"
+            val top = "LLM (Large Language Model) Concepts"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 10. What is Database / DBMS / RDBMS
+        val isWhatIsDbms = norm in setOf("what is database", "what is dbms", "what is rdbms", "difference between dbms and rdbms", "what is a database", "what is a dbms", "what is a rdbms") ||
+                clean == "what is database" || clean == "what is dbms" || clean == "what is rdbms"
+        if (isWhatIsDbms) {
+            val p1 = "* **Database, DBMS, and RDBMS Definitions:**\n\n• **Database:** An organized, persistent electronic collection of structured information or data.\n• **DBMS (Database Management System):** Software that interacts with end users, applications, and the database itself to capture, query, and manage data (e.g., file systems, XML databases).\n• **RDBMS (Relational DBMS):** An advanced DBMS based on Edgar Codd's relational model where data is structured into tables (relations) with rows (tuples) and columns (attributes), enforcing integrity constraints and ACID transactions (e.g., PostgreSQL, MySQL, Oracle)."
+            val p2 = "* **Core Placement Pillars of RDBMS:**\n• **Primary Key & Foreign Key:** Enforce entity and referential integrity across related tables.\n• **ACID Compliance:** Ensures enterprise transactions remain atomic, consistent, isolated, and durable.\n• **Indexing (B-Tree):** Reduces query search time from O(N) full table scan to O(log N) index seek."
+            val sub = "SQL & Database Management"
+            val ch = "Database Concepts"
+            val top = "Database & RDBMS Fundamentals"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11. "VS" / Comparison Questions
+        val isComparison = clean.contains("vs") || clean.contains("versus") || clean.contains("difference between") || clean.contains("compare") || clean.contains("and")
+
+        // 11a. List vs Tuple
+        if (clean.contains("list") && clean.contains("tuple") && (isComparison || clean.contains("difference"))) {
+            val p1 = "* **List vs. Tuple Comparison (Python):**\n\n• **Mutability:** Lists are **mutable** (elements can be added, removed, or modified in place); Tuples are **immutable** (once instantiated, elements cannot be modified).\n• **Syntax:** Lists use square brackets `[1, 2, 3]`; Tuples use parentheses `(1, 2, 3)`.\n• **Memory & Speed:** Tuples allocate a single fixed memory block and are faster to construct and iterate over; Lists allocate extra capacity to support dynamic amortized O(1) append operations.\n• **Dictionary Keys:** Tuples can serve as dictionary keys or set elements (if all elements are hashable); Lists can **never** be dictionary keys because mutable types are unhashable."
+            val p2 = "* **Placement Interview Tip:**\nUse a tuple for fixed records or heterogeneous data (e.g. `(latitude, longitude)` or database rows). Use a list for collections of homogeneous items that grow or shrink dynamically."
+            val sub = "Python & Coding Logic"
+            val ch = "Python Data Structures"
+            val top = "List vs Tuple"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11b. SQL vs NoSQL
+        if (clean.contains("sql") && clean.contains("nosql")) {
+            val p1 = "* **SQL vs. NoSQL Comparison:**\n\n• **Data Model:** SQL databases are **relational** (predefined schemas, tables, rows, columns); NoSQL databases are **non-relational** (Document, Key-Value, Wide-Column, or Graph stores with dynamic JSON-like schemas).\n• **Transactions:** SQL guarantees strict **ACID** properties; NoSQL embraces **BASE** properties (Basically Available, Soft-state, Eventual consistency).\n• **Scaling:** SQL scales primarily **vertically** (increasing CPU, RAM, SSD on a server); NoSQL scales **horizontally** (sharding and distributing data partitions across commodity nodes).\n• **Examples:** SQL: PostgreSQL, MySQL, Oracle; NoSQL: MongoDB, Redis, Apache Cassandra, DynamoDB."
+            val p2 = "* **Placement System Design Tip:**\nChoose SQL for relational integrity, financial transactions, and complex analytical JOINs. Choose NoSQL for high-throughput write-heavy logs, caching, rapidly evolving schemas, or massive horizontal scale."
+            val sub = "SQL & Database Management"
+            val ch = "Database Architecture"
+            val top = "SQL vs NoSQL"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11c. DELETE vs TRUNCATE
+        if (clean.contains("delete") && clean.contains("truncate")) {
+            val p1 = "* **DELETE vs. TRUNCATE Comparison (SQL):**\n\n• **Command Type:** `DELETE` is a **DML** (Data Manipulation Language) command; `TRUNCATE` is a **DDL** (Data Definition Language) command.\n• **WHERE Clause:** `DELETE` supports a `WHERE` clause to filter specific rows; `TRUNCATE` removes **all rows** unconditionally.\n• **Transaction Logging & Speed:** `DELETE` scans and logs each deleted row individually in the transaction log (slow for large tables); `TRUNCATE` deallocates data pages directly and logs only page deallocations (extremely fast).\n• **Rollback:** `DELETE` operations can be rolled back in an active transaction; `TRUNCATE` commits immediately in some engines (though PostgreSQL and SQL Server support rolling back TRUNCATE within an uncommitted transaction).\n• **Identity Counter:** `TRUNCATE` resets auto-increment / identity seed values back to initial state; `DELETE` retains the current counter."
+            val p2 = "* **Placement Interview Takeaway:**\nNever run `DELETE` without a `WHERE` clause in production. Use `TRUNCATE TABLE` when emptying staging or temporary tables."
+            val sub = "SQL & Database Management"
+            val ch = "SQL DDL & DML Commands"
+            val top = "DELETE vs TRUNCATE"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11d. Primary Key vs Foreign Key
+        if (clean.contains("primary key") && clean.contains("foreign key")) {
+            val p1 = "* **Primary Key vs. Foreign Key Comparison:**\n\n• **Purpose:** A **Primary Key (PK)** uniquely identifies each row within its own table; a **Foreign Key (FK)** references a Primary Key or Unique Key in another table to establish a relationship.\n• **Uniqueness & Nullability:** Primary Keys must be strictly **UNIQUE and NOT NULL**; Foreign Keys can contain duplicate values and can be `NULL` (unless defined `NOT NULL`).\n• **Quantity:** A table can have only **one** Primary Key (which may be composite); a table can have **multiple** Foreign Keys pointing to different tables.\n• **Clustered Index:** Primary Keys automatically create a clustered index by default; Foreign Keys do not create indexes automatically (they should be indexed manually for JOIN performance)."
+            val p2 = "* **Placement Interview Takeaway:**\nForeign Keys enforce **Referential Integrity**. Cascading rules like `ON DELETE CASCADE` or `ON DELETE SET NULL` prevent orphaned child rows when a parent record is deleted."
+            val sub = "SQL & Database Management"
+            val ch = "Database Constraints & Keys"
+            val top = "Primary Key vs Foreign Key"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11e. AI vs ML
+        if ((clean.contains("ai") && clean.contains("ml") && (isComparison || clean.contains("difference"))) ||
+                (clean.contains("artificial intelligence") && clean.contains("machine learning"))) {
+            val p1 = "* **AI vs. Machine Learning (ML) Comparison:**\n\n• **Scope:** **Artificial Intelligence** is the overarching discipline of building intelligent systems capable of human-like decision making; **Machine Learning** is a specific branch/subset of AI.\n• **Methodology:** AI encompasses symbolic AI, expert rule systems, and search trees (A* algorithm); ML focuses on statistical algorithms that learn patterns directly from training data without being explicitly programmed.\n• **Goal:** AI seeks general intelligent behavior; ML seeks accurate predictive models on specific tasks through data optimization."
+            val p2 = "* **Placement Takeaway:**\nAll Machine Learning is Artificial Intelligence, but not all Artificial Intelligence is Machine Learning (e.g. minimax chess algorithms are AI without ML)."
+            val sub = "AI & Modern Tech Concepts"
+            val ch = "Artificial Intelligence Fundamentals"
+            val top = "AI vs ML"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11f. Deep Learning vs Machine Learning
+        if (clean.contains("deep learning") && clean.contains("machine learning")) {
+            val p1 = "* **Deep Learning (DL) vs. Traditional Machine Learning (ML):**\n\n• **Feature Engineering:** Traditional ML requires manual feature extraction (PCA, TF-IDF, domain feature engineering); DL automatically learns hierarchical representations directly from raw data (pixels, text tokens, audio signals).\n• **Architecture:** Traditional ML relies on models like Random Forest, SVM, and XGBoost; DL utilizes multi-layer artificial neural networks (CNNs, RNNs, Transformers).\n• **Hardware & Data Requirements:** Traditional ML works well on small-to-medium tabular datasets on standard CPUs; DL requires massive datasets and GPU/TPU matrix accelerators."
+            val p2 = "* **Placement Takeaway:**\nFor structured enterprise tabular data, Gradient Boosted Decision Trees (XGBoost/LightGBM) frequently outperform Deep Learning with lower compute costs and higher explainability."
+            val sub = "AI & Modern Tech Concepts"
+            val ch = "Neural Networks & Deep Learning"
+            val top = "Deep Learning vs Machine Learning"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11g. INNER JOIN vs LEFT JOIN
+        if (clean.contains("inner join") && clean.contains("left join")) {
+            val p1 = "* **INNER JOIN vs. LEFT JOIN Comparison:**\n\n• **Row Matching:** `INNER JOIN` returns **only rows that have matching values in both tables**; `LEFT JOIN` (or `LEFT OUTER JOIN`) returns **all rows from the left table**, plus matching records from the right table.\n• **Unmatched Left Rows:** In `LEFT JOIN`, if a left row has no match in the right table, all columns from the right table are populated with `NULL`; `INNER JOIN` drops unmatched rows completely.\n• **Result Cardinality:** An `INNER JOIN` row count is ≤ left table row count (assuming unique join keys); a `LEFT JOIN` row count is always ≥ left table row count."
+            val p2 = "* **Placement Interview Trick:**\nTo find records in Table A that have no corresponding record in Table B, use a `LEFT JOIN` with a NULL filter:\n```sql\nSELECT a.*\nFROM table_a a\nLEFT JOIN table_b b ON a.id = b.a_id\nWHERE b.a_id IS NULL;\n```"
+            val sub = "SQL & Database Management"
+            val ch = "SQL Joins & Relational Algebra"
+            val top = "SQL Joins (INNER vs LEFT)"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11h. WHERE vs HAVING
+        if (clean.contains("where") && clean.contains("having") && (isComparison || clean.contains("difference"))) {
+            val p1 = "* **WHERE vs. HAVING Comparison (SQL):**\n\n• **Evaluation Stage:** `WHERE` filters individual rows **before** any aggregation or `GROUP BY` operation; `HAVING` filters aggregated groups **after** `GROUP BY` calculation.\n• **Aggregate Functions:** `WHERE` **cannot** evaluate aggregate functions (`WHERE AVG(salary) > 50000` is illegal); `HAVING` is specifically designed to filter on aggregate functions (`HAVING AVG(salary) > 50000`).\n• **Indexing:** `WHERE` clauses can utilize B-Tree indexes for fast row seeks; `HAVING` filters aggregated intermediate result partitions in memory."
+            val p2 = "* **SQL Query Execution Pipeline (Crucial for Interviews):**\n1. `FROM` & `JOIN`\n2. `WHERE` (row filtering)\n3. `GROUP BY` (grouping)\n4. `HAVING` (group filtering)\n5. `SELECT` (projection)\n6. `DISTINCT`\n7. `ORDER BY` (sorting)\n8. `LIMIT` / `OFFSET`"
+            val sub = "SQL & Database Management"
+            val ch = "SQL Filtering & Grouping"
+            val top = "WHERE vs HAVING"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11i. is vs == in Python
+        if ((lowerQuery.contains("is") && lowerQuery.contains("==")) || clean == "is vs" || clean.contains("is vs ==")) {
+            val p1 = "* **`is` vs. `==` Comparison (Python):**\n\n• **Equality (`==`):** Tests for **value equality** — checks whether two objects have equivalent content by invoking the `__eq__()` method.\n• **Identity (`is`):** Compares **memory identity** — checks whether two variables reference the exact same object in heap memory (`id(a) == id(b)`).\n• **Example:**\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\nprint(a == b)  # True (same values)\nprint(a is b)  # False (different memory addresses)\n```"
+            val p2 = "* **Placement Interview Trap (Integer Interning & None):**\n• Always compare singletons with `is`: `if x is None:`, never `if x == None:`.\n• Python pre-allocates and interns small integers between -5 and 256. Therefore `x = 250; y = 250; x is y` evaluates to `True`, but integers outside that range allocate separate heap objects."
+            val sub = "Python & Coding Logic"
+            val ch = "Python Memory & Internals"
+            val top = "Object Identity vs Value Equality (`is` vs `==`)"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 12. "How to / Write Code / Example" Questions
+
+        // 12a. Reverse a string in Python
+        if (clean.contains("reverse") && (clean.contains("string") || clean.contains("str"))) {
+            val p1 = "* **How to Reverse a String in Python:**\n\n**Approach 1: Extended Slicing (Most Pythonic - O(N) Time, O(N) Space):**\n```python\ndef reverse_string(s: str) -> str:\n    return s[::-1]\n\nprint(reverse_string(\"placement\"))  # Output: tnemecalp\n```\n\n**Approach 2: Two-Pointer Technique (Mutable Character Array - O(N) Time, O(1) Auxiliary Space):**\n```python\ndef reverse_two_pointer(s: str) -> str:\n    chars = list(s)\n    left, right = 0, len(chars) - 1\n    while left < right:\n        chars[left], chars[right] = chars[right], chars[left]\n        left += 1\n        right -= 1\n    return \"\".join(chars)\n```"
+            val p2 = "* **Placement Interview Tip:**\nBecause Python strings are strictly immutable, slicing `s[::-1]` creates a new string object in memory. If an interviewer asks to reverse a string in-place with O(1) extra memory, convert to a `list` and use two pointers."
+            val sub = "Python & Coding Logic"
+            val ch = "Python Strings & Algorithms"
+            val top = "Reverse a String"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 12b. Second highest salary in SQL
+        if (clean.contains("second highest salary") || clean.contains("2nd highest salary") || (clean.contains("highest salary") && clean.contains("second"))) {
+            val p1 = "* **Find Second Highest Salary in SQL:**\n\n**Approach 1: Correlated Subquery (Universal ANSI SQL):**\n```sql\nSELECT MAX(salary) AS second_highest_salary\nFROM employees\nWHERE salary < (\n    SELECT MAX(salary)\n    FROM employees\n);\n```\n\n**Approach 2: Window Function (`DENSE_RANK` - Handles ties correctly):**\n```sql\nWITH RankedSalaries AS (\n    SELECT salary,\n           DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk\n    FROM employees\n)\nSELECT salary AS second_highest_salary\nFROM RankedSalaries\nWHERE rnk = 2\nLIMIT 1;\n```"
+            val p2 = "* **Placement Interview Trap:**\nNever use `ORDER BY salary DESC LIMIT 1 OFFSET 1` without handling duplicates. If multiple employees share the top salary, `LIMIT 1 OFFSET 1` returns the highest salary again. Always use `DENSE_RANK()` or `MAX() < (SELECT MAX())`."
+            val sub = "SQL & Database Management"
+            val ch = "SQL Interview Queries"
+            val top = "Second Highest Salary Query"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 12c. Palindrome
+        if (clean.contains("palindrome")) {
+            val p1 = "* **Check Palindrome (Python):**\n\n```python\ndef is_palindrome(s: str) -> bool:\n    # Filter alphanumeric characters and convert to lowercase\n    clean = [c.lower() for c in s if c.isalnum()]\n    \n    left, right = 0, len(clean) - 1\n    while left < right:\n        if clean[left] != clean[right]:\n            return False\n        left += 1\n        right -= 1\n    return True\n\nprint(is_palindrome(\"A man, a plan, a canal: Panama\"))  # True\nprint(is_palindrome(\"race a car\"))  # False\n```"
+            val p2 = "* **Complexity & Edge Cases:**\n• **Time Complexity:** O(N) where N is the length of the string.\n• **Space Complexity:** O(1) auxiliary space if checking characters directly with index pointers and `s[left].isalnum()`.\n• **Edge Cases:** Empty strings and single-character strings are valid palindromes."
+            val sub = "Python & Coding Logic"
+            val ch = "Two-Pointer Algorithms"
+            val top = "Palindrome Verification"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 12d. Fibonacci
+        if (clean.contains("fibonacci")) {
+            val p1 = "* **Fibonacci Series in Python (O(N) Time, O(1) Space):**\n\n```python\ndef fibonacci_sequence(n: int) -> list[int]:\n    if n <= 0:\n        return []\n    if n == 1:\n        return [0]\n    \n    seq = [0, 1]\n    for _ in range(2, n):\n        seq.append(seq[-1] + seq[-2])\n    return seq\n\nprint(fibonacci_sequence(8))  # [0, 1, 1, 2, 3, 5, 8, 13]\n```"
+            val p2 = "* **Placement Interview Note:**\nNaive recursion `fib(n-1) + fib(n-2)` takes exponential O(2^N) time due to repeated subproblem calculations. Explain Dynamic Programming (Memoization / Tabulation) to achieve O(N) time, or Matrix Exponentiation for O(log N) time."
+            val sub = "Python & Coding Logic"
+            val ch = "Algorithmic Problem Solving"
+            val top = "Fibonacci Sequence"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 12e. Prime Number
+        if (clean.contains("prime number") || clean.contains("check prime") || (clean.contains("prime") && (clean.contains("number") || clean.contains("is prime") || clean.contains("check")))) {
+            val p1 = "* **Check Prime Number (O(sqrt(N)) Time Complexity):**\n\n```python\ndef is_prime(n: int) -> bool:\n    if n <= 1:\n        return False\n    if n <= 3:\n        return True\n    if n % 2 == 0 or n % 3 == 0:\n        return False\n    \n    # Check factors of 6k +/- 1 up to sqrt(n)\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True\n\nprint(is_prime(29))  # True\nprint(is_prime(1))   # False\n```"
+            val p2 = "* **Mathematical Proof:**\nEvery composite integer n has at least one prime divisor less than or equal to sqrt(n). If no divisor is found up to floor(sqrt(n)), n is guaranteed to be prime."
+            val sub = "Python & Coding Logic"
+            val ch = "Mathematical Algorithms"
+            val top = "Prime Number Verification"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "direct_${System.currentTimeMillis()}", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        return null
+    }
+
     private fun hasExplicitContextPronoun(lowerQuery: String): Boolean {
         val words = lowerQuery.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
         val pronouns = setOf("it", "its", "this", "that", "these", "those", "roots", "solve", "formula", "derivation")
@@ -1855,7 +2173,7 @@ class LocalAIEngine private constructor(context: Context?) {
             if (includeExamples) {
                 appendLine("* **Key Example & Takeaway:** $example")
             }
-            append("* **Board Exam Focus:** High-yield concept in ${chunk.chapter}.")
+            append("* **Placement Exam Focus:** High-yield concept in ${chunk.chapter}.")
         }.trim()
 
         return LocalAiResponse(
@@ -1867,6 +2185,141 @@ class LocalAIEngine private constructor(context: Context?) {
             confidenceScore = 98.0,
             isFollowUp = true
         )
+    }
+
+    /**
+     * Smart Code & Query Helper: Parses raw Python code or SQL queries and produces
+     * step-by-step logic breakdown, algorithmic time & space complexity, and placement interview edge cases.
+     */
+    fun analyzeCodeOrQuerySnippet(rawCode: String): CodeSnippetAnalysis? {
+        val trimmed = rawCode.trim()
+        if (trimmed.length < 10) return null
+
+        val lower = trimmed.lowercase(Locale.ROOT)
+
+        // Ensure this is not a general theoretical question asking "what is a select query"
+        val isQuestion = lower.startsWith("what is") || lower.startsWith("explain") ||
+                lower.startsWith("tell me about") || lower.startsWith("define") ||
+                lower.startsWith("how does") || lower.startsWith("why is") ||
+                lower.startsWith("difference between")
+        if (isQuestion) return null
+
+        // 1. Detect SQL Query Snippets
+        val sqlPattern = Regex("(?i)\\b(SELECT\\s+[\\s\\S]*?\\s+FROM|INSERT\\s+INTO|UPDATE\\s+[a-zA-Z0-9_]+\\s+SET|DELETE\\s+FROM|CREATE\\s+TABLE)\\b")
+        if (sqlPattern.containsMatchIn(trimmed)) {
+            val hasJoin = lower.contains("join")
+            val hasGroupBy = lower.contains("group by")
+            val hasHaving = lower.contains("having")
+            val hasOrderBy = lower.contains("order by")
+            val hasWhere = lower.contains("where")
+
+            val breakdown = buildString {
+                appendLine("1. **Operation & Target Table:** Executes structured relational operation against source tables.")
+                if (hasJoin) {
+                    appendLine("2. **Join Strategy:** Combines records across multiple tables based on foreign key/relational predicates.")
+                }
+                if (hasWhere) {
+                    appendLine("3. **Row Filtering (WHERE):** Filters row partitions before grouping or projection.")
+                }
+                if (hasGroupBy) {
+                    appendLine("4. **Aggregation (GROUP BY):** Groups matched rows into summary buckets applying aggregate metrics.")
+                }
+                if (hasHaving) {
+                    appendLine("5. **Post-Aggregation Filter (HAVING):** Prunes aggregated groups based on summary thresholds.")
+                }
+                if (hasOrderBy) {
+                    appendLine("6. **Projection & Sorting (ORDER BY):** Emits final selected attributes ordered by designated columns.")
+                }
+            }.trim()
+
+            val timeComp = if (hasJoin && !hasWhere) {
+                "O(M * N) worst-case without indexes (Hash/Merge join); O(M + N) with indexed join keys."
+            } else if (hasOrderBy && hasGroupBy) {
+                "O(N log N) due to filesort / temporary table sorting."
+            } else if (hasWhere) {
+                "O(log N) for B-Tree index range scans; O(N) for full table scans."
+            } else {
+                "O(N) sequential table scan over matching records."
+            }
+
+            val spaceComp = if (hasGroupBy || hasOrderBy || hasJoin) {
+                "O(K) auxiliary buffer memory for hash aggregation tables and sorting buffers."
+            } else {
+                "O(1) streaming cursor memory."
+            }
+
+            val edgeCases = "• **NULL Semantics:** In SQL, `NULL = NULL` evaluates to `UNKNOWN`, causing unexpected row omission in INNER JOINs.\n" +
+                    "• **Cartesian Explosion:** Missing or non-unique JOIN conditions will trigger an accidental CROSS JOIN producing excessive rows.\n" +
+                    "• **WHERE vs ON in OUTER JOINs:** Placing filters in the WHERE clause instead of ON turns a LEFT JOIN into an INNER JOIN.\n" +
+                    "• **Aggregation on Empty Sets:** `COUNT(*)` returns 0, whereas `SUM()` and `AVG()` return `NULL` when 0 rows match."
+
+            return CodeSnippetAnalysis(
+                language = "SQL Query",
+                logicBreakdown = breakdown,
+                timeComplexity = timeComp,
+                spaceComplexity = spaceComp,
+                interviewEdgeCases = edgeCases
+            )
+        }
+
+        // 2. Detect Python Snippets
+        val hasPythonMarker = Regex("""(?m)(^\s*def\s+\w+\s*\(|^\s*class\s+\w+|^\s*for\s+\w+\s+in\s+|^\s*while\s+.*?:|^\s*if\s+.*?:|^\s*try\s*:|^\s*except[\s:]|^\s*with\s+open\s*\(|\[\s*\w+\s+for\s+\w+\s+in\s+)""").containsMatchIn(trimmed) ||
+                (trimmed.contains(" = [") || trimmed.contains(" = {")) && trimmed.lines().size >= 2 ||
+                (trimmed.lines().size >= 2 && trimmed.contains(":") && (lower.contains("return ") || lower.contains("def ") || lower.contains("print(")))
+
+        if (hasPythonMarker && !trimmed.contains("SELECT", ignoreCase = true)) {
+            val hasNestedLoops = Regex("(?s)for\\s+.*?:.*for\\s+.*?:").containsMatchIn(trimmed) ||
+                    Regex("(?s)while\\s+.*?:.*while\\s+.*?:").containsMatchIn(trimmed)
+            val hasSingleLoop = lower.contains("for ") || lower.contains("while ")
+            val hasRecursion = lower.contains("def ") && Regex("def\\s+(\\w+)[\\s\\S]*?\\1\\s*\\(").containsMatchIn(trimmed)
+            val hasSorting = lower.contains(".sort(") || lower.contains("sorted(")
+            val hasDictOrSet = lower.contains("dict(") || lower.contains("set(") || lower.contains("{") || lower.contains(".get(")
+
+            val breakdown = buildString {
+                appendLine("1. **Declaration & Input Handling:** Prepares variables and validates function/block arguments.")
+                if (hasSingleLoop || hasNestedLoops) {
+                    appendLine("2. **Iterative Traversal:** Loops through sequence elements maintaining state counters or pointers.")
+                }
+                if (hasDictOrSet) {
+                    appendLine("3. **Hashing & Fast Lookup:** Utilizes hash table operations for O(1) average lookup/insert.")
+                }
+                if (hasRecursion) {
+                    appendLine("4. **Recursive Call Stack:** Breaks problem down into smaller self-similar subproblems with base cases.")
+                }
+                if (lower.contains("return ") || lower.contains("yield ")) {
+                    appendLine("5. **Result Emission:** Returns calculated result or yields generator stream to caller.")
+                }
+            }.trim()
+
+            val timeComp = when {
+                hasNestedLoops -> "O(N²) quadratic time due to nested loop iteration over data."
+                hasSorting -> "O(N log N) using Python's Timsort algorithm."
+                hasRecursion -> "O(2ⁿ) if un-memoized tree recursion; O(N) with dynamic programming / memoization."
+                hasSingleLoop -> "O(N) linear time passing through the collection once."
+                else -> "O(1) constant time execution."
+            }
+
+            val spaceComp = when {
+                hasRecursion -> "O(D) call stack frame space, where D is maximum recursion depth."
+                hasDictOrSet || lower.contains(".append(") || lower.contains("[x for") -> "O(N) auxiliary space storing unique keys/elements."
+                else -> "O(1) auxiliary space modifying or evaluating variables in-place."
+            }
+
+            val edgeCases = "• **Empty / None Inputs:** Check for `if not data: return ...` before accessing index 0 to avoid `IndexError`.\n" +
+                    "• **Default Mutable Argument Anti-Pattern:** Avoid `def func(lst=[])`; default lists persist mutations across calls.\n" +
+                    "• **Integer Division & Rounding:** Python 3 `/` returns float; use `//` for integer truncation in placement math.\n" +
+                    "• **Off-by-One in Ranges:** Remember `range(start, end)` is exclusive of `end`."
+
+            return CodeSnippetAnalysis(
+                language = "Python Code",
+                logicBreakdown = breakdown,
+                timeComplexity = timeComp,
+                spaceComplexity = spaceComp,
+                interviewEdgeCases = edgeCases
+            )
+        }
+
+        return null
     }
 
     private fun isDoubtAssistanceQuery(normalized: String): Boolean {
@@ -2042,9 +2495,12 @@ class LocalAIEngine private constructor(context: Context?) {
         if (examplePrompts.any { cleaned.contains(it) }) return true
         if (elaboratePrompts.any { cleaned.contains(it) }) return true
         if (solvePrompts.any { cleaned.contains(it) }) return true
+        if (cleaned.contains("interview") || cleaned.contains("interview questions") || cleaned.contains("questions on this") || cleaned.contains("interview q")) return true
+        if (cleaned == "why" || cleaned.startsWith("why ") || cleaned.contains("why does") || cleaned.contains("reason")) return true
+        if (cleaned.contains("give example") || cleaned.contains("example") || cleaned.contains("code example")) return true
 
         val words = cleaned.split("\\s+".toRegex())
-        if (words.size <= 5 && words.any { it in setOf("it", "its", "this", "that", "these", "those", "roots", "solve") }) {
+        if (words.size <= 5 && words.any { it in setOf("it", "its", "this", "that", "these", "those", "roots", "solve", "why", "short", "details", "example") }) {
             return true
         }
 
@@ -2057,12 +2513,39 @@ class LocalAIEngine private constructor(context: Context?) {
     ): LocalAiResponse {
         val cleaned = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), "").trim()
 
-        if (isShortenQuery(cleaned)) {
+        if (isShortenQuery(cleaned) || cleaned.contains("short") || cleaned.contains("brief")) {
             return buildShortenedResponse(chunk)
         }
 
-        if (isElaborationQuery(cleaned) || elaboratePrompts.any { cleaned.contains(it) } || cleaned == "elaborate") {
+        if (isElaborationQuery(cleaned) || elaboratePrompts.any { cleaned.contains(it) } || cleaned == "elaborate" || cleaned.contains("details")) {
             return buildEducationalResponse(chunk, 100.0, isElaborated = true, isFollowUp = true)
+        }
+
+        if (cleaned.contains("interview") || cleaned.contains("interview question") || cleaned.contains("questions on this")) {
+            val iq = generateInterviewQuestions(chunk)
+            val tip = generatePlacementInterviewTip(chunk)
+            return LocalAiResponse(
+                paragraph1 = "* **Placement Interview Preparation** (${chunk.subject} · ${chunk.topic})\n\n$iq",
+                paragraph2 = "* **Interviewer Evaluation Tip & Takeaway:**\n$tip",
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = 95.0,
+                isFollowUp = true
+            )
+        }
+
+        if (cleaned == "why" || cleaned.startsWith("why ") || cleaned.contains("why does") || cleaned.contains("reason")) {
+            val rationale = generateEngineeringRationale(chunk)
+            return LocalAiResponse(
+                paragraph1 = "* **Engineering Rationale & Design Philosophy** (${chunk.subject} · ${chunk.topic})\n\n$rationale",
+                paragraph2 = "* **Core Principle & Takeaway:**\nUnderstanding the architectural reasoning behind ${chunk.topic} differentiates junior coders from senior engineering talent.",
+                matchedSubject = chunk.subject,
+                matchedChapter = chunk.chapter,
+                matchedTopic = chunk.topic,
+                confidenceScore = 95.0,
+                isFollowUp = true
+            )
         }
 
         val bulletPrefix = if (useEmojis) "📘 " else "* "
@@ -2075,8 +2558,8 @@ class LocalAIEngine private constructor(context: Context?) {
                 generateTopicExample(chunk)
             }
             return LocalAiResponse(
-                paragraph1 = "${bulletPrefix}**Practical Example** (${chunk.subject} · ${chunk.topic})\n\nHere is a real-world scenario illustrating **${chunk.topic}**:",
-                paragraph2 = "$exampleText\n\n${insightPrefix}*Context Grounded:* Derived from ${chunk.chapter} (${chunk.subject}).",
+                paragraph1 = "${bulletPrefix}**Practical Example & Implementation** (${chunk.subject} · ${chunk.topic})\n\nHere is a real-world scenario illustrating **${chunk.topic}**:",
+                paragraph2 = "$exampleText\n\n${insightPrefix}*Core Principle & Takeaway:* Derived from ${chunk.chapter} (${chunk.subject}).",
                 matchedSubject = chunk.subject,
                 matchedChapter = chunk.chapter,
                 matchedTopic = chunk.topic,
@@ -2090,7 +2573,7 @@ class LocalAIEngine private constructor(context: Context?) {
             val formulaText = if (chunk.formulaOrCoreRule.isNotBlank()) chunk.formulaOrCoreRule else chunk.content.substringBefore(".")
             return LocalAiResponse(
                 paragraph1 = "${bulletPrefix}**Method & Solving Steps** (${chunk.subject} · ${chunk.topic})\n\nHere is how to solve and evaluate problems for **${chunk.topic}**:",
-                paragraph2 = "$stepGuide\n\n${insightPrefix}*Formula/Insight:* $formulaText.",
+                paragraph2 = "$stepGuide\n\n${insightPrefix}*Core Principle:* $formulaText.",
                 matchedSubject = chunk.subject,
                 matchedChapter = chunk.chapter,
                 matchedTopic = chunk.topic,
@@ -2101,7 +2584,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
         return LocalAiResponse(
             paragraph1 = "${bulletPrefix}**In-Depth Breakdown** (${chunk.subject} · ${chunk.topic})\n\nExpanding further on **${chunk.topic}**:",
-            paragraph2 = "${chunk.content.ifBlank { "${chunk.definition}\n\n${chunk.formulaOrCoreRule}" }}\n\n${insightPrefix}*Takeaway:* Mastering ${chunk.topic} connects directly to advanced applications in ${chunk.chapter}.",
+            paragraph2 = "${chunk.content.ifBlank { "${chunk.definition}\n\n${chunk.formulaOrCoreRule}" }}\n\n${insightPrefix}*Core Principle & Takeaway:* Mastering ${chunk.topic} connects directly to advanced applications in ${chunk.chapter}.",
             matchedSubject = chunk.subject,
             matchedChapter = chunk.chapter,
             matchedTopic = chunk.topic,
@@ -2110,38 +2593,253 @@ class LocalAIEngine private constructor(context: Context?) {
         )
     }
 
+    fun generateRealLifeAnalogy(chunk: KnowledgeChunk): String {
+        val sub = chunk.subject.lowercase(Locale.ROOT)
+        val topic = chunk.topic.lowercase(Locale.ROOT)
+        val chapter = chunk.chapter.lowercase(Locale.ROOT)
+
+        return when {
+            sub.contains("python") || sub.contains("coding") -> {
+                when {
+                    topic.contains("mutab") || chapter.contains("mutab") ->
+                        "Think of an immutable object as an engraved metal plaque: once stamped, its text cannot change—to change it, you must forge an entirely new plaque. A mutable object is like a whiteboard where you can erase and rewrite items in-place without buying a new board."
+                    topic.contains("gil") || chapter.contains("gil") || topic.contains("thread") ->
+                        "Think of the GIL like a busy restaurant kitchen with four cooks but only one head chef's knife. Even with four cooks standing ready, only one can chop at any single moment, meaning CPU-heavy tasks must create separate standalone kitchens (multiprocessing) to chop simultaneously."
+                    topic.contains("generator") || topic.contains("iterator") ->
+                        "Think of a generator like a vending machine that dispenses a single snack only when a coin is inserted. A regular list is like hauling an entire grocery store into your living room before eating a single bite."
+                    topic.contains("oop") || topic.contains("class") ->
+                        "Think of a class as an architectural blueprint for a house, and an object as the physical brick-and-mortar house constructed from that blueprint. Multiple distinct houses can be built from one blueprint."
+                    else ->
+                        "Think of ${chunk.topic} like a specialized power tool in a software engineer's toolbox. Used in the right scenario, it minimizes boilerplate code and prevents unexpected runtime failures."
+                }
+            }
+            sub.contains("sql") || sub.contains("database") -> {
+                when {
+                    topic.contains("join") || chapter.contains("join") ->
+                        "Think of an INNER JOIN like comparing two class attendance sheets: only students whose names appear on BOTH sheets get marked present. A LEFT JOIN ensures every student on the primary sheet is listed, attaching extra info only if they also signed the second sheet."
+                    topic.contains("index") || chapter.contains("index") ->
+                        "Think of a database index like the alphabetized index at the back of a thick textbook. Instead of reading every page from 1 to 1000 (full table scan), you look up the keyword and jump directly to the target page."
+                    topic.contains("acid") || topic.contains("transaction") ->
+                        "Think of an ACID transaction like an ATM withdrawal: either the cash comes out and your account deducts together, or the entire transaction aborts cleanly—your money is never left in an inconsistent half-way state."
+                    topic.contains("group") || topic.contains("aggregat") ->
+                        "Think of GROUP BY like sorting a box of mixed fruits into separate baskets by fruit type, then weighing each basket individually with an aggregate scale."
+                    else ->
+                        "Think of ${chunk.topic} like the structural foundation of a high-rise building. It enforces data consistency and prevents catastrophic collapses during high-traffic load."
+                }
+            }
+            sub.contains("ai") || sub.contains("tech") || sub.contains("concept") -> {
+                when {
+                    topic.contains("rag") || chapter.contains("rag") ->
+                        "Think of RAG like giving an intelligent student an open-book library during a difficult final exam. Instead of relying solely on memorized intuition, the AI searches authoritative reference books in real-time before composing its answer."
+                    topic.contains("neural") || topic.contains("deep learning") || topic.contains("gradient") ->
+                        "Think of training a neural network like tuning a complex sound board with hundreds of knobs. When the music sounds distorted (high loss), you gently nudge each knob in the direction that makes the sound clearer (backpropagation)."
+                    topic.contains("transformer") || topic.contains("attention") ->
+                        "Think of attention mechanisms like a highlighter pen while reading a dense contract. Rather than treating every single word equally, the reader highlights and cross-references only the key contractual clauses."
+                    else ->
+                        "Think of ${chunk.topic} like an automated smart assistant that learns statistical patterns from millions of past observations to make accurate real-time predictions."
+                }
+            }
+            sub.contains("aptitude") || sub.contains("interview") -> {
+                when {
+                    topic.contains("speed") || topic.contains("distance") || topic.contains("train") ->
+                        "Think of relative speed like walking on an airport moving walkway. If you walk forward along with the walkway, your speeds add up; if you try walking backwards against it, your net speed is the difference."
+                    topic.contains("work") || topic.contains("time") ->
+                        "Think of work problems in terms of baking cookies. If Person A bakes 5 cookies an hour and Person B bakes 4 cookies an hour, their combined oven produces 9 cookies every hour."
+                    topic.contains("probability") ->
+                        "Think of probability like rolling a fair die: having 1 winning face out of 6 possibilities gives you an exact quantifiable 1-in-6 chance of success."
+                    else ->
+                        "Think of ${chunk.topic} like finding a mathematical shortcut through a maze: applying the fundamental formula allows you to bypass tedious trial-and-error arithmetic."
+                }
+            }
+            else -> {
+                "Think of ${chunk.topic} as a foundational building block in ${chunk.subject}. Just as a master blueprint specifies tolerances and constraints before assembly, understanding this principle ensures reliable system performance."
+            }
+        }
+    }
+
+    fun generatePlacementInterviewTip(chunk: KnowledgeChunk): String {
+        val sub = chunk.subject.lowercase(Locale.ROOT)
+        val topic = chunk.topic.lowercase(Locale.ROOT)
+        val chapter = chunk.chapter.lowercase(Locale.ROOT)
+
+        return when {
+            sub.contains("python") || sub.contains("coding") -> {
+                when {
+                    topic.contains("mutab") || chapter.contains("mutab") ->
+                        "Placement rounds often test mutating a list while iterating over it (which skips elements) and using mutable default arguments in functions (`def foo(a=[])`). Always explain why dict keys must be immutable and hashable."
+                    topic.contains("gil") || chapter.contains("gil") || topic.contains("thread") ->
+                        "Interviewers will ask: 'Does multi-threading speed up CPU-bound tasks in Python?' The definitive answer is NO due to the GIL; explain when to switch to `multiprocessing` or asynchronous I/O (`asyncio`)."
+                    topic.contains("generator") || topic.contains("iterator") ->
+                        "Emphasize the difference between eager evaluation (lists consuming O(N) memory immediately) versus lazy evaluation (generators yielding values one-by-one with O(1) auxiliary memory)."
+                    else ->
+                        "Always state both Time and Space complexity before writing code. Identify potential boundary conditions like empty inputs, single-element arrays, and negative values."
+                }
+            }
+            sub.contains("sql") || sub.contains("database") -> {
+                when {
+                    topic.contains("join") || chapter.contains("join") ->
+                        "A classic interview trap is asking the difference between `ON` and `WHERE` conditions in `LEFT JOIN`. Remember: filtering the right table in `WHERE` turns the query into an `INNER JOIN` by discarding NULL rows!"
+                    topic.contains("index") || chapter.contains("index") ->
+                        "Be ready to explain 'Sargable queries'. Applying functions on indexed columns (e.g. `WHERE YEAR(created_at) = 2024`) invalidates B-Tree index lookups and causes slow full-table scans."
+                    topic.contains("acid") || topic.contains("transaction") ->
+                        "Expect questions on transaction isolation levels (Read Uncommitted, Read Committed, Repeatable Read, Serializable) and how they mitigate dirty reads, non-repeatable reads, and phantom reads."
+                    topic.contains("group") || topic.contains("having") ->
+                        "Remember: `WHERE` filters rows BEFORE grouping occurs, whereas `HAVING` filters aggregated groups AFTER `GROUP BY` calculation."
+                    else ->
+                        "Relational schema questions frequently evaluate normal forms (1NF, 2NF, 3NF, BCNF) and when deliberate denormalization is acceptable for read-heavy reporting systems."
+                }
+            }
+            sub.contains("ai") || sub.contains("tech") || sub.contains("concept") -> {
+                when {
+                    topic.contains("rag") || chapter.contains("rag") ->
+                        "Interviewers test chunking strategies (fixed size vs semantic splitting), choice of vector distance metrics (cosine similarity vs dot product vs euclidean), and reranking methods to prevent hallucination."
+                    topic.contains("neural") || topic.contains("deep learning") || topic.contains("gradient") ->
+                        "Be prepared to explain the vanishing and exploding gradient problem, and how activation functions like ReLU and architectural innovations like residual skip connections solve it."
+                    topic.contains("overfitting") || topic.contains("regularization") ->
+                        "Highlight techniques to prevent overfitting: Dropout, L1/L2 weight regularization, Early Stopping, and Data Augmentation."
+                    else ->
+                        "Focus on balancing model accuracy with deployment latency and memory footprint—companies look for engineers who understand production trade-offs."
+                }
+            }
+            sub.contains("aptitude") || sub.contains("interview") -> {
+                when {
+                    topic.contains("speed") || topic.contains("distance") || topic.contains("train") ->
+                        "Unit conversion is the #1 student trap! Always convert km/h to m/s by multiplying by 5/18 (or m/s to km/h by multiplying by 18/5) before solving."
+                    topic.contains("work") || topic.contains("time") ->
+                        "Use the LCM method to assume a total units of work. It eliminates messy fractions and lets you calculate integer daily efficiencies in seconds."
+                    topic.contains("percentage") || topic.contains("profit") ->
+                        "Use successive percentage change formula: a + b + (ab/100) to solve successive discounts or double percentage alterations instantly."
+                    else ->
+                        "Apply answer elimination: inspect unit digits, test divisibility rules, and eliminate absurd options first to solve questions in under 45 seconds."
+                }
+            }
+            else -> {
+                "Interviewers look for candidates who explain both the 'how' and the 'why'—always state time complexity, potential failure edge cases, and practical engineering trade-offs."
+            }
+        }
+    }
+
+    fun generateInterviewQuestions(chunk: KnowledgeChunk): String {
+        val sub = chunk.subject
+        val topic = chunk.topic
+        return buildString {
+            appendLine("• **Q1 (Core Mechanics & Theory):** How would you explain the internal mechanism of **$topic** to a junior developer, and what core technical problem does it solve in $sub?")
+            appendLine()
+            appendLine("• **Q2 (Edge Cases & Failure Scenarios):** In high-concurrency production systems, what are the most dangerous edge cases, performance bottlenecks, or failure modes associated with **$topic**, and how do you safeguard against them?")
+            appendLine()
+            append("• **Q3 (System Design & Tradeoffs):** When evaluating alternative engineering solutions, under what specific architectural conditions would you choose NOT to implement **$topic**?")
+        }
+    }
+
+    fun generateEngineeringRationale(chunk: KnowledgeChunk): String {
+        val sub = chunk.subject
+        val topic = chunk.topic
+        return buildString {
+            appendLine("• **The Engineering Motivation:** Modern software systems demand predictable performance, data integrity, and resource bounds. **$topic** was designed to eliminate non-deterministic race conditions and minimize operational latency in $sub.")
+            appendLine()
+            appendLine("• **Architectural Trade-Offs:** Every engineering abstraction incurs a cost. While **$topic** provides structural safety and consistency, it requires strict adherence to invariant contracts and consumes auxiliary operational resources.")
+            appendLine()
+            append("• **Real-World Impact at Scale:** Without **$topic**, distributed production workloads risk catastrophic cascading failures, deadlocks, and silent data corruption under heavy concurrent traffic.")
+        }
+    }
+
     private fun generateTopicExample(chunk: KnowledgeChunk): String {
-        return when (chunk.subject.lowercase(Locale.ROOT)) {
-            "mathematics" -> {
+        val sub = chunk.subject.lowercase(Locale.ROOT)
+        val topic = chunk.topic.lowercase(Locale.ROOT)
+        val chapter = chunk.chapter.lowercase(Locale.ROOT)
+
+        return when {
+            sub.contains("python") || sub.contains("coding") -> {
+                when {
+                    topic.contains("mutab") || chapter.contains("mutab") || topic.contains("memory") -> {
+                        "```python\n# Immutable int & tuple vs Mutable list\na = [1, 2, 3]\nb = a\nb.append(4)  # Modifies in-place: id(a) == id(b)\nprint(a)      # Output: [1, 2, 3, 4]\n\nx = (1, 2)\n# x[0] = 9   # Raises TypeError: 'tuple' object does not support item assignment\n```"
+                    }
+                    topic.contains("gil") || chapter.contains("gil") || topic.contains("thread") -> {
+                        "```python\nimport multiprocessing as mp\n\ndef heavy_computation(n):\n    return sum(i * i for i in range(n))\n\nif __name__ == '__main__':\n    with mp.Pool(processes=4) as pool:\n        results = pool.map(heavy_computation, [1000000] * 4)\n    print('Parallel CPU-bound execution completed bypassing GIL!')\n```"
+                    }
+                    topic.contains("generator") || topic.contains("iterator") -> {
+                        "```python\ndef fibonacci_gen(limit):\n    a, b = 0, 1\n    while a < limit:\n        yield a\n        a, b = b, a + b\n\nfor num in fibonacci_gen(50):\n    print(num, end=' ')  # Memory-efficient O(1) auxiliary space streaming\n```"
+                    }
+                    else -> {
+                        "```python\n# Practical Placement Logic Example\ndef solve_two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []\n# O(N) Time and O(N) Space hash map optimization\n```"
+                    }
+                }
+            }
+            sub.contains("sql") || sub.contains("database") -> {
+                when {
+                    topic.contains("join") || chapter.contains("join") -> {
+                        "```sql\n-- Retrieve students with their enrolled courses (including students with no courses)\nSELECT s.student_id, s.name, c.course_title\nFROM students s\nLEFT JOIN enrollments e ON s.student_id = e.student_id\nLEFT JOIN courses c ON e.course_id = c.course_id\nWHERE s.active_status = 1;\n```"
+                    }
+                    topic.contains("group") || topic.contains("aggregat") || topic.contains("having") -> {
+                        "```sql\n-- Find departments with average salary exceeding $85,000\nSELECT department_id, COUNT(*) AS employee_count, ROUND(AVG(salary), 2) AS avg_salary\nFROM employees\nGROUP BY department_id\nHAVING AVG(salary) > 85000\nORDER BY avg_salary DESC;\n```"
+                    }
+                    topic.contains("index") || chapter.contains("index") -> {
+                        "```sql\n-- Create composite B-Tree index to avoid full table scans\nCREATE INDEX idx_user_orders ON orders (user_id, order_date DESC);\n-- Explain query execution plan\nEXPLAIN SELECT * FROM orders WHERE user_id = 1042 ORDER BY order_date DESC LIMIT 10;\n```"
+                    }
+                    else -> {
+                        "```sql\n-- High-performance transactional query with ACID safety\nSTART TRANSACTION;\nUPDATE accounts SET balance = balance - 500 WHERE account_id = 101;\nUPDATE accounts SET balance = balance + 500 WHERE account_id = 102;\nCOMMIT;\n```"
+                    }
+                }
+            }
+            sub.contains("ai") || sub.contains("tech") || sub.contains("concept") -> {
+                when {
+                    topic.contains("rag") || chapter.contains("rag") -> {
+                        "In an enterprise RAG pipeline: A user queries 'What is the refund policy?'. The vector embedding is computed, top-3 matching chunks from the policy PDF are retrieved via cosine similarity in Pinecone, and injected into the prompt: 'Context: [chunks] Question: [query] Answer based on context only.'"
+                    }
+                    topic.contains("loss") || topic.contains("gradient") || topic.contains("backprop") -> {
+                        "In training a classification model: Cross-entropy loss measures deviation from ground truth. The optimizer calculates partial derivatives ∂L/∂w for each weight layer via the chain rule and updates weights: w = w - η * ∇L."
+                    }
+                    else -> {
+                        "In self-attention mechanisms, input tokens are mapped into Query (Q), Key (K), and Value (V) matrices. Attention weights are computed via Softmax(Q·Kᵀ / √dₖ)·V, allowing the network to weight contextual importance across the entire sequence in parallel."
+                    }
+                }
+            }
+            sub.contains("aptitude") || sub.contains("interview") -> {
+                when {
+                    topic.contains("speed") || topic.contains("distance") || topic.contains("train") -> {
+                        "A 150m long train travels at 54 km/h (54 × 5/18 = 15 m/s). To cross a 250m long platform, total distance = 150 + 250 = 400m. Time = Distance / Speed = 400 / 15 = 26.67 seconds."
+                    }
+                    topic.contains("work") || topic.contains("time") -> {
+                        "Person A can finish a project in 12 days; Person B in 15 days. Total work (LCM of 12 & 15) = 60 units. A's efficiency = 5 units/day, B's efficiency = 4 units/day. Working together = 5 + 4 = 9 units/day. Time required = 60 / 9 = 6.67 days."
+                    }
+                    topic.contains("profit") || topic.contains("loss") || topic.contains("percentage") -> {
+                        "If an article is bought at \$400 and marked up by 30% (\$520), then sold with a 10% discount: Selling Price = 520 × 0.90 = \$468. Net Profit = 468 - 400 = \$68 (Net Profit % = 17%)."
+                    }
+                    else -> {
+                        "Probability problem: Selecting 2 cards from a standard 52-card deck without replacement. Probability of getting 2 Aces = (4/52) × (3/51) = 1/221."
+                    }
+                }
+            }
+            sub.contains("mathematics") -> {
                 if (chunk.chapter.contains("Quadratic", ignoreCase = true)) {
                     "Consider a projectile trajectory: h(t) = -5t² + 20t. Setting height to ground (h(t) = 0) yields -5t(t - 4) = 0. Roots are t = 0 (launch) and t = 4s (impact). The quadratic formula allows calculating the exact flight duration and apex height."
                 } else {
                     "In calculus, if a car's displacement is s(t) = 3t² + 4t meters, the instantaneous velocity is the derivative v(t) = s'(t) = 6t + 4 m/s. At t = 2s, velocity equals 16 m/s."
                 }
             }
-            "computer science" -> {
+            sub.contains("computer science") -> {
                 if (chunk.chapter.contains("Algorithms", ignoreCase = true)) {
                     "Searching for target 42 in sorted array [10, 20, 30, 42, 50, 70]: Binary search inspects midpoint 30 < 42, narrows to right half [42, 50, 70], checks 42 = 42! Located in 2 comparisons instead of scanning 4 elements linearly."
                 } else {
                     "A browser's 'Back' and 'Forward' buttons use two Stacks (LIFO). When you click Back, the current URL pushes onto the Forward stack and pops from the Back stack in O(1) constant time."
                 }
             }
-            "data science" -> {
+            sub.contains("data science") -> {
                 "When predicting house prices, if a linear regression model predicts \$300,000 for a house actually selling at \$320,000, residual error is \$20,000. Evaluating over test sets using RMSE or R² validates real-world generalization."
             }
-            "artificial intelligence" -> {
+            sub.contains("artificial intelligence") -> {
                 "In computer vision, an image of handwritten digit '8' is fed into neural layers. Gradient descent computes cross-entropy loss against true label and updates weights backwards via backpropagation so the network learns edge and loop detectors."
             }
-            "physics" -> {
+            sub.contains("physics") -> {
                 "Applying Newton's second law F = ma: Accelerating a 1,200 kg car at 2.5 m/s² requires net horizontal engine force F = 1,200 × 2.5 = 3,000 Newtons."
             }
-            "chemistry" -> {
+            sub.contains("chemistry") -> {
                 "Neutralizing stomach acid (HCl) with antacid magnesium hydroxide Mg(OH)₂: 2 HCl + Mg(OH)₂ → MgCl₂ + 2 H₂O. The hydronium and hydroxide ions combine into water, raising pH towards neutrality."
             }
-            "biology" -> {
+            sub.contains("biology") -> {
                 "In human respiration, hemoglobin binds four O₂ molecules in pulmonary capillaries and releases them in oxygen-depleted peripheral muscle tissues via allosteric cooperative binding."
             }
-            "world history", "history" -> {
+            sub.contains("world history") || sub.contains("history") -> {
                 "The Industrial Revolution led to steam locomotives, enabling transport of raw coal from Welsh mines to Manchester manufacturing factories within hours instead of days."
             }
             else -> {
@@ -2303,6 +3001,9 @@ class LocalAIEngine private constructor(context: Context?) {
             generateTopicExample(chunk)
         }
 
+        val analogyText = generateRealLifeAnalogy(chunk)
+        val interviewTipText = generatePlacementInterviewTip(chunk)
+
         val bulletPrefix = if (useEmojis) "📘 " else "* "
         val formulaPrefix = if (useEmojis) "⚡ " else "* "
         val examplePrefix = if (useEmojis) "💡 " else "* "
@@ -2310,16 +3011,18 @@ class LocalAIEngine private constructor(context: Context?) {
         return if (isElaborated) {
             val p1 = "${bulletPrefix}**In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
                     "**1. Theoretical Foundations & Mechanism:**\n" +
-                    "${chunk.content}" +
-                    (if (includeFormulas && formulaText.isNotBlank()) "\n\n**2. Mathematical Formulations & Derivations:**\n$formulaText" else "")
+                    "${chunk.content}\n\n" +
+                    "**2. Real-Life Analogy:**\n" +
+                    "$analogyText" +
+                    (if (includeFormulas && formulaText.isNotBlank()) "\n\n**3. Mathematical Formulations & Derivations:**\n$formulaText" else "")
             val p2 = buildString {
                 if (includeExamples && exampleText.isNotBlank()) {
-                    appendLine("**3. Comprehensive Practical Application:**")
+                    appendLine("**4. Practical Implementation & Code:**")
                     appendLine(exampleText)
                     appendLine()
                 }
-                appendLine("**4. High-Yield Exam Takeaway:**")
-                append("Mastering ${chunk.topic} requires remembering key governing assumptions, units, and boundary conditions.")
+                appendLine("**5. Placement Interview Tip & Key Takeaway:**")
+                append(interviewTipText)
             }.trim()
 
             LocalAiResponse(
@@ -2333,15 +3036,16 @@ class LocalAIEngine private constructor(context: Context?) {
                 isFollowUp = isFollowUp
             )
         } else {
-            // Concise-by-default (3-5 lines max: 1-sentence definition + key formula/rule + 1 quick example)
-            val p1 = "${bulletPrefix}**Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText"
+            // Concise-by-default (3-5 lines max: 1-sentence definition + analogy + key formula/rule + 1 quick example + interview tip)
+            val p1 = "${bulletPrefix}**Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText\n\n${bulletPrefix}**Real-Life Analogy:**\n$analogyText"
             val p2 = buildString {
                 if (includeFormulas && formulaText.isNotBlank()) {
                     appendLine("${formulaPrefix}**Formula / Core Principle:** $formulaText")
                 }
                 if (includeExamples && exampleText.isNotBlank()) {
-                    append("${examplePrefix}**Key Example & Practical Takeaway:** $exampleText")
+                    appendLine("${examplePrefix}**Key Example & Practical Takeaway:** $exampleText")
                 }
+                append("* **Placement Interview Tip & Takeaway:** $interviewTipText")
             }.trim()
 
             LocalAiResponse(

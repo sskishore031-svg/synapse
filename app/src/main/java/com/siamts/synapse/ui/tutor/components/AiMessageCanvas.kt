@@ -31,8 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siamts.synapse.ui.theme.BlueAccent
@@ -40,6 +45,7 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.tutor.ChatMessage
 import com.siamts.synapse.ui.tutor.NeuralWaveTypingIndicator
@@ -265,64 +271,186 @@ fun AiMessageCanvas(
 }
 
 /**
+ * Converts text containing Markdown **bold** or `inline code` spans into an [AnnotatedString]
+ * with [FontWeight.Bold] or Monospace styling, stripping raw syntax markers.
+ */
+fun parseMarkdownAnnotatedString(text: String, baseColor: Color): AnnotatedString {
+    return buildAnnotatedString {
+        // Match both **bold** and `code` spans
+        val tokenRegex = Regex("""(\*\*(.*?)\*\*|`([^`]+)`)""")
+        var cursor = 0
+        val matches = tokenRegex.findAll(text)
+
+        for (match in matches) {
+            if (match.range.first > cursor) {
+                withStyle(SpanStyle(color = baseColor)) {
+                    append(text.substring(cursor, match.range.first))
+                }
+            }
+
+            val boldContent = match.groups[2]?.value
+            val codeContent = match.groups[3]?.value
+
+            if (boldContent != null) {
+                withStyle(SpanStyle(color = baseColor, fontWeight = FontWeight.Bold)) {
+                    append(boldContent)
+                }
+            } else if (codeContent != null) {
+                withStyle(
+                    SpanStyle(
+                        color = Color(0xFFFF9500),
+                        fontFamily = FontFamily.Monospace,
+                        background = Color(0x22FFFFFF)
+                    )
+                ) {
+                    append(" $codeContent ")
+                }
+            }
+
+            cursor = match.range.last + 1
+        }
+
+        if (cursor < text.length) {
+            withStyle(SpanStyle(color = baseColor)) {
+                append(text.substring(cursor))
+            }
+        }
+    }
+}
+
+/**
  * Formats Markdown bold headers, numbered points, and bullet items with comfortable 22.sp line height.
+ * Accurately parses bold text, code snippets, and replaces raw asterisks with clean bullet dots.
  */
 @Composable
 fun AiMarkdownText(text: String, textColor: Color, modifier: Modifier = Modifier) {
     val lines = text.split("\n")
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        var inCodeBlock = false
+        val codeBuffer = mutableListOf<String>()
+
         lines.forEach { line ->
             val trimmed = line.trim()
+
+            if (trimmed.startsWith("```")) {
+                if (inCodeBlock) {
+                    // Close code block and render
+                    inCodeBlock = false
+                    val codeContent = codeBuffer.joinToString("\n")
+                    codeBuffer.clear()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF0F1015))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = codeContent,
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 20.sp
+                        )
+                    }
+                } else {
+                    inCodeBlock = true
+                }
+                return@forEach
+            }
+
+            if (inCodeBlock) {
+                codeBuffer.add(line)
+                return@forEach
+            }
+
+            if (trimmed.isBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                return@forEach
+            }
+
             when {
-                trimmed.startsWith("**") && trimmed.endsWith("**") -> {
-                    val cleanHeader = trimmed.removeSurrounding("**")
+                // Bullet lines starting with "* ", "• ", or "- "
+                trimmed.startsWith("* ") || trimmed.startsWith("• ") || trimmed.startsWith("- ") -> {
+                    val rawBulletContent = trimmed.removePrefix("* ").removePrefix("• ").removePrefix("- ").trim()
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "•",
+                            color = SunsetOrange,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = parseMarkdownAnnotatedString(rawBulletContent, textColor),
+                            fontSize = 14.sp,
+                            lineHeight = 22.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // Numbered list item: "1. ", "2. ", etc.
+                Regex("""^\d+\.\s+.*""").matches(trimmed) -> {
+                    val dotIndex = trimmed.indexOf(". ")
+                    val prefix = trimmed.substring(0, dotIndex + 2)
+                    val numContent = trimmed.substring(dotIndex + 2).trim()
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = prefix,
+                            color = SunsetOrange,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = parseMarkdownAnnotatedString(numContent, textColor),
+                            fontSize = 14.sp,
+                            lineHeight = 22.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // Markdown Headers: "# ", "## ", "### "
+                trimmed.startsWith("#") -> {
+                    val headerContent = trimmed.replace(Regex("""^#+\s*"""), "")
                     Text(
-                        text = cleanHeader,
-                        color = textColor,
-                        fontSize = 14.sp,
+                        text = parseMarkdownAnnotatedString(headerContent, textColor),
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 22.sp
                     )
                 }
-                trimmed.startsWith("• ") || trimmed.startsWith("- ") -> {
-                    val bulletText = trimmed.removePrefix("• ").removePrefix("- ")
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "•", color = CyanAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = bulletText,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-                trimmed.startsWith("1. ") || trimmed.startsWith("2. ") || trimmed.startsWith("3. ") ||
-                trimmed.startsWith("4. ") || trimmed.startsWith("5. ") || trimmed.startsWith("6. ") ||
-                trimmed.startsWith("7. ") || trimmed.startsWith("8. ") || trimmed.startsWith("9. ") -> {
-                    val prefix = trimmed.take(3)
-                    val numText = trimmed.drop(3)
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(text = prefix, color = CyanAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = numText,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
+
+                // Normal paragraph text (parses inline **bold** and `code` seamlessly)
                 else -> {
-                    if (trimmed.isNotBlank()) {
-                        Text(
-                            text = line,
-                            color = textColor,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
-                        )
-                    }
+                    Text(
+                        text = parseMarkdownAnnotatedString(trimmed, textColor),
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp
+                    )
                 }
+            }
+        }
+
+        // Flush remaining code block if closing fence was omitted
+        if (inCodeBlock && codeBuffer.isNotEmpty()) {
+            val codeContent = codeBuffer.joinToString("\n")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0F1015))
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = codeContent,
+                    color = Color(0xFFE2E8F0),
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace,
+                    lineHeight = 20.sp
+                )
             }
         }
     }

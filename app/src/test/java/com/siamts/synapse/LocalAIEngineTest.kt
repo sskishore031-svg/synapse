@@ -428,4 +428,194 @@ class LocalAIEngineTest {
         assertTrue("Must emit token events", tokenEvents.isNotEmpty())
         assertEquals("Hello! I'm doing great and ready to help you study. What topic shall we explore today?", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
     }
+
+    @Test
+    fun testCodeAnalysis_pythonSnippet() {
+        val code = """
+            def find_duplicates(nums):
+                seen = set()
+                duplicates = []
+                for num in nums:
+                    if num in seen:
+                        duplicates.append(num)
+                    seen.add(num)
+                return duplicates
+        """.trimIndent()
+        val response = engine.generateResponse(code)
+        assertTrue("Should detect Python Code", response.paragraph1.contains("Python Code Logic Breakdown"))
+        assertTrue("Should compute Time & Space Complexity", response.paragraph2.contains("Time & Space Complexity"))
+        assertTrue("Should list Placement Interview Edge Cases", response.paragraph2.contains("Placement Interview Edge Cases"))
+        assertEquals("Python & Coding Logic", response.matchedSubject)
+    }
+
+    @Test
+    fun testCodeAnalysis_sqlQuery() {
+        val query = """
+            SELECT d.dept_name, COUNT(e.emp_id) AS total_staff, AVG(e.salary) AS avg_sal
+            FROM departments d
+            INNER JOIN employees e ON d.dept_id = e.dept_id
+            WHERE e.active = 1
+            GROUP BY d.dept_name
+            HAVING AVG(e.salary) > 75000
+            ORDER BY avg_sal DESC;
+        """.trimIndent()
+        val response = engine.generateResponse(query)
+        assertTrue("Should detect SQL Query", response.paragraph1.contains("SQL Query Logic Breakdown"))
+        assertTrue("Should compute Time & Space Complexity", response.paragraph2.contains("Time & Space Complexity"))
+        assertTrue("Should highlight NULL and Cartesian traps", response.paragraph2.contains("Placement Interview Edge Cases"))
+        assertEquals("SQL & Database Management", response.matchedSubject)
+    }
+
+    @Test
+    fun testContextFollowUp_whyAndInterviewQuestions() {
+        // First turn: Learn about SQL Joins
+        val r1 = engine.generateResponse("what is sql inner join and left join?")
+        assertNotNull(r1.matchedTopic)
+
+        // Second turn: Ask "interview questions on this"
+        val r2 = engine.generateResponse("interview questions on this")
+        assertTrue("Should be follow-up", r2.isFollowUp)
+        assertTrue("Should generate interview questions", r2.paragraph1.contains("Placement Interview Preparation"))
+        assertTrue("Should contain takeaway", r2.paragraph2.contains("Takeaway"))
+
+        // Third turn: Ask "why?"
+        val r3 = engine.generateResponse("why?")
+        assertTrue("Should be follow-up", r3.isFollowUp)
+        assertTrue("Should provide engineering rationale", r3.paragraph1.contains("Engineering Rationale"))
+        assertTrue("Should contain Core Principle & Takeaway", r3.paragraph2.contains("Core Principle") || r3.paragraph2.contains("Takeaway"))
+    }
+
+    @Test
+    fun testEducationalResponse_containsAnalogyAndInterviewTip() {
+        val response = engine.generateResponse("explain python global interpreter lock")
+        assertTrue("Should contain Real-Life Analogy", response.paragraph1.contains("Real-Life Analogy") || response.paragraph1.contains("Concept & Definition"))
+        assertTrue("Should contain Core Principle", response.paragraph2.contains("Core Principle"))
+        assertTrue("Should contain Placement Interview Tip / Takeaway", response.paragraph2.contains("Takeaway") || response.paragraph2.contains("Placement Interview Tip"))
+    }
+
+    @Test
+    fun testStrictScopeGuard_redirectsNonTechnical() {
+        val nonTechQueries = listOf(
+            "who is rajinikanth",
+            "tell me a recipe for chicken biryani",
+            "what was the cricket match score",
+            "will you marry me"
+        )
+        for (q in nonTechQueries) {
+            val response = engine.generateResponse(q)
+            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("falls outside my placement and technical scope"))
+        }
+    }
+
+    @Test
+    fun testDirectQuestionIntent_pythonMeansSnake_answersMontyPythonDirectly() {
+        val testQueries = listOf(
+            "python means snake?",
+            "python means snake",
+            "is python named after snake",
+            "why is it called python",
+            "why python"
+        )
+        for (query in testQueries) {
+            val response = engine.generateResponse(query)
+            assertFalse("Should never dump mutability for origin query '$query'", response.paragraph1.contains("Python Memory Model & Mutability"))
+            assertTrue("Should explain Monty Python origin for '$query'", response.paragraph1.contains("No, Python is not named after the snake") || response.paragraph1.contains("Monty Python"))
+            assertTrue("Should contain placement topics to explore", response.paragraph2.contains("Key Placement Topics to Explore"))
+            assertEquals("Python & Coding Logic", response.matchedSubject)
+            assertTrue(response.confidenceScore >= 95.0)
+        }
+    }
+
+    @Test
+    fun testDirectQuestionIntent_whoCreatedAndFullForms() {
+        val pyCreatorResp = engine.generateResponse("who created python")
+        assertTrue("Should name Guido van Rossum", pyCreatorResp.paragraph1.contains("Guido van Rossum"))
+        assertTrue("Should mention 1991", pyCreatorResp.paragraph1.contains("1991"))
+        assertEquals("Python & Coding Logic", pyCreatorResp.matchedSubject)
+
+        val sqlCreatorResp = engine.generateResponse("who created sql")
+        assertTrue("Should name Chamberlin & Boyce", sqlCreatorResp.paragraph1.contains("Donald D. Chamberlin") && sqlCreatorResp.paragraph1.contains("Raymond F. Boyce"))
+        assertTrue("Should mention IBM", sqlCreatorResp.paragraph1.contains("IBM"))
+        assertEquals("SQL & Database Management", sqlCreatorResp.matchedSubject)
+
+        val sqlFullFormResp = engine.generateResponse("what is the full form of sql")
+        assertTrue("Should state Structured Query Language", sqlFullFormResp.paragraph1.contains("Structured Query Language"))
+        assertTrue("Should mention DDL, DML, TCL", sqlFullFormResp.paragraph2.contains("DDL") && sqlFullFormResp.paragraph2.contains("DML"))
+
+        val llmFullFormResp = engine.generateResponse("full form of llm")
+        assertTrue("Should state Large Language Model", llmFullFormResp.paragraph1.contains("Large Language Model"))
+        assertTrue("Should mention Pre-training & RAG", llmFullFormResp.paragraph2.contains("Pre-training") && llmFullFormResp.paragraph2.contains("RAG"))
+        assertEquals("AI & Modern Tech Concepts", llmFullFormResp.matchedSubject)
+    }
+
+    @Test
+    fun testDirectQuestionIntent_comparisons() {
+        val listVsTuple = engine.generateResponse("list vs tuple")
+        assertTrue("Should compare mutable vs immutable", listVsTuple.paragraph1.contains("mutable") && listVsTuple.paragraph1.contains("immutable"))
+        assertEquals("List vs Tuple", listVsTuple.matchedTopic)
+
+        val sqlVsNosql = engine.generateResponse("sql vs nosql")
+        assertTrue("Should compare ACID vs BASE", sqlVsNosql.paragraph1.contains("ACID") && sqlVsNosql.paragraph1.contains("BASE"))
+        assertEquals("SQL vs NoSQL", sqlVsNosql.matchedTopic)
+
+        val delVsTrunc = engine.generateResponse("delete vs truncate")
+        assertTrue("Should compare DML vs DDL", delVsTrunc.paragraph1.contains("DML") && delVsTrunc.paragraph1.contains("DDL"))
+        assertEquals("DELETE vs TRUNCATE", delVsTrunc.matchedTopic)
+
+        val pkVsFk = engine.generateResponse("primary key vs foreign key")
+        assertTrue("Should compare PK and FK", pkVsFk.paragraph1.contains("Primary Key") && pkVsFk.paragraph1.contains("Foreign Key"))
+        assertEquals("Primary Key vs Foreign Key", pkVsFk.matchedTopic)
+
+        val aiVsMl = engine.generateResponse("ai vs ml")
+        assertTrue("Should compare AI and ML", aiVsMl.paragraph1.contains("Artificial Intelligence") && aiVsMl.paragraph1.contains("Machine Learning"))
+        assertEquals("AI vs ML", aiVsMl.matchedTopic)
+
+        val whereVsHaving = engine.generateResponse("where vs having")
+        assertTrue("Should compare WHERE and HAVING", whereVsHaving.paragraph1.contains("WHERE") && whereVsHaving.paragraph1.contains("HAVING"))
+        assertEquals("WHERE vs HAVING", whereVsHaving.matchedTopic)
+
+        val isVsEquals = engine.generateResponse("is vs ==")
+        assertTrue("Should compare value equality and memory identity", isVsEquals.paragraph1.contains("value equality") && isVsEquals.paragraph1.contains("memory identity"))
+        assertEquals("Object Identity vs Value Equality (`is` vs `==`)", isVsEquals.matchedTopic)
+    }
+
+    @Test
+    fun testDirectQuestionIntent_howToCodeSnippets() {
+        val reverseStr = engine.generateResponse("how to reverse a string in python")
+        assertTrue("Should contain slicing and two-pointer", reverseStr.paragraph1.contains("[::-1]") && reverseStr.paragraph1.contains("reverse_two_pointer"))
+        assertEquals("Python & Coding Logic", reverseStr.matchedSubject)
+
+        val secondSalary = engine.generateResponse("find second highest salary in sql")
+        assertTrue("Should contain subquery and DENSE_RANK", secondSalary.paragraph1.contains("MAX(salary)") && secondSalary.paragraph1.contains("DENSE_RANK"))
+        assertEquals("SQL & Database Management", secondSalary.matchedSubject)
+
+        val palindrome = engine.generateResponse("check palindrome in python")
+        assertTrue("Should contain is_palindrome function", palindrome.paragraph1.contains("is_palindrome"))
+        assertEquals("Python & Coding Logic", palindrome.matchedSubject)
+
+        val fib = engine.generateResponse("fibonacci series in python")
+        assertTrue("Should contain fibonacci sequence logic", fib.paragraph1.contains("fibonacci_sequence"))
+        assertEquals("Python & Coding Logic", fib.matchedSubject)
+
+        val prime = engine.generateResponse("check prime number")
+        assertTrue("Should contain is_prime function", prime.paragraph1.contains("is_prime"))
+        assertEquals("Python & Coding Logic", prime.matchedSubject)
+    }
+
+    @Test
+    fun testDirectQuestionIntent_trackOverviews() {
+        val sqlOverview = engine.generateResponse("what is sql")
+        assertTrue("Should explain SQL declarative nature", sqlOverview.paragraph1.contains("Structured Query Language") && sqlOverview.paragraph1.contains("declarative"))
+        assertTrue("Should list SQL placement topics", sqlOverview.paragraph2.contains("Joins") && sqlOverview.paragraph2.contains("ACID"))
+        assertEquals("SQL & Database Management", sqlOverview.matchedSubject)
+
+        val pyOverview = engine.generateResponse("what is python")
+        assertTrue("Should explain Python high-level interpreted nature", pyOverview.paragraph1.contains("high-level") && pyOverview.paragraph1.contains("interpreted"))
+        assertTrue("Should list Python placement topics", pyOverview.paragraph2.contains("Memory Model") && pyOverview.paragraph2.contains("GIL"))
+        assertEquals("Python & Coding Logic", pyOverview.matchedSubject)
+
+        val aiOverview = engine.generateResponse("what is ai")
+        assertTrue("Should explain AI cognition and hierarchy", aiOverview.paragraph1.contains("Artificial Intelligence") && aiOverview.paragraph2.contains("Machine Learning"))
+        assertEquals("AI & Modern Tech Concepts", aiOverview.matchedSubject)
+    }
 }

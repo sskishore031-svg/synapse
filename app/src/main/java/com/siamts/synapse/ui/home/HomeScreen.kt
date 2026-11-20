@@ -232,14 +232,14 @@ fun HomeContent(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Sunset Amber Interactive AI Search Bar
-                var topQueryText by remember { mutableStateOf("") }
+                // Sunset Amber Interactive AI Search Bar (Tap anywhere opens AI Chat)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .background(Color(0xFF13141B), RoundedCornerShape(16.dp))
                         .border(1.dp, Color(0xFFFF6A00).copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .clickable { onAiChatClick() }
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -256,85 +256,20 @@ fun HomeContent(
                             Text(text = "✨", fontSize = 15.sp, color = SunsetOrange)
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = topQueryText,
-                            onValueChange = { topQueryText = it },
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    if (topQueryText.isBlank()) {
-                                        onAiChatClick()
-                                    }
-                                },
-                            singleLine = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal
-                            ),
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                                imeAction = androidx.compose.ui.text.input.ImeAction.Search
-                            ),
-                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                                onSearch = {
-                                    if (topQueryText.isNotBlank()) {
-                                        val q = topQueryText.trim()
-                                        topQueryText = ""
-                                        onAiChatQuerySubmit?.invoke(q) ?: onAiChatClick()
-                                    } else {
-                                        onAiChatClick()
-                                    }
-                                },
-                                onDone = {
-                                    if (topQueryText.isNotBlank()) {
-                                        val q = topQueryText.trim()
-                                        topQueryText = ""
-                                        onAiChatQuerySubmit?.invoke(q) ?: onAiChatClick()
-                                    } else {
-                                        onAiChatClick()
-                                    }
-                                }
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (topQueryText.isEmpty()) {
-                                    Text(
-                                        text = "Chat with SYNAPSE — Ask any placement doubt...",
-                                        color = TextSecondary,
-                                        fontSize = 13.sp,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                }
-                                innerTextField()
-                            }
+                        Text(
+                            text = "Chat with SYNAPSE — Ask any placement doubt...",
+                            color = TextSecondary,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        if (topQueryText.isNotBlank()) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
-                                        shape = CircleShape
-                                    )
-                                    .clickable {
-                                        val q = topQueryText.trim()
-                                        topQueryText = ""
-                                        onAiChatQuerySubmit?.invoke(q) ?: onAiChatClick()
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "➔", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable { onAiChatClick() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "🎙️", fontSize = 16.sp)
-                            }
+                        Box(
+                            modifier = Modifier.size(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "🎙️", fontSize = 16.sp)
                         }
                     }
                 }
