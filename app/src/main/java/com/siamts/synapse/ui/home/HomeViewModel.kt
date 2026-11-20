@@ -55,6 +55,7 @@ class HomeViewModel(
             val user = manager?.getSessionUser()
             val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Kishore" }
 
+            val studySessions = try { com.siamts.synapse.data.local.QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
 
@@ -62,8 +63,13 @@ class HomeViewModel(
             val quizChapters = quizRecords.map { it.chapterId }
             val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
 
-            val streak = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty()) {
-                manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+            val streak = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty() || studySessions.isNotEmpty()) {
+                val dates = studySessions.map { it.studyDate }.filter { it.isNotBlank() }.distinct().sortedDescending()
+                if (dates.isNotEmpty()) {
+                    manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: dates.size
+                } else {
+                    manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+                }
             } else {
                 0
             }

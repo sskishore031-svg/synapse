@@ -579,73 +579,8 @@ fun DashboardContent(
                             }
                         }
                     }
-                    // 5. AI Tutor Banner Card (Clean Right-Aligned Pill with Zero Overlap)
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 2.dp
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onAskAiClick?.invoke() },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(text = "🤖", fontSize = 24.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "A question on your mind?",
-                                            color = TextPrimary,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                        Text(
-                                            text = "Your AI Tutor is one tap away.",
-                                            color = TextSecondary,
-                                            fontSize = 12.sp,
-                                        )
-                                    }
-                                }
 
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Box(
-                                    modifier = Modifier
-                                        .background(
-                                            brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
-                                            shape = RoundedCornerShape(20.dp)
-                                        )
-                                        .clickable { onAskAiClick?.invoke() }
-                                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "Chat with SYNAPSE",
-                                            color = Color.White,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 6. Progress & Analytics Card (Home Screen Bottom Option)
+                    // Progress & Analytics Card (Home Screen Bottom Option)
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 2.dp
@@ -756,30 +691,6 @@ fun DashboardContent(
                         )
                     }
                 }
-            }
-        }
-
-        // Floating Sunset Amber Chat Integration Button (never overlaps left column text)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 68.dp, end = 16.dp)
-                .background(
-                    brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .border(1.dp, AmberGold.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
-                .clickable { onAskAiClick?.invoke() }
-                .padding(horizontal = 14.dp, vertical = 9.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "🤖 ", fontSize = 14.sp)
-                Text(
-                    text = "Chat with SYNAPSE",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }

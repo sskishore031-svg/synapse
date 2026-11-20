@@ -659,8 +659,9 @@ fun SubjectSelectionContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(vertical = 8.dp, horizontal = 8.dp),
+                    .background(Color(0xFF13141B))
+                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -683,11 +684,11 @@ fun SubjectSelectionContent(
                         Text(
                             text = icon,
                             fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
+                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4)
                         )
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )

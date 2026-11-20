@@ -100,11 +100,11 @@ fun HomeScreen(
         onTabSelect = { index ->
             viewModel.onTabSelected(index)
             when (index) {
+                0 -> { /* Already on Home */ }
                 1 -> onSubjectClick?.invoke("")
-                2 -> onAiChatClick?.invoke()
-                3 -> {
-                    // Stay in profile tab of home, or open full profile screen
-                }
+                2 -> onQuizClick?.invoke()
+                3 -> onNotesClick?.invoke()
+                4 -> onProfileClick?.invoke()
             }
         },
         onActionClick = { id ->
@@ -147,6 +147,7 @@ fun HomeScreen(
         onDismissAddTask = { viewModel.setAddTaskDialogVisible(false) },
         onAiChatClick = { onAiChatClick?.invoke() },
         onProgressAnalyticsClick = onProgressAnalyticsClick,
+        onContinueLessonClick = onContinueLessonClick,
         modifier = modifier,
     )
 }
@@ -169,6 +170,7 @@ fun HomeContent(
     onDismissAddTask: () -> Unit = {},
     onAiChatClick: () -> Unit = {},
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onContinueLessonClick: ((String, Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalThemeIsDark.current
@@ -752,20 +754,46 @@ fun HomeContent(
                     if (uiState.recentSessions.isEmpty() && !uiState.isLoading) {
                         item {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onContinueLessonClick?.invoke("PYTHON", 1)
+                                    },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430)),
+                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Start your learning journey",
-                                        color = TextPrimary,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Start Track 1: Python & Coding Logic",
+                                            color = TextPrimary,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = "Start ›",
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Explore subjects below and complete your first chapter.",
+                                        text = "Begin your 2-minute daily concept lessons · 15 min",
                                         color = TextSecondary,
                                         fontSize = 12.sp
                                     )
@@ -1084,61 +1112,41 @@ fun HomeContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(DarkBackgroundBottom)
+                    .background(Color(0xFF13141B))
                     .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val tabs = listOf("Home 🏠", "Learn 📚", "AI Chat 🤖", "Profile 👤")
-                tabs.forEachIndexed { index, tabName ->
+                val navItems = listOf(
+                    Triple("Home", "🏠", 0),
+                    Triple("Learn", "📖", 1),
+                    Triple("Quiz", "❓", 2),
+                    Triple("Notes", "📝", 3),
+                    Triple("Profile", "👤", 4)
+                )
+
+                navItems.forEach { (label, icon, index) ->
                     val isSelected = index == uiState.selectedTab
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .background(
-                                color = if (isSelected) SurfacePanelElevated else Color.Transparent,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .border(
-                                width = if (isSelected) 1.dp else 0.dp,
-                                color = if (isSelected) SunsetOrange.copy(alpha = 0.5f) else Color.Transparent,
-                                shape = RoundedCornerShape(12.dp)
-                            )
                             .clickable { onTabSelect(index) }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = tabName,
-                            color = if (isSelected) SunsetOrange else TextSecondary,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            text = icon,
+                            fontSize = 18.sp,
+                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4)
+                        )
+                        Text(
+                            text = label,
+                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4),
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
-            }
-        }
-
-        // Floating Sunset Amber Chat Integration Button (never overlaps left column text)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 72.dp, end = 16.dp)
-                .background(
-                    brush = Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .border(1.dp, AmberGold.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
-                .clickable { onAiChatClick?.invoke() }
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "🤖 ", fontSize = 14.sp)
-                Text(
-                    text = "Chat with SYNAPSE",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }

@@ -30,7 +30,7 @@ data class DashboardUiState(
     val studyStreakDays: Int = 0,
     val todayPlanTotalTime: String = "0 min",
     val todayPlanItems: List<PlanItem> = emptyList(),
-    val recommendedTitle: String = "Linear algebra essentials",
-    val recommendedSubtitle: String = "Build a stronger foundation · 15 min",
+    val recommendedTitle: String = "Start Track 1: Python & Coding Logic",
+    val recommendedSubtitle: String = "Begin your 2-minute daily concept lessons · 15 min",
     val selectedTab: Int = 0,
 )

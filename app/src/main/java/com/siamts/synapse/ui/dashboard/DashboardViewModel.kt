@@ -83,7 +83,7 @@ class DashboardViewModel(
             val userName = user?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Kishore" }
             val photo = user?.photoUrl ?: _uiState.value.profilePhotoUri
 
-            // 2. Real stats from QuizDao and ChapterDao
+            val studySessions = try { QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
 
@@ -92,8 +92,13 @@ class DashboardViewModel(
             val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
 
             // 1. Streak from DataStore (0 for new users with no completed topics or quizzes)
-            val streakDays = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty()) {
-                manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+            val streakDays = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty() || studySessions.isNotEmpty()) {
+                val dates = studySessions.map { it.studyDate }.filter { it.isNotBlank() }.distinct().sortedDescending()
+                if (dates.isNotEmpty()) {
+                    manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: dates.size
+                } else {
+                    manager?.recordActiveStudyDay() ?: manager?.getStudyStreak() ?: 0
+                }
             } else {
                 0
             }
@@ -237,8 +242,8 @@ class DashboardViewModel(
 
             repository.getHomeDashboard(userId = user?.id, email = user?.email).fold(
                 onSuccess = { data ->
-                    val recTitle = data.brainMap?.recommendationTitle ?: "Python & Coding Logic"
-                    val recSub = data.brainMap?.recommendationSubtitle ?: "Start your 2-minute daily concept lessons · 15 min"
+                    val recTitle = data.brainMap?.recommendationTitle ?: "Start Track 1: Python & Coding Logic"
+                    val recSub = data.brainMap?.recommendationSubtitle ?: "Begin your 2-minute daily concept lessons · 15 min"
 
                     _uiState.update { current ->
                         current.copy(

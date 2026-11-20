@@ -304,6 +304,15 @@ class MainActivity : ComponentActivity() {
             }
 
             SYNAPSETheme(darkTheme = isDark) {
+                val view = androidx.compose.ui.platform.LocalView.current
+                if (!view.isInEditMode) {
+                    androidx.compose.runtime.SideEffect {
+                        val window = (view.context as android.app.Activity).window
+                        window.navigationBarColor = if (isDark) android.graphics.Color.parseColor("#13141B") else android.graphics.Color.WHITE
+                        val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
+                        insets.isAppearanceLightNavigationBars = !isDark
+                    }
+                }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = MaterialTheme.colorScheme.background
