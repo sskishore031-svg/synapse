@@ -206,7 +206,17 @@ sealed class AppScreen {
     data object OpenSourceLicenses : AppScreen()
     data object ProgressAnalytics : AppScreen()
     data object Flashcards : AppScreen()
-    data object AiTutor : AppScreen()
+    open class AiTutor(val initialPrompt: String? = null) : AppScreen() {
+        companion object : AiTutor(null)
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is AiTutor) return false
+            return initialPrompt == other.initialPrompt
+        }
+
+        override fun hashCode(): Int = initialPrompt?.hashCode() ?: 0
+    }
     data object Home : AppScreen()
     data class DynamicChapterLesson(val chapterId: Int, val subjectId: String? = null) : AppScreen()
     data object QuizHomeSelection : AppScreen()
@@ -588,6 +598,9 @@ class MainActivity : ComponentActivity() {
                                     viewModel = dashboardViewModel,
                                     onAskAiClick = {
                                         navigateTo(AppScreen.AiTutor)
+                                    },
+                                    onAiChatQuerySubmit = { prompt ->
+                                        navigateTo(AppScreen.AiTutor(prompt))
                                     },
                                     onLearnTabClick = {
                                         switchTab(AppScreen.SubjectSelection)
@@ -1651,8 +1664,15 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            AppScreen.AiTutor -> {
+                            is AppScreen.AiTutor -> {
+                                val tutorScreen = currentScreen as? AppScreen.AiTutor
                                 val aiTutorViewModel: AiTutorViewModel = viewModel()
+                                LaunchedEffect(tutorScreen?.initialPrompt) {
+                                    val prompt = tutorScreen?.initialPrompt
+                                    if (!prompt.isNullOrBlank()) {
+                                        aiTutorViewModel.onSendMessage(prompt)
+                                    }
+                                }
                                 AiTutorScreen(
                                     viewModel = aiTutorViewModel,
                                     onBackClick = {
@@ -1696,6 +1716,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onAiChatClick = {
                                         navigateTo(AppScreen.AiTutor)
+                                    },
+                                    onAiChatQuerySubmit = { prompt ->
+                                        navigateTo(AppScreen.AiTutor(prompt))
                                     },
                                     onFlashcardsClick = {
                                         navigateTo(AppScreen.Flashcards)

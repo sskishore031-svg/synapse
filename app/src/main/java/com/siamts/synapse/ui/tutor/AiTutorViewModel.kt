@@ -62,11 +62,17 @@ class AiTutorViewModel(
     private var streamingJob: Job? = null
     private var voiceAssistant: VoiceAssistantManager? = null
 
-    // Dynamic length control tracking (lastTopic & lastResponseText)
+    // Dynamic length control tracking (lastTopic, lastTrack & lastResponseText)
     var lastTopic: String = ""
+        private set
+    var lastTrack: String = "Python & Coding Logic"
         private set
     var lastResponseText: String = ""
         private set
+
+    fun sendMessage(prompt: String) {
+        onSendMessage(prompt)
+    }
 
     init {
         loadHistory()
@@ -807,6 +813,9 @@ class AiTutorViewModel(
                         if (!localResponse.matchedTopic.isNullOrBlank()) {
                             lastTopic = localResponse.matchedTopic
                             lastResponseText = localResponse.paragraph1 + if (localResponse.paragraph2.isNotBlank()) "\n" + localResponse.paragraph2 else ""
+                        }
+                        if (!localResponse.matchedSubject.isNullOrBlank()) {
+                            lastTrack = localResponse.matchedSubject
                         }
 
                         // Handle name capture or preference persistence

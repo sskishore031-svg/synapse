@@ -635,6 +635,33 @@ class LocalAIEngine private constructor(context: Context?) {
             return appFeatureResp
         }
 
+        val codeAnalysis = analyzeCodeOrQuerySnippet(query)
+        if (codeAnalysis != null) {
+            consecutiveUnclearCount = 0
+            val p1 = "* **${codeAnalysis.language} Logic Breakdown:**\n${codeAnalysis.logicBreakdown}"
+            val p2 = "* **Time & Space Complexity:**\n• Time Complexity: ${codeAnalysis.timeComplexity}\n• Space Complexity: ${codeAnalysis.spaceComplexity}\n\n* **Placement Interview Edge Cases:**\n${codeAnalysis.interviewEdgeCases}"
+            val subject = if (codeAnalysis.language.contains("SQL")) "SQL & Database Management" else "Python & Coding Logic"
+            val topic = if (codeAnalysis.language.contains("SQL")) "SQL Query Analysis" else "Python Code Analysis"
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "code_${System.currentTimeMillis()}",
+                    subject = subject,
+                    chapter = "Code Analysis",
+                    topic = topic,
+                    content = "$p1\n$p2"
+                )
+            )
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = p2,
+                matchedSubject = subject,
+                matchedChapter = "Code & Query Helper",
+                matchedTopic = topic,
+                confidenceScore = 99.0
+            )
+        }
+
         // 4. STAGE 4: Explicit Out-of-Scope & Casual Slang Guardrails
         if (isOutOfScopeQuery(normalized)) {
             consecutiveUnclearCount = 0

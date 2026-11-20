@@ -353,7 +353,7 @@ fun InChatQuizScorecardCard(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = if (message.isQuizScoreSaved) "✓ Saved to Notes Organizer" else "Save Score & Mistakes to Notes",
+                    text = if (message.isQuizScoreSaved) "✓ Saved to Mistake Vault & Notes" else "Save Mistakes to Vault & Notes",
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
