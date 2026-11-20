@@ -58,6 +58,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -65,9 +67,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.siamts.synapse.data.model.NoteItemDto
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.PurpleAccent
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
+import com.siamts.synapse.ui.theme.TextPrimary
+import com.siamts.synapse.ui.theme.TextSecondary
 import kotlin.math.roundToInt
 
 /**
@@ -83,6 +94,7 @@ fun ThreeDNoteViewerDialog(
     onToggleDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     val clipboardManager = LocalClipboardManager.current
     val density = LocalDensity.current
 
@@ -183,7 +195,7 @@ fun ThreeDNoteViewerDialog(
                         .matchParentSize()
                         .offset(x = 3.dp, y = 4.dp)
                         .background(
-                            color = Color(0xFFE2E8F0),
+                            color = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                             shape = RoundedCornerShape(25.dp)
                         )
                 )
@@ -195,17 +207,26 @@ fun ThreeDNoteViewerDialog(
                         .border(
                             width = 2.dp,
                             brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White,
-                                    CyanAccent.copy(alpha = 0.6f),
-                                    PurpleAccent.copy(alpha = 0.5f),
-                                    Color.White.copy(alpha = 0.8f)
-                                )
+                                colors = if (isDark) {
+                                    listOf(
+                                        SunsetOrange.copy(alpha = 0.8f),
+                                        AmberGold.copy(alpha = 0.7f),
+                                        SunsetOrangeEnd.copy(alpha = 0.8f),
+                                        AmberGold.copy(alpha = 0.4f)
+                                    )
+                                } else {
+                                    listOf(
+                                        Color.White,
+                                        CyanAccent.copy(alpha = 0.6f),
+                                        PurpleAccent.copy(alpha = 0.5f),
+                                        Color.White.copy(alpha = 0.8f)
+                                    )
+                                }
                             ),
                             shape = RoundedCornerShape(24.dp)
                         ),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
                 ) {
                     Column(
@@ -225,7 +246,7 @@ fun ThreeDNoteViewerDialog(
                                     .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
                                     .background(
                                         brush = Brush.horizontalGradient(
-                                            listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+                                            listOf(SunsetOrange, SunsetOrangeEnd)
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     )
@@ -251,8 +272,8 @@ fun ThreeDNoteViewerDialog(
                                 // 3D Share with Friend Pill
                                 Box(
                                     modifier = Modifier
-                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(10.dp))
-                                        .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(10.dp))
+                                        .background(if (isDark) SurfacePanel else Color(0xFFE0F2FE), RoundedCornerShape(10.dp))
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFBAE6FD), RoundedCornerShape(10.dp))
                                         .clickable {
                                             com.siamts.synapse.util.ShareUtils.shareNote(
                                                 context = context,
@@ -271,7 +292,7 @@ fun ThreeDNoteViewerDialog(
                                             text = "Share",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0284C7)
+                                            color = if (isDark) AmberGold else Color(0xFF0284C7)
                                         )
                                     }
                                 }
@@ -279,8 +300,8 @@ fun ThreeDNoteViewerDialog(
                                 // 3D Golden Bookmark Badge
                                 Box(
                                     modifier = Modifier
-                                        .background(Color(0xFFFEF3C7), RoundedCornerShape(10.dp))
-                                        .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(10.dp))
+                                        .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFFEF3C7), RoundedCornerShape(10.dp))
+                                        .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color(0xFFFDE68A), RoundedCornerShape(10.dp))
                                         .clickable { onToggleSave?.invoke() }
                                         .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
@@ -291,7 +312,7 @@ fun ThreeDNoteViewerDialog(
                                             text = if (note.isSaved) "Saved" else "Save",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFB45309)
+                                            color = if (isDark) SunsetOrange else Color(0xFFB45309)
                                         )
                                     }
                                 }
@@ -300,11 +321,12 @@ fun ThreeDNoteViewerDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(32.dp)
-                                        .background(Color(0xFFF1F5F9), CircleShape)
+                                        .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), CircleShape)
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, CircleShape)
                                         .clickable { onDismiss() },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "✕", fontSize = 13.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
+                                    Text(text = "✕", fontSize = 13.sp, color = if (isDark) TextSecondary else Color(0xFF64748B), fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -316,7 +338,7 @@ fun ThreeDNoteViewerDialog(
                             text = note.title,
                             fontSize = 19.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF0F172A),
+                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                             lineHeight = 25.sp
                         )
 
@@ -326,7 +348,7 @@ fun ThreeDNoteViewerDialog(
                             Text(
                                 text = "📅 ${if (note.createdAt.isNotBlank()) note.createdAt else "Recently saved"} • ${note.category}",
                                 fontSize = 11.sp,
-                                color = Color(0xFF64748B),
+                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                 fontWeight = FontWeight.Medium
                             )
                             if (note.isDownloaded) {
@@ -341,7 +363,7 @@ fun ThreeDNoteViewerDialog(
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
-                        HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
+                        HorizontalDivider(color = if (isDark) SurfaceBorder else Color(0xFFE2E8F0), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(14.dp))
 
                         // Scrollable Content Body with 3D Depth Styling
@@ -352,9 +374,6 @@ fun ThreeDNoteViewerDialog(
                                 .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // If content has markdown headers or bullet points, style nicely
-                            val contentLines = note.content.lines()
-                            val definitionLine = contentLines.firstOrNull { it.contains("Definition", ignoreCase = true) || it.startsWith("#") }
                             val isSmartNote = note.content.contains("Key Definition", ignoreCase = true) ||
                                     note.content.contains("Exam Takeaways", ignoreCase = true) ||
                                     note.content.contains("Formulas", ignoreCase = true)
@@ -364,8 +383,8 @@ fun ThreeDNoteViewerDialog(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFF0FDF4), RoundedCornerShape(14.dp))
-                                        .border(1.dp, Color(0xFFBBF7D0), RoundedCornerShape(14.dp))
+                                        .background(if (isDark) SurfacePanel else Color(0xFFF0FDF4), RoundedCornerShape(14.dp))
+                                        .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBBF7D0), RoundedCornerShape(14.dp))
                                         .padding(12.dp)
                                 ) {
                                     Column {
@@ -374,7 +393,7 @@ fun ThreeDNoteViewerDialog(
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = "AI GENERATED HIGH-YIELD SUMMARY",
-                                                color = Color(0xFF15803D),
+                                                color = if (isDark) AmberGold else Color(0xFF15803D),
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 letterSpacing = 0.8.sp
@@ -384,7 +403,7 @@ fun ThreeDNoteViewerDialog(
                                         Text(
                                             text = note.content,
                                             fontSize = 13.sp,
-                                            color = Color(0xFF1E293B),
+                                            color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                             lineHeight = 20.sp
                                         )
                                     }
@@ -394,14 +413,14 @@ fun ThreeDNoteViewerDialog(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color(0xFFF8FAFC)),
+                                    border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                 ) {
                                     Column(modifier = Modifier.padding(14.dp)) {
                                         Text(
                                             text = note.content.ifBlank { "No detailed notes recorded for this item." },
                                             fontSize = 13.sp,
-                                            color = Color(0xFF334155),
+                                            color = if (isDark) TextSecondary else Color(0xFF334155),
                                             lineHeight = 21.sp
                                         )
                                     }
@@ -412,13 +431,14 @@ fun ThreeDNoteViewerDialog(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                                    .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(10.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(10.dp))
                                     .padding(8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = "👆 Touch & drag anywhere to rotate this note in 3D perspective",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -437,8 +457,8 @@ fun ThreeDNoteViewerDialog(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.5.dp, Color(0xFFCBD5E1), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.5.dp, if (isDark) SurfaceBorder else Color(0xFFCBD5E1), RoundedCornerShape(12.dp))
                                     .clickable {
                                         clipboardManager.setText(AnnotatedString("${note.title}\n\n${note.content}"))
                                         Toast.makeText(context, "Copied note to clipboard! 📋", Toast.LENGTH_SHORT).show()
@@ -447,7 +467,7 @@ fun ThreeDNoteViewerDialog(
                             ) {
                                 Text(
                                     text = "📋 Copy",
-                                    color = Color(0xFF1E293B),
+                                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
@@ -460,7 +480,7 @@ fun ThreeDNoteViewerDialog(
                                     .height(44.dp)
                                     .background(
                                         brush = Brush.horizontalGradient(
-                                            listOf(Color(0xFF0284C7), Color(0xFF0EA5E9), Color(0xFF06B6D4))
+                                            listOf(SunsetOrange, AmberGold)
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     )
@@ -502,7 +522,7 @@ fun ThreeDNoteViewerDialog(
                                         .fillMaxSize()
                                         .background(
                                             brush = Brush.horizontalGradient(
-                                                listOf(Color(0xFF2563EB), Color(0xFF7C3AED))
+                                                listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)
                                             ),
                                             shape = RoundedCornerShape(12.dp)
                                         ),

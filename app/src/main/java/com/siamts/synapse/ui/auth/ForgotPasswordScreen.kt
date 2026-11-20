@@ -200,7 +200,7 @@ fun ForgotPasswordContent(
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
                                 value = uiState.email,
-                                onEmailChange = onEmailChange,
+                                onValueChange = onEmailChange,
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -414,7 +414,6 @@ fun ForgotPasswordContent(
                                 color = SunsetOrange,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable { onBackToLoginClick() },
                                 modifier = Modifier.clickable { onBackToLoginClick() },
                             )
                         }

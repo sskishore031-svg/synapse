@@ -1620,6 +1620,9 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = {
                                         popBackStack()
                                     },
+                                    onTrackClick = { trackSlug ->
+                                        navigateTo(AppScreen.SubjectDetail(trackSlug))
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(innerPadding),

@@ -17,7 +17,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao, StudySessionDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
@@ -29,6 +29,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemoryNotes = CopyOnWriteArrayList<NoteEntity>()
     private val inMemorySessions = CopyOnWriteArrayList<ChatSessionEntity>()
     private val inMemoryChatMessages = java.util.concurrent.ConcurrentHashMap<String, List<ChatMessageEntity>>()
+    private val inMemoryStudySessions = CopyOnWriteArrayList<StudySessionEntity>()
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -183,6 +184,19 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 explanation TEXT,
                 question_json TEXT NOT NULL,
                 created_at INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS study_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                track_name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                duration_minutes INTEGER NOT NULL,
+                study_date TEXT NOT NULL,
+                timestamp INTEGER NOT NULL
             )
             """.trimIndent()
         )
@@ -1262,12 +1276,119 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         }
     }
 
+    // ==========================================
+    // StudySessionDao Implementation (Zero-Default Live Tracking)
+    // ==========================================
+
+    override suspend fun insertSession(session: StudySessionEntity): Long = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            val newId = (inMemoryStudySessions.size + 1).toLong()
+            val created = session.copy(id = newId)
+            inMemoryStudySessions.add(created)
+            return@withContext newId
+        }
+        try {
+            val db = writableDatabase
+            val values = ContentValues().apply {
+                put("user_id", session.userId)
+                put("track_name", session.trackName)
+                put("category", session.category)
+                put("duration_minutes", session.durationMinutes)
+                put("study_date", session.studyDate)
+                put("timestamp", session.timestamp)
+            }
+            val id = db.insert("study_sessions", null, values)
+            inMemoryStudySessions.add(session.copy(id = id))
+            id
+        } catch (_: Throwable) {
+            val newId = (inMemoryStudySessions.size + 1).toLong()
+            inMemoryStudySessions.add(session.copy(id = newId))
+            newId
+        }
+    }
+
+    override suspend fun getAllSessions(): List<StudySessionEntity> = withContext(Dispatchers.IO) {
+        if (!hasAndroidContext) {
+            return@withContext inMemoryStudySessions.toList()
+        }
+        val list = mutableListOf<StudySessionEntity>()
+        try {
+            val db = readableDatabase
+            val cursor = db.query("study_sessions", null, null, null, null, null, "id DESC")
+            cursor.use { c ->
+                val idIdx = c.getColumnIndexOrThrow("id")
+                val uIdx = c.getColumnIndexOrThrow("user_id")
+                val tIdx = c.getColumnIndexOrThrow("track_name")
+                val catIdx = c.getColumnIndexOrThrow("category")
+                val durIdx = c.getColumnIndexOrThrow("duration_minutes")
+                val dIdx = c.getColumnIndexOrThrow("study_date")
+                val tsIdx = c.getColumnIndexOrThrow("timestamp")
+                while (c.moveToNext()) {
+                    list.add(
+                        StudySessionEntity(
+                            id = c.getLong(idIdx),
+                            userId = c.getInt(uIdx),
+                            trackName = c.getString(tIdx),
+                            category = c.getString(catIdx),
+                            durationMinutes = c.getInt(durIdx),
+                            studyDate = c.getString(dIdx),
+                            timestamp = c.getLong(tsIdx)
+                        )
+                    )
+                }
+            }
+            list
+        } catch (_: Throwable) {
+            inMemoryStudySessions.toList()
+        }
+    }
+
+    override suspend fun getSessionsByDate(date: String): List<StudySessionEntity> = withContext(Dispatchers.IO) {
+        getAllSessions().filter { it.studyDate == date }
+    }
+
+    override suspend fun getSessionsBetween(startDate: String, endDate: String): List<StudySessionEntity> = withContext(Dispatchers.IO) {
+        getAllSessions().filter { it.studyDate in startDate..endDate }
+    }
+
+    override suspend fun getSessionsByTrack(trackName: String): List<StudySessionEntity> = withContext(Dispatchers.IO) {
+        getAllSessions().filter { it.trackName.equals(trackName, ignoreCase = true) }
+    }
+
+    override suspend fun getAllActiveDates(): List<String> = withContext(Dispatchers.IO) {
+        val dates = mutableSetOf<String>()
+        // From study sessions
+        getAllSessions().forEach { dates.add(it.studyDate) }
+        // From quiz records
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+        getAllRecords().forEach { dates.add(sdf.format(java.util.Date(it.completedAt))) }
+        // From study notes
+        getAllNotes(1).forEach { dates.add(sdf.format(java.util.Date(it.createdAt))) }
+        dates.filter { it.isNotBlank() }.sorted()
+    }
+
+    override suspend fun clearSessions() = withContext(Dispatchers.IO) {
+        inMemoryStudySessions.clear()
+        if (hasAndroidContext) {
+            try {
+                writableDatabase.delete("study_sessions", null, null)
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
         private const val DATABASE_VERSION = 10
 
         @Volatile
         private var INSTANCE: QuizLocalDatabase? = null
+
+        fun getStudySessionDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): StudySessionDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
 
         fun getInstance(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): QuizDao {
             return INSTANCE ?: synchronized(this) {

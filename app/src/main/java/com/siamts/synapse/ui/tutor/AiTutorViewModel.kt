@@ -959,6 +959,14 @@ class AiTutorViewModel(
                 userId = uid,
                 email = email
             )
+            try {
+                val subName = message.matchedSubject ?: "Python & Coding Logic"
+                com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                    trackName = subName,
+                    category = "Note Making",
+                    durationMinutes = 5
+                )
+            } catch (_: Throwable) {}
         }
 
         val updatedMessages = _uiState.value.messages.map {

@@ -38,11 +38,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -147,10 +150,10 @@ fun SplashContent(
             }
 
             // Floating glowing particles
-            drawCircle(CyanGlow.copy(alpha = 0.6f), radius = 5f, center = Offset(w * 0.22f, h * 0.22f))
-            drawCircle(PurpleGlow.copy(alpha = 0.5f), radius = 6f, center = Offset(w * 0.82f, h * 0.55f))
-            drawCircle(CyanGlow.copy(alpha = 0.5f), radius = 4f, center = Offset(w * 0.25f, h * 0.68f))
-            drawCircle(PurpleGlow.copy(alpha = 0.6f), radius = 5f, center = Offset(w * 0.78f, h * 0.82f))
+            drawCircle(SunsetOrange.copy(alpha = 0.6f), radius = 5f, center = Offset(w * 0.22f, h * 0.22f))
+            drawCircle(AmberGold.copy(alpha = 0.5f), radius = 6f, center = Offset(w * 0.82f, h * 0.55f))
+            drawCircle(SunsetOrange.copy(alpha = 0.5f), radius = 4f, center = Offset(w * 0.25f, h * 0.68f))
+            drawCircle(AmberGold.copy(alpha = 0.6f), radius = 5f, center = Offset(w * 0.78f, h * 0.82f))
         }
 
         Column(
@@ -172,7 +175,7 @@ fun SplashContent(
             ) {
                 Text(
                     text = uiState.badgeText,
-                    color = CyanGlow,
+                    color = AmberGold,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp,
@@ -214,7 +217,7 @@ fun SplashContent(
                         modifier = Modifier
                             .padding(horizontal = 3.dp)
                             .size(7.dp)
-                            .background(CyanGlow, CircleShape)
+                            .background(SunsetOrange, CircleShape)
                     )
                     Box(
                         modifier = Modifier
@@ -258,12 +261,12 @@ fun SplashContent(
                     Box(
                         modifier = Modifier
                             .size(8.dp)
-                            .background(CyanGlow, CircleShape)
+                            .background(SunsetOrange, CircleShape)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "✨ Initializing Synapse AI Neural Core...",
-                        color = CyanGlow,
+                        color = SunsetOrange,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.5.sp

@@ -84,6 +84,13 @@ class NotesGeneratorViewModel(
             )
 
             if (res.isSuccess) {
+                try {
+                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                        trackName = "Python & Coding Logic",
+                        category = "Note Making",
+                        durationMinutes = 5
+                    )
+                } catch (_: Throwable) {}
                 _uiState.update {
                     it.copy(
                         isSaved = true,

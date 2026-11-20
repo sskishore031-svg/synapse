@@ -1,8 +1,10 @@
 package com.siamts.synapse.ui.algorithms
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -44,6 +47,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -88,6 +96,8 @@ fun AlgorithmsLessonPart2Content(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -120,13 +130,13 @@ fun AlgorithmsLessonPart2Content(
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = uiState.title, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text(text = uiState.subtitleTag, color = CyanGlow, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = uiState.subtitleTag, color = AmberGold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape),
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(text = "•••", color = TextSecondary, fontSize = 14.sp)
@@ -134,12 +144,12 @@ fun AlgorithmsLessonPart2Content(
                 }
             }
 
-            // Light Sheet Container
+            // Sheet Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -164,14 +174,14 @@ fun AlgorithmsLessonPart2Content(
                                     LinearProgressIndicator(
                                         progress = { uiState.progressPercent / 100f },
                                         modifier = Modifier.weight(1f).height(6.dp),
-                                        color = BlueAccent,
-                                        trackColor = Color(0xFFE2E8F0),
+                                        color = SunsetOrange,
+                                        trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
-                                    Text(text = "${uiState.progressPercent}%", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "${uiState.progressPercent}%", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text(text = uiState.progressSubtext, color = Color(0xFF64748B), fontSize = 12.sp)
+                                Text(text = uiState.progressSubtext, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 12.sp)
                             }
                         }
 
@@ -180,7 +190,7 @@ fun AlgorithmsLessonPart2Content(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -191,11 +201,11 @@ fun AlgorithmsLessonPart2Content(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(36.dp)
-                                            .background(if (isSelected) Color.White else Color.Transparent, RoundedCornerShape(8.dp))
+                                            .background(if (isSelected) (if (isDark) SurfacePanelElevated else Color.White) else Color.Transparent, RoundedCornerShape(8.dp))
                                             .clickable { onSubTabSelect(index) },
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(text = tabName, color = if (isSelected) BlueAccent else Color(0xFF64748B), fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
+                                        Text(text = tabName, color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF64748B)), fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
                                     }
                                 }
                             }
@@ -204,78 +214,78 @@ fun AlgorithmsLessonPart2Content(
                         // 3. Concept Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = uiState.headline, color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(text = uiState.headline, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text(text = uiState.conceptText, color = Color(0xFF475569), fontSize = 13.sp, lineHeight = 18.sp)
+                                Text(text = uiState.conceptText, color = if (isDark) TextSecondary else Color(0xFF475569), fontSize = 13.sp, lineHeight = 18.sp)
                             }
                         }
 
                         // 4. Binary Search Walkthrough Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = uiState.exampleTitle, color = Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(text = uiState.exampleTitle, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 // Step 1
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(20.dp).background(BlueAccent, CircleShape), contentAlignment = Alignment.Center) {
+                                    Box(modifier = Modifier.size(20.dp).background(SunsetOrange, CircleShape), contentAlignment = Alignment.Center) {
                                         Text(text = "1", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Step 1: Middle element = 8", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Step 1: Middle element = 8", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     val arr1 = listOf("2", "4", "6", "8", "10", "12", "14")
                                     arr1.forEach { valStr ->
                                         Box(
-                                            modifier = Modifier.background(if (valStr == "8") Color(0xFFEFF6FF) else Color.White, RoundedCornerShape(4.dp)).border(1.dp, if (valStr == "8") BlueAccent else Color(0xFFE2E8F0), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
+                                            modifier = Modifier.background(if (valStr == "8") (if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF)) else (if (isDark) SurfacePanelElevated else Color.White), RoundedCornerShape(4.dp)).border(1.dp, if (valStr == "8") SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
-                                            Text(text = valStr, color = if (valStr == "8") BlueAccent else Color(0xFF475569), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = valStr, color = if (valStr == "8") SunsetOrange else (if (isDark) TextPrimary else Color(0xFF475569)), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
-                                Text(text = "6 < 8: search left half", color = Color(0xFF64748B), fontSize = 10.sp, modifier = Modifier.padding(start = 28.dp, top = 2.dp))
+                                Text(text = "6 < 8: search left half", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp, modifier = Modifier.padding(start = 28.dp, top = 2.dp))
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 // Step 2
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(20.dp).background(BlueAccent, CircleShape), contentAlignment = Alignment.Center) {
+                                    Box(modifier = Modifier.size(20.dp).background(SunsetOrange, CircleShape), contentAlignment = Alignment.Center) {
                                         Text(text = "2", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Step 2: Middle element = 4", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Step 2: Middle element = 4", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     val arr2 = listOf("2", "4", "6")
                                     arr2.forEach { valStr ->
                                         Box(
-                                            modifier = Modifier.background(if (valStr == "4") Color(0xFFEFF6FF) else Color.White, RoundedCornerShape(4.dp)).border(1.dp, if (valStr == "4") BlueAccent else Color(0xFFE2E8F0), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
+                                            modifier = Modifier.background(if (valStr == "4") (if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF)) else (if (isDark) SurfacePanelElevated else Color.White), RoundedCornerShape(4.dp)).border(1.dp, if (valStr == "4") SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
-                                            Text(text = valStr, color = if (valStr == "4") BlueAccent else Color(0xFF475569), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = valStr, color = if (valStr == "4") SunsetOrange else (if (isDark) TextPrimary else Color(0xFF475569)), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
-                                Text(text = "6 > 4: search right half", color = Color(0xFF64748B), fontSize = 10.sp, modifier = Modifier.padding(start = 28.dp, top = 2.dp))
+                                Text(text = "6 > 4: search right half", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp, modifier = Modifier.padding(start = 28.dp, top = 2.dp))
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 // Step 3
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(20.dp).background(BlueAccent, CircleShape), contentAlignment = Alignment.Center) {
+                                    Box(modifier = Modifier.size(20.dp).background(SunsetOrange, CircleShape), contentAlignment = Alignment.Center) {
                                         Text(text = "3", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Step 3: Middle element = 6", color = Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Step 3: Middle element = 6", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Box(
-                                        modifier = Modifier.background(Color(0xFFD1FAE5), RoundedCornerShape(4.dp)).border(1.dp, Color(0xFF059669), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.background(if (isDark) AmberGold.copy(alpha = 0.2f) else Color(0xFFD1FAE5), RoundedCornerShape(4.dp)).border(1.dp, AmberGold, RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Text(text = "6", color = Color(0xFF059669), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "6", color = AmberGold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -284,12 +294,12 @@ fun AlgorithmsLessonPart2Content(
                         // 5. Key Points Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Key Points", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Key Points", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(6.dp))
                                 uiState.keyPoints.forEach { point ->
                                     Row(modifier = Modifier.padding(bottom = 4.dp)) {
-                                        Text(text = "• ", color = BlueAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = point, color = Color(0xFF475569), fontSize = 12.sp)
+                                        Text(text = "• ", color = SunsetOrange, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = point, color = if (isDark) TextSecondary else Color(0xFF475569), fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -297,11 +307,11 @@ fun AlgorithmsLessonPart2Content(
 
                         // 6. AI Recommendation Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))) {
+                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color(0xFF0F172A)), border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color.Transparent)) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(text = "✨ ", fontSize = 12.sp)
-                                        Text(text = "AI RECOMMENDED NEXT", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                                        Text(text = "AI RECOMMENDED NEXT", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(text = uiState.aiRecommendation, color = TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
@@ -316,12 +326,12 @@ fun AlgorithmsLessonPart2Content(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(44.dp)
-                                        .background(Color.White, RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                        .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                         .clickable { onPreviousClick() },
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Text(text = "← Previous", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "← Previous", color = if (isDark) TextPrimary else BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                 }
 
                                 Button(
@@ -334,7 +344,7 @@ fun AlgorithmsLessonPart2Content(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)), RoundedCornerShape(12.dp)),
+                                            .background(Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)), RoundedCornerShape(12.dp)),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(text = "Next Lesson →", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)

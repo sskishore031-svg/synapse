@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.notes
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,11 +46,18 @@ import androidx.compose.ui.unit.sp
 import com.siamts.synapse.data.model.NoteItemDto
 import com.siamts.synapse.ui.notes.components.ThreeDNoteViewerDialog
 import com.siamts.synapse.ui.notes.components.threeDTouchEffect
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -186,12 +195,14 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                 }
             }
 
-            // Light Sheet Container
+            val isDark = isSystemInDarkTheme()
+
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -211,7 +222,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -220,13 +231,16 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(38.dp)
-                                        .background(if (selectedTab == 0) BlueAccent else Color.Transparent, RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (selectedTab == 0) Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                                            RoundedCornerShape(8.dp)
+                                        )
                                         .clickable { selectedTab = 0 },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
                                         text = "Saved Notes (${allNotes.size})",
-                                        color = if (selectedTab == 0) Color.White else Color(0xFF64748B),
+                                        color = if (selectedTab == 0) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -237,13 +251,16 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(38.dp)
-                                        .background(if (selectedTab == 1) BlueAccent else Color.Transparent, RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (selectedTab == 1) Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                                            RoundedCornerShape(8.dp)
+                                        )
                                         .clickable { selectedTab = 1 },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
                                         text = "Downloaded PDFs (${allNotes.count { it.isDownloaded }})",
-                                        color = if (selectedTab == 1) Color.White else Color(0xFF64748B),
+                                        color = if (selectedTab == 1) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -256,14 +273,16 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text(text = "🔍 Search all subject notes...", color = Color(0xFF94A3B8), fontSize = 12.sp) },
+                                placeholder = { Text(text = "🔍 Search all subject notes...", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 12.sp) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0)
+                                    focusedContainerColor = if (isDark) SurfacePanelElevated else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 )
                             )
                         }
@@ -273,7 +292,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text(
                                     text = if (selectedTab == 1) "Offline Downloaded PDFs" else "All Subject Smart Notes",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -296,7 +315,8 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                 )
                                             },
                                         shape = RoundedCornerShape(14.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                                     ) {
                                         Column(modifier = Modifier.padding(12.dp)) {
                                             Row(
@@ -310,12 +330,13 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                 ) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                            .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.35f) else Color.Transparent, RoundedCornerShape(8.dp))
                                                             .padding(horizontal = 8.dp, vertical = 3.dp)
                                                     ) {
                                                         Text(
                                                             text = "${note.subjectIcon} ${note.subjectTag}",
-                                                            color = BlueAccent,
+                                                            color = if (isDark) SunsetOrange else BlueAccent,
                                                             fontSize = 10.sp,
                                                             fontWeight = FontWeight.Bold
                                                         )
@@ -323,21 +344,22 @@ fun MixedSavedDownloadedNotesPreviewScreen(
 
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                            .background(if (isDark) AmberGold.copy(alpha = 0.2f) else Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                                            .border(1.dp, if (isDark) AmberGold.copy(alpha = 0.35f) else Color.Transparent, RoundedCornerShape(6.dp))
                                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
-                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = BlueAccent, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✨ 3D", fontSize = 10.sp, color = AmberGold, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
 
-                                                Text(text = note.dateText, color = Color(0xFF94A3B8), fontSize = 10.sp)
+                                                Text(text = note.dateText, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
                                             }
 
                                             Spacer(modifier = Modifier.height(6.dp))
 
                                             Text(
                                                 text = note.title,
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -346,7 +368,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
 
                                             Text(
                                                 text = note.description,
-                                                color = Color(0xFF475569),
+                                                color = if (isDark) TextSecondary else Color(0xFF475569),
                                                 fontSize = 11.sp,
                                                 lineHeight = 15.sp
                                             )
@@ -365,7 +387,8 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                     // Share with Friend
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFE0F2FE), RoundedCornerShape(8.dp))
+                                                            .background(if (isDark) SurfacePanel else Color(0xFFE0F2FE), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
                                                             .clickable {
                                                                 val noteContent = "${note.description}\n\nHigh-Yield Study Note & Syllabus Summary:\n• Core Subject: ${note.subjectTag}\n• Key takeaways, formulas, worked derivations, and diagrams.\n• High-yield questions and exam revision takeaways."
                                                                 com.siamts.synapse.util.ShareUtils.shareNote(
@@ -381,14 +404,15 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                                             Text(text = "📤", fontSize = 10.sp)
                                                             Spacer(modifier = Modifier.width(3.dp))
-                                                            Text(text = "Share", color = Color(0xFF0284C7), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                            Text(text = "Share", color = if (isDark) AmberGold else Color(0xFF0284C7), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                                         }
                                                     }
 
                                                     // Read in 3D
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                                            .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
                                                             .clickable {
                                                                 selected3DNote = NoteItemDto(
                                                                     id = note.id.toIntOrNull() ?: note.title.hashCode(),
@@ -403,26 +427,28 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                                                             }
                                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                                     ) {
-                                                        Text(text = "📖 Read in 3D", color = BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                        Text(text = "📖 Read in 3D", color = if (isDark) SunsetOrange else BlueAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
 
                                                 if (note.isDownloaded) {
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                                            .background(if (isDark) Color(0xFF059669).copy(alpha = 0.25f) else Color(0xFFD1FAE5), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(8.dp))
                                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                                     ) {
-                                                        Text(text = "✅ Offline Available (${note.fileSizeText})", color = Color(0xFF059669), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✅ Offline Available (${note.fileSizeText})", color = if (isDark) Color(0xFF34D399) else Color(0xFF059669), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 } else {
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(Color(0xFFF3E8FF), RoundedCornerShape(8.dp))
+                                                            .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFF3E8FF), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color.Transparent, RoundedCornerShape(8.dp))
                                                             .clickable { }
                                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                                     ) {
-                                                        Text(text = "📥 Download PDF (${note.fileSizeText})", color = Color(0xFF7C3AED), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                        Text(text = "📥 Download PDF (${note.fileSizeText})", color = if (isDark) SunsetOrange else Color(0xFF7C3AED), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
                                             }
@@ -436,7 +462,7 @@ fun MixedSavedDownloadedNotesPreviewScreen(
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 6.dp) {
                             Text(
                                 text = "✨ 6 Subject Notes Saved · 3 Available Offline",
-                                color = BlueAccent,
+                                color = AmberGold,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,

@@ -170,7 +170,18 @@ class ChapterLessonViewModel(
                 userId = userId,
                 email = userEmail
             )
-            onDone(result.isSuccess)
+            val isSuccess = result.isSuccess
+            if (isSuccess) {
+                try {
+                    val subName = state.subjectName.ifBlank { "Python & Coding Logic" }
+                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                        trackName = subName,
+                        category = "Note Making",
+                        durationMinutes = 5
+                    )
+                } catch (_: Throwable) {}
+            }
+            onDone(isSuccess)
         }
     }
 
@@ -192,6 +203,14 @@ class ChapterLessonViewModel(
             )
 
             result.onSuccess {
+                try {
+                    val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
+                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                        trackName = subName,
+                        category = "Focused Study",
+                        durationMinutes = 15
+                    )
+                } catch (_: Throwable) {}
                 _uiState.update {
                     it.copy(
                         isMarkingComplete = false,

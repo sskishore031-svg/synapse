@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.quiz
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +41,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -46,6 +50,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -142,6 +151,8 @@ fun MixedQuizPreviewScreen(
         )
     )
 
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -173,7 +184,7 @@ fun MixedQuizPreviewScreen(
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "ALL SUBJECTS · COMPREHENSIVE QUIZ", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(text = "ALL SUBJECTS · COMPREHENSIVE QUIZ", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Mixed Knowledge Challenge", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
@@ -190,12 +201,12 @@ fun MixedQuizPreviewScreen(
                 }
             }
 
-            // Light Sheet Container
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -220,7 +231,7 @@ fun MixedQuizPreviewScreen(
                                 ) {
                                     Text(
                                         text = "6 Mixed Questions · 6 Subjects",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -228,7 +239,7 @@ fun MixedQuizPreviewScreen(
                                         Text(text = "⏱ ", fontSize = 12.sp)
                                         Text(
                                             text = "05:00",
-                                            color = BlueAccent,
+                                            color = SunsetOrange,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -240,8 +251,8 @@ fun MixedQuizPreviewScreen(
                                 LinearProgressIndicator(
                                     progress = { 0.5f },
                                     modifier = Modifier.fillMaxWidth().height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
+                                    color = SunsetOrange,
+                                    trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                 )
                             }
                         }
@@ -258,14 +269,15 @@ fun MixedQuizPreviewScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                                                .background(if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                                                .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(10.dp))
                                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(text = "${qItem.subjectIcon} ", fontSize = 11.sp)
                                                 Text(
                                                     text = qItem.subjectTag,
-                                                    color = BlueAccent,
+                                                    color = if (isDark) SunsetOrange else BlueAccent,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     letterSpacing = 0.8.sp,
@@ -275,7 +287,7 @@ fun MixedQuizPreviewScreen(
 
                                         Text(
                                             text = "Q${qIdx + 1}",
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -285,7 +297,7 @@ fun MixedQuizPreviewScreen(
 
                                     Text(
                                         text = qItem.questionText,
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         lineHeight = 20.sp,
@@ -300,8 +312,15 @@ fun MixedQuizPreviewScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(if (isSelected) Color(0xFFEFF6FF) else Color.White, RoundedCornerShape(10.dp))
-                                                    .border(width = if (isSelected) 1.5.dp else 1.dp, color = if (isSelected) BlueAccent else Color(0xFFE2E8F0), shape = RoundedCornerShape(10.dp))
+                                                    .background(
+                                                        if (isSelected) (if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF)) else (if (isDark) SurfacePanelElevated else Color.White),
+                                                        RoundedCornerShape(10.dp)
+                                                    )
+                                                    .border(
+                                                        width = if (isSelected) 1.5.dp else 1.dp,
+                                                        color = if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                                                        shape = RoundedCornerShape(10.dp)
+                                                    )
                                                     .clickable { selectedAnswers[qItem.id] = opt.id }
                                                     .padding(10.dp)
                                             ) {
@@ -312,12 +331,15 @@ fun MixedQuizPreviewScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .size(26.dp)
-                                                            .background(if (isSelected) BlueAccent else Color(0xFFF1F5F9), CircleShape),
+                                                            .background(
+                                                                if (isSelected) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
+                                                                CircleShape
+                                                            ),
                                                         contentAlignment = Alignment.Center,
                                                     ) {
                                                         Text(
                                                             text = opt.optionLabel,
-                                                            color = if (isSelected) Color.White else Color(0xFF64748B),
+                                                            color = if (isSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                                             fontSize = 11.sp,
                                                             fontWeight = FontWeight.Bold,
                                                         )
@@ -327,14 +349,14 @@ fun MixedQuizPreviewScreen(
 
                                                     Text(
                                                         text = opt.text,
-                                                        color = if (isSelected) BlueAccent else Color(0xFF1E293B),
+                                                        color = if (isSelected) (if (isDark) AmberGold else BlueAccent) else (if (isDark) TextPrimary else Color(0xFF1E293B)),
                                                         fontSize = 12.sp,
                                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                         modifier = Modifier.weight(1f),
                                                     )
 
                                                     if (isSelected) {
-                                                        Text(text = "✓", color = BlueAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                        Text(text = "✓", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
                                             }
@@ -348,7 +370,7 @@ fun MixedQuizPreviewScreen(
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 6.dp) {
                             Text(
                                 text = "✨ AI-generated mixed quiz · 6 Subjects Covered",
-                                color = BlueAccent,
+                                color = AmberGold,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
@@ -371,7 +393,10 @@ fun MixedQuizPreviewScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)), RoundedCornerShape(14.dp)),
+                                    .background(
+                                        Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)),
+                                        RoundedCornerShape(14.dp)
+                                    ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(text = "Submit Mixed Quiz →", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)

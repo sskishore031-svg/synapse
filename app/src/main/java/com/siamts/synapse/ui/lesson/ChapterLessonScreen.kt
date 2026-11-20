@@ -322,7 +322,7 @@ fun ChapterLessonScreen(
                                         Spacer(modifier = Modifier.height(10.dp))
                                         Text(
                                             text = uiState.part1Content,
-                                            color = Color(0xFFF8FAFC),
+                                            color = TextPrimary,
                                             fontSize = 16.sp,
                                             lineHeight = 24.sp
                                         )
@@ -365,7 +365,7 @@ fun ChapterLessonScreen(
                                         }
                                         Text(
                                             text = codeOrFormulaText,
-                                            color = Color(0xFFF8FAFC),
+                                            color = TextPrimary,
                                             fontSize = 14.sp,
                                             lineHeight = 22.sp,
                                             fontFamily = FontFamily.Monospace
@@ -880,7 +880,7 @@ private fun SectionHeader(title: String, icon: String) {
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = title,
-            color = Color(0xFF0F172A),
+            color = TextPrimary,
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold
         )
@@ -897,19 +897,20 @@ private fun QuickSelfCheckSection(chapterId: Int) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Q: What is the core invariant of this topic?",
-                    color = Color(0xFF0F172A),
+                    color = TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "A: State must be kept consistent, edge cases handled, and algorithmic complexity minimized.",
-                    color = Color(0xFF059669),
+                    color = AmberGold,
                     fontSize = 13.sp,
                     lineHeight = 20.sp
                 )
@@ -922,13 +923,14 @@ private fun QuickSelfCheckSection(chapterId: Int) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                    border = BorderStroke(1.dp, SurfaceBorder),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Check ${idx + 1}: ${q.question}",
-                            color = Color(0xFF0F172A),
+                            color = TextPrimary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             lineHeight = 20.sp
@@ -941,7 +943,7 @@ private fun QuickSelfCheckSection(chapterId: Int) {
                             ) {
                                 Text(
                                     text = "💡 Tap to reveal answer",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -950,13 +952,14 @@ private fun QuickSelfCheckSection(chapterId: Int) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFECFDF5), RoundedCornerShape(8.dp))
+                                    .background(SurfacePanel, RoundedCornerShape(8.dp))
+                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
                                     .padding(10.dp)
                             ) {
                                 Column {
                                     Text(
                                         text = "✓ Correct Answer: Option ${q.correctOption}",
-                                        color = Color(0xFF065F46),
+                                        color = AmberGold,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -964,7 +967,7 @@ private fun QuickSelfCheckSection(chapterId: Int) {
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = q.explanation.orEmpty(),
-                                            color = Color(0xFF047857),
+                                            color = TextSecondary,
                                             fontSize = 12.sp,
                                             lineHeight = 18.sp
                                         )
@@ -1061,7 +1064,7 @@ fun ChapterCheatSheetView(
                             text = f,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFF8FAFC)
+                            color = TextPrimary
                         )
                     }
                 }
@@ -1102,7 +1105,7 @@ fun ChapterCheatSheetView(
                         Text(
                             text = d,
                             fontSize = 13.sp,
-                            color = Color(0xFFF8FAFC),
+                            color = TextPrimary,
                             lineHeight = 18.sp
                         )
                     }

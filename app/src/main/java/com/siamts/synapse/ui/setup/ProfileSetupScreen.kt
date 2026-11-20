@@ -3,6 +3,7 @@ package com.siamts.synapse.ui.setup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -48,6 +50,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -85,6 +92,8 @@ fun ProfileSetupContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -122,7 +131,7 @@ fun ProfileSetupContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "LET'S GET TO KNOW YOU",
-                            color = CyanGlow,
+                            color = SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -139,13 +148,13 @@ fun ProfileSetupContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
                             .clickable { },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "•••",
-                            color = TextSecondary,
+                            color = if (isDark) SunsetOrange else TextSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -153,13 +162,13 @@ fun ProfileSetupContent(
                 }
             }
 
-            // Light Rounded Card Container
+            // Sheet Card Container
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -187,13 +196,13 @@ fun ProfileSetupContent(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
+                                    color = SunsetOrange,
+                                    trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0),
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = "${uiState.currentStep} of ${uiState.totalSteps}",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                 )
@@ -212,13 +221,13 @@ fun ProfileSetupContent(
                                 Box(
                                     modifier = Modifier
                                         .size(46.dp)
-                                        .background(Color(0xFFE0F2FE), CircleShape)
-                                        .border(2.dp, Color(0xFFBAE6FD), CircleShape),
+                                        .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFE0F2FE), CircleShape)
+                                        .border(2.dp, if (isDark) SunsetOrange.copy(alpha = 0.5f) else Color(0xFFBAE6FD), CircleShape),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
                                         text = uiState.initials,
-                                        color = Color(0xFF0284C7),
+                                        color = SunsetOrange,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -229,14 +238,14 @@ fun ProfileSetupContent(
                                 Column {
                                     Text(
                                         text = "A learning path, just for you.",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Add profile photo",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier.clickable { },
@@ -253,7 +262,7 @@ fun ProfileSetupContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Name",
-                                    color = Color(0xFF1E293B),
+                                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -264,16 +273,16 @@ fun ProfileSetupContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0),
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                        focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                        unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     ),
                                     singleLine = true,
                                     trailingIcon = {
-                                        Text(text = "👤", fontSize = 15.sp, color = Color(0xFF64748B))
+                                        Text(text = "👤", fontSize = 15.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                                     }
                                 )
                             }
@@ -287,7 +296,7 @@ fun ProfileSetupContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Class / Course",
-                                    color = Color(0xFF1E293B),
+                                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -298,16 +307,16 @@ fun ProfileSetupContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0),
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                        focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                        unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     ),
                                     singleLine = true,
                                     trailingIcon = {
-                                        Text(text = "∨", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                                        Text(text = "∨", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (isDark) TextSecondary else Color(0xFF64748B))
                                     }
                                 )
                             }
@@ -321,7 +330,7 @@ fun ProfileSetupContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Preferred language",
-                                    color = Color(0xFF1E293B),
+                                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -332,16 +341,16 @@ fun ProfileSetupContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BlueAccent,
-                                        unfocusedBorderColor = Color(0xFFE2E8F0),
-                                        focusedContainerColor = Color.White,
-                                        unfocusedContainerColor = Color.White,
-                                        focusedTextColor = Color(0xFF0F172A),
-                                        unfocusedTextColor = Color(0xFF0F172A),
+                                        focusedBorderColor = SunsetOrange,
+                                        unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                        focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                        focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                        unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     ),
                                     singleLine = true,
                                     trailingIcon = {
-                                        Text(text = "文A", fontSize = 14.sp, color = Color(0xFF64748B))
+                                        Text(text = "文A", fontSize = 14.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                                     }
                                 )
                             }
@@ -355,14 +364,14 @@ fun ProfileSetupContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Learning interests",
-                                    color = Color(0xFF1E293B),
+                                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Choose subjects you'd like to explore.",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 11.sp,
                                 )
 
@@ -378,12 +387,12 @@ fun ProfileSetupContent(
                                         Box(
                                             modifier = Modifier
                                                 .background(
-                                                    color = if (isSelected) Color(0xFFEFF6FF) else Color.White,
+                                                    color = if (isSelected) (if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF)) else (if (isDark) SurfacePanel else Color.White),
                                                     shape = RoundedCornerShape(20.dp)
                                                 )
                                                 .border(
                                                     width = 1.dp,
-                                                    color = if (isSelected) BlueAccent else Color(0xFFE2E8F0),
+                                                    color = if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                                     shape = RoundedCornerShape(20.dp)
                                                 )
                                                 .clickable { onToggleInterest(interest) }
@@ -392,7 +401,7 @@ fun ProfileSetupContent(
                                         ) {
                                             Text(
                                                 text = if (isSelected) "✓ $interest" else interest,
-                                                color = if (isSelected) BlueAccent else Color(0xFF475569),
+                                                color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF475569)),
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             )
@@ -407,7 +416,7 @@ fun ProfileSetupContent(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF8FAFC))
+                            .background(if (isDark) DarkBackgroundBottom else Color(0xFFF8FAFC))
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -432,14 +441,14 @@ fun ProfileSetupContent(
                                         .background(
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
-                                                    PurpleAccent,
-                                                    BlueAccent,
-                                                    CyanAccent,
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
                                                 )
                                             ),
                                             shape = RoundedCornerShape(16.dp),
                                         ),
-                                    contentAlignment = Alignment.Center,
+                                        contentAlignment = Alignment.Center,
                                 ) {
                                     if (uiState.isLoading) {
                                         CircularProgressIndicator(
@@ -475,7 +484,7 @@ fun ProfileSetupContent(
                         ) {
                             Text(
                                 text = "You can change these preferences anytime.",
-                                color = Color(0xFF94A3B8),
+                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),

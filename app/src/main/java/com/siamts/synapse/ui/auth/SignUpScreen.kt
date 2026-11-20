@@ -633,15 +633,6 @@ fun SignupContent(
         }
     }
 }
-                                modifier = Modifier.clickable { onSignInClick() },
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

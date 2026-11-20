@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.quiz
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +37,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -42,6 +46,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -54,6 +63,8 @@ fun QuizIntroPreviewScreen(
     onTabSelect: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -85,7 +96,7 @@ fun QuizIntroPreviewScreen(
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "QUIZ PREPARATION", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "QUIZ PREPARATION", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = "Ready for your Quiz?", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -102,12 +113,12 @@ fun QuizIntroPreviewScreen(
                 }
             }
 
-            // Light Sheet Container
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -124,13 +135,21 @@ fun QuizIntroPreviewScreen(
                     ) {
                         // 1. Quiz Header Info Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Box(
-                                        modifier = Modifier.size(60.dp).background(Color(0xFFEFF6FF), CircleShape),
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape)
+                                            .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color.Transparent, CircleShape),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(text = "🏆", fontSize = 28.sp)
@@ -138,9 +157,9 @@ fun QuizIntroPreviewScreen(
 
                                     Spacer(modifier = Modifier.height(12.dp))
 
-                                    Text(text = "Chapter Knowledge Test", color = Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Chapter Knowledge Test", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "Evaluate your understanding of key concepts", color = Color(0xFF64748B), fontSize = 12.sp, textAlign = TextAlign.Center)
+                                    Text(text = "Evaluate your understanding of key concepts", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 12.sp, textAlign = TextAlign.Center)
 
                                     Spacer(modifier = Modifier.height(14.dp))
 
@@ -151,22 +170,22 @@ fun QuizIntroPreviewScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(text = "⏱ Time", color = Color(0xFF94A3B8), fontSize = 10.sp)
-                                            Text(text = "10 Mins", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "⏱ Time", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
+                                            Text(text = "10 Mins", color = SunsetOrange, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
 
-                                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color(0xFFE2E8F0)))
+                                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
 
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(text = "❓ Questions", color = Color(0xFF94A3B8), fontSize = 10.sp)
-                                            Text(text = "10 Qs", color = BlueAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "❓ Questions", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
+                                            Text(text = "10 Qs", color = SunsetOrange, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
 
-                                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color(0xFFE2E8F0)))
+                                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
 
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(text = "🏆 Bonus", color = Color(0xFF94A3B8), fontSize = 10.sp)
-                                            Text(text = "+120 XP", color = PurpleAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = "🏆 Bonus", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
+                                            Text(text = "+120 XP", color = AmberGold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -176,7 +195,7 @@ fun QuizIntroPreviewScreen(
                         // 2. Instructions Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
                             Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-                                Text(text = "Quiz Guidelines", color = Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Quiz Guidelines", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 val guidelines = listOf(
@@ -188,7 +207,7 @@ fun QuizIntroPreviewScreen(
                                 guidelines.forEach { rule ->
                                     Text(
                                         text = rule,
-                                        color = Color(0xFF475569),
+                                        color = if (isDark) TextSecondary else Color(0xFF475569),
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
                                         modifier = Modifier.padding(bottom = 6.dp)
@@ -200,8 +219,8 @@ fun QuizIntroPreviewScreen(
                         // 3. AI Powered Tag Banner Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 6.dp) {
                             Text(
-                                text = "✨ FRIDAY AI · Tailored to your learning speed and mastery",
-                                color = BlueAccent,
+                                text = "✨ SYNAPSE AI · Tailored to your learning speed and mastery",
+                                color = AmberGold,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
@@ -223,17 +242,17 @@ fun QuizIntroPreviewScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .background(Color.White, RoundedCornerShape(14.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(14.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
                                     .clickable { onBackClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "←", color = BlueAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "←", color = if (isDark) SunsetOrange else BlueAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Back",
-                                        color = BlueAccent,
+                                        color = if (isDark) SunsetOrange else BlueAccent,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -256,9 +275,9 @@ fun QuizIntroPreviewScreen(
                                         .background(
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
-                                                    PurpleAccent,
-                                                    BlueAccent,
-                                                    CyanAccent,
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
                                                 )
                                             ),
                                             shape = RoundedCornerShape(14.dp),
@@ -286,7 +305,8 @@ fun QuizIntroPreviewScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(if (isDark) SurfacePanel else Color.White)
+                    .border(BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -310,7 +330,7 @@ fun QuizIntroPreviewScreen(
                         Text(text = icon, fontSize = 18.sp)
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF94A3B8)),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         )

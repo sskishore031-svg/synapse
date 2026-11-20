@@ -313,11 +313,6 @@ fun SubjectSelectionContent(
                             }
                         }
                     }
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
 
                     // 3. Search Results or Subjects Grid
                     if (isSearching) {
@@ -594,11 +589,6 @@ fun SubjectSelectionContent(
                                                     .height(6.dp),
                                                 color = SunsetOrange,
                                                 trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
-                                            )
-                                                    .fillMaxWidth()
-                                                    .height(5.dp),
-                                                color = subject.progressColor,
-                                                trackColor = Color(0xFFF1F5F9),
                                             )
 
                                             if (subject.progressPercentage >= 100) {

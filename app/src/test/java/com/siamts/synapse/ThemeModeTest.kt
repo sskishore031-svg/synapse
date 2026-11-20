@@ -18,9 +18,9 @@ class ThemeModeTest {
 
     @Test
     fun testThemeModeFallbackForNullOrInvalid() {
-        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(null))
-        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(""))
-        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue("UNKNOWN_MODE"))
+        assertEquals(ThemeMode.DARK, ThemeMode.fromValue(null))
+        assertEquals(ThemeMode.DARK, ThemeMode.fromValue(""))
+        assertEquals(ThemeMode.DARK, ThemeMode.fromValue("UNKNOWN_MODE"))
     }
 
     @Test

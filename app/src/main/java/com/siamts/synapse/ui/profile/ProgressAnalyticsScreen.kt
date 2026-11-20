@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,10 +24,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,8 +47,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siamts.synapse.data.model.AnalyticsData
+import com.siamts.synapse.data.model.SubjectBreakdownItem
+import com.siamts.synapse.data.model.TimeDistributionItem
+import com.siamts.synapse.data.model.WeeklySubjectComparisonItem
 import com.siamts.synapse.ui.theme.AmberGold
-import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.SYNAPSETheme
@@ -55,15 +64,20 @@ import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import java.util.Calendar
 
 @Composable
 fun ProgressAnalyticsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    initialTab: Int = 1, // 0: Overview, 1: Subject, 2: Time, 3: Streaks
+    initialTab: Int = 0, // 0: Overview, 1: Subject, 2: Time, 3: Streaks
+    viewModel: AnalyticsViewModel = viewModel(),
+    onTrackClick: ((String) -> Unit)? = null
 ) {
     val isDark = isSystemInDarkTheme()
     var selectedTab by remember { mutableStateOf(initialTab) }
+    val uiState by viewModel.uiState.collectAsState()
+    val data = uiState.data
 
     val pageTitle = when (selectedTab) {
         1 -> "Subject Analytics"
@@ -79,7 +93,7 @@ fun ProgressAnalyticsScreen(
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         DarkBackgroundTop,
-                        Color(0xFF090D22),
+                        Color(0xFF0C0D14),
                         DarkBackgroundBottom,
                     )
                 )
@@ -104,31 +118,42 @@ fun ProgressAnalyticsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(
+                            text = "PROFILE & SETTINGS",
+                            color = SunsetOrange,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(text = pageTitle, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            // Sheet Container
+            // Main Content Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                    )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .verticalScroll(rememberScrollState())
+                            .navigationBarsPadding()
+                            .padding(bottom = 28.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         // Sub-tabs: Overview, Subject, Time, Streaks
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
@@ -161,11 +186,36 @@ fun ProgressAnalyticsScreen(
                             }
                         }
 
+                        // Tab Contents
                         when (selectedTab) {
-                            1 -> SubjectAnalyticsContent(isDark)
-                            2 -> TimeAnalyticsContent(isDark)
-                            3 -> StreakAnalyticsContent(isDark)
-                            else -> OverviewAnalyticsContent(isDark)
+                            1 -> SubjectAnalyticsContent(
+                                data = data,
+                                isDark = isDark,
+                                onTrackClick = onTrackClick
+                            )
+                            2 -> TimeAnalyticsContent(
+                                data = data,
+                                timeFilter = uiState.timeFilter,
+                                onTimeFilterChange = { viewModel.setTimeFilter(it) },
+                                isDark = isDark
+                            )
+                            3 -> StreakAnalyticsContent(
+                                data = data,
+                                selectedYear = uiState.selectedYear,
+                                selectedMonth = uiState.selectedMonth,
+                                monthDisplayName = uiState.monthDisplayName,
+                                onPreviousMonth = { viewModel.previousMonth() },
+                                onNextMonth = { viewModel.nextMonth() },
+                                onSelectMonth = { viewModel.selectMonth(it) },
+                                isDark = isDark
+                            )
+                            else -> OverviewAnalyticsContent(
+                                data = data,
+                                timeFilter = uiState.timeFilter,
+                                onTimeFilterChange = { viewModel.setTimeFilter(it) },
+                                isDark = isDark,
+                                onTrackClick = onTrackClick
+                            )
                         }
                     }
                 }
@@ -174,8 +224,91 @@ fun ProgressAnalyticsScreen(
     }
 }
 
+/**
+ * Overview Analytics Tab with interactive time dropdown and real-time activity metrics.
+ */
 @Composable
-private fun SubjectAnalyticsContent(isDark: Boolean = false) {
+private fun OverviewAnalyticsContent(
+    data: AnalyticsData,
+    timeFilter: String,
+    onTimeFilterChange: (String) -> Unit,
+    isDark: Boolean = false,
+    onTrackClick: ((String) -> Unit)? = null
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Study Time Card with Weekly Bar Chart & Dropdown
+        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = "Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = data.formattedStudyTime, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        TimeFilterDropdownPill(
+                            currentFilter = timeFilter,
+                            onFilterSelect = onTimeFilterChange,
+                            isDark = isDark
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    DailyStudyBarChart(
+                        days = data.chartDays,
+                        heights = data.chartHeights,
+                        minutes = data.chartMinutes,
+                        isDark = isDark
+                    )
+                }
+            }
+        }
+
+        // Subjects Breakdown for 4 Placement Tracks
+        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "Subjects Breakdown", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        data.subjectBreakdown.forEach { item ->
+                            SubjectBreakdownRow(item = item, isDark = isDark, onClick = { onTrackClick?.invoke(item.slug) })
+                        }
+                    }
+                }
+            }
+        }
+
+        // Insights Box
+        InsightsCard(insightsText = data.insights, isDark = isDark)
+    }
+}
+
+/**
+ * Subject Analytics Tab: 4 Placement Tracks, live time cards, and weekly comparison.
+ */
+@Composable
+private fun SubjectAnalyticsContent(
+    data: AnalyticsData,
+    isDark: Boolean = false,
+    onTrackClick: ((String) -> Unit)? = null
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // 1. Subjects Breakdown Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
@@ -189,52 +322,35 @@ private fun SubjectAnalyticsContent(isDark: Boolean = false) {
                     Text(text = "Subjects Breakdown", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    val subjects = listOf(
-                        Triple("Computer Science", 0.45f, SunsetOrange),
-                        Triple("AI & DS", 0.25f, AmberGold),
-                        Triple("Mathematics", 0.18f, Color(0xFF8B5CF6)),
-                        Triple("Others", 0.12f, Color(0xFF10B981)),
-                    )
-
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        subjects.forEach { (sName, sPct, sColor) ->
-                            Column {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(modifier = Modifier.size(8.dp).background(sColor, CircleShape))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = sName, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                    }
-                                    Text(text = "${(sPct * 100).toInt()}%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(
-                                    progress = { sPct },
-                                    modifier = Modifier.fillMaxWidth().height(6.dp),
-                                    color = sColor,
-                                    trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
-                                )
-                            }
+                        data.subjectBreakdown.forEach { item ->
+                            SubjectBreakdownRow(item = item, isDark = isDark, onClick = { onTrackClick?.invoke(item.slug) })
                         }
                     }
                 }
             }
         }
 
-        // 2. Study Time by Subject Cards Box
+        // 2. Study Time by Subject Cards Box (Live updated from Room DB / API)
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(text = "Study Time by Subject", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val items = data.subjectBreakdown
+                val item1 = items.getOrNull(0) ?: SubjectBreakdownItem("Python & Coding Logic", "PYTHON", "🐍")
+                val item2 = items.getOrNull(1) ?: SubjectBreakdownItem("SQL & Database Management", "SQL", "🗄️")
+                val item3 = items.getOrNull(2) ?: SubjectBreakdownItem("AI & Modern Tech Concepts", "AI_TECH", "⚡")
+                val item4 = items.getOrNull(3) ?: SubjectBreakdownItem("Aptitude & Interview Prep", "APTITUDE", "🎯")
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectTimeCard("Computer Science", "1h 33m", "💻", Modifier.weight(1f), isDark)
-                    SubjectTimeCard("AI & DS", "54m", "🧠", Modifier.weight(1f), isDark)
+                    SubjectTimeCard(item1, Modifier.weight(1f), isDark) { onTrackClick?.invoke(item1.slug) }
+                    SubjectTimeCard(item2, Modifier.weight(1f), isDark) { onTrackClick?.invoke(item2.slug) }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectTimeCard("Mathematics", "37m", "🧮", Modifier.weight(1f), isDark)
-                    SubjectTimeCard("Others", "21m", "📋", Modifier.weight(1f), isDark)
+                    SubjectTimeCard(item3, Modifier.weight(1f), isDark) { onTrackClick?.invoke(item3.slug) }
+                    SubjectTimeCard(item4, Modifier.weight(1f), isDark) { onTrackClick?.invoke(item4.slug) }
                 }
             }
         }
@@ -251,57 +367,23 @@ private fun SubjectAnalyticsContent(isDark: Boolean = false) {
                     Text(text = "Weekly Subject Comparison", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val w = size.width
-                            val h = size.height
-                            val days = 7
-                            val spacing = w / days
-                            val barW = 4.dp.toPx()
+                    WeeklySubjectComparisonChart(items = data.weeklySubjectComparison, isDark = isDark)
 
-                            val cCS = SunsetOrange
-                            val cAI = AmberGold
-                            val cMath = Color(0xFF8B5CF6)
-                            val cOth = Color(0xFF10B981)
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                            val csH = listOf(0.6f, 0.4f, 0.8f, 0.7f, 0.5f, 0.9f, 0.65f)
-                            val aiH = listOf(0.4f, 0.3f, 0.5f, 0.6f, 0.4f, 0.7f, 0.5f)
-                            val mathH = listOf(0.3f, 0.5f, 0.2f, 0.4f, 0.3f, 0.5f, 0.4f)
-                            val othH = listOf(0.2f, 0.1f, 0.3f, 0.2f, 0.2f, 0.3f, 0.2f)
-
-                            for (i in 0 until days) {
-                                val groupX = i * spacing + 12f
-                                drawRect(color = cCS, topLeft = Offset(groupX, h * (1 - csH[i])), size = Size(barW, h * csH[i]))
-                                drawRect(color = cAI, topLeft = Offset(groupX + barW + 2f, h * (1 - aiH[i])), size = Size(barW, h * aiH[i]))
-                                drawRect(color = cMath, topLeft = Offset(groupX + (barW + 2f) * 2, h * (1 - mathH[i])), size = Size(barW, h * mathH[i]))
-                                drawRect(color = cOth, topLeft = Offset(groupX + (barW + 2f) * 3, h * (1 - othH[i])), size = Size(barW, h * othH[i]))
+                    // Legend
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                        listOf(
+                            Triple("Python", SunsetOrange, "PYTHON"),
+                            Triple("SQL", AmberGold, "SQL"),
+                            Triple("AI Tech", Color(0xFF8B5CF6), "AI_TECH"),
+                            Triple("Aptitude", Color(0xFF10B981), "APTITUDE")
+                        ).forEach { (label, color, _) ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(6.dp).background(color, CircleShape))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = label, fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                             }
-                        }
-                    }
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(6.dp).background(SunsetOrange, CircleShape))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Computer Science", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(6.dp).background(AmberGold, CircleShape))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "AI & DS", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(6.dp).background(Color(0xFF8B5CF6), CircleShape))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Mathematics", fontSize = 9.sp, color = if (isDark) TextSecondary else Color(0xFF64748B))
                         }
                     }
                 }
@@ -309,60 +391,20 @@ private fun SubjectAnalyticsContent(isDark: Boolean = false) {
         }
 
         // 4. Insights Box
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
-                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "You spent the most time on Computer Science this week (45% of total study time). Keep it up!",
-                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
-                }
-            }
-        }
+        InsightsCard(insightsText = data.insights, isDark = isDark)
     }
 }
 
+/**
+ * Time Analytics Tab with working interactive "This Week ▾" / "Last Week" / "This Month" filter.
+ */
 @Composable
-private fun SubjectTimeCard(title: String, timeText: String, icon: String, modifier: Modifier = Modifier, isDark: Boolean = false) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
-        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(28.dp).background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = icon, fontSize = 12.sp)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(text = title, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
-                    Text(text = timeText, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            Text(text = "›", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 16.sp)
-        }
-    }
-}
-
-@Composable
-private fun TimeAnalyticsContent(isDark: Boolean = false) {
+private fun TimeAnalyticsContent(
+    data: AnalyticsData,
+    timeFilter: String,
+    onTimeFilterChange: (String) -> Unit,
+    isDark: Boolean = false
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Study Time Card with Weekly Bar Chart Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
@@ -373,51 +415,36 @@ private fun TimeAnalyticsContent(isDark: Boolean = false) {
                 border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Column {
                             Text(text = "Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "3h 25m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(text = data.formattedStudyTime, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(text = "This Week ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
-                        }
+                        TimeFilterDropdownPill(
+                            currentFilter = timeFilter,
+                            onFilterSelect = onTimeFilterChange,
+                            isDark = isDark
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val w = size.width
-                            val h = size.height
-
-                            val heights = listOf(0.3f, 0.6f, 0.45f, 0.8f, 0.5f, 0.9f, 0.7f)
-                            val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                            val barW = 16.dp.toPx()
-                            val spacing = w / days.size
-
-                            for (i in days.indices) {
-                                val x = i * spacing + (spacing - barW) / 2f
-                                val barH = h * heights[i]
-                                drawRect(color = SunsetOrange, topLeft = Offset(x, h - barH), size = Size(barW, barH))
-                            }
-                        }
-                    }
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
-                        }
-                    }
+                    DailyStudyBarChart(
+                        days = data.chartDays,
+                        heights = data.chartHeights,
+                        minutes = data.chartMinutes,
+                        isDark = isDark
+                    )
                 }
             }
         }
 
-        // Metrics Box
+        // Metrics Box: Average Daily Study Time & Most Productive Day
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Card(
@@ -432,8 +459,8 @@ private fun TimeAnalyticsContent(isDark: Boolean = false) {
                             Text(text = "Average Daily Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "29m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "▲ 20% vs last week", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = data.averageDailyTime, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = if (data.totalMinutes > 0) "Live average" else "0m daily", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -449,8 +476,8 @@ private fun TimeAnalyticsContent(isDark: Boolean = false) {
                             Text(text = "Most Productive Day", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Saturday", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "56m spent", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
+                        Text(text = data.mostProductiveDay, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = data.mostProductiveDayText, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                     }
                 }
             }
@@ -468,27 +495,9 @@ private fun TimeAnalyticsContent(isDark: Boolean = false) {
                     Text(text = "Time Distribution", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    val dist = listOf(
-                        Triple("Focused Study", 0.70f, SunsetOrange),
-                        Triple("Practice (Quiz)", 0.20f, AmberGold),
-                        Triple("Note Making", 0.10f, Color(0xFF8B5CF6)),
-                    )
-
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        dist.forEach { (dLabel, dPct, dColor) ->
-                            Column {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(text = dLabel, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                    Text(text = "${(dPct * 100).toInt()}%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(
-                                    progress = { dPct },
-                                    modifier = Modifier.fillMaxWidth().height(6.dp),
-                                    color = dColor,
-                                    trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
-                                )
-                            }
+                        data.timeDistribution.forEach { item ->
+                            TimeDistributionRow(item = item, isDark = isDark)
                         }
                     }
                 }
@@ -496,33 +505,24 @@ private fun TimeAnalyticsContent(isDark: Boolean = false) {
         }
 
         // Insights Box
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
-                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "You studied 20% more this week compared to last week. Great progress!",
-                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
-                }
-            }
-        }
+        InsightsCard(insightsText = data.insights, isDark = isDark)
     }
 }
 
+/**
+ * Streak Analytics Tab with interactive Month Navigation (Arrows + Dropdown) & dynamic Calendar.
+ */
 @Composable
-private fun StreakAnalyticsContent(isDark: Boolean = false) {
+private fun StreakAnalyticsContent(
+    data: AnalyticsData,
+    selectedYear: Int,
+    selectedMonth: Int,
+    monthDisplayName: String,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onSelectMonth: (Int) -> Unit,
+    isDark: Boolean = false
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Streak Summary Cards Row Box
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
@@ -543,8 +543,8 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(text = "Current Streak", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
-                            Text(text = "5 days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "Keep it going!", color = SunsetOrange, fontSize = 9.sp)
+                            Text(text = "${data.currentStreak} days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(text = if (data.currentStreak > 0) "Keep it going!" else "Study today to start!", color = SunsetOrange, fontSize = 9.sp)
                         }
                     }
                 }
@@ -565,7 +565,7 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(text = "Best Streak", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
-                            Text(text = "12 days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "${data.bestStreak} days", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             Text(text = "Your highest streak", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 9.sp)
                         }
                     }
@@ -573,7 +573,7 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
             }
         }
 
-        // Study Calendar Grid Box
+        // Study Calendar Grid Box with working Month Navigator (Arrows + Dropdown)
         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -582,47 +582,77 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
                 border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(text = "Study Calendar", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Box(
-                            modifier = Modifier
-                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(text = "October 2026 ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
-                        }
+
+                        // Interactive Month Navigation Bar with Arrows + Dropdown
+                        MonthNavigatorPill(
+                            displayName = monthDisplayName,
+                            selectedMonth = selectedMonth,
+                            onPrevious = onPreviousMonth,
+                            onNext = onNextMonth,
+                            onSelectMonth = onSelectMonth,
+                            isDark = isDark
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
+                    // Day Header Row (Mon..Sun)
                     val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                         daysOfWeek.forEach { day ->
-                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Text(
+                                text = day,
+                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
+                                fontSize = 10.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    val activeDays = setOf(5, 6, 8, 10, 14, 15, 17, 20, 24, 28, 29, 31)
-                    val dates = (28..30).map { Pair(it, false) } + (1..31).map { Pair(it, activeDays.contains(it)) }
+                    // Dynamic Calendar Grid
+                    val activeDaysSet = remember(data.monthActiveDays) { data.monthActiveDays.toSet() }
+                    val calendarGrid = remember(selectedYear, selectedMonth, activeDaysSet) {
+                        buildCalendarGridDays(selectedYear, selectedMonth, activeDaysSet)
+                    }
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        for (i in dates.indices step 7) {
+                        for (i in calendarGrid.indices step 7) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                                for (j in i until (i + 7).coerceAtMost(dates.size)) {
-                                    val (dNum, isActive) = dates[j]
+                                for (j in i until (i + 7).coerceAtMost(calendarGrid.size)) {
+                                    val dayItem = calendarGrid[j]
+                                    val isCurrentMonth = dayItem.isCurrentMonth
+                                    val isActive = dayItem.isActive
+
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(28.dp)
                                             .padding(2.dp)
-                                            .background(if (isActive) SunsetOrange else Color.Transparent, CircleShape),
+                                            .background(
+                                                color = when {
+                                                    isActive -> SunsetOrange
+                                                    else -> Color.Transparent
+                                                },
+                                                shape = CircleShape
+                                            ),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
-                                            text = "$dNum",
-                                            color = if (isActive) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
+                                            text = "${dayItem.dayNumber}",
+                                            color = when {
+                                                isActive -> Color.White
+                                                !isCurrentMonth -> (if (isDark) TextMuted.copy(alpha = 0.4f) else Color(0xFFCBD5E1))
+                                                else -> (if (isDark) TextSecondary else Color(0xFF64748B))
+                                            },
                                             fontSize = 11.sp,
                                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
                                         )
@@ -650,8 +680,8 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
                             Text(text = "Weekly Consistency", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "71%", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "▲ 15% vs last week", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = data.weeklyConsistency, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = if (data.weeklyConsistencyPercentage > 0) "Active this week" else "0% this week", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -667,7 +697,7 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
                             Text(text = "Completed Daily Goals", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "5 / 7", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = data.completedDailyGoals, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         Text(text = "this week", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp)
                     }
                 }
@@ -675,153 +705,476 @@ private fun StreakAnalyticsContent(isDark: Boolean = false) {
         }
 
         // Insights Box
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
-                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "You have a 5-day study streak! Stay consistent to beat your best streak of 12 days.",
-                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
-                }
+        val streakInsights = if (data.currentStreak > 0) {
+            "You have a ${data.currentStreak}-day study streak! Stay consistent to beat your personal best streak of ${data.bestStreak} days."
+        } else {
+            "Start a micro-lesson or take a quick quiz today to kickstart your study streak!"
+        }
+        InsightsCard(insightsText = streakInsights, isDark = isDark)
+    }
+}
+
+// ==========================================
+// Reusable UI Components
+// ==========================================
+
+@Composable
+private fun TimeFilterDropdownPill(
+    currentFilter: String,
+    onFilterSelect: (String) -> Unit,
+    isDark: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val filterLabels = mapOf(
+        "this_week" to "This Week",
+        "last_week" to "Last Week",
+        "this_month" to "This Month"
+    )
+    val displayLabel = filterLabels[currentFilter] ?: "This Week"
+
+    Box {
+        Row(
+            modifier = Modifier
+                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$displayLabel ▾",
+                color = if (isDark) TextSecondary else Color(0xFF64748B),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(if (isDark) SurfacePanelElevated else Color.White)
+        ) {
+            listOf("this_week" to "This Week", "last_week" to "Last Week", "this_month" to "This Month").forEach { (key, label) ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = label,
+                            color = if (key == currentFilter) SunsetOrange else (if (isDark) TextPrimary else Color(0xFF0F172A)),
+                            fontWeight = if (key == currentFilter) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    },
+                    onClick = {
+                        onFilterSelect(key)
+                        expanded = false
+                    },
+                    colors = MenuDefaults.itemColors()
+                )
             }
         }
     }
 }
 
 @Composable
-private fun OverviewAnalyticsContent(isDark: Boolean = false) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Study Time Card
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
-                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+private fun MonthNavigatorPill(
+    displayName: String,
+    selectedMonth: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSelectMonth: (Int) -> Unit,
+    isDark: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val monthNames = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
+
+    Row(
+        modifier = Modifier
+            .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left Arrow
+        Text(
+            text = "‹",
+            color = if (isDark) TextSecondary else Color(0xFF64748B),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clickable { onPrevious() }
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+
+        // Clickable Month Dropdown
+        Box {
+            Text(
+                text = "$displayName ▾",
+                color = if (isDark) TextSecondary else Color(0xFF64748B),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .clickable { expanded = true }
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(if (isDark) SurfacePanelElevated else Color.White)
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column {
-                            Text(text = "Study Time", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "3h 25m", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                monthNames.forEachIndexed { index, mName ->
+                    val mNum = index + 1
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = mName,
+                                color = if (mNum == selectedMonth) SunsetOrange else (if (isDark) TextPrimary else Color(0xFF0F172A)),
+                                fontWeight = if (mNum == selectedMonth) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 12.sp
+                            )
+                        },
+                        onClick = {
+                            onSelectMonth(mNum)
+                            expanded = false
                         }
+                    )
+                }
+            }
+        }
 
-                        Box(
-                            modifier = Modifier
-                                .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(text = "This Week ▾", color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 11.sp)
-                        }
-                    }
+        // Right Arrow
+        Text(
+            text = "›",
+            color = if (isDark) TextSecondary else Color(0xFF64748B),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clickable { onNext() }
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
 
-                    Spacer(modifier = Modifier.height(14.dp))
+@Composable
+private fun DailyStudyBarChart(
+    days: List<String>,
+    heights: List<Float>,
+    minutes: List<Int>,
+    isDark: Boolean = false
+) {
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
 
-                    Box(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val w = size.width
-                            val h = size.height
+                val barW = 16.dp.toPx()
+                val count = if (days.isNotEmpty()) days.size else 7
+                val spacing = w / count
 
-                            val heights = listOf(0.3f, 0.6f, 0.45f, 0.8f, 0.5f, 0.9f, 0.7f)
-                            val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                            val barW = 16.dp.toPx()
-                            val spacing = w / days.size
+                for (i in 0 until count) {
+                    val rawH = heights.getOrNull(i) ?: 0f
+                    val x = i * spacing + (spacing - barW) / 2f
+                    val barH = (h * rawH).coerceIn(0f, h)
 
-                            for (i in days.indices) {
-                                val x = i * spacing + (spacing - barW) / 2f
-                                val barH = h * heights[i]
-                                drawRect(color = SunsetOrange, topLeft = Offset(x, h - barH), size = Size(barW, barH))
-                            }
-                        }
-                    }
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
-                        }
+                    if (barH > 0f) {
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(SunsetOrange, AmberGold)
+                            ),
+                            topLeft = Offset(x, h - barH),
+                            size = Size(barW, barH)
+                        )
+                    } else {
+                        // Subtle base bar placeholder
+                        drawRect(
+                            color = if (isDark) Color(0xFF1F202B) else Color(0xFFE2E8F0),
+                            topLeft = Offset(x, h - 3.dp.toPx()),
+                            size = Size(barW, 3.dp.toPx())
+                        )
                     }
                 }
             }
         }
 
-        // Subjects Breakdown Donut Chart Card Box
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
-                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "Subjects Breakdown", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(6.dp))
 
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    val subjects = listOf(
-                        Triple("Computer Science", "45%", SunsetOrange),
-                        Triple("AI & DS", "25%", AmberGold),
-                        Triple("Mathematics", "18%", Color(0xFF8B5CF6)),
-                        Triple("Others", "12%", Color(0xFF10B981)),
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        subjects.forEach { (sName, sPct, sColor) ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(10.dp).background(sColor, CircleShape))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = sName, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp)
-                                }
-                                Text(text = sPct, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+            days.forEach { day ->
+                Text(
+                    text = day,
+                    color = if (isDark) TextSecondary else Color(0xFF94A3B8),
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center
+                )
             }
         }
+    }
+}
 
-        // Insights Card Box
-        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
-                border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "💡 ", fontSize = 12.sp)
-                        Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+@Composable
+private fun SubjectBreakdownRow(
+    item: SubjectBreakdownItem,
+    isDark: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    val barColor = Color(android.graphics.Color.parseColor(item.colorHex))
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .padding(vertical = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(barColor, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "${item.icon} ${item.name}",
+                    color = if (isDark) TextSecondary else Color(0xFF334155),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Text(
+                text = "${item.percentage}% (${item.formattedTime})",
+                color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = { item.fraction.coerceIn(0f, 1f) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+            color = barColor,
+            trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
+        )
+    }
+}
+
+@Composable
+private fun SubjectTimeCard(
+    item: SubjectBreakdownItem,
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    Card(
+        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = item.icon, fontSize = 12.sp)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(text = item.name, color = if (isDark) TextSecondary else Color(0xFF64748B), fontSize = 10.sp, maxLines = 1)
+                    Text(text = item.formattedTime, color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Text(text = "›", color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 16.sp)
+        }
+    }
+}
+
+@Composable
+private fun TimeDistributionRow(item: TimeDistributionItem, isDark: Boolean = false) {
+    val barColor = Color(android.graphics.Color.parseColor(item.colorHex))
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = item.label, color = if (isDark) TextSecondary else Color(0xFF334155), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(text = "${item.percentage}% (${item.formattedTime})", color = if (isDark) TextPrimary else Color(0xFF0F172A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = { item.fraction.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(6.dp),
+            color = barColor,
+            trackColor = if (isDark) Color(0xFF25221F) else Color(0xFFE2E8F0)
+        )
+    }
+}
+
+@Composable
+private fun WeeklySubjectComparisonChart(items: List<WeeklySubjectComparisonItem>, isDark: Boolean = false) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val days = 7
+            val spacing = w / days
+            val barW = 3.5.dp.toPx()
+
+            val colors = listOf(
+                SunsetOrange,
+                AmberGold,
+                Color(0xFF8B5CF6),
+                Color(0xFF10B981)
+            )
+
+            for (d in 0 until days) {
+                val groupX = d * spacing + 8f
+                items.take(4).forEachIndexed { trackIdx, trackItem ->
+                    val rawH = trackItem.heights.getOrNull(d) ?: 0f
+                    val bHeight = (h * rawH).coerceIn(0f, h)
+                    val bx = groupX + trackIdx * (barW + 1.5f)
+                    val bColor = colors.getOrElse(trackIdx) { SunsetOrange }
+
+                    if (bHeight > 0f) {
+                        drawRect(
+                            color = bColor,
+                            topLeft = Offset(bx, h - bHeight),
+                            size = Size(barW, bHeight)
+                        )
+                    } else {
+                        drawRect(
+                            color = if (isDark) Color(0xFF1F202B) else Color(0xFFE2E8F0),
+                            topLeft = Offset(bx, h - 2.dp.toPx()),
+                            size = Size(barW, 2.dp.toPx())
+                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "You studied 20% more this week compared to last week. Great progress!",
-                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
                 }
             }
         }
     }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+            Text(text = day, color = if (isDark) TextSecondary else Color(0xFF94A3B8), fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+private fun InsightsCard(insightsText: String, isDark: Boolean = false) {
+    DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = if (isDark) SunsetOrange.copy(alpha = 0.12f) else Color(0xFFEFF6FF)),
+            border = BorderStroke(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.3f) else Color(0xFFBFDBFE))
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "💡 ", fontSize = 12.sp)
+                    Text(text = "Your Insights", color = SunsetOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = insightsText,
+                    color = if (isDark) TextPrimary else Color(0xFF1E293B),
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+            }
+        }
+    }
+}
+
+data class CalendarDayItem(
+    val dayNumber: Int,
+    val isCurrentMonth: Boolean,
+    val isActive: Boolean
+)
+
+private fun buildCalendarGridDays(year: Int, month: Int, activeDays: Set<Int>): List<CalendarDayItem> {
+    val cal = Calendar.getInstance()
+    cal.clear()
+    cal.set(Calendar.YEAR, year)
+    cal.set(Calendar.MONTH, month - 1)
+    cal.set(Calendar.DAY_OF_MONTH, 1)
+
+    val maxDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    val firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK) // 1=Sun, 2=Mon...
+    val leadingEmpty = when (firstDayOfWeek) {
+        Calendar.MONDAY -> 0
+        Calendar.TUESDAY -> 1
+        Calendar.WEDNESDAY -> 2
+        Calendar.THURSDAY -> 3
+        Calendar.FRIDAY -> 4
+        Calendar.SATURDAY -> 5
+        Calendar.SUNDAY -> 6
+        else -> 0
+    }
+
+    cal.add(Calendar.MONTH, -1)
+    val prevMax = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+    val list = mutableListOf<CalendarDayItem>()
+    for (i in (prevMax - leadingEmpty + 1)..prevMax) {
+        list.add(CalendarDayItem(dayNumber = i, isCurrentMonth = false, isActive = false))
+    }
+
+    for (d in 1..maxDays) {
+        list.add(CalendarDayItem(dayNumber = d, isCurrentMonth = true, isActive = activeDays.contains(d)))
+    }
+
+    var nextMonthDay = 1
+    while (list.size % 7 != 0) {
+        list.add(CalendarDayItem(dayNumber = nextMonthDay++, isCurrentMonth = false, isActive = false))
+    }
+
+    return list
+}
+
+@Composable
+fun AnalyticsScreen(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    initialTab: Int = 0,
+    viewModel: AnalyticsViewModel = viewModel(),
+    onTrackClick: ((String) -> Unit)? = null
+) {
+    ProgressAnalyticsScreen(
+        onBackClick = onBackClick,
+        modifier = modifier,
+        initialTab = initialTab,
+        viewModel = viewModel,
+        onTrackClick = onTrackClick
+    )
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProgressAnalyticsScreenPreview() {
     SYNAPSETheme {
-        ProgressAnalyticsScreen(onBackClick = {}, initialTab = 1, modifier = Modifier.fillMaxSize())
+        ProgressAnalyticsScreen(onBackClick = {}, initialTab = 0, modifier = Modifier.fillMaxSize())
     }
 }

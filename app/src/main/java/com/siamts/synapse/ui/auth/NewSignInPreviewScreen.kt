@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.auth
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,6 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -53,6 +57,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -156,13 +165,15 @@ fun NewSignInScreen(
                 }
             }
 
-            // White Light Container Card extending to bottom
+            val isDark = isSystemInDarkTheme()
+
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -181,7 +192,7 @@ fun NewSignInScreen(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Email or Phone Number",
-                                color = Color(0xFF1E293B),
+                                color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -192,19 +203,19 @@ fun NewSignInScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanelElevated else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                                 trailingIcon = {
                                     Text(
                                         text = "✉",
                                         fontSize = 18.sp,
-                                        color = Color(0xFF64748B)
+                                        color = if (isDark) AmberGold else Color(0xFF64748B)
                                     )
                                 }
                             )
@@ -219,7 +230,7 @@ fun NewSignInScreen(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Password",
-                                color = Color(0xFF1E293B),
+                                color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -232,12 +243,12 @@ fun NewSignInScreen(
                                 visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BlueAccent,
-                                    unfocusedBorderColor = Color(0xFFE2E8F0),
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedTextColor = Color(0xFF0F172A),
-                                    unfocusedTextColor = Color(0xFF0F172A),
+                                    focusedBorderColor = SunsetOrange,
+                                    unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                    focusedContainerColor = if (isDark) SurfacePanelElevated else Color.White,
+                                    unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                    focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 ),
                                 singleLine = true,
                                 trailingIcon = {
@@ -245,7 +256,7 @@ fun NewSignInScreen(
                                         Text(
                                             text = if (isPasswordVisible) "👁" else "🙈",
                                             fontSize = 18.sp,
-                                            color = Color(0xFF64748B)
+                                            color = if (isDark) AmberGold else Color(0xFF64748B)
                                         )
                                     }
                                 }
@@ -255,7 +266,7 @@ fun NewSignInScreen(
 
                             Text(
                                 text = "Forgot password?",
-                                color = BlueAccent,
+                                color = SunsetOrange,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier
@@ -274,13 +285,13 @@ fun NewSignInScreen(
                             checked = rememberMe,
                             onCheckedChange = { rememberMe = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = BlueAccent,
-                                uncheckedColor = Color(0xFF94A3B8)
+                                checkedColor = SunsetOrange,
+                                uncheckedColor = if (isDark) SurfaceBorder else Color(0xFF94A3B8)
                             )
                         )
                         Text(
                             text = "Remember me on this device",
-                            color = Color(0xFF475569),
+                            color = if (isDark) TextSecondary else Color(0xFF475569),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -306,9 +317,9 @@ fun NewSignInScreen(
                                     .background(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
-                                                PurpleAccent,
-                                                BlueAccent,
-                                                CyanAccent,
+                                                SunsetOrange,
+                                                SunsetOrangeEnd,
+                                                AmberGold,
                                             )
                                         ),
                                         shape = RoundedCornerShape(16.dp),
@@ -344,18 +355,18 @@ fun NewSignInScreen(
                     ) {
                         HorizontalDivider(
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFFE2E8F0)
+                            color = if (isDark) SurfaceBorder else Color(0xFFE2E8F0)
                         )
                         Text(
                             text = " OR CONTINUE WITH ",
-                            color = Color(0xFF94A3B8),
+                            color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                         HorizontalDivider(
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFFE2E8F0)
+                            color = if (isDark) SurfaceBorder else Color(0xFFE2E8F0)
                         )
                     }
 
@@ -369,8 +380,8 @@ fun NewSignInScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(44.dp)
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                 .clickable { },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -378,7 +389,7 @@ fun NewSignInScreen(
                                 Text(text = "🌐 ", fontSize = 14.sp)
                                 Text(
                                     text = "Google",
-                                    color = Color(0xFF334155),
+                                    color = if (isDark) TextPrimary else Color(0xFF334155),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -390,8 +401,8 @@ fun NewSignInScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(44.dp)
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                 .clickable { },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -399,7 +410,7 @@ fun NewSignInScreen(
                                 Text(text = "🔑 ", fontSize = 14.sp)
                                 Text(
                                     text = "SSO Login",
-                                    color = Color(0xFF334155),
+                                    color = if (isDark) TextPrimary else Color(0xFF334155),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -422,12 +433,12 @@ fun NewSignInScreen(
                             ) {
                                 Text(
                                     text = "Don't have an account? ",
-                                    color = Color(0xFF64748B),
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
                                     fontSize = 13.sp,
                                 )
                                 Text(
                                     text = "Sign Up Free",
-                                    color = BlueAccent,
+                                    color = SunsetOrange,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.clickable { onSignUpClick() },

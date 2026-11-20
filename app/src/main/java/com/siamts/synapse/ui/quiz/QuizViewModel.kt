@@ -650,6 +650,16 @@ class QuizViewModel(
                 )
                 quizDao.insertQuizRecord(record)
 
+                // Automatically log Practice (Quiz) session for Progress & Analytics
+                try {
+                    val trackTitle = state.topicTag.ifBlank { subId.ifBlank { "Python & Coding Logic" } }
+                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                        trackName = trackTitle,
+                        category = "Practice (Quiz)",
+                        durationMinutes = 10
+                    )
+                } catch (_: Throwable) {}
+
                 // Real-Time Milestone Notification when score >= 80%
                 if (scorePercentage >= 80f) {
                     try {

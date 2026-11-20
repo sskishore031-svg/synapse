@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.notes
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +51,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -56,6 +60,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -140,6 +149,7 @@ fun NotesGeneratorContent(
     isSavedTemporarily: Boolean = false,
 ) {
     val context = LocalContext.current
+    val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -169,7 +179,7 @@ fun NotesGeneratorContent(
                     Column {
                         Text(
                             text = uiState.headerTag,
-                            color = TextMuted,
+                            color = AmberGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -195,13 +205,13 @@ fun NotesGeneratorContent(
                 }
             }
 
-            // Light Sheet Container
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -226,7 +236,7 @@ fun NotesGeneratorContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Enter topic or subject",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -242,19 +252,19 @@ fun NotesGeneratorContent(
                                         placeholder = {
                                             Text(
                                                 text = "e.g. Python, Photosynthesis, Calculus",
-                                                color = Color(0xFF94A3B8),
+                                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                 fontSize = 11.sp
                                             )
                                         },
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BlueAccent,
-                                            unfocusedBorderColor = Color(0xFFE2E8F0),
-                                            focusedContainerColor = Color.White,
-                                            unfocusedContainerColor = Color.White,
-                                            focusedTextColor = Color(0xFF0F172A),
-                                            unfocusedTextColor = Color(0xFF0F172A),
+                                            focusedBorderColor = SunsetOrange,
+                                            unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                            focusedContainerColor = if (isDark) SurfacePanelElevated else Color.White,
+                                            unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                                            focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                            unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         ),
                                         singleLine = true,
                                     )
@@ -272,7 +282,7 @@ fun NotesGeneratorContent(
                                                 .fillMaxSize()
                                                 .background(
                                                     brush = Brush.horizontalGradient(
-                                                        colors = listOf(PurpleAccent, BlueAccent)
+                                                        colors = listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)
                                                     ),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
@@ -309,7 +319,8 @@ fun NotesGeneratorContent(
                                     .fillMaxWidth()
                                     .clickable { },
                                 shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -325,7 +336,7 @@ fun NotesGeneratorContent(
                                         Box(
                                             modifier = Modifier
                                                 .size(36.dp)
-                                                .background(Color(0xFFEFF6FF), CircleShape),
+                                                .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             Text(text = "☁️", fontSize = 16.sp)
@@ -336,13 +347,13 @@ fun NotesGeneratorContent(
                                         Column {
                                             Text(
                                                 text = "Upload document",
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                             Text(
                                                 text = uiState.documentText,
-                                                color = Color(0xFF94A3B8),
+                                                color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                 fontSize = 11.sp,
                                             )
                                         }
@@ -350,7 +361,7 @@ fun NotesGeneratorContent(
 
                                     Text(
                                         text = "+",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -366,7 +377,8 @@ fun NotesGeneratorContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(
@@ -376,19 +388,20 @@ fun NotesGeneratorContent(
                                     ) {
                                         Text(
                                             text = "Your study notes",
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
 
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                                                .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                                                .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color.Transparent, RoundedCornerShape(10.dp))
                                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                                         ) {
                                             Text(
                                                 text = "✨ AI-generated",
-                                                color = BlueAccent,
+                                                color = if (isDark) SunsetOrange else BlueAccent,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
@@ -399,7 +412,7 @@ fun NotesGeneratorContent(
 
                                     Text(
                                         text = uiState.noteTitle,
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -408,7 +421,7 @@ fun NotesGeneratorContent(
 
                                     Text(
                                         text = uiState.noteSummary,
-                                        color = Color(0xFF475569),
+                                        color = if (isDark) TextSecondary else Color(0xFF475569),
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
                                     )
@@ -417,7 +430,7 @@ fun NotesGeneratorContent(
 
                                     Text(
                                         text = "Key points",
-                                        color = Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -427,7 +440,7 @@ fun NotesGeneratorContent(
                                     uiState.keyPoints.forEach { point ->
                                         Text(
                                             text = "• $point",
-                                            color = Color(0xFF475569),
+                                            color = if (isDark) TextSecondary else Color(0xFF475569),
                                             fontSize = 12.sp,
                                             modifier = Modifier.padding(bottom = 2.dp),
                                         )
@@ -437,7 +450,7 @@ fun NotesGeneratorContent(
 
                                     Text(
                                         text = "IMPORTANT TERMS",
-                                        color = Color(0xFF64748B),
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.sp,
@@ -452,12 +465,13 @@ fun NotesGeneratorContent(
                                         uiState.importantTerms.forEach { term ->
                                             Box(
                                                 modifier = Modifier
-                                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                    .background(if (isDark) SurfacePanel else Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
+                                                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
                                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
                                                     text = term,
-                                                    color = BlueAccent,
+                                                    color = if (isDark) AmberGold else BlueAccent,
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Medium,
                                                 )
@@ -482,8 +496,8 @@ fun NotesGeneratorContent(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(46.dp)
-                                        .background(Color.White, RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                        .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                         .clickable { onDownloadNotes?.invoke() },
                                     contentAlignment = Alignment.Center,
                                 ) {
@@ -492,7 +506,7 @@ fun NotesGeneratorContent(
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "Download",
-                                            color = BlueAccent,
+                                            color = if (isDark) SunsetOrange else BlueAccent,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -504,8 +518,8 @@ fun NotesGeneratorContent(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(46.dp)
-                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                        .background(if (isDark) SurfacePanelElevated else Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
                                         .clickable {
                                             val content = buildString {
                                                 append(uiState.noteSummary).append("\n\n")
@@ -529,7 +543,7 @@ fun NotesGeneratorContent(
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "Share",
-                                            color = Color(0xFF0284C7),
+                                            color = if (isDark) AmberGold else Color(0xFF0284C7),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
@@ -551,7 +565,7 @@ fun NotesGeneratorContent(
                                             .fillMaxSize()
                                             .background(
                                                 brush = Brush.horizontalGradient(
-                                                    colors = listOf(PurpleAccent, BlueAccent, CyanAccent)
+                                                    colors = listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)
                                                 ),
                                                 shape = RoundedCornerShape(12.dp)
                                             ),
@@ -580,13 +594,14 @@ fun NotesGeneratorContent(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) Color(0xFF059669).copy(alpha = 0.25f) else Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(12.dp))
                                     .padding(10.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = "✓ ${uiState.saveStatusText}",
-                                    color = Color(0xFF059669),
+                                    color = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -602,17 +617,17 @@ fun NotesGeneratorContent(
                                 modifier = Modifier
                                     .width(100.dp)
                                     .height(40.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onBackClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "←", color = BlueAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "←", color = if (isDark) SunsetOrange else BlueAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Back",
-                                        color = BlueAccent,
+                                        color = if (isDark) SunsetOrange else BlueAccent,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -627,7 +642,8 @@ fun NotesGeneratorContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(if (isDark) SurfacePanel else Color.White)
+                    .border(BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
@@ -651,11 +667,11 @@ fun NotesGeneratorContent(
                         Text(
                             text = icon,
                             fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
+                            color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF94A3B8))
                         )
                         Text(
                             text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
+                            color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF94A3B8)),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )

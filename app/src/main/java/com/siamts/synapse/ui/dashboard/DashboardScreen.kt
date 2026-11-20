@@ -742,13 +742,13 @@ fun DashboardContent(
                         singleLine = true,
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF0F172A),
-                            unfocusedTextColor = Color(0xFF0F172A),
-                            cursorColor = Color(0xFF2563EB),
-                            focusedBorderColor = Color(0xFF2563EB),
-                            unfocusedBorderColor = Color(0xFFCBD5E1),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                            unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
+                            focusedBorderColor = SunsetOrange,
+                            unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
+                            focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                            unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                            cursorColor = SunsetOrange
                         )
                     )
 
@@ -756,14 +756,14 @@ fun DashboardContent(
                         text = "Task Type",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B)
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Lesson", "Quiz", "Revision").forEach { cat ->
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        color = if (selectedCategory == cat) BlueAccent else Color(0xFFF1F5F9),
+                                        color = if (selectedCategory == cat) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
                                         shape = RoundedCornerShape(8.dp)
                                     )
                                     .clickable { selectedCategory = cat }
@@ -771,7 +771,7 @@ fun DashboardContent(
                             ) {
                                 Text(
                                     text = cat,
-                                    color = if (selectedCategory == cat) Color.White else Color(0xFF334155),
+                                    color = if (selectedCategory == cat) Color.White else (if (isDark) TextSecondary else Color(0xFF334155)),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -783,14 +783,14 @@ fun DashboardContent(
                         text = "Estimated Duration",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = if (isDark) TextPrimary else Color(0xFF1E293B)
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("10 min", "15 min", "25 min", "45 min").forEach { dur ->
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        color = if (selectedDuration == dur) Color(0xFF0F172A) else Color(0xFFF1F5F9),
+                                        color = if (selectedDuration == dur) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
                                         shape = RoundedCornerShape(8.dp)
                                     )
                                     .clickable { selectedDuration = dur }
@@ -798,7 +798,7 @@ fun DashboardContent(
                             ) {
                                 Text(
                                     text = dur,
-                                    color = if (selectedDuration == dur) Color.White else Color(0xFF334155),
+                                    color = if (selectedDuration == dur) Color.White else (if (isDark) TextSecondary else Color(0xFF334155)),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -815,7 +815,7 @@ fun DashboardContent(
                             showAddTaskDialog = false
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Add Task", color = Color.White, fontWeight = FontWeight.Bold)
@@ -823,10 +823,10 @@ fun DashboardContent(
             },
             dismissButton = {
                 TextButton(onClick = { showAddTaskDialog = false }) {
-                    Text("Cancel", color = Color(0xFF64748B))
+                    Text("Cancel", color = if (isDark) TextSecondary else Color(0xFF64748B))
                 }
             },
-            containerColor = Color.White,
+            containerColor = if (isDark) SurfacePanelElevated else Color.White,
             shape = RoundedCornerShape(16.dp)
         )
     }

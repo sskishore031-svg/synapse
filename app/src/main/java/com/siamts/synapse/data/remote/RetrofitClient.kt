@@ -91,6 +91,9 @@ object RetrofitClient {
     @Volatile
     private var learningPlanApiInstance: LearningPlanApi? = null
 
+    @Volatile
+    private var analyticsApiInstance: AnalyticsApi? = null
+
     private val headerInterceptor by lazy {
         Interceptor { chain ->
             val originalRequest = chain.request()
@@ -196,6 +199,9 @@ object RetrofitClient {
 
     val learningPlanApi: LearningPlanApi
         get() = getOrCreateLearningPlanApi()
+
+    val analyticsApi: AnalyticsApi
+        get() = getOrCreateAnalyticsApi()
 
     private fun getOrCreateApi(): AuthApi {
         return apiInstance ?: synchronized(this) {
@@ -317,6 +323,14 @@ object RetrofitClient {
         }
     }
 
+    private fun getOrCreateAnalyticsApi(): AnalyticsApi {
+        return analyticsApiInstance ?: synchronized(this) {
+            analyticsApiInstance ?: buildRetrofit(currentBaseUrl).create(AnalyticsApi::class.java).also {
+                analyticsApiInstance = it
+            }
+        }
+    }
+
     private fun buildRetrofit(url: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(url)
@@ -348,6 +362,7 @@ object RetrofitClient {
                 notificationsApiInstance = buildRetrofit(formatted).create(NotificationsApi::class.java)
                 subjectsApiInstance = buildRetrofit(formatted).create(SubjectsApi::class.java)
                 learningPlanApiInstance = buildRetrofit(formatted).create(LearningPlanApi::class.java)
+                analyticsApiInstance = buildRetrofit(formatted).create(AnalyticsApi::class.java)
             }
         }
     }

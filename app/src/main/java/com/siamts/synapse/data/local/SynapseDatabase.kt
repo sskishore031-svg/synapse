@@ -44,6 +44,38 @@ object SynapseDatabase {
         return QuizLocalDatabase.getChatDao(context)
     }
 
+    fun getStudySessionDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): StudySessionDao {
+        return QuizLocalDatabase.getStudySessionDao(context)
+    }
+
+    /**
+     * Helper to log real-time user study activity asynchronously into local SQLite/Room
+     * whenever lessons are read, quizzes taken, or notes crafted.
+     */
+    fun logSession(
+        trackName: String,
+        category: String,
+        durationMinutes: Int = 15,
+        context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }
+    ) {
+        seederScope.launch {
+            try {
+                val dao = getStudySessionDao(context)
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                val today = sdf.format(java.util.Date())
+                val session = StudySessionEntity(
+                    userId = 1,
+                    trackName = trackName,
+                    category = category,
+                    durationMinutes = durationMinutes,
+                    studyDate = today,
+                    timestamp = System.currentTimeMillis()
+                )
+                dao.insertSession(session)
+            } catch (_: Throwable) {}
+        }
+    }
+
     /**
      * Runs a fast background seeder on Dispatchers.IO that populates all subjects,
      * 8+ chapters per subject, lesson contents, and chapter-linked quizzes on startup

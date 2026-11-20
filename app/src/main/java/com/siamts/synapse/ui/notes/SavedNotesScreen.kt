@@ -625,30 +625,6 @@ fun SavedNotesContent(
             }
         }
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8)
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) BlueAccent else Color(0xFF94A3B8),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-
         // 3D Perspective Note Viewer Dialog
         if (selected3DNote != null) {
             ThreeDNoteViewerDialog(

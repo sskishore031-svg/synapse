@@ -36,6 +36,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -43,6 +45,8 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.TextMuted
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -112,7 +116,7 @@ fun WelcomeContent(
             ) {
                 Text(
                     text = uiState.badgeText,
-                    color = CyanGlow,
+                    color = AmberGold,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp,
@@ -170,7 +174,7 @@ fun WelcomeContent(
                                     .padding(horizontal = 4.dp)
                                     .size(if (isSelected) 8.dp else 6.dp)
                                     .background(
-                                        color = if (isSelected) CyanGlow else Color(0xFF1E293B),
+                                        color = if (isSelected) SunsetOrange else Color(0xFF1E293B),
                                         shape = CircleShape,
                                     )
                                     .clickable { onPageClick(pageIndex) },
@@ -212,9 +216,9 @@ fun WelcomeContent(
                             .background(
                                 brush = Brush.horizontalGradient(
                                     colors = listOf(
-                                        PurpleAccent,
-                                        BlueAccent,
-                                        CyanAccent,
+                                        SunsetOrange,
+                                        SunsetOrangeEnd,
+                                        AmberGold,
                                     )
                                 ),
                                 shape = RoundedCornerShape(16.dp),

@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.results
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -42,6 +46,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -99,6 +108,7 @@ fun QuizReviewAnswersPreviewScreen(
         )
     )
 
+    val isDark = isSystemInDarkTheme()
     val questionsToDisplay = if (!reviewQuestions.isNullOrEmpty()) reviewQuestions else defaultQuestions
     val correctCount = questionsToDisplay.count { it.isCorrect }
     val totalCount = questionsToDisplay.size.coerceAtLeast(1)
@@ -139,7 +149,7 @@ fun QuizReviewAnswersPreviewScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "QUIZ SOLUTIONS & EXPLANATIONS",
-                            color = CyanGlow,
+                            color = AmberGold,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -160,12 +170,12 @@ fun QuizReviewAnswersPreviewScreen(
                 }
             }
 
-            // Light Sheet Container
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(color = Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(color = if (isDark) Color.Transparent else Color(0xFFF8FAFC), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -185,7 +195,8 @@ fun QuizReviewAnswersPreviewScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(
@@ -196,24 +207,25 @@ fun QuizReviewAnswersPreviewScreen(
                                         Column {
                                             Text(
                                                 text = calculatedScoreText,
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = calculatedSubtext,
-                                                color = Color(0xFF64748B),
+                                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                                 fontSize = 11.sp
                                             )
                                         }
 
                                         Box(
                                             modifier = Modifier
-                                                .background(Color(0xFFF3E8FF), RoundedCornerShape(12.dp))
+                                                .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFF3E8FF), RoundedCornerShape(12.dp))
+                                                .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color.Transparent, RoundedCornerShape(12.dp))
                                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                                         ) {
-                                            Text(text = xpEarned, color = PurpleAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = xpEarned, color = if (isDark) SunsetOrange else PurpleAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
 
@@ -224,8 +236,8 @@ fun QuizReviewAnswersPreviewScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(6.dp),
-                                        color = if (calculatedAccuracy >= 0.7f) BlueAccent else Color(0xFFE11D48),
-                                        trackColor = Color(0xFFE2E8F0),
+                                        color = SunsetOrange,
+                                        trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                     )
                                 }
                             }
@@ -236,7 +248,7 @@ fun QuizReviewAnswersPreviewScreen(
                             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text(
                                     text = "Detailed Solutions & Explanations",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -245,7 +257,8 @@ fun QuizReviewAnswersPreviewScreen(
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(14.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(14.dp)) {
@@ -256,7 +269,7 @@ fun QuizReviewAnswersPreviewScreen(
                                             ) {
                                                 Text(
                                                     text = "Question ${item.questionNumber}",
-                                                    color = BlueAccent,
+                                                    color = SunsetOrange,
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
@@ -264,14 +277,19 @@ fun QuizReviewAnswersPreviewScreen(
                                                 Box(
                                                     modifier = Modifier
                                                         .background(
-                                                            if (item.isCorrect) Color(0xFFD1FAE5) else Color(0xFFFEE2E2),
+                                                            if (item.isCorrect) (if (isDark) Color(0xFF059669).copy(alpha = 0.25f) else Color(0xFFD1FAE5)) else (if (isDark) Color(0xFFDC2626).copy(alpha = 0.25f) else Color(0xFFFEE2E2)),
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .border(
+                                                            1.dp,
+                                                            if (item.isCorrect) (if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color.Transparent) else (if (isDark) Color(0xFFDC2626).copy(alpha = 0.5f) else Color.Transparent),
                                                             RoundedCornerShape(8.dp)
                                                         )
                                                         .padding(horizontal = 8.dp, vertical = 3.dp)
                                                 ) {
                                                     Text(
                                                         text = if (item.isCorrect) "✓ Correct" else "✕ Incorrect",
-                                                        color = if (item.isCorrect) Color(0xFF059669) else Color(0xFFDC2626),
+                                                        color = if (item.isCorrect) (if (isDark) Color(0xFF34D399) else Color(0xFF059669)) else (if (isDark) Color(0xFFF87171) else Color(0xFFDC2626)),
                                                         fontSize = 11.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
@@ -282,7 +300,7 @@ fun QuizReviewAnswersPreviewScreen(
 
                                             Text(
                                                 text = item.questionText,
-                                                color = Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 lineHeight = 20.sp
@@ -295,19 +313,19 @@ fun QuizReviewAnswersPreviewScreen(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .background(
-                                                        if (item.isCorrect) Color(0xFFEFF6FF) else Color(0xFFFEF2F2),
+                                                        if (item.isCorrect) (if (isDark) Color(0xFF059669).copy(alpha = 0.15f) else Color(0xFFEFF6FF)) else (if (isDark) Color(0xFFDC2626).copy(alpha = 0.15f) else Color(0xFFFEF2F2)),
                                                         RoundedCornerShape(8.dp)
                                                     )
                                                     .border(
                                                         1.dp,
-                                                        if (item.isCorrect) Color(0xFFBFDBFE) else Color(0xFFFECACA),
+                                                        if (item.isCorrect) (if (isDark) Color(0xFF059669).copy(alpha = 0.4f) else Color(0xFFBFDBFE)) else (if (isDark) Color(0xFFDC2626).copy(alpha = 0.4f) else Color(0xFFFECACA)),
                                                         RoundedCornerShape(8.dp)
                                                     )
                                                     .padding(10.dp)
                                             ) {
                                                 Text(
                                                     text = "Your Answer: ${item.userAnswer}",
-                                                    color = if (item.isCorrect) BlueAccent else Color(0xFFDC2626),
+                                                    color = if (item.isCorrect) (if (isDark) Color(0xFF34D399) else BlueAccent) else (if (isDark) Color(0xFFF87171) else Color(0xFFDC2626)),
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Medium,
                                                 )
@@ -319,13 +337,13 @@ fun QuizReviewAnswersPreviewScreen(
                                                 Box(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .background(Color(0xFFECFDF5), RoundedCornerShape(8.dp))
-                                                        .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(8.dp))
+                                                        .background(if (isDark) Color(0xFF059669).copy(alpha = 0.2f) else Color(0xFFECFDF5), RoundedCornerShape(8.dp))
+                                                        .border(1.dp, if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color(0xFFA7F3D0), RoundedCornerShape(8.dp))
                                                         .padding(10.dp)
                                                 ) {
                                                     Text(
                                                         text = "Correct Answer: ${item.correctAnswer}",
-                                                        color = Color(0xFF059669),
+                                                        color = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
                                                         fontSize = 12.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
@@ -338,12 +356,13 @@ fun QuizReviewAnswersPreviewScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
+                                                    .background(if (isDark) SurfacePanel else Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
+                                                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
                                                     .padding(10.dp)
                                             ) {
                                                 Text(
                                                     text = "💡 Explanation: ${item.explanation}",
-                                                    color = Color(0xFF334155),
+                                                    color = if (isDark) TextSecondary else Color(0xFF334155),
                                                     fontSize = 12.sp,
                                                     lineHeight = 17.sp,
                                                 )
@@ -359,14 +378,15 @@ fun QuizReviewAnswersPreviewScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color(0xFFEFF6FF)),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color.Transparent)
                             ) {
                                 Column(modifier = Modifier.padding(10.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(text = "✨ ", fontSize = 12.sp)
                                         Text(
                                             text = "SYNAPSE AI INSIGHT",
-                                            color = BlueAccent,
+                                            color = AmberGold,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -374,7 +394,7 @@ fun QuizReviewAnswersPreviewScreen(
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "Review incorrect items carefully before attempting chapter quizzes to reinforce long-term memory.",
-                                        color = Color(0xFF1E293B),
+                                        color = if (isDark) TextSecondary else Color(0xFF1E293B),
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -391,14 +411,14 @@ fun QuizReviewAnswersPreviewScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(46.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onRetryQuizClick?.invoke() ?: onBackClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = "Retake Quiz 🔄",
-                                    color = BlueAccent,
+                                    color = if (isDark) SunsetOrange else BlueAccent,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -421,7 +441,7 @@ fun QuizReviewAnswersPreviewScreen(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .background(
-                                            Brush.horizontalGradient(listOf(PurpleAccent, BlueAccent, CyanAccent)),
+                                            Brush.horizontalGradient(listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)),
                                             RoundedCornerShape(12.dp)
                                         ),
                                     contentAlignment = Alignment.Center,

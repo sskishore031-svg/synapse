@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.lesson
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +43,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -49,6 +53,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
@@ -167,13 +176,15 @@ fun LessonContent(
                 }
             }
 
-            // Light Sheet Container
+            val isDark = isSystemInDarkTheme()
+
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -203,12 +214,12 @@ fun LessonContent(
                                 ) {
                                     Text(
                                         text = uiState.lessonInfo,
-                                        color = Color(0xFF64748B),
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
                                         fontSize = 12.sp,
                                     )
                                     Text(
                                         text = "${uiState.completionPercentage}% complete",
-                                        color = BlueAccent,
+                                        color = SunsetOrange,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -221,8 +232,8 @@ fun LessonContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(6.dp),
-                                    color = BlueAccent,
-                                    trackColor = Color(0xFFE2E8F0),
+                                    color = SunsetOrange,
+                                    trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                 )
                             }
                         }
@@ -235,7 +246,7 @@ fun LessonContent(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
                                     .padding(4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -246,7 +257,7 @@ fun LessonContent(
                                         modifier = Modifier
                                             .weight(1f)
                                             .background(
-                                                color = if (isSelected) Color.White else Color.Transparent,
+                                                color = if (isSelected) (if (isDark) SunsetOrange else Color.White) else Color.Transparent,
                                                 shape = RoundedCornerShape(10.dp)
                                             )
                                             .clickable { onSubTabSelect(index) }
@@ -255,7 +266,7 @@ fun LessonContent(
                                     ) {
                                         Text(
                                             text = title,
-                                            color = if (isSelected) BlueAccent else Color(0xFF64748B),
+                                            color = if (isSelected) (if (isDark) Color.White else BlueAccent) else (if (isDark) TextSecondary else Color(0xFF64748B)),
                                             fontSize = 13.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         )
@@ -272,7 +283,7 @@ fun LessonContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = uiState.headline,
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -281,7 +292,7 @@ fun LessonContent(
 
                                 Text(
                                     text = uiState.description,
-                                    color = Color(0xFF475569),
+                                    color = if (isDark) TextSecondary else Color(0xFF475569),
                                     fontSize = 13.sp,
                                     lineHeight = 18.sp,
                                 )
@@ -298,7 +309,8 @@ fun LessonContent(
                                     .fillMaxWidth()
                                     .height(140.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color(0xFF0F172A)),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color.Transparent)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -307,7 +319,7 @@ fun LessonContent(
                                 ) {
                                     Text(
                                         text = "Loss ↓ as weights improve",
-                                        color = TextSecondary,
+                                        color = if (isDark) AmberGold else TextSecondary,
                                         fontSize = 11.sp,
                                         modifier = Modifier.align(Alignment.TopStart),
                                     )
@@ -328,7 +340,7 @@ fun LessonContent(
                                         drawPath(
                                             path = curvePath,
                                             brush = Brush.horizontalGradient(
-                                                colors = listOf(PurpleGlow, CyanGlow)
+                                                colors = listOf(SunsetOrange, AmberGold)
                                             ),
                                             style = Stroke(width = 4f)
                                         )
@@ -343,7 +355,7 @@ fun LessonContent(
 
                                         ballPoints.forEach { point ->
                                             drawCircle(
-                                                color = PurpleGlow,
+                                                color = SunsetOrange,
                                                 radius = 6f,
                                                 center = point
                                             )
@@ -351,7 +363,7 @@ fun LessonContent(
 
                                         // Minimum Loss Dot
                                         drawCircle(
-                                            color = CyanGlow,
+                                            color = AmberGold,
                                             radius = 8f,
                                             center = Offset(w * 0.5f, h * 0.75f)
                                         )
@@ -359,7 +371,7 @@ fun LessonContent(
 
                                     Text(
                                         text = "Minimum loss",
-                                        color = CyanGlow,
+                                        color = AmberGold,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.align(Alignment.BottomCenter),
@@ -376,7 +388,7 @@ fun LessonContent(
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Key points",
-                                    color = Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -386,7 +398,7 @@ fun LessonContent(
                                 uiState.keyPoints.forEach { point ->
                                     Text(
                                         text = "• $point",
-                                        color = Color(0xFF475569),
+                                        color = if (isDark) TextSecondary else Color(0xFF475569),
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
                                         modifier = Modifier.padding(bottom = 4.dp),
@@ -403,20 +415,21 @@ fun LessonContent(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFEFF6FF), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color(0xFFEFF6FF), RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(12.dp))
                                     .padding(12.dp)
                             ) {
                                 Column {
                                     Text(
                                         text = uiState.exampleTitle,
-                                        color = BlueAccent,
+                                        color = if (isDark) AmberGold else BlueAccent,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = uiState.exampleContent,
-                                        color = Color(0xFF1E293B),
+                                        color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
                                     )
@@ -433,8 +446,8 @@ fun LessonContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onAskAiClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -443,7 +456,7 @@ fun LessonContent(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "Ask AI to explain",
-                                        color = BlueAccent,
+                                        color = if (isDark) SunsetOrange else BlueAccent,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -468,17 +481,17 @@ fun LessonContent(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .background(Color.White, RoundedCornerShape(16.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(16.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
                                     .clickable { onPreviousClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "←", color = BlueAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "←", color = if (isDark) SunsetOrange else BlueAccent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Previous",
-                                        color = BlueAccent,
+                                        color = if (isDark) SunsetOrange else BlueAccent,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -501,9 +514,9 @@ fun LessonContent(
                                         .background(
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
-                                                    PurpleAccent,
-                                                    BlueAccent,
-                                                    CyanAccent,
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
                                                 )
                                             ),
                                             shape = RoundedCornerShape(16.dp),

@@ -1,5 +1,7 @@
 package com.siamts.synapse.ui.notes
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +39,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -44,6 +48,11 @@ import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
+import com.siamts.synapse.ui.theme.SunsetOrange
+import com.siamts.synapse.ui.theme.SunsetOrangeEnd
+import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.BrainGraphic
@@ -131,13 +140,15 @@ fun NoteSavedSuccessContent(
                 )
             }
 
-            // Light Sheet Container
+            val isDark = isSystemInDarkTheme()
+
+            // Dark Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {
@@ -162,7 +173,7 @@ fun NoteSavedSuccessContent(
                                     .size(76.dp)
                                     .background(
                                         brush = Brush.horizontalGradient(
-                                            colors = listOf(PurpleAccent, BlueAccent)
+                                            colors = listOf(SunsetOrange, SunsetOrangeEnd)
                                         ),
                                         shape = CircleShape
                                     ),
@@ -180,12 +191,13 @@ fun NoteSavedSuccessContent(
 
                             Box(
                                 modifier = Modifier
-                                    .background(Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) Color(0xFF059669).copy(alpha = 0.25f) else Color(0xFFD1FAE5), RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color.Transparent, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                             ) {
                                 Text(
                                     text = "✓ Saved to library",
-                                    color = Color(0xFF059669),
+                                    color = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -204,14 +216,14 @@ fun NoteSavedSuccessContent(
                         ) {
                             Text(
                                 text = uiState.savedHeadline,
-                                color = Color(0xFF0F172A),
+                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = uiState.savedMessage,
-                                color = Color(0xFF64748B),
+                                color = if (isDark) TextSecondary else Color(0xFF64748B),
                                 fontSize = 13.sp,
                                 textAlign = TextAlign.Center,
                                 lineHeight = 18.sp,
@@ -227,14 +239,15 @@ fun NoteSavedSuccessContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
                                             .size(36.dp)
-                                            .background(Color(0xFFEFF6FF), CircleShape),
+                                            .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFEFF6FF), CircleShape),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(text = "📝", fontSize = 16.sp)
@@ -245,13 +258,13 @@ fun NoteSavedSuccessContent(
                                     Column {
                                         Text(
                                             text = uiState.noteTitle,
-                                            color = Color(0xFF0F172A),
+                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = uiState.savedNoteCategory,
-                                            color = Color(0xFF64748B),
+                                            color = if (isDark) TextSecondary else Color(0xFF64748B),
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -261,7 +274,7 @@ fun NoteSavedSuccessContent(
 
                                 Text(
                                     text = uiState.savedNoteTags,
-                                    color = Color(0xFF94A3B8),
+                                    color = if (isDark) AmberGold else Color(0xFF94A3B8),
                                     fontSize = 11.sp,
                                 )
                             }
@@ -292,7 +305,7 @@ fun NoteSavedSuccessContent(
                                         .fillMaxSize()
                                         .background(
                                             brush = Brush.horizontalGradient(
-                                                colors = listOf(PurpleAccent, BlueAccent, CyanAccent)
+                                                colors = listOf(SunsetOrange, SunsetOrangeEnd, AmberGold)
                                             ),
                                             shape = RoundedCornerShape(16.dp),
                                         ),
@@ -316,8 +329,8 @@ fun NoteSavedSuccessContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color(0xFFE0F2FE), RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFBAE6FD), RoundedCornerShape(12.dp))
                                     .clickable {
                                         com.siamts.synapse.util.ShareUtils.shareNote(
                                             context = context,
@@ -334,7 +347,7 @@ fun NoteSavedSuccessContent(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Share Note with Friend",
-                                        color = Color(0xFF0284C7),
+                                        color = if (isDark) AmberGold else Color(0xFF0284C7),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -346,14 +359,14 @@ fun NoteSavedSuccessContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color.White, RoundedCornerShape(12.dp))
-                                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                                    .background(if (isDark) SurfacePanelElevated else Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
                                     .clickable { onBackToLearningClick() },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = "Back to Learning",
-                                    color = BlueAccent,
+                                    color = if (isDark) SunsetOrange else BlueAccent,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                 )

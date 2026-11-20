@@ -479,9 +479,6 @@ fun NotesHomeScreen(
                     }
                 }
             }
-                    }
-                }
-            }
         }
 
         // Create Note Dialog with Full Categorization
@@ -520,7 +517,7 @@ fun NotesHomeScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .background(
-                                            color = if (isCatSelected) BlueAccent else Color(0xFFF1F5F9),
+                                            color = if (isCatSelected) SunsetOrange else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                         .clickable { selectedCategory = catKey }
@@ -531,7 +528,7 @@ fun NotesHomeScreen(
                                         text = label,
                                         fontSize = 12.sp,
                                         fontWeight = if (isCatSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isCatSelected) Color.White else Color(0xFF1E293B)
+                                        color = if (isCatSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF1E293B))
                                     )
                                 }
                             }
@@ -543,7 +540,7 @@ fun NotesHomeScreen(
                                 text = "Select Subject:",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp,
-                                color = Color(0xFF64748B)
+                                color = if (isDark) TextSecondary else Color(0xFF64748B)
                             )
                             Row(
                                 modifier = Modifier
@@ -556,7 +553,7 @@ fun NotesHomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(
-                                                color = if (isSubSelected) CyanAccent else Color(0xFFF1F5F9),
+                                                color = if (isSubSelected) AmberGold else (if (isDark) SurfacePanel else Color(0xFFF1F5F9)),
                                                 shape = RoundedCornerShape(10.dp)
                                             )
                                             .clickable { selectedSubjectId = subId }
@@ -566,7 +563,7 @@ fun NotesHomeScreen(
                                             text = subName,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSubSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSubSelected) Color(0xFF0F172A) else Color(0xFF334155)
+                                            color = if (isSubSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF1E293B))
                                         )
                                     }
                                 }
@@ -612,7 +609,7 @@ fun NotesHomeScreen(
                                 showCreateDialog = false
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                        colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
                     ) {
                         Text("Save Note")
                     }

@@ -16,11 +16,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import com.siamts.synapse.ui.theme.CyanGlow
-import com.siamts.synapse.ui.theme.PurpleGlow
+import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.SunsetOrange
 
 /**
- * Custom Canvas composable that renders a glowing futuristic AI brain with neural network pathways and pulsing synapse nodes.
+ * Custom Canvas composable that renders a glowing futuristic AI brain with neural network pathways and pulsing synapse nodes in Sunset Orange & Amber Gold.
  */
 @Composable
 fun BrainGraphic(
@@ -48,8 +48,8 @@ fun BrainGraphic(
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    CyanGlow.copy(alpha = 0.25f * pulseAnim),
-                    PurpleGlow.copy(alpha = 0.15f * pulseAnim),
+                    SunsetOrange.copy(alpha = 0.3f * pulseAnim),
+                    AmberGold.copy(alpha = 0.18f * pulseAnim),
                     Color.Transparent
                 ),
                 center = Offset(centerX, centerY),
@@ -103,12 +103,12 @@ fun BrainGraphic(
         // Draw Lobe Outlines
         drawPath(
             path = leftBrain,
-            color = CyanGlow.copy(alpha = 0.5f),
+            color = SunsetOrange.copy(alpha = 0.6f),
             style = Stroke(width = 3f)
         )
         drawPath(
             path = rightBrain,
-            color = PurpleGlow.copy(alpha = 0.5f),
+            color = AmberGold.copy(alpha = 0.6f),
             style = Stroke(width = 3f)
         )
 
@@ -143,7 +143,7 @@ fun BrainGraphic(
                 if (dist < scale * 0.75f) {
                     val alpha = (1f - dist / (scale * 0.75f)) * 0.6f * pulseAnim
                     drawLine(
-                        color = if (i % 2 == 0) CyanGlow.copy(alpha = alpha) else PurpleGlow.copy(alpha = alpha),
+                        color = if (i % 2 == 0) SunsetOrange.copy(alpha = alpha) else AmberGold.copy(alpha = alpha),
                         start = nodes[i],
                         end = nodes[j],
                         strokeWidth = 2f
@@ -154,7 +154,7 @@ fun BrainGraphic(
 
         // Draw Synapse Glowing Node Circles
         nodes.forEachIndexed { index, node ->
-            val color = if (index % 2 == 0) CyanGlow else PurpleGlow
+            val color = if (index % 2 == 0) SunsetOrange else AmberGold
             val nodeRadius = if (index % 3 == 0) 6f else 4f
 
             // Outer Glow
