@@ -618,4 +618,47 @@ class LocalAIEngineTest {
         assertTrue("Should explain AI cognition and hierarchy", aiOverview.paragraph1.contains("Artificial Intelligence") && aiOverview.paragraph2.contains("Machine Learning"))
         assertEquals("AI & Modern Tech Concepts", aiOverview.matchedSubject)
     }
+
+    @Test
+    fun testUserAskingOwnName_sayMyNameAndWhatIsMyName() {
+        engine.preferredName = "Kishore"
+
+        val sayName = engine.generateResponse("say my name")
+        assertFalse("Must never dump OOP/dunder concepts", sayName.paragraph1.contains("OOP") || sayName.paragraph1.contains("Classes"))
+        assertTrue("Must tell user their name", sayName.paragraph1.contains("Your name is **Kishore**!"))
+
+        val whatIsName = engine.generateResponse("what is my name")
+        assertFalse("Must never return AI identity for user's name", whatIsName.paragraph1.contains("I am SYNAPSE AI"))
+        assertTrue("Must tell user their name", whatIsName.paragraph1.contains("Your name is **Kishore**!"))
+
+        val whoAmI = engine.generateResponse("who am i")
+        assertTrue("Must answer who user is", whoAmI.paragraph1.contains("Kishore"))
+
+        val tanglish = engine.generateResponse("enoda name solu")
+        assertTrue("Must answer in Tanglish name", tanglish.paragraph1.contains("Kishore"))
+    }
+
+    @Test
+    fun testUserAskingOwnName_whenNoNameKnown() {
+        engine.resetContext()
+
+        val sayName = engine.generateResponse("say my name")
+        assertTrue("Should prompt for name", sayName.paragraph1.contains("I don't know your name yet"))
+
+        val whatIsName = engine.generateResponse("what is my name")
+        assertTrue("Should prompt for name", whatIsName.paragraph1.contains("I don't know your name yet"))
+    }
+
+    @Test
+    fun testUserNameCapture_andFollowUpAskingName() {
+        engine.resetContext()
+
+        val captureResp = engine.generateResponse("my name is Kishore")
+        assertTrue(captureResp.isNameCapture)
+        assertEquals("Kishore", engine.preferredName)
+        assertTrue(captureResp.paragraph1.contains("Got it, Kishore!"))
+
+        val followUp = engine.generateResponse("what is my name")
+        assertTrue(followUp.paragraph1.contains("Your name is **Kishore**!"))
+    }
 }

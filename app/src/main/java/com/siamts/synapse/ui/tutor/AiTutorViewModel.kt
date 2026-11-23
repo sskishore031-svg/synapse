@@ -90,16 +90,17 @@ class AiTutorViewModel(
             val email = user?.email ?: "student@synapse.ai"
 
             // Sync user preferences with localAiEngine
-            // CRITICAL: NEVER inject user?.name from SessionManager into localAiEngine.preferredName!
-            // Strictly opt-in custom name only when explicitly requested by user in chat.
+            val accountName = user?.name?.trim().orEmpty()
             val savedPrefName = userPreferencesRepository?.getChatPreferredName().orEmpty()
-            localAiEngine.preferredName = savedPrefName
+            val activeName = savedPrefName.ifBlank { accountName }
+            localAiEngine.accountUserName = accountName
+            localAiEngine.preferredName = activeName
             localAiEngine.includeFormulas = userPreferencesRepository?.getIncludeFormulas() ?: true
             localAiEngine.includeExamples = userPreferencesRepository?.getIncludeExamples() ?: true
             localAiEngine.useEmojis = userPreferencesRepository?.getUseEmojis() ?: false
 
-            val headerTag = if (savedPrefName.isNotBlank()) {
-                "PERSONALIZED FOR ${savedPrefName.uppercase()}"
+            val headerTag = if (activeName.isNotBlank()) {
+                "PERSONALIZED FOR ${activeName.uppercase()}"
             } else {
                 "SYNAPSE AI NEURAL CORE"
             }
@@ -384,6 +385,7 @@ class AiTutorViewModel(
         }
 
         // --- Deterministic Command Handlers (0ms lag, pre-LLM execution) ---
+        if (handleUserNameQuery(query)) return
         if (handleNavigationCommand(query)) return
         if (handleAlarmCommand(query)) return
         if (handleChapterNoteSaving(query)) return
@@ -1431,6 +1433,107 @@ class AiTutorViewModel(
         persistCurrentSession(newMessages)
     }
 
+    private fun handleUserNameQuery(query: String): Boolean {
+        val lower = query.lowercase(Locale.ROOT).trim()
+        val normalized = lower.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+
+        // 1. Check if user is asking for their own name: "say my name", "what is my name", etc.
+        if (localAiEngine.isUserAskingOwnName(lower, normalized)) {
+            val user = sessionManager?.getSessionUser()
+            val activeName = localAiEngine.getEffectiveUserName().ifBlank { user?.name?.trim().orEmpty() }
+            val replyText = if (activeName.isNotBlank()) {
+                "Your name is **$activeName**! 😊 How can I help you with your placement preparation today, $activeName?"
+            } else {
+                "I don't know your name yet! What should I call you? You can tell me *'My name is Kishore'* or *'Call me Kishore'*."
+            }
+
+            val userMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "You",
+                text = query,
+                timeAgo = "Just now",
+                isUser = true
+            )
+            val aiMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = "SYNAPSE AI",
+                text = replyText,
+                timeAgo = "Just now",
+                isUser = false,
+                actionCommand = "USER_NAME_REPLY"
+            )
+            val newMessages = _uiState.value.messages + userMsg + aiMsg
+            _uiState.update {
+                it.copy(
+                    messages = newMessages,
+                    userQuestion = query,
+                    aiAnswerParagraph1 = replyText,
+                    aiAnswerParagraph2 = "",
+                    aiThoughtStatus = if (activeName.isNotBlank()) "✨ User Name: $activeName" else "✨ Awaiting Name",
+                    isGenerating = false
+                )
+            }
+            chatStorage?.saveMessages(currentUserId, newMessages)
+            persistCurrentSession(newMessages)
+            return true
+        }
+
+        // 2. Check if user is directly introducing / setting their name: "my name is Kishore", "call me Kishore", "i am Kishore"
+        val callMeMatch = Regex(
+            """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
+            RegexOption.IGNORE_CASE
+        ).find(query.trim())
+        if (callMeMatch != null) {
+            val candidate = callMeMatch.groupValues[1].trim()
+            val stopWords = setOf("by", "my", "name", "a", "an", "the", "asking", "studying", "learning", "ready", "ok", "okay", "fine", "what", "who", "say")
+            if (!stopWords.contains(candidate.lowercase(Locale.ROOT)) && candidate.length >= 2) {
+                val newName = candidate.split(" ")
+                    .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } }
+
+                localAiEngine.preferredName = newName
+                localAiEngine.isWaitingForName = false
+                scope.launch(Dispatchers.IO) {
+                    userPreferencesRepository?.setChatPreferredName(newName)
+                    userPreferencesRepository?.setPreferredName(newName)
+                }
+                _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${newName.uppercase()}") }
+
+                val userMsg = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    senderName = "You",
+                    text = query,
+                    timeAgo = "Just now",
+                    isUser = true
+                )
+                val replyText = "Got it, **$newName**! From now on, I will call you $newName. 😊 What placement topic shall we dive into today?"
+                val aiMsg = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    senderName = "SYNAPSE AI",
+                    text = replyText,
+                    timeAgo = "Just now",
+                    isUser = false,
+                    actionCommand = "NAME_CAPTURED"
+                )
+                val newMessages = _uiState.value.messages + userMsg + aiMsg
+                _uiState.update {
+                    it.copy(
+                        messages = newMessages,
+                        userQuestion = query,
+                        aiAnswerParagraph1 = replyText,
+                        aiAnswerParagraph2 = "",
+                        aiThoughtStatus = "✨ Saved Name: $newName",
+                        isGenerating = false
+                    )
+                }
+                chatStorage?.saveMessages(currentUserId, newMessages)
+                persistCurrentSession(newMessages)
+                return true
+            }
+        }
+
+        return false
+    }
+
     private fun handleNavigationCommand(query: String): Boolean {
         val lower = query.lowercase(Locale.ROOT).trim()
         val cleanLower = lower.replace(Regex("[^a-z0-9 ]"), " ").trim()
@@ -1438,6 +1541,7 @@ class AiTutorViewModel(
         val action: AiUiAction
         val replyText: String
         val thoughtStatus: String
+        val actionCmd: String
 
         when {
             cleanLower in listOf("home", "home screen", "open home", "open home screen", "go to home", "go to home screen", "navigate to home", "take me to home") ||
@@ -1445,36 +1549,42 @@ class AiTutorViewModel(
                 action = AiUiAction.NavigateToHome
                 replyText = "🏠 Opening your **Home** screen now."
                 thoughtStatus = "🏠 Navigating to Home Screen"
+                actionCmd = "NAVIGATE_HOME"
             }
             cleanLower in listOf("learn", "learn screen", "open learn", "open learn screen", "go to learn", "go to learn screen", "tracks", "track catalog", "open track", "open tracks") ||
             ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("show")) && (cleanLower.contains("learn") || cleanLower.contains("tracks") || cleanLower.contains("catalog"))) -> {
                 action = AiUiAction.NavigateToLearn
                 replyText = "📖 Opening your **Learn** tracks catalog now."
                 thoughtStatus = "📖 Navigating to Learn Screen"
+                actionCmd = "NAVIGATE_LEARN"
             }
             cleanLower in listOf("quiz", "quiz screen", "quiz hub", "open quiz", "open quiz screen", "open quiz hub", "go to quiz", "go to quiz hub") ||
             ((cleanLower.contains("open") || cleanLower.contains("go to")) && (cleanLower.contains("quiz hub") || cleanLower.contains("quiz screen") || (cleanLower.contains("quiz") && !cleanLower.contains("start") && !cleanLower.contains("take") && !cleanLower.contains("test") && !cleanLower.contains("practice")))) -> {
                 action = AiUiAction.NavigateToQuiz(null, null)
                 replyText = "❓ Opening the **Quiz Hub** now."
                 thoughtStatus = "❓ Navigating to Quiz Hub"
+                actionCmd = "NAVIGATE_QUIZ"
             }
-            cleanLower in listOf("notes", "notes screen", "saved notes", "open notes", "open notes screen", "go to notes", "go to notes screen", "view notes", "show notes") ||
+            cleanLower in listOf("notes", "notes screen", "saved notes", "open notes", "open notes screen", "go to notes", "go to notes screen", "view notes", "show notes", "show my notes") ||
             ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view") || cleanLower.contains("show")) && cleanLower.contains("notes") && !isNoteSavingQuery(query)) -> {
                 action = AiUiAction.NavigateToNotes
-                replyText = "📝 Opening your **Saved Notes** organizer now."
-                thoughtStatus = "📝 Navigating to Notes"
+                replyText = "📝 Opening your Saved Study Notes now."
+                thoughtStatus = "📝 Opening Notes"
+                actionCmd = "NAVIGATE_NOTES"
             }
             cleanLower in listOf("profile", "profile screen", "my profile", "open profile", "open profile screen", "go to profile", "view profile", "profile and settings") ||
             ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view")) && cleanLower.contains("profile")) -> {
                 action = AiUiAction.NavigateToProfile
                 replyText = "👤 Opening your **Profile & Settings** now."
                 thoughtStatus = "👤 Navigating to Profile"
+                actionCmd = "NAVIGATE_PROFILE"
             }
             cleanLower in listOf("analytics", "progress", "analytics screen", "progress screen", "open analytics", "open progress", "go to analytics", "go to progress", "view analytics", "progress and analytics") ||
             ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view") || cleanLower.contains("show")) && (cleanLower.contains("analytics") || cleanLower.contains("progress"))) -> {
                 action = AiUiAction.NavigateToProgress
                 replyText = "📊 Opening your **Progress & Analytics** dashboard now."
                 thoughtStatus = "📊 Navigating to Analytics"
+                actionCmd = "SHOW_PROGRESS"
             }
             else -> return false
         }
@@ -1492,7 +1602,7 @@ class AiTutorViewModel(
             text = replyText,
             timeAgo = "Just now",
             isUser = false,
-            actionCommand = "NAVIGATE"
+            actionCommand = actionCmd
         )
         val newMessages = _uiState.value.messages + userMsg + actionMsg
         _uiState.update {
