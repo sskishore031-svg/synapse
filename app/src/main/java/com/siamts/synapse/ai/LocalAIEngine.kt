@@ -568,17 +568,17 @@ class LocalAIEngine private constructor(context: Context?) {
         val normalized = normalizeQuery(query)
         val lowerQuery = query.lowercase(Locale.ROOT)
 
-        // 1. STAGE 1: Name-Setting & Nickname Memory ("call me Kishore", "enoda name solu kupdu")
+        // 1. STAGE 1: User Asking for Their Own Name ("say my name", "what is my name", "who am i", "enoda name solu")
+        if (isUserAskingOwnName(lowerQuery, normalized)) {
+            consecutiveUnclearCount = 0
+            return buildUserNameResponse()
+        }
+
+        // 1.5. STAGE 1.5: Name-Setting & Nickname Memory ("call me Kishore", "call me by my name")
         val nameSettingResp = checkNameSettingIntent(query, lowerQuery, normalized)
         if (nameSettingResp != null) {
             consecutiveUnclearCount = 0
             return nameSettingResp
-        }
-
-        // 1.5. STAGE 1.5: User Asking for Their Own Name ("say my name", "what is my name", "who am i")
-        if (isUserAskingOwnName(lowerQuery, normalized)) {
-            consecutiveUnclearCount = 0
-            return buildUserNameResponse()
         }
 
         // 2. STAGE 2: Formatting & Style Preferences ("no formula", "no example", "no emoji", "no need of formula and example")
@@ -1242,6 +1242,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun checkNameSettingIntent(rawQuery: String, lowerQuery: String, normalized: String): LocalAiResponse? {
         val trimmedRaw = rawQuery.trim()
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
 
         // 1. If currently waiting for user to provide their name (e.g. following "call me by my name")
         if (isWaitingForName) {
@@ -1263,14 +1264,31 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // 2. Direct name instruction first: "call me Kishore", "from now on call me Kishore", "call me by my name Kishore", "my name is Kishore", "hi my name is Kishore"
+        // 2. Command: User asks AI to call them by name without providing the name yet
+        val promptNameRequests = setOf(
+            "call me by my name", "call me by name", "call me with my name", "call me my name", "call me",
+            "enoda name solu kupdu", "enoda name solli kupdu", "ennoda name solu kupdu", "ennoda name solli koopdu",
+            "en peyar solli koopdu", "en peru solli kupdu"
+        )
+        if (clean in promptNameRequests || clean == "call me") {
+            isWaitingForName = true
+            consecutiveUnclearCount = 0
+            return LocalAiResponse(
+                paragraph1 = "Sure! What name would you like me to call you?",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true
+            )
+        }
+
+        // 3. Direct name instruction first: "call me Kishore", "from now on call me Kishore", "call me by my name Kishore", "my name is Kishore", "hi my name is Kishore"
         val callMeMatch = Regex(
             """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
             RegexOption.IGNORE_CASE
         ).find(trimmedRaw)
         if (callMeMatch != null) {
             val candidate = callMeMatch.groupValues[1].trim()
-            val stopWords = setOf("by", "my", "name", "a", "an", "the", "asking", "studying", "learning", "ready", "ok", "okay", "fine", "what", "who", "say")
+            val stopWords = setOf("by", "my", "name", "a", "an", "the", "asking", "studying", "learning", "ready", "ok", "okay", "fine", "what", "who", "say", "me")
             if (!stopWords.contains(candidate.lowercase(Locale.ROOT))) {
                 val name = candidate.split(" ")
                     .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } }
@@ -1290,59 +1308,48 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
-
-        // 3. Command: User asks AI to call them by name without providing the name yet
-        val promptNameRequests = setOf(
-            "call me by my name", "call me by name", "call me with my name", "call me my name", "call me",
-            "enoda name solu kupdu", "enoda name solli kupdu", "ennoda name solu kupdu", "ennoda name solli koopdu",
-            "en peyar solli koopdu", "en peru solli kupdu"
-        )
-        if (clean in promptNameRequests || clean == "call me") {
-            isWaitingForName = true
-            return LocalAiResponse(
-                paragraph1 = "Sure! What name would you like me to call you?",
-                paragraph2 = "",
-                confidenceScore = 100.0,
-                isGreeting = true
-            )
-        }
-
-        // Tanglish: "enoda name Kishore", "ennoda name Kishore", "en per Kishore", "en peyar Kishore"
+        // 4. Tanglish: "enoda name Kishore", "ennoda name Kishore", "en per Kishore", "en peyar Kishore"
+        val tanglishStopWords = setOf("solu", "sollu", "solunga", "solungalen", "enna", "theriyuma", "kupdu", "koopdu", "nu", "endru")
         val tanglishNameMatch = Regex("^(?:enoda|ennoda|en)\\s+(?:name|per|peyar)(?:\\s+is)?\\s+([a-zA-Z]+)", RegexOption.IGNORE_CASE).find(trimmedRaw)
         if (tanglishNameMatch != null) {
-            val name = tanglishNameMatch.groupValues[1].replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
-            if (name.isNotBlank() && name.length >= 2) {
-                preferredName = name
-                isWaitingForName = false
-                consecutiveUnclearCount = 0
-                return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
-                    paragraph2 = "",
-                    confidenceScore = 100.0,
-                    isGreeting = true,
-                    isNameCapture = true,
-                    capturedName = preferredName
-                )
+            val candidate = tanglishNameMatch.groupValues[1].trim()
+            if (!tanglishStopWords.contains(candidate.lowercase(Locale.ROOT))) {
+                val name = candidate.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                if (name.isNotBlank() && name.length >= 2) {
+                    preferredName = name
+                    isWaitingForName = false
+                    consecutiveUnclearCount = 0
+                    return LocalAiResponse(
+                        paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
+                        paragraph2 = "",
+                        confidenceScore = 100.0,
+                        isGreeting = true,
+                        isNameCapture = true,
+                        capturedName = preferredName
+                    )
+                }
             }
         }
 
-        // Tanglish: "enakku Kishore nu kupdu", "enna Kishore nu kupdu", "inimel enna Kishore nu kupdu", "inimel Kishore nu kupdu"
+        // 5. Tanglish: "enakku Kishore nu kupdu", "enna Kishore nu kupdu", "inimel enna Kishore nu kupdu", "inimel Kishore nu kupdu"
         val tanglishKupduMatch = Regex("(?:enakku|enna|inimel\\s+enna|inimel)?\\s*([a-zA-Z]+)\\s*(?:nu|endru)\\s*(?:kupdu|koopdu|kollu)", RegexOption.IGNORE_CASE).find(trimmedRaw)
         if (tanglishKupduMatch != null) {
-            val name = tanglishKupduMatch.groupValues[1].replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
-            if (name.isNotBlank() && !setOf("enna", "enakku", "inimel", "name").contains(name.lowercase(Locale.ROOT))) {
-                preferredName = name
-                isWaitingForName = false
-                consecutiveUnclearCount = 0
-                return LocalAiResponse(
-                    paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
-                    paragraph2 = "",
-                    confidenceScore = 100.0,
-                    isGreeting = true,
-                    isNameCapture = true,
-                    capturedName = preferredName
-                )
+            val candidate = tanglishKupduMatch.groupValues[1].trim()
+            if (!tanglishStopWords.contains(candidate.lowercase(Locale.ROOT)) && !setOf("enna", "enakku", "inimel", "name").contains(candidate.lowercase(Locale.ROOT))) {
+                val name = candidate.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                if (name.isNotBlank() && name.length >= 2) {
+                    preferredName = name
+                    isWaitingForName = false
+                    consecutiveUnclearCount = 0
+                    return LocalAiResponse(
+                        paragraph1 = "Got it, $preferredName! From now on, I will call you $preferredName.",
+                        paragraph2 = "",
+                        confidenceScore = 100.0,
+                        isGreeting = true,
+                        isNameCapture = true,
+                        capturedName = preferredName
+                    )
+                }
             }
         }
 
@@ -1355,14 +1362,20 @@ class LocalAIEngine private constructor(context: Context?) {
         val clean = q.replace(Regex("[^a-zA-Z0-9\\s]"), " ").replace(Regex("\\s+"), " ").trim()
         val words = clean.split(" ").filter { it.isNotBlank() }
 
-        // 1. Direct English exact matches
+        // Never treat queries asking for the AI's identity or third party as asking for user's own name
+        if (words.contains("your") || words.contains("ur") || words.contains("synapse")) {
+            return false
+        }
+
+        // 1. Direct English & Tanglish exact matches
         val exactMatches = setOf(
             "say my name", "what is my name", "whats my name", "what s my name",
             "tell my name", "tell me my name", "speak my name", "call my name",
             "who am i", "who i am", "do you know my name", "do u know my name",
             "can you say my name", "can u say my name", "can you tell my name", "can u tell my name",
             "my name", "what is my name please", "say my name please", "tell my name please",
-            "my name please", "repeat my name", "know my name"
+            "my name please", "repeat my name", "know my name",
+            "enoda name", "ennoda name", "en peru", "en peyar"
         )
         if (clean in exactMatches || norm in exactMatches) return true
 
@@ -1375,25 +1388,24 @@ class LocalAIEngine private constructor(context: Context?) {
         )
         if (phraseMatches.any { clean.contains(it) || norm.contains(it) }) return true
 
-        // 3. Word-level detection: has ('my' or 'me' or 'i') AND 'name' AND ('say' or 'tell' or 'what' or 'whats' or 'know' or 'speak' or 'call')
-        val hasMyRef = words.contains("my") || words.contains("me") || words.contains("i")
+        // 3. Word-level detection: has ('my' or 'me' or 'i') AND 'name' AND ('say' or 'tell' or 'what' or 'whats' or 'know' or 'speak')
+        val hasMyRef = words.contains("my") || (words.contains("me") && !words.contains("call")) || words.contains("i")
         val hasName = words.contains("name")
         val hasVerb = words.contains("say") || words.contains("tell") || words.contains("what") ||
                 words.contains("whats") || words.contains("know") || words.contains("speak") ||
-                words.contains("call") || words.contains("repeat")
+                words.contains("repeat")
         if (hasMyRef && hasName && hasVerb) {
             val isSetting = clean.startsWith("my name is") || clean.startsWith("call me") || clean.startsWith("i am") || clean.startsWith("i m")
             if (!isSetting) return true
         }
 
-        // 4. Tanglish phrases
+        // 4. Tanglish phrases (strictly asking, never conflicting with name introduction)
         val tanglishPhrases = listOf(
             "enoda name solu", "enoda name sollu", "ennoda name solu", "ennoda name sollu",
             "enoda name enna", "ennoda name enna", "en per enna", "en peru enna", "en peyar enna",
             "en per solu", "en peru solu", "en peyar solu", "en per sollu", "en peru sollu",
             "enoda name theriyuma", "en name theriyuma", "ennoda name theriyuma",
-            "naan yaaru", "naan yaar", "nan yaru", "na yaaru", "na yaar", "my name enna",
-            "enoda name", "ennoda name", "en peru", "en peyar"
+            "naan yaaru", "naan yaar", "nan yaru", "na yaaru", "na yaar", "my name enna"
         )
         if (tanglishPhrases.any { clean.contains(it) || norm.contains(it) }) return true
 

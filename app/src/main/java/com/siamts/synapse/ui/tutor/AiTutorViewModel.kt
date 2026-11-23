@@ -72,6 +72,9 @@ class AiTutorViewModel(
         private set
     var lastTrack: String = "Python & Coding Logic"
         private set
+    @Volatile
+    private var cachedAccountName: String = ""
+
     var lastResponseText: String = ""
         private set
 
@@ -91,6 +94,7 @@ class AiTutorViewModel(
 
             // Sync user preferences with localAiEngine
             val accountName = user?.name?.trim().orEmpty()
+            cachedAccountName = accountName
             val savedPrefName = userPreferencesRepository?.getChatPreferredName().orEmpty()
             val activeName = savedPrefName.ifBlank { accountName }
             localAiEngine.accountUserName = accountName
@@ -1439,8 +1443,7 @@ class AiTutorViewModel(
 
         // 1. Check if user is asking for their own name: "say my name", "what is my name", etc.
         if (localAiEngine.isUserAskingOwnName(lower, normalized)) {
-            val user = sessionManager?.getSessionUser()
-            val activeName = localAiEngine.getEffectiveUserName().ifBlank { user?.name?.trim().orEmpty() }
+            val activeName = localAiEngine.getEffectiveUserName().ifBlank { cachedAccountName }
             val replyText = if (activeName.isNotBlank()) {
                 "Your name is **$activeName**! 😊 How can I help you with your placement preparation today, $activeName?"
             } else {
