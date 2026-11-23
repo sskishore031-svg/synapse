@@ -1,6 +1,5 @@
 package com.siamts.synapse.ui.tutor
 
-import com.siamts.synapse.data.local.ChatSessionEntity
 import java.util.UUID
 
 /**
@@ -58,6 +57,8 @@ data class InChatQuizSession(
  * Sealed UI actions dispatched by the Agentic Task Execution Engine.
  */
 sealed class AiUiAction {
+    data object NavigateToHome : AiUiAction()
+    data object NavigateToLearn : AiUiAction()
     data class NavigateToQuiz(val subjectId: String? = null, val subjectName: String? = null) : AiUiAction()
     data class NavigateToSubject(val subjectId: String, val subjectName: String? = null) : AiUiAction()
     data object NavigateToNotes : AiUiAction()
@@ -82,13 +83,6 @@ data class AiTutorUiState(
     val isGenerating: Boolean = false,
     val currentlySpeakingMessageId: String? = null,
     val activeQuizSession: InChatQuizSession? = null,
-    val isHistorySheetVisible: Boolean = false,
-    val chatSessions: List<ChatSessionEntity> = emptyList(),
-    val currentSessionId: String = "",
-    val isHoldRecording: Boolean = false,
-    val isRecordingLocked: Boolean = false,
-    val recordingDurationSeconds: Int = 0,
-    val recordedSpokenText: String = "",
     // Retained for backward compatibility
     val userQuestion: String = "",
     val aiAnswerParagraph1: String = "",

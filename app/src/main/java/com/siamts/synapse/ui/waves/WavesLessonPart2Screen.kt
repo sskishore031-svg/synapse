@@ -296,21 +296,7 @@ fun WavesLessonPart2Content(
                             }
                         }
 
-                        // 8. AI Recommendation Box
-                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
-                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "✨ ", fontSize = 12.sp)
-                                        Text(text = "AI RECOMMENDED NEXT", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = uiState.aiRecommendation, color = TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
-                                }
-                            }
-                        }
-
-                        // 9. Navigation Buttons Box
+                        // 8. Navigation Buttons Box
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 4.dp) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Box(
@@ -340,6 +326,20 @@ fun WavesLessonPart2Content(
                                     ) {
                                         Text(text = "Next Lesson →", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                     }
+                                }
+                            }
+                        }
+
+                        // 9. AI Recommendation Box
+                        DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 2.dp) {
+                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A))) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "✨ ", fontSize = 12.sp)
+                                        Text(text = "AI RECOMMENDED NEXT", color = CyanGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = uiState.aiRecommendation, color = TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
                                 }
                             }
                         }

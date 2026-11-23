@@ -3,6 +3,7 @@ package com.siamts.synapse.ui.tutor
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.siamts.synapse.SynapseApplication
 import com.siamts.synapse.ai.LocalAIEngine
 import com.siamts.synapse.ai.LocalAiStreamToken
 import com.siamts.synapse.ai.SlmInferenceEngine
@@ -10,7 +11,9 @@ import com.siamts.synapse.ai.VoiceAssistantManager
 import com.siamts.synapse.data.local.AiChatStorage
 import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.ChatSessionEntity
+import com.siamts.synapse.data.local.LearningTaskEntity
 import com.siamts.synapse.data.local.MistakeQuestionEntity
+import com.siamts.synapse.data.local.NoteEntity
 import com.siamts.synapse.data.local.QuizRecordEntity
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.local.SynapseDatabase
@@ -19,7 +22,9 @@ import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
 import com.siamts.synapse.data.repository.NotesRepositoryImpl
+import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import com.siamts.synapse.data.repository.UserPreferencesRepository
+import com.siamts.synapse.notification.StudyReminderScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -378,6 +383,11 @@ class AiTutorViewModel(
             }
         }
 
+        // --- Deterministic Command Handlers (0ms lag, pre-LLM execution) ---
+        if (handleNavigationCommand(query)) return
+        if (handleAlarmCommand(query)) return
+        if (handleChapterNoteSaving(query)) return
+
         // --- Board Exam Format Shortcuts (2M and 5M) ---
         if (isTwoMarkQuery(lowerQ)) {
             val extracted = extractTopicFromExamQuery(query)
@@ -478,6 +488,20 @@ class AiTutorViewModel(
                 val user = sessionManager?.getSessionUser()
                 val uid = user?.id ?: currentUserId
                 val email = user?.email ?: "student@synapse.ai"
+                try {
+                    SynapseDatabase.getNotesDao().insertNote(
+                        NoteEntity(
+                            userId = uid,
+                            subjectId = "101",
+                            title = noteTitle,
+                            content = noteContent,
+                            category = "SAVED",
+                            trackName = lastAi?.matchedSubject ?: "Python & Coding Logic",
+                            isBookmarked = true,
+                            isOfflineCached = true
+                        )
+                    )
+                } catch (_: Throwable) {}
                 notesRepository.saveNote(
                     title = noteTitle,
                     content = noteContent,
@@ -959,6 +983,21 @@ class AiTutorViewModel(
             val user = sessionManager?.getSessionUser()
             val uid = user?.id ?: currentUserId
             val email = user?.email ?: "student@synapse.ai"
+            try {
+                val subName = message.matchedSubject ?: "Python & Coding Logic"
+                SynapseDatabase.getNotesDao().insertNote(
+                    NoteEntity(
+                        userId = uid,
+                        subjectId = "101",
+                        title = title,
+                        content = content,
+                        category = "SAVED",
+                        trackName = subName,
+                        isBookmarked = true,
+                        isOfflineCached = true
+                    )
+                )
+            } catch (_: Throwable) {}
             notesRepository.saveNote(
                 title = title,
                 content = content,
@@ -1390,6 +1429,350 @@ class AiTutorViewModel(
         val newMessages = updatedMessages + confirmMsg
         _uiState.update { it.copy(messages = newMessages) }
         persistCurrentSession(newMessages)
+    }
+
+    private fun handleNavigationCommand(query: String): Boolean {
+        val lower = query.lowercase(Locale.ROOT).trim()
+        val cleanLower = lower.replace(Regex("[^a-z0-9 ]"), " ").trim()
+
+        val action: AiUiAction
+        val replyText: String
+        val thoughtStatus: String
+
+        when {
+            cleanLower in listOf("home", "home screen", "open home", "open home screen", "go to home", "go to home screen", "navigate to home", "take me to home") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("show")) && cleanLower.contains("home")) -> {
+                action = AiUiAction.NavigateToHome
+                replyText = "🏠 Opening your **Home** screen now."
+                thoughtStatus = "🏠 Navigating to Home Screen"
+            }
+            cleanLower in listOf("learn", "learn screen", "open learn", "open learn screen", "go to learn", "go to learn screen", "tracks", "track catalog", "open track", "open tracks") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("show")) && (cleanLower.contains("learn") || cleanLower.contains("tracks") || cleanLower.contains("catalog"))) -> {
+                action = AiUiAction.NavigateToLearn
+                replyText = "📖 Opening your **Learn** tracks catalog now."
+                thoughtStatus = "📖 Navigating to Learn Screen"
+            }
+            cleanLower in listOf("quiz", "quiz screen", "quiz hub", "open quiz", "open quiz screen", "open quiz hub", "go to quiz", "go to quiz hub") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to")) && (cleanLower.contains("quiz hub") || cleanLower.contains("quiz screen") || (cleanLower.contains("quiz") && !cleanLower.contains("start") && !cleanLower.contains("take") && !cleanLower.contains("test") && !cleanLower.contains("practice")))) -> {
+                action = AiUiAction.NavigateToQuiz(null, null)
+                replyText = "❓ Opening the **Quiz Hub** now."
+                thoughtStatus = "❓ Navigating to Quiz Hub"
+            }
+            cleanLower in listOf("notes", "notes screen", "saved notes", "open notes", "open notes screen", "go to notes", "go to notes screen", "view notes", "show notes") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view") || cleanLower.contains("show")) && cleanLower.contains("notes") && !isNoteSavingQuery(query)) -> {
+                action = AiUiAction.NavigateToNotes
+                replyText = "📝 Opening your **Saved Notes** organizer now."
+                thoughtStatus = "📝 Navigating to Notes"
+            }
+            cleanLower in listOf("profile", "profile screen", "my profile", "open profile", "open profile screen", "go to profile", "view profile", "profile and settings") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view")) && cleanLower.contains("profile")) -> {
+                action = AiUiAction.NavigateToProfile
+                replyText = "👤 Opening your **Profile & Settings** now."
+                thoughtStatus = "👤 Navigating to Profile"
+            }
+            cleanLower in listOf("analytics", "progress", "analytics screen", "progress screen", "open analytics", "open progress", "go to analytics", "go to progress", "view analytics", "progress and analytics") ||
+            ((cleanLower.contains("open") || cleanLower.contains("go to") || cleanLower.contains("view") || cleanLower.contains("show")) && (cleanLower.contains("analytics") || cleanLower.contains("progress"))) -> {
+                action = AiUiAction.NavigateToProgress
+                replyText = "📊 Opening your **Progress & Analytics** dashboard now."
+                thoughtStatus = "📊 Navigating to Analytics"
+            }
+            else -> return false
+        }
+
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = query,
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val actionMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = replyText,
+            timeAgo = "Just now",
+            isUser = false,
+            actionCommand = "NAVIGATE"
+        )
+        val newMessages = _uiState.value.messages + userMsg + actionMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = query,
+                isGenerating = false,
+                aiThoughtStatus = thoughtStatus
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
+        scope.launch {
+            _actionEvent.emit(action)
+        }
+        return true
+    }
+
+    private fun handleAlarmCommand(query: String): Boolean {
+        val lower = query.lowercase(Locale.ROOT).trim()
+        val isAlarmIntent = lower.contains("alarm") || lower.contains("remind me") || lower.contains("reminder") ||
+                lower.startsWith("remind ") || lower.contains("set reminder")
+        if (!isAlarmIntent) return false
+
+        var parsedHour: Int? = null
+        var parsedMinute: Int? = null
+
+        val colonOrDotRegex = Regex("""(\d{1,2})[:.](\d{2})\s*(am|pm)?""", RegexOption.IGNORE_CASE)
+        val matchColon = colonOrDotRegex.find(lower)
+        if (matchColon != null) {
+            val h = matchColon.groupValues[1].toIntOrNull()
+            val m = matchColon.groupValues[2].toIntOrNull()
+            val ampm = matchColon.groupValues.getOrNull(3)?.lowercase(Locale.ROOT)
+            if (h != null && m != null) {
+                parsedMinute = m
+                parsedHour = when {
+                    ampm == "pm" && h < 12 -> h + 12
+                    ampm == "am" && h == 12 -> 0
+                    else -> h
+                }
+            }
+        }
+
+        if (parsedHour == null) {
+            val hourOnlyRegex = Regex("""(\d{1,2})\s*(am|pm)""", RegexOption.IGNORE_CASE)
+            val matchHour = hourOnlyRegex.find(lower)
+            if (matchHour != null) {
+                val h = matchHour.groupValues[1].toIntOrNull()
+                val ampm = matchHour.groupValues[2].lowercase(Locale.ROOT)
+                if (h != null) {
+                    parsedMinute = 0
+                    parsedHour = when {
+                        ampm == "pm" && h < 12 -> h + 12
+                        ampm == "am" && h == 12 -> 0
+                        else -> h
+                    }
+                }
+            }
+        }
+
+        val hour = parsedHour ?: 9
+        val minute = parsedMinute ?: 0
+
+        val period = if (hour >= 12) "PM" else "AM"
+        val displayHour = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
+        }
+        val formattedTime = String.format(Locale.ROOT, "%d:%02d %s", displayHour, minute, period)
+
+        val context = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }
+        if (context != null) {
+            try {
+                StudyReminderScheduler.scheduleDailyStudyReminder(context, hour, minute)
+            } catch (_: Throwable) {}
+        }
+
+        scope.launch(Dispatchers.IO) {
+            try {
+                val taskDao = SynapseDatabase.getLearningTaskDao(context)
+                taskDao.insertTask(
+                    LearningTaskEntity(
+                        title = "Study Alarm ($formattedTime)",
+                        category = "Study Alarm",
+                        duration = "15 min",
+                        isCompleted = false
+                    )
+                )
+            } catch (_: Throwable) {}
+        }
+
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = query,
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val replyText = "⏰ Study alarm set for **$formattedTime**! I'll remind you right on time so you can stay consistent with your daily study goals."
+        val aiMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = replyText,
+            timeAgo = "Just now",
+            isUser = false,
+            actionCommand = "SET_ALARM"
+        )
+        val newMessages = _uiState.value.messages + userMsg + aiMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = query,
+                isGenerating = false,
+                aiThoughtStatus = "⏰ Alarm Set for $formattedTime"
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
+        return true
+    }
+
+    private fun handleChapterNoteSaving(query: String): Boolean {
+        val lower = query.lowercase(Locale.ROOT).trim()
+
+        val hasSaveIntent = lower.contains("save") || lower.contains("bookmark") ||
+                lower.contains("add to notes") || lower.contains("save panu") ||
+                (lower.contains("note") && (lower.contains("create") || lower.contains("make") || lower.contains("take")))
+        val hasChapterMention = lower.contains("chapter") || lower.contains("ch ") ||
+                Regex("""\bch\d\b""").containsMatchIn(lower) ||
+                lower.contains("1st") || lower.contains("2nd") || lower.contains("3rd") || lower.contains("4th") || lower.contains("5th") ||
+                lower.contains("first") || lower.contains("second") || lower.contains("third") || lower.contains("fourth") || lower.contains("fifth")
+
+        if (!hasSaveIntent || !hasChapterMention) return false
+
+        val trackNum = when {
+            lower.contains("python") || lower.contains("coding") || lower.contains("logic") || lower.contains("track 1") -> 101
+            lower.contains("sql") || lower.contains("db") || lower.contains("database") || lower.contains("rdbms") || lower.contains("track 2") -> 102
+            lower.contains("ai") || lower.contains("tech") || lower.contains("modern") || lower.contains("track 3") -> 103
+            lower.contains("aptitude") || lower.contains("quant") || lower.contains("interview") || lower.contains("track 4") -> 104
+            else -> {
+                when {
+                    lastTrack.contains("SQL", ignoreCase = true) -> 102
+                    lastTrack.contains("AI", ignoreCase = true) -> 103
+                    lastTrack.contains("Aptitude", ignoreCase = true) -> 104
+                    else -> 101
+                }
+            }
+        }
+
+        val chNum = when {
+            Regex("""(?:chapter|ch\.?)\s*1\b|1st\s+chapter|first\s+chapter|\bch1\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) -> 1
+            Regex("""(?:chapter|ch\.?)\s*2\b|2nd\s+chapter|second\s+chapter|\bch2\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) -> 2
+            Regex("""(?:chapter|ch\.?)\s*3\b|3rd\s+chapter|third\s+chapter|\bch3\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) -> 3
+            Regex("""(?:chapter|ch\.?)\s*4\b|4th\s+chapter|fourth\s+chapter|\bch4\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) -> 4
+            Regex("""(?:chapter|ch\.?)\s*5\b|5th\s+chapter|fifth\s+chapter|\bch5\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) -> 5
+            lower.contains("1st") || lower.contains("first") -> 1
+            lower.contains("2nd") || lower.contains("second") -> 2
+            lower.contains("3rd") || lower.contains("third") -> 3
+            lower.contains("4th") || lower.contains("fourth") -> 4
+            lower.contains("5th") || lower.contains("fifth") -> 5
+            lower.contains("1") -> 1
+            lower.contains("2") -> 2
+            lower.contains("3") -> 3
+            lower.contains("4") -> 4
+            lower.contains("5") -> 5
+            else -> 1
+        }
+
+        val chapterId = (trackNum * 100) + chNum
+        val chapter = BaseCurriculumData.getChapterById(chapterId)
+            ?: SubjectCatalogRepository.getInstanceOrNull()?.getChapterById(chapterId)
+        val subject = BaseCurriculumData.getSubjectById(trackNum.toString())
+            ?: SubjectCatalogRepository.getInstanceOrNull()?.getSubjectByNumericId(trackNum)
+
+        val trackName = subject?.name ?: when (trackNum) {
+            101 -> "Python & Coding Logic"
+            102 -> "SQL & Database Management"
+            103 -> "AI & Modern Tech Concepts"
+            else -> "Aptitude & Interview Prep"
+        }
+        val chapterTitle = chapter?.title ?: "Chapter $chNum Fundamentals"
+        val noteTitle = "Chapter $chNum: $chapterTitle"
+
+        val noteContent = buildString {
+            appendLine("# $trackName - Chapter $chNum: $chapterTitle")
+            appendLine()
+            if (!chapter?.summary.isNullOrBlank()) {
+                appendLine("### Summary")
+                appendLine(chapter?.summary)
+                appendLine()
+            }
+            if (!chapter?.part1Content.isNullOrBlank()) {
+                appendLine("### Part 1: Core Fundamentals")
+                appendLine(chapter?.part1Content)
+                appendLine()
+            }
+            if (!chapter?.part2Content.isNullOrBlank()) {
+                appendLine("### Part 2: Practical Applications & Cheat Sheet")
+                appendLine(chapter?.part2Content)
+                appendLine()
+            }
+            if (!chapter?.syllabus.isNullOrEmpty()) {
+                appendLine("### Key Concepts")
+                chapter?.syllabus?.forEach { appendLine("• $it") }
+                appendLine()
+            }
+            if (!chapter?.coreFormulas.isNullOrEmpty()) {
+                appendLine("### Core Rules / Syntax")
+                chapter?.coreFormulas?.forEach { appendLine("• `$it`") }
+                appendLine()
+            }
+            if (!chapter?.examTip.isNullOrBlank()) {
+                appendLine("### 🎯 Placement Interview Tip")
+                appendLine(chapter?.examTip)
+            }
+        }
+
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = query,
+            timeAgo = "Just now",
+            isUser = true
+        )
+
+        val confirmMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = "📝 Done! I've saved full study notes for **$trackName — Chapter $chNum: $chapterTitle** to your Notes tab under **Subject Notes**.",
+            timeAgo = "Just now",
+            isUser = false,
+            isSavedNoteCard = true,
+            savedNoteTitle = noteTitle
+        )
+
+        val newMessages = _uiState.value.messages + userMsg + confirmMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = query,
+                isGenerating = false,
+                aiThoughtStatus = "✓ Notes Saved ($trackName Ch $chNum)"
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
+
+        scope.launch(Dispatchers.IO) {
+            val user = sessionManager?.getSessionUser()
+            val uid = user?.id ?: currentUserId
+            val email = user?.email ?: "student@synapse.ai"
+            try {
+                SynapseDatabase.getNotesDao().insertNote(
+                    NoteEntity(
+                        userId = uid,
+                        subjectId = trackNum.toString(),
+                        chapterId = chapterId,
+                        title = noteTitle,
+                        content = noteContent,
+                        category = "SUBJECT",
+                        trackName = trackName,
+                        isBookmarked = true,
+                        isOfflineCached = true
+                    )
+                )
+            } catch (_: Throwable) {}
+            try {
+                notesRepository.saveNote(
+                    title = noteTitle,
+                    content = noteContent,
+                    subjectId = trackNum,
+                    category = "SUBJECT",
+                    userId = uid,
+                    email = email
+                )
+            } catch (_: Throwable) {}
+        }
+
+        return true
     }
 
     private fun isSubjectActionQuery(q: String): Boolean {

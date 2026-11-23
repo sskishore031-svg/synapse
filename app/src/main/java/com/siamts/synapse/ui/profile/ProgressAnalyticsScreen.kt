@@ -164,7 +164,6 @@ fun ProgressAnalyticsScreen(
                             .weight(1f)
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
-                            .navigationBarsPadding()
                             .padding(bottom = 28.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {

@@ -1,5 +1,7 @@
 package com.siamts.synapse.data.local
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Entity representing a persistent study note stored in the local SQLite database.
  */
@@ -11,6 +13,9 @@ data class NoteEntity(
     val title: String,
     val content: String,
     val category: String = "COMMON",
+    val trackName: String? = null,
+    val isBookmarked: Boolean = true,
+    val isOfflineCached: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -20,6 +25,7 @@ data class NoteEntity(
 interface NotesDao {
     suspend fun insertNote(note: NoteEntity): Long
     suspend fun getAllNotes(userId: Int): List<NoteEntity>
+    fun observeAllNotes(userId: Int = 1): Flow<List<NoteEntity>>
     suspend fun getNotesBySubject(userId: Int, subjectId: String): List<NoteEntity>
     suspend fun getNoteById(noteId: Long): NoteEntity?
     suspend fun deleteNote(noteId: Long): Int

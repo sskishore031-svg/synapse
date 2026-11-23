@@ -401,7 +401,55 @@ fun RoadmapContent(
                             }
                         }
 
-                        // 3. AI Recommended Next Box
+                        // 3. Action Button Box: Continue Button
+                        DashedBorderBox(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = 4.dp
+                        ) {
+                            Button(
+                                onClick = onContinueClick,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    SunsetOrange,
+                                                    SunsetOrangeEnd,
+                                                    AmberGold,
+                                                )
+                                            ),
+                                            shape = RoundedCornerShape(16.dp),
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "→",
+                                            color = Color.White,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Continue: ${uiState.activeLessonTitle}",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. AI Recommended Next Box
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 2.dp
@@ -433,56 +481,6 @@ fun RoadmapContent(
                                         color = if (isDark) TextSecondary else TextSecondary,
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 4. Action Button Box: Continue Button
-                    DashedBorderBox(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = 4.dp
-                    ) {
-                        Button(
-                            onClick = onContinueClick,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            colors = listOf(
-                                                SunsetOrange,
-                                                SunsetOrangeEnd,
-                                                AmberGold,
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(16.dp),
-                                    ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "→",
-                                        color = Color.White,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Continue: ${uiState.activeLessonTitle}",
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
                                     )
                                 }
                             }

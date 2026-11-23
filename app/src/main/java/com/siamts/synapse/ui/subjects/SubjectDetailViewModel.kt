@@ -9,6 +9,7 @@ import com.siamts.synapse.data.repository.ChaptersRepository
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,10 +34,14 @@ class SubjectDetailViewModel(
 ) : ViewModel() {
 
     private val scope: CoroutineScope = externalScope ?: try {
+        val d = Dispatchers.Main
+        d.isDispatchNeeded(kotlin.coroutines.EmptyCoroutineContext)
         viewModelScope
     } catch (_: Throwable) {
-        CoroutineScope(Dispatchers.IO)
+        CoroutineScope(Dispatchers.Unconfined)
     }
+
+    private var loadJob: kotlinx.coroutines.Job? = null
 
     private val _uiState = MutableStateFlow(SubjectDetailUiState())
     val uiState: StateFlow<SubjectDetailUiState> = _uiState.asStateFlow()
@@ -82,91 +87,114 @@ class SubjectDetailViewModel(
 
     fun loadSubject(subjectId: String) {
         val trimmed = subjectId.trim()
-        _uiState.update { it.copy(isLoading = true, errorMessage = null, subjectId = trimmed) }
+        loadJob?.cancel()
 
-        scope.launch {
-            val repo = catalogRepo ?: try {
-                SubjectCatalogRepository.getInstance()
-            } catch (_: Throwable) {
-                null
+        val repo = catalogRepo ?: try {
+            SubjectCatalogRepository.getInstance()
+        } catch (_: Throwable) {
+            null
+        }
+
+        val subject = repo?.getSubjectById(trimmed)
+            ?: BaseCurriculumData.getSubjectById(trimmed)
+            ?: BaseCurriculumData.subjects.firstOrNull {
+                it.id.equals(trimmed, ignoreCase = true) ||
+                it.name.equals(trimmed, ignoreCase = true) ||
+                it.slug.equals(trimmed, ignoreCase = true) ||
+                it.subjectId.toString() == trimmed
             }
 
-            val subject = repo?.getSubjectById(trimmed)
-                ?: BaseCurriculumData.getSubjectById(trimmed)
-                ?: BaseCurriculumData.subjects.firstOrNull {
-                    it.id.equals(trimmed, ignoreCase = true) ||
-                    it.name.equals(trimmed, ignoreCase = true) ||
-                    it.slug.equals(trimmed, ignoreCase = true) ||
-                    it.subjectId.toString() == trimmed
+        if (subject != null) {
+            val parsedColor = try {
+                Color(android.graphics.Color.parseColor(subject.colorHex))
+            } catch (_: Throwable) {
+                when (subject.id) {
+                    "MATH" -> Color(0xFF3B82F6)
+                    "CS" -> Color(0xFF10B981)
+                    "DS" -> Color(0xFF8B5CF6)
+                    "AI" -> Color(0xFF2563EB)
+                    "PHY" -> Color(0xFFD97706)
+                    "CHEM" -> Color(0xFFEF4444)
+                    else -> Color(0xFF3B82F6)
                 }
+            }
 
-            if (subject != null) {
-                val parsedColor = try {
-                    Color(android.graphics.Color.parseColor(subject.colorHex))
-                } catch (_: Throwable) {
-                    when (subject.id) {
-                        "MATH" -> Color(0xFF3B82F6)
-                        "CS" -> Color(0xFF10B981)
-                        "DS" -> Color(0xFF8B5CF6)
-                        "AI" -> Color(0xFF2563EB)
-                        "PHY" -> Color(0xFFD97706)
-                        "CHEM" -> Color(0xFFEF4444)
-                        else -> Color(0xFF3B82F6)
-                    }
-                }
+            val chapterItems = subject.chapters.map { ch ->
+                SubjectChapterDetailItem(
+                    chapterId = ch.chapterId,
+                    order = ch.chapterOrder,
+                    title = ch.title,
+                    summary = ch.summary,
+                    estimatedMinutes = ch.estimatedMinutes,
+                    questionCount = ch.mcqs.size.coerceAtLeast(5),
+                    isCompleted = false,
+                    isUnlocked = true
+                )
+            }
 
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    subjectId = subject.id.ifBlank { subject.subjectId.toString() },
+                    numericId = subject.subjectId,
+                    title = subject.name,
+                    slug = subject.slug,
+                    category = subject.category,
+                    iconSymbol = subject.iconSymbol,
+                    colorHex = subject.colorHex,
+                    color = parsedColor,
+                    overview = subject.description.ifBlank { "Comprehensive curriculum and hands-on modules in ${subject.name}." },
+                    progressPercentage = 0,
+                    completedChapters = 0,
+                    totalChapters = chapterItems.size,
+                    chapters = chapterItems,
+                    errorMessage = null
+                )
+            }
+
+            loadJob = scope.launch {
                 val existingProgress = try {
                     val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
                     runCatching { progressDao.getProgressForUser("1") }.getOrDefault(emptyList()).associateBy { it.lessonId }
                 } catch (_: Throwable) {
                     emptyMap()
                 }
-                val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subject.id.ifBlank { subject.name })
-
-                val chapterItems = subject.chapters.map { ch ->
-                    val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                    val isDone = existingProgress[canonId]?.isCompleted == true || existingProgress[ch.chapterId.toString()]?.isCompleted == true
-                    SubjectChapterDetailItem(
-                        chapterId = ch.chapterId,
-                        order = ch.chapterOrder,
-                        title = ch.title,
-                        summary = ch.summary,
-                        estimatedMinutes = ch.estimatedMinutes,
-                        questionCount = ch.mcqs.size.coerceAtLeast(5),
-                        isCompleted = isDone,
-                        isUnlocked = true
-                    )
+                if (_uiState.value.numericId != subject.subjectId) return@launch
+                if (existingProgress.isNotEmpty()) {
+                    val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subject.id.ifBlank { subject.name })
+                    val updatedChapters = subject.chapters.map { ch ->
+                        val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
+                        val isDone = existingProgress[canonId]?.isCompleted == true || existingProgress[ch.chapterId.toString()]?.isCompleted == true
+                        SubjectChapterDetailItem(
+                            chapterId = ch.chapterId,
+                            order = ch.chapterOrder,
+                            title = ch.title,
+                            summary = ch.summary,
+                            estimatedMinutes = ch.estimatedMinutes,
+                            questionCount = ch.mcqs.size.coerceAtLeast(5),
+                            isCompleted = isDone,
+                            isUnlocked = true
+                        )
+                    }
+                    val doneCount = updatedChapters.count { it.isCompleted }
+                    val totalCount = updatedChapters.size.coerceAtLeast(1)
+                    val pct = ((doneCount.toFloat() / totalCount.toFloat()) * 100).toInt().coerceIn(0, 100)
+                    _uiState.update { current ->
+                        if (current.numericId != subject.subjectId) return@update current
+                        current.copy(
+                            completedChapters = doneCount,
+                            progressPercentage = pct,
+                            chapters = updatedChapters
+                        )
+                    }
                 }
-                val doneCount = chapterItems.count { it.isCompleted }
-                val totalCount = chapterItems.size.coerceAtLeast(1)
-                val initialPct = ((doneCount.toFloat() / totalCount.toFloat()) * 100).toInt().coerceIn(0, 100)
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        subjectId = subject.id.ifBlank { subject.subjectId.toString() },
-                        numericId = subject.subjectId,
-                        title = subject.name,
-                        slug = subject.slug,
-                        category = subject.category,
-                        iconSymbol = subject.iconSymbol,
-                        colorHex = subject.colorHex,
-                        color = parsedColor,
-                        overview = subject.description.ifBlank { "Comprehensive curriculum and hands-on modules in ${subject.name}." },
-                        progressPercentage = initialPct,
-                        completedChapters = doneCount,
-                        totalChapters = chapterItems.size,
-                        chapters = chapterItems,
-                        errorMessage = null
-                    )
-                }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Subject '$subjectId' could not be loaded."
-                    )
-                }
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "Subject '$subjectId' could not be loaded."
+                )
             }
         }
     }

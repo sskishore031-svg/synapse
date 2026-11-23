@@ -32,6 +32,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemoryStudySessions = CopyOnWriteArrayList<StudySessionEntity>()
     private val inMemoryLessonProgress = java.util.concurrent.ConcurrentHashMap<String, LessonProgressEntity>()
     private val progressStateFlow = kotlinx.coroutines.flow.MutableStateFlow<List<LessonProgressEntity>>(emptyList())
+    private val notesStateFlow = kotlinx.coroutines.flow.MutableStateFlow<Long>(0L)
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -951,6 +952,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         val assignedId = if (note.id > 0) note.id else System.currentTimeMillis()
         val noteWithId = note.copy(id = assignedId)
         inMemoryNotes.add(0, noteWithId)
+        notesStateFlow.value = System.currentTimeMillis()
 
         if (hasAndroidContext) {
             try {
@@ -971,6 +973,13 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             }
         }
         assignedId
+    }
+
+    override fun observeAllNotes(userId: Int): kotlinx.coroutines.flow.Flow<List<NoteEntity>> = kotlinx.coroutines.flow.flow {
+        emit(getAllNotes(userId))
+        notesStateFlow.collect {
+            emit(getAllNotes(userId))
+        }
     }
 
     override suspend fun getAllNotes(userId: Int): List<NoteEntity> = withContext(Dispatchers.IO) {
@@ -1068,6 +1077,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     override suspend fun deleteNote(noteId: Long): Int = withContext(Dispatchers.IO) {
         inMemoryNotes.removeIf { it.id == noteId }
+        notesStateFlow.value = System.currentTimeMillis()
         if (hasAndroidContext) {
             try {
                 val db = writableDatabase

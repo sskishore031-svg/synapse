@@ -330,6 +330,9 @@ class MainActivity : ComponentActivity() {
                 if (!view.isInEditMode) {
                     androidx.compose.runtime.SideEffect {
                         val window = (view.context as android.app.Activity).window
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            window.isNavigationBarContrastEnforced = false
+                        }
                         window.navigationBarColor = if (isDark) android.graphics.Color.parseColor("#13141B") else android.graphics.Color.WHITE
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
                         insets.isAppearanceLightNavigationBars = !isDark
@@ -1702,6 +1705,12 @@ class MainActivity : ComponentActivity() {
                                     viewModel = aiTutorViewModel,
                                     onBackClick = {
                                         popBackStack()
+                                    },
+                                    onNavigateToHome = {
+                                        switchTab(AppScreen.Home)
+                                    },
+                                    onNavigateToLearn = {
+                                        switchTab(AppScreen.SubjectSelection)
                                     },
                                     onNavigateToQuiz = { subjectId, subjectName ->
                                         val sId = subjectId?.toIntOrNull()

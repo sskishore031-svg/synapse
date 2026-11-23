@@ -33,7 +33,8 @@ class SubjectSelectionViewModel(
 ) : ViewModel() {
 
     private val scope: CoroutineScope = externalScope ?: try {
-        Dispatchers.Main
+        val d = Dispatchers.Main
+        d.isDispatchNeeded(kotlin.coroutines.EmptyCoroutineContext)
         viewModelScope
     } catch (_: Throwable) {
         CoroutineScope(Dispatchers.Unconfined)

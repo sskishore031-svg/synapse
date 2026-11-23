@@ -941,6 +941,29 @@ class LocalAIEngine private constructor(context: Context?) {
     private fun checkAppFeatureQuery(lowerQuery: String): LocalAiResponse? {
         val q = lowerQuery.trim()
         return when {
+            q.contains("alarm") || q.contains("remind me") || q.contains("reminder") || q.startsWith("remind ") -> {
+                LocalAiResponse(
+                    paragraph1 = "⏰ **SYNAPSE Study Alarm & Reminders**\n\nI can schedule daily study alarms for you! Simply tell me something like:\n• *'Set a study alarm for 9:44 AM'*\n• *'Remind me to study at 8 PM'*\n\nYour alarm will be scheduled directly on your device with high-priority notifications so you never miss a revision session.",
+                    paragraph2 = "Consistent daily study is key to cracking placement interviews!",
+                    confidenceScore = 98.0
+                )
+            }
+            q.startsWith("open ") || q.startsWith("go to ") || q.startsWith("navigate to ") || q.contains(" screen") || q.contains("screen open") -> {
+                val targetScreen = when {
+                    q.contains("home") -> "Home"
+                    q.contains("learn") || q.contains("track") -> "Learn"
+                    q.contains("quiz") -> "Quiz Hub"
+                    q.contains("note") -> "Notes"
+                    q.contains("profile") -> "Profile"
+                    q.contains("analytics") || q.contains("progress") -> "Progress & Analytics"
+                    else -> "requested"
+                }
+                LocalAiResponse(
+                    paragraph1 = "Opening your **$targetScreen** screen now! Navigating...",
+                    paragraph2 = "You can also switch tabs anytime using the navigation bar at the bottom.",
+                    confidenceScore = 98.0
+                )
+            }
             q.contains("note") && (q.contains("how") || q.contains("create") || q.contains("save") || q.contains("where") || q.contains("download")) -> {
                 LocalAiResponse(
                     paragraph1 = "📝 **SYNAPSE Notes Organizer**\n\nYou can access, create, and organize study notes by tapping the Notes icon in the bottom navigation bar.",

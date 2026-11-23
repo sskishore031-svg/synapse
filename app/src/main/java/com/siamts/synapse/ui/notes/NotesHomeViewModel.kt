@@ -28,7 +28,68 @@ class NotesHomeViewModel(
     val uiState: StateFlow<NotesHomeUiState> = _uiState.asStateFlow()
 
     init {
+        observeLiveNotes()
         loadNotesSummary()
+    }
+
+    private fun observeLiveNotes() {
+        val dao = try {
+            SynapseDatabase.getNotesDao()
+        } catch (_: Throwable) {
+            null
+        } ?: return
+
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            dao.observeAllNotes(userId).collect { roomNotes ->
+                val mappedRoomNotes = roomNotes.map { entity ->
+                    NoteItemDto(
+                        id = entity.id.toInt(),
+                        userId = entity.userId,
+                        subjectId = entity.subjectId?.toIntOrNull(),
+                        chapterId = entity.chapterId,
+                        title = entity.title,
+                        content = entity.content,
+                        category = entity.category,
+                        isSaved = entity.isBookmarked,
+                        isDownloaded = entity.isOfflineCached,
+                        subjectName = entity.trackName ?: entity.subjectId ?: "General Notes",
+                        subjectSlug = (entity.trackName ?: entity.subjectId)?.lowercase() ?: "general",
+                        subjectIcon = "📝",
+                        createdAt = "Today",
+                        updatedAt = "Today"
+                    )
+                }
+                _uiState.update { current ->
+                    val combinedNotes = (mappedRoomNotes + current.allNotes).distinctBy { it.id.toString() + "_" + it.title.trim().lowercase() }
+                    val subjectCount = combinedNotes.count {
+                        it.category.contains("SUBJECT", ignoreCase = true) ||
+                        it.category.contains("Subject Notes", ignoreCase = true)
+                    }
+                    val commonCount = combinedNotes.count {
+                        it.category.contains("COMMON", ignoreCase = true)
+                    }
+                    val savedCount = combinedNotes.count {
+                        it.isSaved || it.category.isNotBlank()
+                    }
+                    val downloadedCount = combinedNotes.count {
+                        it.isDownloaded || it.isSaved
+                    }
+                    val updatedSummary = NotesCountsDto(
+                        subjectNotesCount = maxOf(subjectCount, current.summary.subjectNotesCount),
+                        commonNotesCount = maxOf(commonCount, current.summary.commonNotesCount),
+                        savedNotesCount = maxOf(savedCount, current.summary.savedNotesCount),
+                        downloadedNotesCount = maxOf(downloadedCount, current.summary.downloadedNotesCount)
+                    )
+                    current.copy(
+                        allNotes = combinedNotes,
+                        summary = updatedSummary,
+                        filteredNotes = if (current.activeFilter == "ALL") combinedNotes else current.filteredNotes
+                    )
+                }
+            }
+        }
     }
 
     fun loadNotesSummary() {

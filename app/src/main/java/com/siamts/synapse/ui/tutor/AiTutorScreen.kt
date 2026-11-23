@@ -126,6 +126,8 @@ import java.util.Locale
 fun AiTutorScreen(
     viewModel: AiTutorViewModel,
     onBackClick: () -> Unit,
+    onNavigateToHome: (() -> Unit)? = null,
+    onNavigateToLearn: (() -> Unit)? = null,
     onNavigateToQuiz: ((subjectId: String?, subjectName: String?) -> Unit)? = null,
     onNavigateToSubject: ((subjectId: String) -> Unit)? = null,
     onNavigateToNotes: (() -> Unit)? = null,
@@ -165,6 +167,12 @@ fun AiTutorScreen(
     LaunchedEffect(viewModel) {
         viewModel.actionEvent.collect { action ->
             when (action) {
+                is AiUiAction.NavigateToHome -> {
+                    onNavigateToHome?.invoke()
+                }
+                is AiUiAction.NavigateToLearn -> {
+                    onNavigateToLearn?.invoke()
+                }
                 is AiUiAction.NavigateToQuiz -> {
                     onNavigateToQuiz?.invoke(action.subjectId, action.subjectName)
                 }
