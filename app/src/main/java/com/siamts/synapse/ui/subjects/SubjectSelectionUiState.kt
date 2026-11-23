@@ -6,7 +6,8 @@ import com.siamts.synapse.data.model.CatalogSubject
 data class SubjectChapterSnippet(
     val chapterId: Int,
     val title: String,
-    val summary: String = ""
+    val summary: String = "",
+    val isCompleted: Boolean = false
 )
 
 data class Subject(
@@ -17,7 +18,9 @@ data class Subject(
     val progressColor: Color,
     val category: String = "Core",
     val chapters: List<SubjectChapterSnippet> = emptyList(),
-    val isInterested: Boolean = false
+    val isInterested: Boolean = false,
+    val completedChaptersCount: Int = 0,
+    val totalChaptersCount: Int = 5
 )
 
 data class SearchResultItem(

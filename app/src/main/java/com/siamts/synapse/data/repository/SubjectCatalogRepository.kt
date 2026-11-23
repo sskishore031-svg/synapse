@@ -131,23 +131,15 @@ class SubjectCatalogRepository private constructor(context: Context) {
 
     fun resolveSubjectNumericId(subjectId: String): Int? {
         val trimmed = subjectId.trim().lowercase(Locale.ROOT)
-        return when (trimmed) {
-            "math", "maths", "mathematics", "algebra", "calculus", "1", "math_001" -> 1
-            "cs", "computer science", "algorithms", "data structures", "2" -> 2
-            "ds", "data science", "data analytics", "3" -> 3
-            "ai", "artificial intelligence", "ml", "deep learning", "4" -> 4
-            "phy", "physics", "waves", "5" -> 5
-            "chem", "chemistry", "bonding", "6" -> 6
-            "bio", "biology", "ext_bio", "101" -> 101
-            "history", "world history", "ext_history", "102" -> 102
-            "econ", "economics", "finance", "economics & finance", "ext_econ", "103" -> 103
-            "env", "environmental science", "ecology", "ext_env", "104" -> 104
-            "net", "networks", "computer networks", "ext_net", "105" -> 105
-            "sec", "security", "cyber security", "ext_sec", "106" -> 106
-            "psych", "psychology", "ext_psych", "107" -> 107
-            "biz", "business", "business management", "management", "ext_biz", "108" -> 108
-            "ee", "electrical engineering", "circuits", "ext_ee", "109" -> 109
-            "astro", "astronomy", "astronomy & astrophysics", "astrophysics", "ext_astro", "110" -> 110
+        return when {
+            trimmed.contains("python") || trimmed == "101" || trimmed == "py" -> 101
+            trimmed.contains("sql") || trimmed == "102" || trimmed == "db" -> 102
+            trimmed.contains("ai") || trimmed == "103" || trimmed.contains("tech") -> 103
+            trimmed.contains("aptitude") || trimmed == "104" || trimmed.contains("interview") -> 104
+            trimmed.contains("dsa") || trimmed.contains("data structure") || trimmed.contains("algorithm") || trimmed == "105" -> 105
+            trimmed.contains("java") || trimmed.contains("oops") || trimmed == "106" -> 106
+            trimmed.contains("os") || trimmed.contains("network") || trimmed == "107" -> 107
+            trimmed.contains("android") || trimmed.contains("compose") || trimmed == "108" -> 108
             else -> trimmed.toIntOrNull()
         }
     }

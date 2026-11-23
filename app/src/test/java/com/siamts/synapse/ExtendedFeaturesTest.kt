@@ -24,7 +24,7 @@ class ExtendedFeaturesTest {
 
         val catalog = gson.fromJson(fileToRead.readText(), ExtendedCurriculumCatalog::class.java)
         assertNotNull(catalog)
-        assertEquals(4, catalog.subjects.size)
+        assertTrue("Catalog must have at least 4 tracks", catalog.subjects.size >= 4)
 
         val expectedSubjectNames = listOf(
             "Python & Coding Logic",

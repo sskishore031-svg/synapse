@@ -382,14 +382,14 @@ fun AiTutorContent(
     val context = LocalContext.current
 
     val pageBgGradient = if (isDark) {
-        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+        listOf(DarkBackgroundTop, Color(0xFF0C0D12), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+        listOf(Color(0xFFF5F6FA), Color(0xFFF5F6FA))
     }
-    val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF8FAFC)
-    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
-    val inputCardBgColor = if (isDark) Color(0xFF0D1322) else Color.White
-    val inputTextColor = if (isDark) TextPrimary else LightTextPrimary
+    val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF5F6FA)
+    val headerTextColor = if (isDark) TextPrimary else Color(0xFF11131A)
+    val inputCardBgColor = if (isDark) Color(0xFF13141B) else Color.White
+    val inputTextColor = if (isDark) TextPrimary else Color(0xFF11131A)
 
     // Smooth auto-scroll to bottom whenever new messages arrive or streaming tokens update
     val lastMessageTextLength = uiState.messages.lastOrNull()?.let {

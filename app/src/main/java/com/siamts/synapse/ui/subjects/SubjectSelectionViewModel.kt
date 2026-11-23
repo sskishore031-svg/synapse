@@ -8,6 +8,8 @@ import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.repository.CurriculumRepository
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,8 +28,16 @@ class SubjectSelectionViewModel(
         null
     },
     private val sessionManager: SessionManager? = SessionManager.getInstanceOrNull(),
-    private val curriculumRepo: CurriculumRepository = CurriculumRepository.getInstance()
+    private val curriculumRepo: CurriculumRepository = CurriculumRepository.getInstance(),
+    externalScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope = externalScope ?: try {
+        Dispatchers.Main
+        viewModelScope
+    } catch (_: Throwable) {
+        CoroutineScope(Dispatchers.Unconfined)
+    }
 
     private val baseSubjects = BaseCurriculumData.subjects.map { catalogSub ->
         val parsedColor = try {
@@ -70,8 +80,47 @@ class SubjectSelectionViewModel(
 
     init {
         observeUserSession()
+        observeLessonProgress()
         if (catalogRepo != null) {
             observeCatalog()
+        }
+    }
+
+    private fun observeLessonProgress() {
+        val progressDao = try {
+            com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+        } catch (_: Throwable) {
+            null
+        } ?: return
+        scope.launch {
+            progressDao.observeProgressForUser("1").collect { progressList ->
+                val completedMap = progressList.associateBy { it.lessonId }
+                _uiState.update { current ->
+                    val updatedSubjects = current.subjects.map { sub ->
+                        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
+                        val totalInTrack = sub.chapters.size.coerceAtLeast(1)
+                        val updatedChapters = sub.chapters.map { ch ->
+                            val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
+                            val isDone = completedMap[canonId]?.isCompleted == true || completedMap[ch.chapterId.toString()]?.isCompleted == true
+                            ch.copy(isCompleted = isDone)
+                        }
+                        val doneCount = updatedChapters.count { it.isCompleted }
+                        val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        sub.copy(
+                            completedChaptersCount = doneCount,
+                            totalChaptersCount = totalInTrack,
+                            progressPercentage = pct,
+                            chapters = updatedChapters
+                        )
+                    }
+                    val (filtered, results) = performSearch(updatedSubjects, current.searchQuery, current.selectedClass)
+                    current.copy(
+                        subjects = updatedSubjects,
+                        filteredSubjects = filtered,
+                        searchResults = results
+                    )
+                }
+            }
         }
     }
 
@@ -90,7 +139,7 @@ class SubjectSelectionViewModel(
 
     private fun observeUserSession() {
         val manager = sessionManager ?: SessionManager.getInstanceOrNull() ?: return
-        viewModelScope.launch {
+        scope.launch {
             manager.sessionStateFlow.collect { sessionState ->
                 if (sessionState is AuthSessionState.Authenticated) {
                     val interests = (sessionState.user.selectedInterests ?: sessionState.user.interests).orEmpty()
@@ -111,41 +160,108 @@ class SubjectSelectionViewModel(
 
     private fun observeCatalog() {
         if (catalogRepo == null) return
-        viewModelScope.launch {
-            catalogRepo.catalogSubjects.collect { catalogList ->
-                val addedSubjects = catalogList.filter { it.isAdded }.map { catSub ->
-                    Subject(
-                        id = catSub.subjectId.toString(),
-                        title = catSub.name,
-                        iconSymbol = catSub.iconSymbol,
-                        progressPercentage = 0,
-                        progressColor = try {
-                            Color(android.graphics.Color.parseColor(catSub.colorHex))
-                        } catch (_: Throwable) {
-                            Color(0xFF2563EB)
-                        },
-                        category = catSub.category,
-                        chapters = catSub.chapters.map { ch ->
-                            SubjectChapterSnippet(
-                                chapterId = ch.chapterId,
-                                title = ch.title,
-                                summary = ch.summary
-                            )
+        val progressDao = try {
+            com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+        } catch (_: Throwable) {
+            null
+        }
+        scope.launch {
+            if (progressDao != null) {
+                kotlinx.coroutines.flow.combine(
+                    catalogRepo.catalogSubjects,
+                    progressDao.observeProgressForUser("1")
+                ) { catalogList, progressList ->
+                    val completedMap = progressList.associateBy { it.lessonId }
+                    val addedSubjects = catalogList.filter { it.isAdded }.map { catSub ->
+                        Subject(
+                            id = catSub.subjectId.toString(),
+                            title = catSub.name,
+                            iconSymbol = catSub.iconSymbol,
+                            progressPercentage = 0,
+                            progressColor = try {
+                                Color(android.graphics.Color.parseColor(catSub.colorHex))
+                            } catch (_: Throwable) {
+                                Color(0xFF2563EB)
+                            },
+                            category = catSub.category,
+                            chapters = catSub.chapters.map { ch ->
+                                SubjectChapterSnippet(
+                                    chapterId = ch.chapterId,
+                                    title = ch.title,
+                                    summary = ch.summary
+                                )
+                            }
+                        )
+                    }
+
+                    val mergedList = (baseSubjects + addedSubjects).distinctBy { it.id }.map { sub ->
+                        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
+                        val totalInTrack = sub.chapters.size.coerceAtLeast(1)
+                        val updatedChapters = sub.chapters.map { ch ->
+                            val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
+                            val isDone = completedMap[canonId]?.isCompleted == true || completedMap[ch.chapterId.toString()]?.isCompleted == true
+                            ch.copy(isCompleted = isDone)
                         }
-                    )
-                }
+                        val doneCount = updatedChapters.count { it.isCompleted }
+                        val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        sub.copy(
+                            completedChaptersCount = doneCount,
+                            totalChaptersCount = totalInTrack,
+                            progressPercentage = pct,
+                            chapters = updatedChapters
+                        )
+                    }
 
-                val allCombined = applyInterests(baseSubjects, _uiState.value.userInterests)
-                val currentQuery = _uiState.value.searchQuery
+                    val allCombined = applyInterests(mergedList, _uiState.value.userInterests)
+                    val currentQuery = _uiState.value.searchQuery
 
-                _uiState.update { current ->
-                    val (filtered, results) = performSearch(allCombined, currentQuery, current.selectedClass)
-                    current.copy(
-                        subjects = allCombined,
-                        filteredSubjects = filtered,
-                        searchResults = results,
-                        availableCatalog = catalogList
-                    )
+                    _uiState.update { current ->
+                        val (filtered, results) = performSearch(allCombined, currentQuery, current.selectedClass)
+                        current.copy(
+                            subjects = allCombined,
+                            filteredSubjects = filtered,
+                            searchResults = results,
+                            availableCatalog = catalogList
+                        )
+                    }
+                }.collect {}
+            } else {
+                catalogRepo.catalogSubjects.collect { catalogList ->
+                    val addedSubjects = catalogList.filter { it.isAdded }.map { catSub ->
+                        Subject(
+                            id = catSub.subjectId.toString(),
+                            title = catSub.name,
+                            iconSymbol = catSub.iconSymbol,
+                            progressPercentage = 0,
+                            progressColor = try {
+                                Color(android.graphics.Color.parseColor(catSub.colorHex))
+                            } catch (_: Throwable) {
+                                Color(0xFF2563EB)
+                            },
+                            category = catSub.category,
+                            chapters = catSub.chapters.map { ch ->
+                                SubjectChapterSnippet(
+                                    chapterId = ch.chapterId,
+                                    title = ch.title,
+                                    summary = ch.summary
+                                )
+                            }
+                        )
+                    }
+
+                    val mergedList = (baseSubjects + addedSubjects).distinctBy { it.id }
+                    val allCombined = applyInterests(mergedList, _uiState.value.userInterests)
+                    val currentQuery = _uiState.value.searchQuery
+
+                    _uiState.update { current ->
+                        val (filtered, results) = performSearch(allCombined, currentQuery, current.selectedClass)
+                        current.copy(
+                            subjects = allCombined,
+                            filteredSubjects = filtered,
+                            searchResults = results,
+                            availableCatalog = catalogList
+                        )
+                    }
                 }
             }
         }
@@ -247,7 +363,7 @@ class SubjectSelectionViewModel(
         } else {
             repo.removeSubject(subjectId)
         }
-        viewModelScope.launch {
+        scope.launch {
             val user = sessionManager?.getSessionUser()
             if (willAdd) {
                 curriculumRepo.addSubjectToUser(subjectId, user?.id, user?.email)
@@ -257,7 +373,7 @@ class SubjectSelectionViewModel(
 
     fun addSubjectFromCatalog(subjectId: String) {
         catalogRepo?.addSubject(subjectId)
-        viewModelScope.launch {
+        scope.launch {
             val user = sessionManager?.getSessionUser()
             curriculumRepo.addSubjectToUser(subjectId, user?.id, user?.email)
         }
@@ -272,10 +388,16 @@ class SubjectSelectionViewModel(
     }
 
     fun restartSubject(subjectId: String) {
+        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subjectId)
+        scope.launch {
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().resetTrackProgress(normTrack, "1")
+            } catch (_: Throwable) {}
+        }
         _uiState.update { current ->
             val updatedSubs = current.subjects.map { sub ->
                 if (sub.id.equals(subjectId, ignoreCase = true) || sub.title.equals(subjectId, ignoreCase = true)) {
-                    sub.copy(progressPercentage = 0)
+                    sub.copy(progressPercentage = 0, completedChaptersCount = 0)
                 } else sub
             }
             val (filtered, results) = performSearch(updatedSubs, current.searchQuery, current.selectedClass)

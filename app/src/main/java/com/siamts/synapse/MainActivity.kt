@@ -32,6 +32,8 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import com.siamts.synapse.ui.components.BottomNavBar
+import com.siamts.synapse.ui.navigation.NavGraph
 import com.siamts.synapse.notification.SynapseNotificationHelper
 import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2Screen
 import com.siamts.synapse.ui.algorithms.AlgorithmsLessonPart2ViewModel
@@ -204,7 +206,17 @@ sealed class AppScreen {
     data object TermsOfService : AppScreen()
     data object PrivacyPolicy : AppScreen()
     data object OpenSourceLicenses : AppScreen()
-    data object ProgressAnalytics : AppScreen()
+    open class ProgressAnalytics(val initialTab: Int = 0) : AppScreen() {
+        companion object : ProgressAnalytics(0)
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ProgressAnalytics) return false
+            return initialTab == other.initialTab
+        }
+
+        override fun hashCode(): Int = initialTab
+    }
     data object Flashcards : AppScreen()
     open class AiTutor(val initialPrompt: String? = null) : AppScreen() {
         companion object : AiTutor(null)
@@ -323,29 +335,41 @@ class MainActivity : ComponentActivity() {
                         insets.isAppearanceLightNavigationBars = !isDark
                     }
                 }
+                val profileViewModel: ProfileViewModel = viewModel()
+                var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
+                val screenBackStack = remember { mutableStateListOf<AppScreen>() }
+
+                fun navigateTo(newScreen: AppScreen) {
+                    if (newScreen != currentScreen) {
+                        screenBackStack.add(currentScreen)
+                        currentScreen = newScreen
+                    }
+                }
+
+                fun switchTab(tabScreen: AppScreen) {
+                    if (tabScreen == currentScreen) return
+                    screenBackStack.clear()
+                    if (tabScreen != AppScreen.Dashboard) {
+                        screenBackStack.add(AppScreen.Dashboard)
+                    }
+                    currentScreen = tabScreen
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.background,
+                    bottomBar = {
+                        val currentTab = NavGraph.getTabForScreen(currentScreen)
+                        if (currentTab != -1) {
+                            BottomNavBar(
+                                selectedTab = currentTab,
+                                onTabSelect = { tabIndex ->
+                                    switchTab(NavGraph.getScreenForTab(tabIndex))
+                                }
+                            )
+                        }
+                    }
                 ) { innerPadding ->
-                    val profileViewModel: ProfileViewModel = viewModel()
-                    var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Splash) }
-                    val screenBackStack = remember { mutableStateListOf<AppScreen>() }
-
-                    fun navigateTo(newScreen: AppScreen) {
-                        if (newScreen != currentScreen) {
-                            screenBackStack.add(currentScreen)
-                            currentScreen = newScreen
-                        }
-                    }
-
-                    fun switchTab(tabScreen: AppScreen) {
-                        if (tabScreen == currentScreen) return
-                        screenBackStack.clear()
-                        if (tabScreen != AppScreen.Dashboard) {
-                            screenBackStack.add(AppScreen.Dashboard)
-                        }
-                        currentScreen = tabScreen
-                    }
 
                     fun navigateToQuizResult(resultScreen: AppScreen.QuizResult) {
                         while (screenBackStack.isNotEmpty() && screenBackStack.last() is AppScreen.DynamicQuizAttempt) {
@@ -488,7 +512,7 @@ class MainActivity : ComponentActivity() {
 
                     Crossfade(
                         targetState = currentScreen,
-                        animationSpec = tween(durationMillis = 500),
+                        animationSpec = tween(durationMillis = 120),
                         label = "ScreenTransition",
                     ) { screen ->
                         when (screen) {
@@ -624,7 +648,7 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.NotificationsSettings)
                                     },
                                     onProgressAnalyticsClick = {
-                                        navigateTo(AppScreen.ProgressAnalytics)
+                                        navigateTo(AppScreen.ProgressAnalytics())
                                     },
                                     onContinueLessonClick = { subjectSlug, _ ->
                                         when (subjectSlug.lowercase()) {
@@ -1637,8 +1661,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            AppScreen.ProgressAnalytics -> {
+                            is AppScreen.ProgressAnalytics -> {
                                 ProgressAnalyticsScreen(
+                                    initialTab = (currentScreen as? AppScreen.ProgressAnalytics)?.initialTab ?: 0,
                                     onBackClick = {
                                         popBackStack()
                                     },
@@ -1696,7 +1721,7 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.Profile)
                                     },
                                     onNavigateToProgress = {
-                                        navigateTo(AppScreen.ProgressAnalytics)
+                                        navigateTo(AppScreen.ProgressAnalytics())
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1736,7 +1761,10 @@ class MainActivity : ComponentActivity() {
                                         navigateTo(AppScreen.BrainMap)
                                     },
                                     onProgressAnalyticsClick = {
-                                        navigateTo(AppScreen.ProgressAnalytics)
+                                        navigateTo(AppScreen.ProgressAnalytics())
+                                    },
+                                    onStreakCalendarClick = {
+                                        navigateTo(AppScreen.ProgressAnalytics(3))
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

@@ -46,8 +46,14 @@ class AnalyticsViewModel(
     }
 
     fun setTimeFilter(filter: String) {
-        if (_uiState.value.timeFilter == filter) return
-        _uiState.update { it.copy(timeFilter = filter) }
+        val normalized = when (filter.trim().lowercase()) {
+            "this week", "this_week" -> "this_week"
+            "last week", "last_week" -> "last_week"
+            "this month", "this_month" -> "this_month"
+            else -> filter.trim().lowercase()
+        }
+        if (_uiState.value.timeFilter == normalized) return
+        _uiState.update { it.copy(timeFilter = normalized) }
         loadAnalytics()
     }
 

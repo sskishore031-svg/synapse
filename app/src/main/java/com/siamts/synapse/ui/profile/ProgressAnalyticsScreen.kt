@@ -91,10 +91,13 @@ fun ProgressAnalyticsScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF0C0D14),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA),
                     )
                 )
             )
@@ -112,7 +115,12 @@ fun ProgressAnalyticsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "←",
+                            color = if (isDark) TextPrimary else Color(0xFF11131A),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -126,7 +134,12 @@ fun ProgressAnalyticsScreen(
                             letterSpacing = 1.2.sp
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = pageTitle, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = pageTitle,
+                            color = if (isDark) TextPrimary else Color(0xFF11131A),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -137,7 +150,7 @@ fun ProgressAnalyticsScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .background(
-                        color = if (isDark) Color.Transparent else Color(0xFFF8FAFC),
+                        color = if (isDark) Color.Transparent else Color(0xFFF5F6FA),
                         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                     )
             ) {

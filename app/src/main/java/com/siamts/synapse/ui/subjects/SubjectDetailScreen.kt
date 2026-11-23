@@ -93,22 +93,23 @@ fun SubjectDetailContent(
     modifier: Modifier = Modifier,
 ) {
     val isDark = isSystemInDarkTheme()
+    val cardBg = if (isDark) SurfacePanelElevated else Color.White
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
+    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
+    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF5A6075)
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF0C0D12), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFF5F6FA), Color(0xFFF5F6FA))
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        DarkBackgroundTop,
-                        Color(0xFF090D22),
-                        DarkBackgroundBottom,
-                    )
-                )
-            )
+            .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Dark Header Section
+            // Header Section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,7 +122,7 @@ fun SubjectDetailContent(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = textPrimaryColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -139,7 +140,7 @@ fun SubjectDetailContent(
                         )
                         Text(
                             text = uiState.title,
-                            color = TextPrimary,
+                            color = textPrimaryColor,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -159,7 +160,7 @@ fun SubjectDetailContent(
 
                 Text(
                     text = uiState.overview,
-                    color = if (isDark) TextSecondary else Color(0xFFCBD5E1),
+                    color = textSecondaryColor,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(start = 4.dp, end = 4.dp)
@@ -309,10 +310,8 @@ fun SubjectDetailContent(
                                 .fillMaxWidth()
                                 .clickable { onChapterClick(chapter.chapterId) },
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isDark) SurfacePanelElevated else Color.White
-                            ),
-                            border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = BorderStroke(1.dp, cardBorder),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
@@ -346,7 +345,7 @@ fun SubjectDetailContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = chapter.title,
-                                            color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                            color = textPrimaryColor,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -356,18 +355,37 @@ fun SubjectDetailContent(
                                         ) {
                                             Text(
                                                 text = "⏱ ${chapter.estimatedMinutes} min",
-                                                color = if (isDark) TextSecondary else Color(0xFF64748B),
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
                                             )
                                             Text(
                                                 text = "•",
-                                                color = if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
+                                                color = cardBorder,
                                                 fontSize = 11.sp
                                             )
                                             Text(
                                                 text = "❓ ${chapter.questionCount} MCQs",
-                                                color = if (isDark) TextSecondary else Color(0xFF64748B),
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+
+                                    if (chapter.isCompleted) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = Color(0xFF10B981).copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                )
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "✓ Completed",
+                                                color = Color(0xFF059669),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
                                             )
                                         }
                                     }

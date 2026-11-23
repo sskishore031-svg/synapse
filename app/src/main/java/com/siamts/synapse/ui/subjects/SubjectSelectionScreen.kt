@@ -122,16 +122,19 @@ fun SubjectSelectionContent(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
-                        Color(0xFF090D22),
+                        Color(0xFF0C0D12),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top Dark Header
+            // Top Header
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,7 +156,7 @@ fun SubjectSelectionContent(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = uiState.title,
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else Color(0xFF11131A),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -162,7 +165,8 @@ fun SubjectSelectionContent(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color.White, CircleShape)
+                            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE4E7F0), CircleShape)
                             .clickable { onOpenCatalog() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -237,8 +241,8 @@ fun SubjectSelectionContent(
                             onValueChange = onSearchChange,
                             placeholder = {
                                 Text(
-                                    text = "Search subjects, topics (e.g. Differentiation, Waves, Networks)",
-                                    color = if (isDark) TextSecondary else Color(0xFF94A3B8),
+                                    text = "Search tracks, topics (e.g. Python, SQL, DSA, Android)",
+                                    color = if (isDark) TextSecondary else Color(0xFF5A6075),
                                     fontSize = 13.sp,
                                 )
                             },
@@ -246,11 +250,11 @@ fun SubjectSelectionContent(
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = SunsetOrange,
-                                unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
+                                unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE4E7F0),
                                 focusedContainerColor = if (isDark) SurfacePanel else Color.White,
                                 unfocusedContainerColor = if (isDark) SurfacePanel else Color.White,
-                                focusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
-                                unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                focusedTextColor = if (isDark) TextPrimary else Color(0xFF11131A),
+                                unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF11131A),
                             ),
                             singleLine = true,
                             leadingIcon = {
@@ -568,9 +572,10 @@ fun SubjectSelectionContent(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 Text(
-                                                    text = "${subject.chapters.size} Chapters",
+                                                    text = "${subject.completedChaptersCount} / ${subject.totalChaptersCount} Chapters Completed",
                                                     color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                     fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Medium
                                                 )
                                                 Text(
                                                     text = "${subject.progressPercentage}%",
@@ -655,46 +660,7 @@ fun SubjectSelectionContent(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF13141B))
-                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .padding(vertical = 10.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
-                )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4)
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
         }
     }
 
@@ -719,19 +685,21 @@ fun SubjectSelectionContent(
 
         AlertDialog(
             onDismissRequest = onCloseCatalog,
+            containerColor = if (isDark) SurfacePanelElevated else Color.White,
+            shape = RoundedCornerShape(20.dp),
             title = {
                 Column {
                     Text(
-                        text = "📚 Extended Subject Catalog",
+                        text = "📚 Placement & App Tracks",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = if (isDark) TextPrimary else Color(0xFF11131A)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Add production-grade academic subjects directly to your curriculum.",
+                        text = "Add comprehensive placement and engineering tracks to your curriculum.",
                         fontSize = 11.sp,
-                        color = Color(0xFF64748B)
+                        color = if (isDark) TextSecondary else Color(0xFF5A6075)
                     )
                 }
             },
@@ -745,20 +713,20 @@ fun SubjectSelectionContent(
                         onValueChange = { catalogSearchQuery = it },
                         placeholder = {
                             Text(
-                                text = "Filter subjects & topics (e.g. Networks, Biology)",
-                                color = Color(0xFF94A3B8),
+                                text = "Filter tracks (e.g. DSA, Java, Android, OS)",
+                                color = if (isDark) TextSecondary else Color(0xFF5A6075),
                                 fontSize = 12.sp
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BlueAccent,
-                            unfocusedBorderColor = Color(0xFFE2E8F0),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedTextColor = Color(0xFF0F172A),
-                            unfocusedTextColor = Color(0xFF0F172A),
+                            focusedBorderColor = SunsetOrange,
+                            unfocusedBorderColor = if (isDark) SurfaceBorder else Color(0xFFE4E7F0),
+                            focusedContainerColor = if (isDark) SurfacePanel else Color(0xFFEEF1F7),
+                            unfocusedContainerColor = if (isDark) SurfacePanel else Color(0xFFEEF1F7),
+                            focusedTextColor = if (isDark) TextPrimary else Color(0xFF11131A),
+                            unfocusedTextColor = if (isDark) TextPrimary else Color(0xFF11131A),
                         ),
                         singleLine = true,
                         leadingIcon = { Text(text = "🔍", fontSize = 14.sp) }
@@ -772,70 +740,75 @@ fun SubjectSelectionContent(
                     ) {
                         items(filteredCatalog) { catalogSub ->
                             val isAdded = catalogSub.isAdded
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isAdded) Color(0xFFF0FDF4) else Color.White
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isAdded) {
+                                        if (isDark) Color(0xFF064E3B).copy(alpha = 0.4f) else Color(0xFFF0FDF4)
+                                    } else {
+                                        if (isDark) SurfacePanel else Color.White
+                                    }
+                                ),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE4E7F0)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                             ) {
-                                Box(
+                                Row(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .background(Color(0xFFF1F5F9), CircleShape),
-                                    contentAlignment = Alignment.Center
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = catalogSub.iconSymbol, fontSize = 18.sp)
-                                }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(if (isDark) SurfacePanelElevated else Color(0xFFEEF1F7), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = catalogSub.iconSymbol, fontSize = 18.sp)
+                                    }
 
-                                Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = catalogSub.name,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF0F172A)
-                                    )
-                                    Text(
-                                        text = "${catalogSub.category} • ${catalogSub.chapters.size} chapters",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF64748B)
-                                    )
-                                }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = catalogSub.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = if (isDark) TextPrimary else Color(0xFF11131A)
+                                        )
+                                        Text(
+                                            text = "${catalogSub.category} • ${catalogSub.chapters.size} chapters",
+                                            fontSize = 11.sp,
+                                            color = if (isDark) TextSecondary else Color(0xFF5A6075)
+                                        )
+                                    }
 
-                                Button(
-                                    onClick = { onToggleCatalogSubject(catalogSub.id) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isAdded) Color(0xFF059669) else BlueAccent
-                                    ),
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (isAdded) "✓ Added" else "+ Add",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Button(
+                                        onClick = { onToggleCatalogSubject(catalogSub.id) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isAdded) Color(0xFF059669) else SunsetOrange
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isAdded) "✓ Added" else "+ Add",
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        },
-        confirmButton = {
+            },
+            confirmButton = {
                 Button(
                     onClick = onCloseCatalog,
-                    colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(text = "Done", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)

@@ -48,6 +48,40 @@ object SynapseDatabase {
         return QuizLocalDatabase.getStudySessionDao(context)
     }
 
+    fun getLessonProgressDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): LessonProgressDao {
+        return QuizLocalDatabase.getLessonProgressDao(context)
+    }
+
+    /**
+     * Asynchronously syncs completed chapter/quiz progress to the PHP/MySQL backend
+     * without blocking UI execution.
+     */
+    fun syncProgressToRemote(
+        trackId: String,
+        lessonId: String,
+        lessonCompleted: Boolean = true,
+        quizCompleted: Boolean = false,
+        userId: Int = 1
+    ) {
+        seederScope.launch {
+            try {
+                val req = com.siamts.synapse.data.remote.SyncProgressRequest(
+                    userId = userId,
+                    trackId = trackId,
+                    lessonId = lessonId,
+                    lessonCompleted = lessonCompleted,
+                    quizCompleted = quizCompleted,
+                    isCompleted = true
+                )
+                try {
+                    com.siamts.synapse.data.remote.RetrofitClient.progressApi.syncProgress(req)
+                } catch (_: Throwable) {
+                    com.siamts.synapse.data.remote.RetrofitClient.progressApi.syncProgressAuth(req)
+                }
+            } catch (_: Throwable) {}
+        }
+    }
+
     /**
      * Helper to log real-time user study activity asynchronously into local SQLite/Room
      * whenever lessons are read, quizzes taken, or notes crafted.

@@ -46,8 +46,40 @@ class DashboardViewModel(
 
     init {
         observeUserSession()
+        observeLessonProgress()
         loadLocalStatsAndTasks()
         loadDashboardData()
+    }
+
+    private fun observeLessonProgress() {
+        val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+        viewModelScope.launch(Dispatchers.IO) {
+            progressDao.observeProgressForUser("1").collect { progressList ->
+                val completedIds = progressList.filter { it.isCompleted }.map { it.lessonId }.toSet()
+                val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
+                val quizChapterIds = quizRecords.map { it.chapterId }.toSet()
+                val allCompletedLessons = (completedIds + quizChapterIds).filter { it.isNotBlank() }.distinct()
+                val totalTopics = 20
+                val distinctTopicsDone = allCompletedLessons.size.coerceAtMost(totalTopics)
+                val overallPercent = ((distinctTopicsDone.toFloat() / totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
+
+                val progressMsg = when {
+                    distinctTopicsDone == 0 -> "Welcome! Every lesson builds your foundation."
+                    distinctTopicsDone < 5 -> "Great start! Keep building your momentum."
+                    distinctTopicsDone < 15 -> "Great work! Every lesson makes a new connection."
+                    else -> "Outstanding progress! You're mastering your curriculum."
+                }
+
+                _uiState.update { current ->
+                    current.copy(
+                        overallProgress = overallPercent,
+                        topicsDone = distinctTopicsDone,
+                        totalTopics = totalTopics,
+                        progressMessage = progressMsg
+                    )
+                }
+            }
+        }
     }
 
     private fun formatCurrentDate(): String {
@@ -86,10 +118,12 @@ class DashboardViewModel(
             val studySessions = try { QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
+            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser("1") } catch (_: Throwable) { emptyList() }
 
+            val completedProgressIds = progressList.filter { it.isCompleted }.map { it.lessonId }
             val completedChapters = chapters.filter { it.isAttempted }.map { it.id }
             val quizChapters = quizRecords.map { it.chapterId }
-            val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
+            val distinctTopicsDone = (completedProgressIds + completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size.coerceAtMost(20)
 
             // 1. Streak from DataStore (0 for new users with no completed topics or quizzes)
             val streakDays = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty() || studySessions.isNotEmpty()) {

@@ -27,9 +27,33 @@ class HomeViewModel(
 
     init {
         observeUserSession()
+        observeLessonProgress()
         loadLocalStats()
         loadDailyTasks()
         loadHomeData()
+    }
+
+    private fun observeLessonProgress() {
+        val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            progressDao.observeProgressForUser("1").collect { progressList ->
+                val completedIds = progressList.filter { it.isCompleted }.map { it.lessonId }.toSet()
+                val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
+                val quizChapterIds = quizRecords.map { it.chapterId }.toSet()
+                val allCompletedLessons = (completedIds + quizChapterIds).filter { it.isNotBlank() }.distinct()
+                val totalTopics = 20
+                val distinctTopicsDone = allCompletedLessons.size.coerceAtMost(totalTopics)
+                val overallPercent = ((distinctTopicsDone.toFloat() / totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
+
+                _uiState.update { current ->
+                    current.copy(
+                        overallProgress = overallPercent,
+                        topicsDone = distinctTopicsDone,
+                        totalTopics = totalTopics
+                    )
+                }
+            }
+        }
     }
 
     private fun observeUserSession() {
@@ -58,10 +82,12 @@ class HomeViewModel(
             val studySessions = try { com.siamts.synapse.data.local.QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
+            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser("1") } catch (_: Throwable) { emptyList() }
 
+            val completedProgressIds = progressList.filter { it.isCompleted }.map { it.lessonId }
             val completedChapters = chapters.filter { it.isAttempted }.map { it.id }
             val quizChapters = quizRecords.map { it.chapterId }
-            val distinctTopicsDone = (completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size
+            val distinctTopicsDone = (completedProgressIds + completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size.coerceAtMost(20)
 
             val streak = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty() || studySessions.isNotEmpty()) {
                 val dates = studySessions.map { it.studyDate }.filter { it.isNotBlank() }.distinct().sortedDescending()
@@ -87,6 +113,19 @@ class HomeViewModel(
                 0
             }
 
+            val activeDates = studySessions.map { it.studyDate }.filter { it.isNotBlank() }.distinct()
+            val cal = java.util.Calendar.getInstance()
+            cal.firstDayOfWeek = java.util.Calendar.MONDAY
+            cal.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            val currentWeekDates = (0..6).map { offset ->
+                val c = cal.clone() as java.util.Calendar
+                c.add(java.util.Calendar.DAY_OF_MONTH, offset)
+                sdf.format(c.time)
+            }
+            val weeklyBooleans = currentWeekDates.map { it in activeDates }
+            val bestStreak = maxOf(streak, activeDates.size)
+
             _uiState.update { current ->
                 current.copy(
                     userName = userName,
@@ -95,7 +134,9 @@ class HomeViewModel(
                     totalTopics = totalTopics,
                     quizScore = avgScore,
                     quizzesAttempted = quizRecords.size,
-                    studyStreakDays = streak
+                    studyStreakDays = streak,
+                    bestStreakDays = bestStreak,
+                    weeklyActiveDays = weeklyBooleans
                 )
             }
         }

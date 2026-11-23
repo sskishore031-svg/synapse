@@ -67,6 +67,15 @@ class ChapterLessonViewModel(
             val userId = user?.id ?: 1
             val userEmail = user?.email ?: "student@synapse.ai"
 
+            val norm = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(resolvedSubject?.name.orEmpty())
+            val cId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(targetChapterId, norm)
+            val isDone = runCatching {
+                com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgress(cId, userId.toString())?.isCompleted == true
+            }.getOrDefault(false)
+            if (isDone) {
+                _uiState.update { it.copy(isCompleted = true) }
+            }
+
             val result = chaptersRepository.getChapterLesson(
                 chapterId = targetChapterId,
                 userId = userId,
@@ -112,23 +121,30 @@ class ChapterLessonViewModel(
         } ?: formulaPoints.joinToString(separator = "\n\n") { "• $it" }
             .ifBlank { "Worked practical examples, analytical derivations, and problem solving steps." }
 
+        val resolvedCid = chap?.id ?: targetChapterId
+        val resolvedSubName = sub?.name.orEmpty().ifEmpty {
+            BaseCurriculumData.getSubjectById((sub?.id ?: 1).toString())?.name
+                ?: BaseCurriculumData.subjects.firstOrNull { s -> s.chapters.any { it.chapterId == targetChapterId } }?.name
+                ?: "Curriculum Subject"
+        }
+        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(resolvedSubName)
+        val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(resolvedCid, normTrack)
+        val isAlreadyDone = chap?.isCompleted == true ||
+            (com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressCached(canonId)?.isCompleted == true)
+
         _uiState.update {
             it.copy(
                 isLoading = false,
-                chapterId = chap?.id ?: targetChapterId,
+                chapterId = resolvedCid,
                 chapterTitle = chap?.title.orEmpty().ifEmpty {
                     BaseCurriculumData.getChapterById(targetChapterId)?.title ?: "Lesson"
                 },
                 subjectId = sub?.id ?: 1,
-                subjectName = sub?.name.orEmpty().ifEmpty {
-                    BaseCurriculumData.getSubjectById((sub?.id ?: 1).toString())?.name
-                        ?: BaseCurriculumData.subjects.firstOrNull { s -> s.chapters.any { it.chapterId == targetChapterId } }?.name
-                        ?: "Curriculum Subject"
-                },
+                subjectName = resolvedSubName,
                 subjectSlug = sub?.slug.orEmpty(),
                 chapterOrder = chap?.chapterOrder ?: 1,
                 durationMinutes = chap?.estimatedMinutes ?: 15,
-                isCompleted = chap?.isCompleted ?: false,
+                isCompleted = isAlreadyDone,
                 currentPartIndex = 0,
                 part1Title = p1Title,
                 part1Content = p1Content,
@@ -195,6 +211,39 @@ class ChapterLessonViewModel(
             val user = sessionManager?.getSessionUser()
             val userId = user?.id ?: 1
             val userEmail = user?.email ?: "student@synapse.ai"
+
+            val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
+            val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subName)
+            val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(cid, normTrack)
+
+            // 1. Mark in Room DB / LessonProgressDao
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markLessonCompleted(
+                    lessonId = canonLessonId,
+                    trackId = normTrack,
+                    userId = userId.toString()
+                )
+            } catch (_: Throwable) {}
+
+            // 2. Automatically log Focused Study session for Progress & Analytics
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                    trackName = com.siamts.synapse.data.local.TrackMapping.getTrackTitle(normTrack),
+                    category = "Focused Study",
+                    durationMinutes = 15
+                )
+            } catch (_: Throwable) {}
+
+            // 3. Asynchronously sync to backend
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.syncProgressToRemote(
+                    trackId = normTrack,
+                    lessonId = canonLessonId,
+                    lessonCompleted = true,
+                    quizCompleted = false,
+                    userId = userId
+                )
+            } catch (_: Throwable) {}
 
             val result = chaptersRepository.completeChapter(
                 chapterId = cid,

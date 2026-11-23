@@ -94,6 +94,9 @@ object RetrofitClient {
     @Volatile
     private var analyticsApiInstance: AnalyticsApi? = null
 
+    @Volatile
+    private var progressApiInstance: ProgressApi? = null
+
     private val headerInterceptor by lazy {
         Interceptor { chain ->
             val originalRequest = chain.request()
@@ -202,6 +205,9 @@ object RetrofitClient {
 
     val analyticsApi: AnalyticsApi
         get() = getOrCreateAnalyticsApi()
+
+    val progressApi: ProgressApi
+        get() = getOrCreateProgressApi()
 
     private fun getOrCreateApi(): AuthApi {
         return apiInstance ?: synchronized(this) {
@@ -327,6 +333,14 @@ object RetrofitClient {
         return analyticsApiInstance ?: synchronized(this) {
             analyticsApiInstance ?: buildRetrofit(currentBaseUrl).create(AnalyticsApi::class.java).also {
                 analyticsApiInstance = it
+            }
+        }
+    }
+
+    private fun getOrCreateProgressApi(): ProgressApi {
+        return progressApiInstance ?: synchronized(this) {
+            progressApiInstance ?: buildRetrofit(currentBaseUrl).create(ProgressApi::class.java).also {
+                progressApiInstance = it
             }
         }
     }

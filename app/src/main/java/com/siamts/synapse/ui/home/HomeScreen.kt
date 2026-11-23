@@ -45,6 +45,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -92,6 +96,7 @@ fun HomeScreen(
     onProfileClick: (() -> Unit)? = null,
     onBrainMapClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onStreakCalendarClick: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -149,11 +154,13 @@ fun HomeScreen(
         onAiChatClick = { onAiChatClick?.invoke() },
         onAiChatQuerySubmit = onAiChatQuerySubmit,
         onProgressAnalyticsClick = onProgressAnalyticsClick,
+        onStreakCalendarClick = onStreakCalendarClick,
         onContinueLessonClick = onContinueLessonClick,
         modifier = modifier,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent(
     uiState: HomeUiState,
@@ -173,6 +180,7 @@ fun HomeContent(
     onAiChatClick: () -> Unit = {},
     onAiChatQuerySubmit: ((String) -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
+    onStreakCalendarClick: (() -> Unit)? = null,
     onContinueLessonClick: ((String, Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -180,9 +188,15 @@ fun HomeContent(
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF0C0D12), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFFDFBF7), Color(0xFFF8F4EE), LightBackground)
+        listOf(Color(0xFFF5F6FA), Color(0xFFF5F6FA))
     }
-    val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
+    val cardBg = if (isDark) SurfacePanel else Color.White
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
+    val elevatedBg = if (isDark) SurfacePanelElevated else Color(0xFFEEF1F7)
+    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
+    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF5A6075)
+    val headerTextColor = textPrimaryColor
+    var showStreakSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -237,8 +251,12 @@ fun HomeContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
-                        .background(Color(0xFF13141B), RoundedCornerShape(16.dp))
-                        .border(1.dp, Color(0xFFFF6A00).copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .background(if (isDark) Color(0xFF13141B) else Color.White, RoundedCornerShape(16.dp))
+                        .border(
+                            1.dp,
+                            if (isDark) Color(0xFFFF6A00).copy(alpha = 0.4f) else cardBorder,
+                            RoundedCornerShape(16.dp)
+                        )
                         .clickable { onAiChatClick() }
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.CenterStart
@@ -258,7 +276,7 @@ fun HomeContent(
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "Chat with SYNAPSE — Ask any placement doubt...",
-                            color = TextSecondary,
+                            color = textSecondaryColor,
                             fontSize = 13.sp,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -460,8 +478,8 @@ fun HomeContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
@@ -480,13 +498,13 @@ fun HomeContent(
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = "${uiState.overallProgress}% Completed",
-                                            color = Color.White,
+                                            color = textPrimaryColor,
                                             fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
                                             text = if (uiState.overallProgress == 100) "Goal achieved! Outstanding discipline." else "Master 2-min daily concepts & tasks",
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 12.sp
                                         )
                                     }
@@ -499,12 +517,12 @@ fun HomeContent(
                                             progress = { (uiState.overallProgress / 100f).coerceIn(0f, 1f) },
                                             modifier = Modifier.fillMaxSize(),
                                             color = SunsetOrange,
-                                            trackColor = Color(0xFF1E212D),
+                                            trackColor = if (isDark) Color(0xFF1E212D) else Color(0xFFE2E8F0),
                                             strokeWidth = 6.dp
                                         )
                                         Text(
                                             text = "${uiState.overallProgress}%",
-                                            color = Color.White,
+                                            color = textPrimaryColor,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -522,21 +540,21 @@ fun HomeContent(
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
-                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                                            .background(elevatedBg, RoundedCornerShape(12.dp))
+                                            .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = "${uiState.topicsDone}",
-                                                color = Color.White,
+                                                color = textPrimaryColor,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
                                                 text = "Topics done",
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
                                             )
                                         }
@@ -546,8 +564,8 @@ fun HomeContent(
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
-                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                                            .background(elevatedBg, RoundedCornerShape(12.dp))
+                                            .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -560,31 +578,41 @@ fun HomeContent(
                                             )
                                             Text(
                                                 text = "Quiz score",
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
                                             )
                                         }
                                     }
 
-                                    // Metric 3: Study streak
+                                    // Metric 3: Study streak (Interactive Streak Sheet Trigger)
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
-                                            .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(elevatedBg, RoundedCornerShape(12.dp))
+                                            .border(
+                                                1.dp,
+                                                SunsetOrange.copy(alpha = 0.6f),
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable { showStreakSheet = true }
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "${uiState.studyStreakDays} days",
-                                                color = SunsetOrange,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "${uiState.studyStreakDays} days",
+                                                    color = SunsetOrange,
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(text = "🔥", fontSize = 12.sp)
+                                            }
                                             Text(
                                                 text = "Study streak",
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
                                             )
                                         }
@@ -638,8 +666,8 @@ fun HomeContent(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                    colors = CardDefaults.cardColors(containerColor = cardBg),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(16.dp),
@@ -650,13 +678,13 @@ fun HomeContent(
                                         Column {
                                             Text(
                                                 text = "No tasks added yet",
-                                                color = TextPrimary,
+                                                color = textPrimaryColor,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
                                                 text = "Tap '+ Add a task' to plan your 2-min micro-lessons for today!",
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 11.sp
                                             )
                                         }
@@ -668,10 +696,10 @@ fun HomeContent(
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(14.dp),
-                                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                            colors = CardDefaults.cardColors(containerColor = cardBg),
                                             border = androidx.compose.foundation.BorderStroke(
                                                 1.dp,
-                                                if (task.isCompleted) Color(0xFF059669) else SurfaceBorder
+                                                if (task.isCompleted) Color(0xFF059669) else cardBorder
                                             )
                                         ) {
                                             Row(
@@ -694,7 +722,7 @@ fun HomeContent(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = task.title,
-                                                        color = if (task.isCompleted) Color(0xFF6B7280) else TextPrimary,
+                                                        color = if (task.isCompleted) Color(0xFF6B7280) else textPrimaryColor,
                                                         fontSize = 14.sp,
                                                         fontWeight = if (task.isCompleted) FontWeight.Normal else FontWeight.SemiBold,
                                                         textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
@@ -727,7 +755,7 @@ fun HomeContent(
                         Column {
                             Text(
                                 text = "AI Learning Modules",
-                                color = TextPrimary,
+                                color = textPrimaryColor,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -743,8 +771,13 @@ fun HomeContent(
                                             .clickable { onActionClick(action.id) },
                                         shape = RoundedCornerShape(16.dp),
                                         colors = CardDefaults.cardColors(
-                                            containerColor = if (action.isHighlighted) Color(0xFF161F42) else Color(0xFF0D1430)
+                                            containerColor = if (isDark) {
+                                                if (action.isHighlighted) Color(0xFF161F42) else Color(0xFF0D1430)
+                                            } else {
+                                                if (action.isHighlighted) Color(0xFFFFF7ED) else cardBg
+                                            }
                                         ),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                                     ) {
                                         Column(
                                             modifier = Modifier.padding(14.dp),
@@ -756,13 +789,13 @@ fun HomeContent(
                                             Spacer(modifier = Modifier.height(12.dp))
                                             Text(
                                                 text = action.title,
-                                                color = TextPrimary,
+                                                color = textPrimaryColor,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                             Text(
                                                 text = action.subtitle,
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 12.sp,
                                             )
                                         }
@@ -782,14 +815,14 @@ fun HomeContent(
                             ) {
                                 Text(
                                     text = "Recent Sessions",
-                                    color = TextPrimary,
+                                    color = textPrimaryColor,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 if (uiState.topicsDone > 0) {
                                     Text(
                                         text = "${uiState.topicsDone}/${uiState.totalTopics} completed",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 12.sp
                                     )
                                 }
@@ -807,8 +840,8 @@ fun HomeContent(
                                         onContinueLessonClick?.invoke("PYTHON", 1)
                                     },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = cardBg),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
@@ -818,7 +851,7 @@ fun HomeContent(
                                     ) {
                                         Text(
                                             text = "Start Track 1: Python & Coding Logic",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -841,7 +874,7 @@ fun HomeContent(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = "Begin your 2-minute daily concept lessons · 15 min",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 12.sp
                                     )
                                 }
@@ -854,9 +887,8 @@ fun HomeContent(
                                     .fillMaxWidth()
                                     .clickable { onSessionClick(session.id) },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF0D1430)
-                                ),
+                                colors = CardDefaults.cardColors(containerColor = cardBg),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),
@@ -867,13 +899,13 @@ fun HomeContent(
                                     ) {
                                         Text(
                                             text = session.title,
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = session.timeAgo,
-                                            color = TextMuted,
+                                            color = textSecondaryColor,
                                             fontSize = 12.sp,
                                         )
                                     }
@@ -890,7 +922,7 @@ fun HomeContent(
                                             .fillMaxWidth()
                                             .height(6.dp),
                                         color = CyanGlow,
-                                        trackColor = Color(0xFF1E293B),
+                                        trackColor = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
                                     )
 
                                     // Add Continue button to first active session card
@@ -1089,8 +1121,8 @@ fun HomeContent(
                                 .fillMaxWidth()
                                 .clickable { onProgressAnalyticsClick?.invoke() },
                             shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -1115,14 +1147,14 @@ fun HomeContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "Progress & Analytics",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "Study time, tracks breakdown & streaks",
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 11.sp,
                                         )
                                     }
@@ -1155,44 +1187,220 @@ fun HomeContent(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
+
+        }
+    }
+
+    // Interactive Streak Quick-View Sheet
+    if (showStreakSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showStreakSheet = false },
+            containerColor = cardBg,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 12.dp, bottom = 8.dp)
+                        .width(40.dp)
+                        .height(4.dp)
+                        .background(cardBorder, RoundedCornerShape(2.dp))
+                )
+            }
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF13141B))
-                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .padding(vertical = 10.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
+                // Header with Flame
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(SunsetOrange.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "🔥", fontSize = 28.sp)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Daily Study Streak",
+                    color = textPrimaryColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                Spacer(modifier = Modifier.height(4.dp))
+
+                val motivationalText = if (uiState.studyStreakDays == 0) {
+                    "Start your first micro-lesson today to build your streak!"
+                } else if (uiState.studyStreakDays == 1) {
+                    "Great start! Complete a lesson tomorrow to keep the flame alive."
+                } else {
+                    "You're on fire! ${uiState.studyStreakDays} days in a row — keep the momentum going!"
+                }
+
+                Text(
+                    text = motivationalText,
+                    color = textSecondaryColor,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Stats Cards: Current Streak & Best Streak
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = elevatedBg),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                     ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4)
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else Color(0xFF8E92A4),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 14.dp, horizontal = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "${uiState.studyStreakDays} days",
+                                color = SunsetOrange,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Current Streak",
+                                color = textSecondaryColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
+
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = elevatedBg),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 14.dp, horizontal = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "${uiState.bestStreakDays} days",
+                                color = AmberGold,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Best Streak",
+                                color = textSecondaryColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // This Week's Activity Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "This Week's Activity",
+                        color = textPrimaryColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${uiState.weeklyActiveDays.count { it }} / 7 active",
+                        color = SunsetOrange,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Mon - Sun Pills Row
+                val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    dayNames.forEachIndexed { index, dayName ->
+                        val isActive = uiState.weeklyActiveDays.getOrElse(index) { false }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isActive) SunsetOrange else elevatedBg
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isActive) SunsetOrange else cardBorder,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isActive) {
+                                    Text(text = "🔥", fontSize = 16.sp)
+                                } else {
+                                    Text(
+                                        text = dayName.take(1),
+                                        color = textSecondaryColor,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = dayName,
+                                color = if (isActive) SunsetOrange else textSecondaryColor,
+                                fontSize = 10.sp,
+                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // View Full Streak Calendar -> Button
+                Button(
+                    onClick = {
+                        showStreakSheet = false
+                        onStreakCalendarClick?.invoke() ?: onProgressAnalyticsClick?.invoke()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
+                ) {
+                    Text(
+                        text = "View Full Streak Calendar →",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

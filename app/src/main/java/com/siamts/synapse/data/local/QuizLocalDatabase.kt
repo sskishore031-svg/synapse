@@ -17,7 +17,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao, StudySessionDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao, StudySessionDao, LessonProgressDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
@@ -30,6 +30,8 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemorySessions = CopyOnWriteArrayList<ChatSessionEntity>()
     private val inMemoryChatMessages = java.util.concurrent.ConcurrentHashMap<String, List<ChatMessageEntity>>()
     private val inMemoryStudySessions = CopyOnWriteArrayList<StudySessionEntity>()
+    private val inMemoryLessonProgress = java.util.concurrent.ConcurrentHashMap<String, LessonProgressEntity>()
+    private val progressStateFlow = kotlinx.coroutines.flow.MutableStateFlow<List<LessonProgressEntity>>(emptyList())
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -197,6 +199,20 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 duration_minutes INTEGER NOT NULL,
                 study_date TEXT NOT NULL,
                 timestamp INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS lesson_progress (
+                lesson_id TEXT NOT NULL,
+                track_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                lesson_completed INTEGER NOT NULL DEFAULT 0,
+                quiz_completed INTEGER NOT NULL DEFAULT 0,
+                is_completed INTEGER NOT NULL DEFAULT 0,
+                completed_at INTEGER NOT NULL,
+                PRIMARY KEY (lesson_id, user_id)
             )
             """.trimIndent()
         )
@@ -1351,6 +1367,10 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         getAllSessions().filter { it.studyDate in startDate..endDate }
     }
 
+    override suspend fun getSessionsForMonth(yearMonth: String): List<StudySessionEntity> = withContext(Dispatchers.IO) {
+        getAllSessions().filter { it.studyDate.startsWith(yearMonth) }
+    }
+
     override suspend fun getSessionsByTrack(trackName: String): List<StudySessionEntity> = withContext(Dispatchers.IO) {
         getAllSessions().filter { it.trackName.equals(trackName, ignoreCase = true) }
     }
@@ -1377,6 +1397,219 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         Unit
     }
 
+    // ==========================================
+    // LessonProgressDao Implementation ('lesson_progress')
+    // ==========================================
+
+    override suspend fun saveProgress(progress: LessonProgressEntity) = withContext(Dispatchers.IO) {
+        val key = "${progress.userId}_${progress.lessonId}"
+        inMemoryLessonProgress[key] = progress
+        progressStateFlow.value = inMemoryLessonProgress.values.toList()
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("lesson_id", progress.lessonId)
+                    put("track_id", progress.trackId)
+                    put("user_id", progress.userId)
+                    put("lesson_completed", if (progress.lessonCompleted) 1 else 0)
+                    put("quiz_completed", if (progress.quizCompleted) 1 else 0)
+                    put("is_completed", if (progress.isCompleted) 1 else 0)
+                    put("completed_at", progress.completedAt)
+                }
+                db.insertWithOnConflict("lesson_progress", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
+    override suspend fun markLessonCompleted(
+        lessonId: String,
+        trackId: String,
+        userId: String
+    ): LessonProgressEntity = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val canonicalId = TrackMapping.canonicalLessonId(lessonId, normTrack)
+        val existing = getProgress(canonicalId, userId)
+        val updated = (existing ?: LessonProgressEntity(
+            lessonId = canonicalId,
+            trackId = normTrack,
+            userId = userId
+        )).copy(
+            lessonCompleted = true,
+            isCompleted = true,
+            completedAt = System.currentTimeMillis()
+        )
+        saveProgress(updated)
+
+        // Backwards compatibility with ChapterDao
+        markChapterCompleted(canonicalId.toIntOrNull() ?: 1)
+        updated
+    }
+
+    override suspend fun markQuizCompleted(
+        lessonId: String,
+        trackId: String,
+        userId: String
+    ): LessonProgressEntity = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val canonicalId = TrackMapping.canonicalLessonId(lessonId, normTrack)
+        val existing = getProgress(canonicalId, userId)
+        val updated = (existing ?: LessonProgressEntity(
+            lessonId = canonicalId,
+            trackId = normTrack,
+            userId = userId
+        )).copy(
+            quizCompleted = true,
+            isCompleted = true,
+            completedAt = System.currentTimeMillis()
+        )
+        saveProgress(updated)
+
+        // Backwards compatibility with ChapterDao
+        markChapterCompleted(canonicalId.toIntOrNull() ?: 1)
+        updated
+    }
+
+    override fun getProgressCached(lessonId: String, userId: String): LessonProgressEntity? {
+        return inMemoryLessonProgress["${userId}_$lessonId"]
+    }
+
+    override suspend fun getProgress(
+        lessonId: String,
+        userId: String
+    ): LessonProgressEntity? = withContext(Dispatchers.IO) {
+        val key = "${userId}_$lessonId"
+        inMemoryLessonProgress[key]?.let { return@withContext it }
+
+        if (hasAndroidContext) {
+            try {
+                val db = readableDatabase
+                val cursor = db.query(
+                    "lesson_progress",
+                    null,
+                    "lesson_id = ? AND user_id = ?",
+                    arrayOf(lessonId, userId),
+                    null, null, null
+                )
+                cursor.use { c ->
+                    if (c.moveToFirst()) {
+                        val entity = LessonProgressEntity(
+                            lessonId = c.getString(c.getColumnIndexOrThrow("lesson_id")),
+                            trackId = c.getString(c.getColumnIndexOrThrow("track_id")),
+                            userId = c.getString(c.getColumnIndexOrThrow("user_id")),
+                            lessonCompleted = c.getInt(c.getColumnIndexOrThrow("lesson_completed")) == 1,
+                            quizCompleted = c.getInt(c.getColumnIndexOrThrow("quiz_completed")) == 1,
+                            isCompleted = c.getInt(c.getColumnIndexOrThrow("is_completed")) == 1,
+                            completedAt = c.getLong(c.getColumnIndexOrThrow("completed_at"))
+                        )
+                        inMemoryLessonProgress[key] = entity
+                        return@withContext entity
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+        null
+    }
+
+    override suspend fun getProgressForUser(
+        userId: String
+    ): List<LessonProgressEntity> = withContext(Dispatchers.IO) {
+        val memList = inMemoryLessonProgress.values.filter { it.userId == userId && it.isCompleted }
+        if (!hasAndroidContext || memList.isNotEmpty()) {
+            return@withContext memList
+        }
+        val list = mutableListOf<LessonProgressEntity>()
+        try {
+            val db = readableDatabase
+            val cursor = db.query(
+                "lesson_progress",
+                null,
+                "user_id = ? AND is_completed = 1",
+                arrayOf(userId),
+                null, null, "completed_at ASC"
+            )
+            cursor.use { c ->
+                val lid = c.getColumnIndexOrThrow("lesson_id")
+                val tid = c.getColumnIndexOrThrow("track_id")
+                val uid = c.getColumnIndexOrThrow("user_id")
+                val lc = c.getColumnIndexOrThrow("lesson_completed")
+                val qc = c.getColumnIndexOrThrow("quiz_completed")
+                val ic = c.getColumnIndexOrThrow("is_completed")
+                val ca = c.getColumnIndexOrThrow("completed_at")
+                while (c.moveToNext()) {
+                    val entity = LessonProgressEntity(
+                        lessonId = c.getString(lid),
+                        trackId = c.getString(tid),
+                        userId = c.getString(uid),
+                        lessonCompleted = c.getInt(lc) == 1,
+                        quizCompleted = c.getInt(qc) == 1,
+                        isCompleted = c.getInt(ic) == 1,
+                        completedAt = c.getLong(ca)
+                    )
+                    list.add(entity)
+                    inMemoryLessonProgress["${userId}_${entity.lessonId}"] = entity
+                }
+            }
+            if (list.isNotEmpty()) {
+                progressStateFlow.value = inMemoryLessonProgress.values.toList()
+            }
+        } catch (_: Throwable) {}
+        list
+    }
+
+    override fun observeProgressForUser(
+        userId: String
+    ): kotlinx.coroutines.flow.Flow<List<LessonProgressEntity>> {
+        return kotlinx.coroutines.flow.flow {
+            emit(getProgressForUser(userId))
+            progressStateFlow.collect { list ->
+                emit(list.filter { it.userId == userId && it.isCompleted })
+            }
+        }
+    }
+
+    override suspend fun getCompletedLessonsForTrack(
+        trackId: String,
+        userId: String
+    ): List<LessonProgressEntity> = withContext(Dispatchers.IO) {
+        val norm = TrackMapping.normalizeTrackId(trackId)
+        getProgressForUser(userId).filter { TrackMapping.normalizeTrackId(it.trackId) == norm && it.isCompleted }
+    }
+
+    override suspend fun resetTrackProgress(
+        trackId: String,
+        userId: String
+    ) = withContext(Dispatchers.IO) {
+        val norm = TrackMapping.normalizeTrackId(trackId)
+        val keysToRemove = inMemoryLessonProgress.filter { 
+            it.value.userId == userId && TrackMapping.normalizeTrackId(it.value.trackId) == norm 
+        }.keys
+        keysToRemove.forEach { inMemoryLessonProgress.remove(it) }
+        progressStateFlow.value = inMemoryLessonProgress.values.toList()
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("lesson_progress", "track_id = ? AND user_id = ?", arrayOf(norm, userId))
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
+    override suspend fun clearAllProgress() = withContext(Dispatchers.IO) {
+        inMemoryLessonProgress.clear()
+        progressStateFlow.value = emptyList()
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("lesson_progress", null, null)
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
         private const val DATABASE_VERSION = 10
@@ -1385,6 +1618,12 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         private var INSTANCE: QuizLocalDatabase? = null
 
         fun getStudySessionDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): StudySessionDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getLessonProgressDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): LessonProgressDao {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
             }

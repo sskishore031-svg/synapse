@@ -583,46 +583,7 @@ fun SavedNotesContent(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (isDark) DarkBackgroundBottom else Color.White)
-                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
-                    .padding(vertical = 8.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
-                )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8)
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
         }
 
         // 3D Perspective Note Viewer Dialog

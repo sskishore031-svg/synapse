@@ -699,46 +699,7 @@ fun DashboardContent(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(DarkBackgroundBottom)
-                    .border(1.dp, SurfaceBorder, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .padding(vertical = 10.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
-                )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8)
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else Color(0xFF94A3B8),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
         }
     }
 

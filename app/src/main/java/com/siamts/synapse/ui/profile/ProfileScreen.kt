@@ -3,6 +3,7 @@ package com.siamts.synapse.ui.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -38,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -133,10 +136,19 @@ fun ProfileContent(
     onSettingsClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
 ) {
-    val isDark = true
+    val isDark = isSystemInDarkTheme() || (MaterialTheme.colorScheme.background.luminance() < 0.5f)
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val pageBgGradient = listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
-    val headerTextColor = TextPrimary
+    val pageBgGradient = if (isDark) {
+        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+    } else {
+        listOf(Color(0xFFF5F6FA), Color(0xFFF0F2F8), Color(0xFFE9ECF5))
+    }
+    val cardBg = if (isDark) SurfacePanel else MaterialTheme.colorScheme.surface
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
+    val textPrimaryColor = if (isDark) TextPrimary else MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = if (isDark) TextSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+    val elevatedBg = if (isDark) SurfacePanelElevated else Color(0xFFEEF1F7)
+    val headerTextColor = textPrimaryColor
 
     Box(
         modifier = modifier
@@ -177,9 +189,10 @@ fun ProfileContent(
                         modifier = Modifier
                             .size(38.dp)
                             .background(
-                                color = if (isDark) Color(0xFF161F42) else Color(0xFFE2E8F0),
+                                color = if (isDark) Color(0xFF161F42) else Color(0xFFEEF1F7),
                                 shape = CircleShape
                             )
+                            .border(1.dp, cardBorder, CircleShape)
                             .clickable { onSettingsClick?.invoke() },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -259,9 +272,9 @@ fun ProfileContent(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(18.dp)),
+                                    .border(1.dp, cardBorder, RoundedCornerShape(18.dp)),
                                 shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                colors = CardDefaults.cardColors(containerColor = cardBg),
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -279,7 +292,7 @@ fun ProfileContent(
                                                 .size(50.dp)
                                                 .clip(CircleShape)
                                                 .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
-                                                .border(1.dp, SurfaceBorder, CircleShape),
+                                                .border(1.dp, cardBorder, CircleShape),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
@@ -314,14 +327,14 @@ fun ProfileContent(
                                         Column {
                                             Text(
                                                 text = uiState.userName,
-                                                color = TextPrimary,
+                                                color = textPrimaryColor,
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold,
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = uiState.userEmail,
-                                                color = TextSecondary,
+                                                color = textSecondaryColor,
                                                 fontSize = 12.sp,
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
@@ -337,8 +350,8 @@ fun ProfileContent(
                                     Box(
                                         modifier = Modifier
                                             .size(32.dp)
-                                            .background(SurfacePanelElevated, CircleShape)
-                                            .border(1.dp, SurfaceBorder, CircleShape)
+                                            .background(elevatedBg, CircleShape)
+                                            .border(1.dp, cardBorder, CircleShape)
                                             .clickable { onMyProfileClick?.invoke() },
                                         contentAlignment = Alignment.Center,
                                     ) {
@@ -356,19 +369,21 @@ fun ProfileContent(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(18.dp)),
+                                    .border(1.dp, cardBorder, RoundedCornerShape(18.dp)),
                                 shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                colors = CardDefaults.cardColors(containerColor = cardBg),
                             ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 6.dp)
-                                ) {
+                                    ) {
                                     // Item 1: My Profile
                                     ProfileOptionRow(
                                         icon = "👤",
                                         title = "My Profile",
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = { onMyProfileClick?.invoke() },
                                     )
 
@@ -377,6 +392,8 @@ fun ProfileContent(
                                         icon = "🏅",
                                         title = "Achievements",
                                         trailingText = uiState.achievementsCount,
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = { onAchievementsClick?.invoke() },
                                     )
 
@@ -385,6 +402,8 @@ fun ProfileContent(
                                         icon = "🎯",
                                         title = "Study Goals",
                                         trailingText = uiState.studyGoalText,
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = { onStudyGoalsClick?.invoke() },
                                     )
 
@@ -392,6 +411,8 @@ fun ProfileContent(
                                     ProfileOptionRow(
                                         icon = "🔖",
                                         title = "Saved Notes",
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = onOpenSavedNotesClick,
                                     )
 
@@ -399,6 +420,8 @@ fun ProfileContent(
                                     ProfileOptionRow(
                                         icon = "💾",
                                         title = "Downloaded Notes",
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = { onOpenDownloadedNotesClick?.invoke() ?: onOpenSavedNotesClick() },
                                     )
 
@@ -416,7 +439,7 @@ fun ProfileContent(
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = "Notifications",
-                                                color = TextPrimary,
+                                                color = textPrimaryColor,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                             )
@@ -436,6 +459,8 @@ fun ProfileContent(
                                     ProfileOptionRow(
                                         icon = "ℹ️",
                                         title = "About Synapse AI",
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
                                         onClick = { onAboutSynapseClick?.invoke() },
                                     )
                                 }
@@ -451,7 +476,7 @@ fun ProfileContent(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(46.dp)
-                                    .background(SurfacePanel, RoundedCornerShape(12.dp))
+                                    .background(cardBg, RoundedCornerShape(12.dp))
                                     .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                                     .clickable { showLogoutDialog = true },
                                 contentAlignment = Alignment.Center,
@@ -478,23 +503,23 @@ fun ProfileContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(46.dp)
-                                        .background(SurfacePanel, RoundedCornerShape(12.dp))
-                                        .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                                        .clickable { onRemoveProfilePictureClick?.invoke() },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "🗑 ", fontSize = 14.sp)
-                                        Text(
-                                            text = "Remove Profile Picture",
-                                            color = Color(0xFFDC2626),
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
+                                        .background(cardBg, RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                                    .clickable { onRemoveProfilePictureClick?.invoke() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "🗑 ", fontSize = 14.sp)
+                                    Text(
+                                        text = "Remove Profile Picture",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
                         }
+                    }
 
                         // 6. Version Footer Box
                         DashedBorderBox(
@@ -503,7 +528,7 @@ fun ProfileContent(
                         ) {
                             Text(
                                 text = uiState.appVersionText,
-                                color = TextSecondary,
+                                color = textSecondaryColor,
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
@@ -513,45 +538,7 @@ fun ProfileContent(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(DarkBackgroundBottom)
-                    .padding(vertical = 8.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
-                )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == uiState.selectedTab
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect(index) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = icon,
-                            fontSize = 18.sp,
-                            color = if (isSelected) SunsetOrange else TextSecondary
-                        )
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else TextSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
         }
 
         if (showLogoutDialog) {
@@ -561,13 +548,13 @@ fun ProfileContent(
                     Text(
                         text = "Confirm Logout",
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = textPrimaryColor
                     )
                 },
                 text = {
                     Text(
                         text = "Are you sure you want to log out of your SYNAPSE AI account?",
-                        color = TextSecondary,
+                        color = textSecondaryColor,
                         fontSize = 14.sp
                     )
                 },
@@ -585,10 +572,10 @@ fun ProfileContent(
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancel", color = TextSecondary, fontWeight = FontWeight.Medium)
+                        Text("Cancel", color = textSecondaryColor, fontWeight = FontWeight.Medium)
                     }
                 },
-                containerColor = SurfacePanelElevated,
+                containerColor = elevatedBg,
                 shape = RoundedCornerShape(16.dp)
             )
         }
@@ -600,6 +587,8 @@ private fun ProfileOptionRow(
     icon: String,
     title: String,
     trailingText: String? = null,
+    textColor: Color = TextPrimary,
+    mutedColor: Color = TextSecondary,
     onClick: () -> Unit,
 ) {
     Row(
@@ -615,7 +604,7 @@ private fun ProfileOptionRow(
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
-                color = TextPrimary,
+                color = textColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -625,14 +614,14 @@ private fun ProfileOptionRow(
             if (trailingText != null) {
                 Text(
                     text = trailingText,
-                    color = TextSecondary,
+                    color = mutedColor,
                     fontSize = 12.sp,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
                 text = "›",
-                color = TextSecondary,
+                color = mutedColor,
                 fontSize = 18.sp,
             )
         }

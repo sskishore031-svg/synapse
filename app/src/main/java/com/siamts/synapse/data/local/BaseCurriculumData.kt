@@ -22,7 +22,7 @@ import java.util.Locale
 object BaseCurriculumData {
 
     val subjects: List<CatalogSubject> by lazy {
-        SamacheerCurriculumData.subjects
+        SamacheerCurriculumData.subjects.filter { it.isAdded || it.subjectId in 101..104 }
     }
 
     // Requirement 4: Start with 0 default notes (only user-created/saved notes exist)

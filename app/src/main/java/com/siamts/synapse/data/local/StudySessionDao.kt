@@ -9,6 +9,7 @@ interface StudySessionDao {
     suspend fun getAllSessions(): List<StudySessionEntity>
     suspend fun getSessionsByDate(date: String): List<StudySessionEntity>
     suspend fun getSessionsBetween(startDate: String, endDate: String): List<StudySessionEntity>
+    suspend fun getSessionsForMonth(yearMonth: String): List<StudySessionEntity>
     suspend fun getSessionsByTrack(trackName: String): List<StudySessionEntity>
     suspend fun getAllActiveDates(): List<String>
     suspend fun clearSessions()

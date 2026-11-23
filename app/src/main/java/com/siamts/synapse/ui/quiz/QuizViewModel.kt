@@ -650,13 +650,37 @@ class QuizViewModel(
                 )
                 quizDao.insertQuizRecord(record)
 
-                // Automatically log Practice (Quiz) session for Progress & Analytics
+                val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subId.ifBlank { state.topicTag })
+                val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(chapIdStr, normTrack)
+                val currentUserId = (user?.id ?: 1).toString()
+
+                // 1. Mark Quiz as completed in LessonProgressDao (updates live Track & Chapter progress)
                 try {
-                    val trackTitle = state.topicTag.ifBlank { subId.ifBlank { "Python & Coding Logic" } }
+                    com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markQuizCompleted(
+                        lessonId = canonLessonId,
+                        trackId = normTrack,
+                        userId = currentUserId
+                    )
+                } catch (_: Throwable) {}
+
+                // 2. Automatically log Practice (Quiz) session for Progress & Analytics
+                try {
+                    val trackTitle = com.siamts.synapse.data.local.TrackMapping.getTrackTitle(normTrack)
                     com.siamts.synapse.data.local.SynapseDatabase.logSession(
                         trackName = trackTitle,
                         category = "Practice (Quiz)",
                         durationMinutes = 10
+                    )
+                } catch (_: Throwable) {}
+
+                // 3. Asynchronously sync to backend
+                try {
+                    com.siamts.synapse.data.local.SynapseDatabase.syncProgressToRemote(
+                        trackId = normTrack,
+                        lessonId = canonLessonId,
+                        lessonCompleted = false,
+                        quizCompleted = true,
+                        userId = user?.id ?: 1
                     )
                 } catch (_: Throwable) {}
 

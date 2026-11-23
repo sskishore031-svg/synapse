@@ -123,9 +123,9 @@ fun NotesHomeScreen(
 
     val isDark = LocalThemeIsDark.current
     val pageBgGradient = if (isDark) {
-        listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
+        listOf(DarkBackgroundTop, Color(0xFF0C0D12), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+        listOf(Color(0xFFF5F6FA), Color(0xFFF5F6FA))
     }
     val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
 

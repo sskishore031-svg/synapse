@@ -50,6 +50,8 @@ data class HomeUiState(
     val quizzesAttempted: Int = 0,
     val latestQuizScore: Int = 0,
     val studyStreakDays: Int = 0,
+    val bestStreakDays: Int = 0,
+    val weeklyActiveDays: List<Boolean> = listOf(false, false, false, false, false, false, false),
     val todayGoalPercent: Int = 0,
     val dailyTasks: List<com.siamts.synapse.data.local.LearningTaskEntity> = emptyList(),
     val showAddTaskDialog: Boolean = false,

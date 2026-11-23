@@ -301,42 +301,7 @@ fun QuizIntroPreviewScreen(
                 }
             }
 
-            // Bottom Navigation Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (isDark) SurfacePanel else Color.White)
-                    .border(BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)))
-                    .padding(vertical = 8.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val navItems = listOf(
-                    Triple("Home", "🏠", 0),
-                    Triple("Learn", "📖", 1),
-                    Triple("Quiz", "❓", 2),
-                    Triple("Notes", "📝", 3),
-                    Triple("Profile", "👤", 4)
-                )
 
-                navItems.forEach { (label, icon, index) ->
-                    val isSelected = index == 2
-                    Column(
-                        modifier = Modifier
-                            .clickable { onTabSelect?.invoke(index) }
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(text = icon, fontSize = 18.sp)
-                        Text(
-                            text = label,
-                            color = if (isSelected) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF94A3B8)),
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        )
-                    }
-                }
-            }
         }
     }
 }

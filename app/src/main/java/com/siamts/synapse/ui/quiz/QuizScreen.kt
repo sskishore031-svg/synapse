@@ -130,10 +130,13 @@ fun QuizContent(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
-                        Color(0xFF090D22),
+                        Color(0xFF0C0D12),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA),
                     )
                 )
             )
