@@ -220,13 +220,13 @@ fun HomeContent(
                 ) {
                     Column(
                         modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(end = 8.dp)
+                            .weight(1f)
+                            .padding(end = 12.dp)
                     ) {
                         Text(
                             text = "Hello, ${uiState.userName.ifBlank { "Kishore" }}! 👋",
                             color = headerTextColor,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -242,48 +242,19 @@ fun HomeContent(
                         )
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Sleek Small Theme Toggle Icon in top-right corner
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(elevatedBg, CircleShape)
+                            .border(1.dp, cardBorder, CircleShape)
+                            .clickable { onToggleTheme?.invoke() },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        // Interactive Dark / Light Mode Toggle Pill
-                        Box(
-                            modifier = Modifier
-                                .height(36.dp)
-                                .background(elevatedBg, RoundedCornerShape(18.dp))
-                                .border(1.dp, cardBorder, RoundedCornerShape(18.dp))
-                                .clickable { onToggleTheme?.invoke() }
-                                .padding(horizontal = 8.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isDark) "🌙" else "☀️",
-                                    fontSize = 13.sp
-                                )
-                                Text(
-                                    text = if (isDark) "Dark" else "Light",
-                                    color = headerTextColor,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        DashedBorderBox(
-                            modifier = Modifier.clickable { onBrainMapCardClick() },
-                            contentPadding = 8.dp
-                        ) {
-                            Text(
-                                text = "⚡ Mind Power: ${uiState.mindPower}%",
-                                color = AmberGlow,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
+                        Text(
+                            text = if (isDark) "🌙" else "☀️",
+                            fontSize = 18.sp
+                        )
                     }
                 }
 
@@ -439,17 +410,21 @@ fun HomeContent(
                                         }
                                     }
 
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                         Text(
-                                            text = uiState.userName,
+                                            text = uiState.userName.ifBlank { "Kishore" },
                                             color = TextPrimary,
                                             fontSize = 20.sp,
                                             fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = uiState.course,
                                             color = TextSecondary,
                                             fontSize = 13.sp,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
                                 }

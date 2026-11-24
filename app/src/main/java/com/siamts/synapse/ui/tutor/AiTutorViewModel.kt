@@ -348,7 +348,7 @@ class AiTutorViewModel(
             )
         }
         if (finalText.isNotBlank()) {
-            onSendMessage(finalText)
+            onSendMessage(finalText, isFromVoice = true)
         }
     }
 
@@ -364,7 +364,7 @@ class AiTutorViewModel(
      * Executes instantaneous message sending (0ms UI lag), checks for Agentic In-App Task commands,
      * or starts fast on-device token streaming.
      */
-    fun onSendMessage(overrideQuery: String? = null) {
+    fun onSendMessage(overrideQuery: String? = null, isFromVoice: Boolean = false) {
         if (_uiState.value.isGenerating) return
 
         val query = (overrideQuery ?: _uiState.value.inputQuery).trim()
@@ -406,46 +406,6 @@ class AiTutorViewModel(
         if (isFiveMarkQuery(lowerQ)) {
             val extracted = extractTopicFromExamQuery(query)
             formatAsFiveMark(customTopic = extracted.ifBlank { null })
-            return
-        }
-
-        if (isLengthControlShortenQuery(lowerQ)) {
-            val userMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                senderName = "You",
-                text = query,
-                timeAgo = "Just now",
-                isUser = true
-            )
-            val topicToSummarize = lastTopic.ifBlank {
-                _uiState.value.messages.lastOrNull { !it.isUser && it.matchedTopic != null }?.matchedTopic ?: "Academic Concept"
-            }
-            val shortText = buildString {
-                appendLine("* **Core Concept:** $topicToSummarize focuses on foundational mechanisms, syntax, and computational logic.")
-                appendLine("* **Key Rule / Syntax:** Standard programming construct or formula with complexity constraints.")
-                append("* **Placement Takeaway:** High-yield summary point essential for technical and coding interview rounds.")
-            }
-            val aiMsg = ChatMessage(
-                id = UUID.randomUUID().toString(),
-                senderName = "SYNAPSE AI",
-                text = shortText,
-                timeAgo = "Just now",
-                isUser = false,
-                matchedTopic = topicToSummarize,
-                isConceptAnswer = true
-            )
-            val newMessages = _uiState.value.messages + userMsg + aiMsg
-            _uiState.update {
-                it.copy(
-                    messages = newMessages,
-                    userQuestion = query,
-                    aiAnswerParagraph1 = shortText,
-                    aiAnswerParagraph2 = "",
-                    aiThoughtStatus = "✓ Compressed Summary ($topicToSummarize)",
-                    isGenerating = false
-                )
-            }
-            persistCurrentSession(newMessages)
             return
         }
 
@@ -790,6 +750,10 @@ class AiTutorViewModel(
                 }
             }
 
+            if (lastTopic.isNotBlank()) {
+                localAiEngine.recordLastTopic(lastTopic, lastTrack, lastResponseText)
+            }
+
             localAiEngine.streamResponse(query, delayPerWordMs = 15L).collect { streamEvent ->
                 when (streamEvent) {
                     is LocalAiStreamToken.Thinking -> {
@@ -848,6 +812,10 @@ class AiTutorViewModel(
                         }
                         if (!localResponse.matchedSubject.isNullOrBlank()) {
                             lastTrack = localResponse.matchedSubject
+                        }
+
+                        if (isFromVoice && localResponse.paragraph1.isNotBlank()) {
+                            voiceAssistant?.speak(localResponse.paragraph1)
                         }
 
                         // Handle name capture or preference persistence

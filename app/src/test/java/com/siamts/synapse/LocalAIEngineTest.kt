@@ -37,6 +37,8 @@ class LocalAIEngineTest {
 
         assertNotNull("Knowledge dataset json file must exist for tests", jsonContent)
         engine.loadFromJson(jsonContent!!)
+        engine.preferredName = ""
+        engine.accountUserName = ""
         engine.resetContext()
     }
 
@@ -499,11 +501,13 @@ class LocalAIEngineTest {
             "who is rajinikanth",
             "tell me a recipe for chicken biryani",
             "what was the cricket match score",
-            "will you marry me"
+            "will you marry me",
+            "ena pandra",
+            "enna pandra"
         )
         for (q in nonTechQueries) {
             val response = engine.generateResponse(q)
-            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("falls outside my placement and technical scope"))
+            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("I don't have the answer to that") || response.paragraph1.contains("falls outside my placement"))
         }
     }
 
@@ -643,10 +647,15 @@ class LocalAIEngineTest {
         engine.resetContext()
 
         val sayName = engine.generateResponse("say my name")
-        assertTrue("Should prompt for name", sayName.paragraph1.contains("I don't know your name yet"))
+        assertTrue("Should tell user their name is Kishore", sayName.paragraph1.contains("Kishore"))
+        assertFalse("Must not return OOP dunder chunk", sayName.paragraph1.contains("dunder", ignoreCase = true))
 
         val whatIsName = engine.generateResponse("what is my name")
-        assertTrue("Should prompt for name", whatIsName.paragraph1.contains("I don't know your name yet"))
+        assertTrue("Should tell user their name is Kishore", whatIsName.paragraph1.contains("Kishore"))
+        assertFalse("Must never return AI identity", whatIsName.paragraph1.contains("I am SYNAPSE AI"))
+
+        val nowWhatIsName = engine.generateResponse("now what is my name")
+        assertTrue("Should tell user their name is Kishore", nowWhatIsName.paragraph1.contains("Kishore"))
     }
 
     @Test
@@ -660,5 +669,27 @@ class LocalAIEngineTest {
 
         val followUp = engine.generateResponse("what is my name")
         assertTrue(followUp.paragraph1.contains("Your name is **Kishore**!"))
+
+        val nowFollowUp = engine.generateResponse("now what is my name")
+        assertTrue(nowFollowUp.paragraph1.contains("Your name is **Kishore**!"))
+    }
+
+    @Test
+    fun testTopicMemory_explainAboutPython_thenExplainShortly() {
+        engine.resetContext()
+        val r1 = engine.generateResponse("explain about python")
+        assertEquals("Python & Coding Logic", r1.matchedSubject)
+
+        val r2 = engine.generateResponse("explain shortly")
+        assertEquals("Python & Coding Logic", r2.matchedSubject)
+        assertTrue(r2.isFollowUp)
+        assertFalse(r2.paragraph1.contains("Aptitude", ignoreCase = true))
+    }
+
+    @Test
+    fun testOffTopicCasualQuery_returnsCleanOutOfScopeMessage() {
+        engine.resetContext()
+        val r = engine.generateResponse("ena pandra")
+        assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, r.paragraph1)
     }
 }

@@ -204,66 +204,49 @@ fun DashboardContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp)
+                    ) {
                         Text(
                             text = uiState.dateText,
                             color = if (isDark) TextMuted else BlueAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Hello, ${uiState.userName} 👋",
+                            text = "Hello, ${uiState.userName.ifBlank { "Kishore" }} 👋",
                             color = headerTextColor,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Interactive Dark / Light Mode Toggle Pill
-                        Box(
-                            modifier = Modifier
-                                .height(38.dp)
-                                .background(controlBgColor, RoundedCornerShape(19.dp))
-                                .border(1.dp, controlBorderColor, RoundedCornerShape(19.dp))
-                                .clickable { onToggleTheme?.invoke() }
-                                .padding(horizontal = 10.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isDark) "🌙" else "☀️",
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    text = if (isDark) "Dark" else "Light",
-                                    color = headerTextColor,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // Bell Notification Button
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Sleek Small Theme Toggle Icon in top-right corner
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .background(controlBgColor, CircleShape)
                                 .border(1.dp, controlBorderColor, CircleShape)
-                                .clickable { onNotificationClick?.invoke() },
+                                .clickable { onToggleTheme?.invoke() },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(text = "🔔", fontSize = 16.sp)
+                            Text(
+                                text = if (isDark) "🌙" else "☀️",
+                                fontSize = 18.sp
+                            )
                         }
-
-                        Spacer(modifier = Modifier.width(10.dp))
 
                         // Top Right Corner Profile Icon (Photo or K Avatar)
                         val photoModel = RetrofitClient.resolveImageModel(uiState.profilePhotoUri)

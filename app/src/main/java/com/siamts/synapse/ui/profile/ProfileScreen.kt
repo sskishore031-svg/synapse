@@ -269,7 +269,10 @@ fun ProfileContent(
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.clickable { onMyProfileClick?.invoke() }
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(end = 8.dp)
+                                            .clickable { onMyProfileClick?.invoke() }
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -308,18 +311,22 @@ fun ProfileContent(
 
                                         Spacer(modifier = Modifier.width(12.dp))
 
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = uiState.userName,
                                                 color = textPrimaryColor,
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = uiState.userEmail,
                                                 color = textSecondaryColor,
                                                 fontSize = 12.sp,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
@@ -327,6 +334,8 @@ fun ProfileContent(
                                                 color = AmberGold,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Medium,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                         }
                                     }

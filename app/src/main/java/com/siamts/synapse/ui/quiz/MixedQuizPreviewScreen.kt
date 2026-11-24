@@ -48,6 +48,9 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
@@ -184,23 +187,23 @@ fun MixedQuizPreviewScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "←", color = if (isDark) TextPrimary else LightTextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "ALL SUBJECTS · COMPREHENSIVE QUIZ", color = AmberGold, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "Mixed Knowledge Challenge", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Mixed Knowledge Challenge", color = if (isDark) TextPrimary else LightTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) Color(0xFF161F42) else Color(0xFFEEF1F7), CircleShape)
                             .clickable { onBackClick() },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "✕", color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "✕", color = if (isDark) TextSecondary else LightTextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

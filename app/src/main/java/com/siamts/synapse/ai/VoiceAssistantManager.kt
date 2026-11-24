@@ -458,7 +458,7 @@ class VoiceAssistantManager(
     }
 
     /**
-     * Starts single-turn speech dictation (for WhatsApp-style hold-to-talk or tap-to-dictate).
+     * Starts single-turn speech dictation (for tap-to-talk or hold-to-talk).
      */
     fun startDictation(
         onPartial: (String) -> Unit,
@@ -468,20 +468,22 @@ class VoiceAssistantManager(
         stopLiveSession()
         mainHandler.post {
             try {
-                if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-                    onComplete("")
-                    return@post
-                }
                 try {
                     dictationRecognizer?.cancel()
                     dictationRecognizer?.destroy()
                 } catch (_: Exception) {}
                 lastDictatedText = ""
 
-                dictationRecognizer = SpeechRecognizer.createSpeechRecognizer(context.applicationContext).apply {
+                _voiceState.value = VoiceState.LISTENING
+
+                dictationRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
                     setRecognitionListener(object : RecognitionListener {
-                        override fun onReadyForSpeech(params: Bundle?) {}
-                        override fun onBeginningOfSpeech() {}
+                        override fun onReadyForSpeech(params: Bundle?) {
+                            _voiceState.value = VoiceState.LISTENING
+                        }
+                        override fun onBeginningOfSpeech() {
+                            _voiceState.value = VoiceState.LISTENING
+                        }
                         override fun onRmsChanged(rmsdB: Float) {
                             val normalized = ((rmsdB + 2f) / 12f).coerceIn(0f, 1f)
                             _audioLevel.value = normalized
@@ -489,16 +491,22 @@ class VoiceAssistantManager(
                         override fun onBufferReceived(buffer: ByteArray?) {}
                         override fun onEndOfSpeech() {
                             _audioLevel.value = 0f
+                            _voiceState.value = VoiceState.THINKING
                         }
                         override fun onError(error: Int) {
                             _audioLevel.value = 0f
-                            onComplete(lastDictatedText)
+                            _voiceState.value = VoiceState.IDLE
+                            Log.w(tag, "SpeechRecognizer dictation error code: $error")
+                            val text = lastDictatedText.trim()
+                            onComplete(text)
                         }
                         override fun onResults(results: Bundle?) {
                             _audioLevel.value = 0f
+                            _voiceState.value = VoiceState.IDLE
                             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                            val text = matches?.firstOrNull()?.trim() ?: lastDictatedText
+                            val text = matches?.firstOrNull()?.trim() ?: lastDictatedText.trim()
                             lastDictatedText = text
+                            Log.d(tag, "SpeechRecognizer results: '$text'")
                             onComplete(text)
                         }
                         override fun onPartialResults(partialResults: Bundle?) {
@@ -514,16 +522,18 @@ class VoiceAssistantManager(
 
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag())
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                     putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 3000L)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2500L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L)
                 }
                 dictationRecognizer?.startListening(intent)
             } catch (e: Exception) {
                 Log.e(tag, "Dictation start error", e)
+                _voiceState.value = VoiceState.IDLE
                 onComplete("")
             }
         }

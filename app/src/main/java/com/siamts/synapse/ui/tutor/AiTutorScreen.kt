@@ -204,8 +204,18 @@ fun AiTutorScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            showLiveVoiceOverlay = true
-            voiceAssistant.startLiveSession()
+            isHoldingMic = true
+            transcribedSpeech = ""
+            voiceAssistant.startDictation(
+                onPartial = { transcribedSpeech = it },
+                onComplete = { result ->
+                    transcribedSpeech = result
+                    isHoldingMic = false
+                    if (result.isNotBlank()) {
+                        viewModel.onSendMessage(result, isFromVoice = true)
+                    }
+                }
+            )
         } else {
             Toast.makeText(context, "Microphone permission is required for voice chat", Toast.LENGTH_SHORT).show()
         }
@@ -266,18 +276,31 @@ fun AiTutorScreen(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     false
                 } else {
-                    isHoldingMic = true
-                    transcribedSpeech = ""
-                    voiceAssistant.startDictation(
-                        onPartial = { transcribedSpeech = it },
-                        onComplete = {
-                            transcribedSpeech = it
-                            if (!isLockedMic && it.isNotBlank()) {
-                                viewModel.onSendMessage(it)
-                            }
+                    if (isHoldingMic) {
+                        // Tapping again while active stops dictation and submits
+                        isHoldingMic = false
+                        val text = voiceAssistant.stopDictationAndGet()
+                        val toSend = text.ifBlank { transcribedSpeech }.trim()
+                        if (toSend.isNotBlank()) {
+                            viewModel.onSendMessage(toSend, isFromVoice = true)
                         }
-                    )
-                    true
+                        transcribedSpeech = ""
+                        false
+                    } else {
+                        isHoldingMic = true
+                        transcribedSpeech = ""
+                        voiceAssistant.startDictation(
+                            onPartial = { transcribedSpeech = it },
+                            onComplete = { result ->
+                                transcribedSpeech = result
+                                isHoldingMic = false
+                                if (!isLockedMic && result.isNotBlank()) {
+                                    viewModel.onSendMessage(result, isFromVoice = true)
+                                }
+                            }
+                        )
+                        true
+                    }
                 }
             },
             onMicSlideLocked = {
@@ -286,20 +309,17 @@ fun AiTutorScreen(
             },
             onMicTouchUp = { durationMs ->
                 if (!isLockedMic) {
-                    isHoldingMic = false
-                    if (durationMs < 350L && transcribedSpeech.isBlank()) {
-                        // Short tap -> Open full-screen Live Voice Assistant
-                        voiceAssistant.cancelDictation()
-                        showLiveVoiceOverlay = true
-                        voiceAssistant.startLiveSession()
-                    } else {
+                    if (durationMs >= 400L) {
+                        // User held down and released: finalize and send immediately!
+                        isHoldingMic = false
                         val text = voiceAssistant.stopDictationAndGet()
                         val toSend = text.ifBlank { transcribedSpeech }.trim()
                         if (toSend.isNotBlank()) {
-                            viewModel.onSendMessage(toSend)
+                            viewModel.onSendMessage(toSend, isFromVoice = true)
                         }
                         transcribedSpeech = ""
                     }
+                    // If tap (< 400ms), dictation stays active hands-free until user finishes or taps again
                 }
             },
             onCancelLockedRecording = {
@@ -314,7 +334,7 @@ fun AiTutorScreen(
                 val text = voiceAssistant.stopDictationAndGet()
                 val toSend = text.ifBlank { transcribedSpeech }.trim()
                 if (toSend.isNotBlank()) {
-                    viewModel.onSendMessage(toSend)
+                    viewModel.onSendMessage(toSend, isFromVoice = true)
                 }
                 transcribedSpeech = ""
             },
@@ -665,9 +685,10 @@ fun AiTutorContent(
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
-                                                text = "Listening... Slide up to lock",
-                                                color = Color(0xFF94A3B8),
+                                                text = transcribedSpeech.ifBlank { "Listening... Speak your doubt now 🎙️" },
+                                                color = if (transcribedSpeech.isNotBlank()) inputTextColor else Color(0xFF94A3B8),
                                                 fontSize = 12.sp,
+                                                fontWeight = if (transcribedSpeech.isNotBlank()) FontWeight.Medium else FontWeight.Normal,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )

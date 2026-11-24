@@ -116,14 +116,14 @@ fun SettingsScreen(
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+        listOf(Color(0xFFF7F8FC), Color(0xFFF7F8FC))
     }
 
-    val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF8FAFC)
+    val bodyBgColor = if (isDark) DarkBackground else Color(0xFFF7F8FC)
     val cardBgColor = if (isDark) SurfacePanel else Color.White
-    val cardBorderColor = if (isDark) SurfaceBorder else LightBorder
-    val primaryTextColor = if (isDark) TextPrimary else LightTextPrimary
-    val secondaryTextColor = if (isDark) TextSecondary else LightTextSecondary
+    val cardBorderColor = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
+    val primaryTextColor = if (isDark) TextPrimary else Color(0xFF11131A)
+    val secondaryTextColor = if (isDark) TextSecondary else Color(0xFF64748B)
     val sectionHeaderColor = if (isDark) AmberGold else SunsetOrange
 
     val sessionManager = remember {
@@ -173,55 +173,45 @@ fun SettingsScreen(
             .background(brush = Brush.verticalGradient(colors = pageBgGradient))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header Box
-            DashedBorderBox(
+            // Modern, Clean, Calming Header Bar
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                contentPadding = 8.dp
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(cardBgColor, CircleShape)
+                        .border(1.dp, cardBorderColor, CircleShape)
+                        .clickable { onBackClick() },
+                    contentAlignment = Alignment.Center
                 ) {
-                    IconButton(onClick = onBackClick) {
-                        Text(
-                            text = "←",
-                            color = primaryTextColor,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "←",
+                        color = primaryTextColor,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "PREFERENCES & CONFIG",
-                            color = if (isDark) CyanAccent else BlueAccent,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Settings",
-                            color = primaryTextColor,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                Spacer(modifier = Modifier.width(16.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                color = if (isDark) Color(0xFF161F42) else Color(0xFFE2E8F0),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "⚙️", fontSize = 16.sp)
-                    }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Settings",
+                        color = primaryTextColor,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = "Preferences & App Controls",
+                        color = secondaryTextColor,
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
                 }
             }
 
@@ -232,18 +222,18 @@ fun SettingsScreen(
                     .weight(1f)
                     .background(
                         color = bodyBgColor,
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                     )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // =========================================================
-                    // SECTION 1: APPEARANCE & THEME (3D Interactive Selector)
+                    // SECTION 1: APPEARANCE & THEME
                     // =========================================================
                     SettingsSectionHeader(
                         title = "Appearance & Theme",
@@ -257,7 +247,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = cardBgColor),
                         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
-                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -272,18 +262,14 @@ fun SettingsScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(46.dp)
+                                        .size(44.dp)
                                         .background(
-                                            brush = if (isDark) {
-                                                Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A)))
-                                            } else {
-                                                Brush.linearGradient(listOf(Color(0xFFEFF6FF), Color(0xFFDBEAFE)))
-                                            },
+                                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFFFF7ED),
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                         .border(
                                             1.dp,
-                                            if (isDark) CyanAccent.copy(alpha = 0.5f) else BlueAccent.copy(alpha = 0.3f),
+                                            if (isDark) SunsetOrange.copy(alpha = 0.5f) else SunsetOrange.copy(alpha = 0.3f),
                                             RoundedCornerShape(12.dp)
                                         ),
                                     contentAlignment = Alignment.Center
@@ -293,7 +279,7 @@ fun SettingsScreen(
                                         ThemeMode.DARK -> "🌙"
                                         ThemeMode.SYSTEM -> "⚙️"
                                     }
-                                    Text(text = icon, fontSize = 22.sp)
+                                    Text(text = icon, fontSize = 20.sp)
                                 }
 
                                 Spacer(modifier = Modifier.width(14.dp))
@@ -307,9 +293,9 @@ fun SettingsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "${activeTheme.title} active",
+                                        text = "${activeTheme.title} Mode active",
                                         fontSize = 12.sp,
-                                        color = if (isDark) CyanAccent else BlueAccent,
+                                        color = SunsetOrange,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
@@ -318,15 +304,16 @@ fun SettingsScreen(
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        color = if (isDark) Color(0xFF1A274E) else Color(0xFFEEF2FF),
+                                        color = if (isDark) Color(0xFF1E2433) else Color(0xFFFFF7ED),
                                         shape = RoundedCornerShape(8.dp)
                                     )
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    .border(1.dp, SunsetOrange.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = "Customize 3D 🎨",
-                                    color = if (isDark) CyanGlow else BlueAccent,
-                                    fontSize = 11.sp,
+                                    text = "Change ›",
+                                    color = SunsetOrange,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -334,10 +321,10 @@ fun SettingsScreen(
                     }
 
                     // =========================================================
-                    // SECTION 2: APP PREFERENCES
+                    // SECTION 2: STUDY HABITS & REMINDERS
                     // =========================================================
                     SettingsSectionHeader(
-                        title = "App Preferences",
+                        title = "Study Habits & Reminders",
                         color = sectionHeaderColor
                     )
                     Card(
@@ -347,10 +334,10 @@ fun SettingsScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
                         elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             SettingsToggleRow(
                                 title = "Daily Study Reminders",
-                                subtitle = "Receive daily focus prompts for offline revision",
+                                subtitle = "Receive gentle focus prompts for offline revision",
                                 checked = dailyReminderEnabled,
                                 onCheckedChange = { isChecked ->
                                     dailyReminderEnabled = isChecked
@@ -376,130 +363,142 @@ fun SettingsScreen(
                                 secondaryTextColor = secondaryTextColor
                             )
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            if (dailyReminderEnabled) {
+                                Spacer(modifier = Modifier.height(14.dp))
 
-                            // Interactive Preferred Study Time Row & Time Picker
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        TimePickerDialog(
-                                            context,
-                                            { _, selectedHour, selectedMinute ->
-                                                coroutineScope.launch {
-                                                    userPreferencesRepo.setStudyReminderTime(selectedHour, selectedMinute)
-                                                    sessionManager.setStudyReminderTime(selectedHour, selectedMinute)
-                                                }
-                                                if (dailyReminderEnabled) {
-                                                    StudyReminderScheduler.scheduleDailyStudyReminder(context, selectedHour, selectedMinute)
-                                                }
-                                                val newFormatted = UserPreferencesRepository.formatTime(selectedHour, selectedMinute)
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar("⏰ Daily study reminder set for $newFormatted")
-                                                }
-                                                Toast.makeText(context, "⏰ Daily study reminder set for $newFormatted", Toast.LENGTH_SHORT).show()
-                                            },
-                                            currentStudyHour,
-                                            currentStudyMinute,
-                                            false
-                                        ).show()
-                                    }
-                                    .background(
-                                        color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .border(
-                                        1.dp,
-                                        if (isDark) CyanAccent.copy(alpha = 0.3f) else BlueAccent.copy(alpha = 0.2f),
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                                // Interactive Preferred Study Time Row & Time Picker
                                 Row(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            TimePickerDialog(
+                                                context,
+                                                { _, selectedHour, selectedMinute ->
+                                                    coroutineScope.launch {
+                                                        userPreferencesRepo.setStudyReminderTime(selectedHour, selectedMinute)
+                                                        sessionManager.setStudyReminderTime(selectedHour, selectedMinute)
+                                                    }
+                                                    if (dailyReminderEnabled) {
+                                                        StudyReminderScheduler.scheduleDailyStudyReminder(context, selectedHour, selectedMinute)
+                                                    }
+                                                    val newFormatted = UserPreferencesRepository.formatTime(selectedHour, selectedMinute)
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar("⏰ Daily study reminder set for $newFormatted")
+                                                    }
+                                                    Toast.makeText(context, "⏰ Daily study reminder set for $newFormatted", Toast.LENGTH_SHORT).show()
+                                                },
+                                                currentStudyHour,
+                                                currentStudyMinute,
+                                                false
+                                            ).show()
+                                        }
+                                        .background(
+                                            color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF8FAFC),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .border(
+                                            1.dp,
+                                            cardBorderColor,
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "⏰", fontSize = 20.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = "⏰", fontSize = 18.sp)
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text(
+                                                text = "Preferred Reminder Time",
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 14.sp,
+                                                color = primaryTextColor
+                                            )
+                                            Text(
+                                                text = "Exact alarm & daily alert",
+                                                fontSize = 11.sp,
+                                                color = secondaryTextColor
+                                            )
+                                        }
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = SunsetOrange.copy(alpha = 0.12f),
+                                                    shape = RoundedCornerShape(8.dp)
+                                                )
+                                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = formattedStudyTime,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = SunsetOrange
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "Preferred Study Time",
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 14.sp,
-                                            color = primaryTextColor
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "Exact alarm & daily alert",
-                                            fontSize = 11.sp,
-                                            color = secondaryTextColor
+                                            text = "✏️",
+                                            fontSize = 13.sp
                                         )
                                     }
                                 }
 
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(
-                                                color = if (isDark) CyanAccent.copy(alpha = 0.15f) else BlueAccent.copy(alpha = 0.12f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(
-                                            text = formattedStudyTime,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            color = if (isDark) CyanAccent else BlueAccent
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Subtle test notification chip
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                            ) {
+                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            } else {
+                                                val sent = SynapseNotificationHelper.showTestNotification(context)
+                                                if (sent) {
+                                                    Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+                                                } else {
+                                                    Toast.makeText(context, "Unable to post notification.", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = "✏️",
-                                        fontSize = 14.sp
+                                        text = "⚡ Test Reminder Alert",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                        color = SunsetOrange
                                     )
                                 }
                             }
+                        }
+                    }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Send Test Notification Button (for Viva Review Demo)
-                            Button(
-                                onClick = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        val sent = SynapseNotificationHelper.showTestNotification(context)
-                                        if (sent) {
-                                            Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            Toast.makeText(context, "Unable to post notification. Please check permissions.", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFEEF2FF)
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    if (isDark) CyanAccent.copy(alpha = 0.5f) else BlueAccent.copy(alpha = 0.3f)
-                                )
-                            ) {
-                                Text(
-                                    text = "⚡ Send Test Notification",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = if (isDark) CyanAccent else BlueAccent
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
+                    // =========================================================
+                    // SECTION 3: PREFERENCES & EXPERIENCE
+                    // =========================================================
+                    SettingsSectionHeader(
+                        title = "Preferences & Experience",
+                        color = sectionHeaderColor
+                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = cardBgColor),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             SettingsToggleRow(
                                 title = "Sound Effects & Haptics",
                                 subtitle = "Play subtle vibrations on quiz interactions",
@@ -508,7 +507,7 @@ fun SettingsScreen(
                                 primaryTextColor = primaryTextColor,
                                 secondaryTextColor = secondaryTextColor
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
                             SettingsToggleRow(
                                 title = "Offline Mode Auto-Sync",
                                 subtitle = "Auto-cache study guides for offline reading",
@@ -521,10 +520,10 @@ fun SettingsScreen(
                     }
 
                     // =========================================================
-                    // SECTION 3: STORAGE & CACHE
+                    // SECTION 4: STORAGE & DATA
                     // =========================================================
                     SettingsSectionHeader(
-                        title = "Storage & Cache",
+                        title = "Storage & Data",
                         color = sectionHeaderColor
                     )
                     Card(
@@ -562,7 +561,7 @@ fun SettingsScreen(
                             }
                             Text(
                                 text = "🧹 Clear",
-                                color = if (isDark) CyanAccent else BlueAccent,
+                                color = SunsetOrange,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
@@ -570,7 +569,7 @@ fun SettingsScreen(
                     }
 
                     // =========================================================
-                    // SECTION 4: ABOUT SYNAPSE AI (With Brain Graphic)
+                    // SECTION 5: ABOUT SYNAPSE AI
                     // =========================================================
                     SettingsSectionHeader(
                         title = "About Synapse AI",
@@ -588,7 +587,7 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp),
+                                .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -598,17 +597,17 @@ fun SettingsScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(48.dp)
+                                        .size(44.dp)
                                         .background(
-                                            color = if (isDark) Color(0xFF161F42) else Color(0xFFEFF6FF),
+                                            color = if (isDark) Color(0xFF161F42) else Color(0xFFFFF7ED),
                                             shape = RoundedCornerShape(12.dp)
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    BrainGraphic(modifier = Modifier.size(36.dp))
+                                    BrainGraphic(modifier = Modifier.size(32.dp))
                                 }
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(14.dp))
 
                                 Column {
                                     Text(
@@ -619,7 +618,7 @@ fun SettingsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "Version 1.0.0 · Tap to view details",
+                                        text = "Version 1.0.0 · Offline Placement Engine",
                                         fontSize = 12.sp,
                                         color = secondaryTextColor
                                     )
@@ -636,7 +635,7 @@ fun SettingsScreen(
                     }
 
                     // =========================================================
-                    // SECTION 5: ACCOUNT & LOGOUT
+                    // SECTION 6: ACCOUNT & LOGOUT
                     // =========================================================
                     Card(
                         modifier = Modifier
@@ -644,11 +643,11 @@ fun SettingsScreen(
                             .clickable { showLogoutDialog = true },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isDark) Color(0xFF38131B) else Color(0xFFFEF2F2)
+                            containerColor = if (isDark) Color(0xFF2A1218) else Color(0xFFFEF2F2)
                         ),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isDark) Color(0xFF6B1D2F) else Color(0xFFFECACA)
+                            if (isDark) Color(0xFF5C1D27) else Color(0xFFFECACA)
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
                     ) {
@@ -980,7 +979,7 @@ private fun SettingsToggleRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
             Text(
                 text = title,
                 fontWeight = FontWeight.SemiBold,
@@ -999,7 +998,9 @@ private fun SettingsToggleRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = BlueAccent
+                checkedTrackColor = SunsetOrange,
+                uncheckedThumbColor = Color(0xFFCBD5E1),
+                uncheckedTrackColor = Color(0xFFE2E8F0)
             )
         )
     }

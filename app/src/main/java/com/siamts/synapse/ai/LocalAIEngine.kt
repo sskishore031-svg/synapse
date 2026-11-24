@@ -268,7 +268,9 @@ class LocalAIEngine private constructor(context: Context?) {
         "sivakarthikeyan", "sk", "actor", "actress", "movie", "movies", "cinema", "box office", "song", "songs",
         "cricket", "ipl", "football", "match score", "politics", "politician", "minister",
         "recipe", "food", "cook", "cooking", "restaurant", "hotel", "taste", "delicious",
-        "girlfriend", "boyfriend", "marry me", "do you love me", "love you", "joke", "jokes", "weather", "horoscope"
+        "girlfriend", "boyfriend", "marry me", "do you love me", "love you", "joke", "jokes", "weather", "horoscope",
+        "ena pandra", "enna pandra", "ena panra", "enna panra", "saptingala", "saaptiya", "sapacha", "enna vishesham",
+        "what are you doing", "what r u doing", "what you doing", "how is weather", "weather today", "tell me a story", "tell a story"
     )
 
     private val identityPhrases = setOf(
@@ -732,9 +734,13 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         if (lastTopicTurn != null && isFollowUpQuery(lowerQuery)) {
+            val lastTopicName = lastTopicTurn.matchedTopic.orEmpty()
+            val lastSubjectName = lastTopicTurn.matchedSubject.orEmpty()
             val activeChunk = synchronized(chunks) {
                 chunks.find { it.chunkId == lastTopicTurn.chunkId }
-                    ?: chunks.find { it.topic.equals(lastTopicTurn.matchedTopic, ignoreCase = true) }
+                    ?: chunks.find { it.topic.equals(lastTopicName, ignoreCase = true) }
+                    ?: chunks.find { !lastTopicName.isBlank() && (it.topic.contains(lastTopicName, ignoreCase = true) || lastTopicName.contains(it.topic, ignoreCase = true)) }
+                    ?: chunks.find { !lastSubjectName.isBlank() && (it.subject.contains(lastSubjectName, ignoreCase = true) || lastSubjectName.contains(it.subject, ignoreCase = true)) }
             }
 
             if (activeChunk != null) {
@@ -742,13 +748,18 @@ class LocalAIEngine private constructor(context: Context?) {
                 val followUpResponse = buildContextAwareFollowUpResponse(lowerQuery, activeChunk)
                 recordTurn(userQuery, activeChunk)
                 return followUpResponse
-            } else if (!lastTopicTurn.matchedTopic.isNullOrBlank()) {
+            } else if (!lastTopicName.isNullOrBlank()) {
+                val subName = if (lastSubjectName.isNotBlank()) lastSubjectName else "Placement Prep"
+                val chapName = lastTopicTurn.matchedChapter?.ifBlank { "General" } ?: "General"
                 val syntheticChunk = KnowledgeChunk(
                     chunkId = lastTopicTurn.chunkId ?: "hist_${System.currentTimeMillis()}",
-                    subject = lastTopicTurn.matchedSubject.orEmpty(),
-                    chapter = lastTopicTurn.matchedChapter.orEmpty(),
-                    topic = lastTopicTurn.matchedTopic.orEmpty(),
-                    content = "${lastTopicTurn.matchedTopic} in ${lastTopicTurn.matchedSubject}."
+                    subject = subName,
+                    chapter = chapName,
+                    topic = lastTopicName,
+                    definition = "$lastTopicName focuses on core concepts and computational principles in $subName.",
+                    formulaOrCoreRule = "Foundational syntax, algorithmic invariants, and system properties governing $lastTopicName.",
+                    workedExample = "Practical implementation and interview question scenarios on $lastTopicName.",
+                    content = "$lastTopicName in $subName."
                 )
                 consecutiveUnclearCount = 0
                 val followUpResponse = buildContextAwareFollowUpResponse(lowerQuery, syntheticChunk)
@@ -848,9 +859,9 @@ class LocalAIEngine private constructor(context: Context?) {
             return dynamicResp
         }
 
-        // 9. STAGE 9: Graceful Academic Guidance Fallback (Never returns "I didn't understand that")
+        // 9. STAGE 9: Off-Topic / Unknown Question Fallback
         consecutiveUnclearCount = 0
-        return buildAcademicGuidanceResponse(query, tokens)
+        return buildOutOfScopeResponse()
     }
 
     /**
@@ -1484,13 +1495,6 @@ class LocalAIEngine private constructor(context: Context?) {
             isGreeting = false
         )
     }
-        return LocalAiResponse(
-            paragraph1 = replyText,
-            paragraph2 = "",
-            confidenceScore = 100.0,
-            isGreeting = false
-        )
-    }
 
     private fun checkStylePreferenceIntent(lowerQuery: String, normalized: String): LocalAiResponse? {
         val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
@@ -1743,9 +1747,13 @@ class LocalAIEngine private constructor(context: Context?) {
             "enna", "enna da", "sollu", "sollunga", "pesu", "pesunga", "dei", "ayyo"
         )
 
+        val isCasualPhrase = trimmed.contains("ena pandra") || trimmed.contains("enna pandra") ||
+                trimmed.contains("ena panra") || trimmed.contains("enna panra") ||
+                trimmed.contains("saptingala") || trimmed.contains("saaptiya") || trimmed.contains("sapacha")
+
         val isPureSlang = words.all { it in casualSlangWords } || (words.size <= 2 && words.any { it in casualSlangWords })
-        if (isPureSlang) {
-            return handleUnclearOrEmpty(lowerQuery)
+        if (isPureSlang || isCasualPhrase) {
+            return buildOutOfScopeResponse()
         }
 
         return null
@@ -1753,14 +1761,13 @@ class LocalAIEngine private constructor(context: Context?) {
 
     private fun handleUnclearOrEmpty(query: String): LocalAiResponse {
         val clean = query.trim()
-        val name = preferredName.trim()
-        val greeting = if (name.isNotBlank()) "Hello $name! " else ""
-
         val words = clean.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
         if (words.isNotEmpty()) {
-            return buildAcademicGuidanceResponse(clean, words)
+            return buildOutOfScopeResponse()
         }
 
+        val name = preferredName.trim()
+        val greeting = if (name.isNotBlank()) "Hello $name! " else ""
         val text = "${greeting}I am your SYNAPSE AI placement & study companion. What concept or topic would you like to master today?\n\n" +
                 "• **Python & Coding Logic:** Core OOP, dunder methods, generators, decorators, and memory model.\n" +
                 "• **SQL & Database Management:** Relational queries, joins, B+ Tree indexing, and ACID transactions.\n" +
@@ -1849,12 +1856,26 @@ class LocalAIEngine private constructor(context: Context?) {
             append(info.challenges)
         }
 
+        recordTurn(
+            lowerQuery,
+            KnowledgeChunk(
+                chunkId = "sub_${info.name.lowercase().replace(" ", "_")}",
+                subject = info.name,
+                chapter = "Subject Overview",
+                topic = info.name,
+                definition = info.whatItIs,
+                formulaOrCoreRule = info.keyUses,
+                workedExample = info.advantages,
+                content = responseText
+            )
+        )
+
         return LocalAiResponse(
             paragraph1 = responseText,
             paragraph2 = "",
             matchedSubject = info.name,
             matchedChapter = "Overview",
-            matchedTopic = "${info.name} Overview",
+            matchedTopic = info.name,
             confidenceScore = 98.0
         )
     }
@@ -2403,7 +2424,11 @@ class LocalAIEngine private constructor(context: Context?) {
                 clean.contains("explain briefly") || clean.contains("quick summary") ||
                 clean.contains("crisp summary") || clean.contains("short notes") ||
                 clean.contains("give me short") || clean.contains("short ha sollu") ||
-                clean.contains("chinadha thaa") || clean == "short" || clean == "brief"
+                clean.contains("chinadha thaa") || clean == "short" || clean == "brief" ||
+                clean.contains("explain shortly") || clean.contains("shortly") ||
+                clean.contains("give me a short summary") || clean.contains("give a summary") ||
+                clean.contains("short summary") || clean == "summary" || clean.contains("summary of") ||
+                clean.contains("shorten this") || clean.contains("summarize this")
     }
 
     fun buildShortenedResponse(chunk: KnowledgeChunk): LocalAiResponse {
@@ -3867,14 +3892,15 @@ class LocalAIEngine private constructor(context: Context?) {
                     "• **System Architecture:** Strict separation between kernel-space and user-space privilege levels.\n• **Concurrency Synchronization:** Primitives prevent race conditions, deadlocks, and priority inversion.\n• **Network Packet Flow:** Layered protocols ensure reliable delivery, congestion control, and data integrity.",
                     "Think of $capitalizedTopic like an airport air traffic control center: it coordinates shared resources across flights, preventing collisions and resource contention."
                 )
-            else ->
+            words.any { it in setOf("placement", "resume", "interview", "hr", "star", "behavioral", "communication", "soft skills") } ->
                 DynamicDomainSpec(
                     "Placement & Technical Engineering",
                     "Foundational Computer Science",
                     "• **Architectural Invariant:** High cohesion and loose coupling governing system interactions.\n• **Engineering Execution:** Clean, maintainable design patterns built for scalability and fault tolerance.\n• **Interview Evaluation:** Evaluated on clarity, trade-off analysis, and concrete real-world applications.",
                     "Think of $capitalizedTopic like a foundational bridge pillar: its solid design supports dynamic traffic loads safely without stressing the surrounding infrastructure."
                 )
-        }
+            else -> null
+        } ?: return null
 
         val domainSubject = spec.subject
         val domainChapter = spec.chapter
@@ -4079,9 +4105,24 @@ class LocalAIEngine private constructor(context: Context?) {
         }
     }
 
+    fun recordLastTopic(topic: String, subject: String = "", content: String = "") {
+        if (topic.isBlank()) return
+        recordTurn(
+            topic,
+            KnowledgeChunk(
+                chunkId = "sync_${System.currentTimeMillis()}",
+                subject = subject.ifBlank { "Placement Prep" },
+                chapter = "Discussion",
+                topic = topic,
+                definition = content.ifBlank { "$topic in $subject." },
+                content = content.ifBlank { "$topic in $subject." }
+            )
+        )
+    }
+
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "That falls outside my placement and technical scope. I'm SYNAPSE AI—built specifically to help you master Python, SQL, Modern AI concepts, and Placement Aptitude!"
+            "I don't have the answer to that. Please ask me anything related to your placement subjects, coding, SQL, AI, or aptitude!"
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

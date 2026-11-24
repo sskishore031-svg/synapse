@@ -10,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -274,7 +275,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
 
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()
@@ -337,6 +347,7 @@ class MainActivity : ComponentActivity() {
                             window.isStatusBarContrastEnforced = false
                         }
                         window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                        window.statusBarColor = android.graphics.Color.TRANSPARENT
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
                         insets.isAppearanceLightNavigationBars = !isDark
                         insets.isAppearanceLightStatusBars = !isDark
