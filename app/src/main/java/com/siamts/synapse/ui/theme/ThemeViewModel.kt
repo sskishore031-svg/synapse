@@ -28,5 +28,11 @@ class ThemeViewModel(application: Application) : AndroidViewModel(application) {
             themePreferences.setThemeMode(mode)
         }
     }
+
+    fun toggleTheme() {
+        val current = themeMode.value
+        val newMode = if (current == ThemeMode.DARK) ThemeMode.LIGHT else ThemeMode.DARK
+        setThemeMode(newMode)
+    }
 }
 

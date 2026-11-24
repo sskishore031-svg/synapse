@@ -185,23 +185,6 @@ fun ProfileContent(
                             fontWeight = FontWeight.Bold,
                         )
                     }
-
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                color = if (isDark) Color(0xFF161F42) else Color(0xFFEEF1F7),
-                                shape = CircleShape
-                            )
-                            .border(1.dp, cardBorder, CircleShape)
-                            .clickable { onSettingsClick?.invoke() },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "⚙️",
-                            fontSize = 16.sp,
-                        )
-                    }
                 }
             }
 
@@ -455,6 +438,15 @@ fun ProfileContent(
                                             )
                                         )
                                     }
+
+                                    // Item 6b: Settings (Directly above About Synapse AI)
+                                    ProfileOptionRow(
+                                        icon = "⚙️",
+                                        title = "Settings",
+                                        textColor = textPrimaryColor,
+                                        mutedColor = textSecondaryColor,
+                                        onClick = { onSettingsClick?.invoke() },
+                                    )
 
                                     // Item 7: About Synapse AI
                                     ProfileOptionRow(

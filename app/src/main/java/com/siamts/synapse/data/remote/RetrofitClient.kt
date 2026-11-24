@@ -402,13 +402,26 @@ object RetrofitClient {
             return trimmed
         }
         val baseUrl = getBaseUrl()
+        val rootBackendUrl = baseUrl
+            .replace(Regex("/auth/?$"), "")
+            .trimEnd('/')
+
         return if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
             try {
-                val currentHost = java.net.URI(baseUrl).host
+                val currentUri = java.net.URI(baseUrl)
+                val currentHost = currentUri.host
                 val parsedUri = java.net.URI(trimmed)
-                if (parsedUri.host.equals("localhost", ignoreCase = true) || parsedUri.host.equals("127.0.0.1")) {
-                    val portStr = if (parsedUri.port > 0 && parsedUri.port != 80 && parsedUri.port != 443) ":${parsedUri.port}" else ""
-                    "${parsedUri.scheme}://$currentHost$portStr${parsedUri.rawPath}"
+                if (parsedUri.host.equals("localhost", ignoreCase = true) ||
+                    parsedUri.host.equals("127.0.0.1") ||
+                    parsedUri.host != currentHost
+                ) {
+                    val path = parsedUri.rawPath.orEmpty()
+                    val uploadPath = if (path.contains("upload/")) {
+                        path.substring(path.indexOf("upload/"))
+                    } else {
+                        path.trimStart('/')
+                    }
+                    "$rootBackendUrl/$uploadPath"
                 } else {
                     trimmed
                 }
@@ -416,9 +429,13 @@ object RetrofitClient {
                 trimmed
             }
         } else {
-            val cleanBase = baseUrl.trimEnd('/')
             val cleanPath = trimmed.trimStart('/')
-            "$cleanBase/$cleanPath"
+            val uploadPath = if (cleanPath.contains("upload/")) {
+                cleanPath.substring(cleanPath.indexOf("upload/"))
+            } else {
+                cleanPath
+            }
+            "$rootBackendUrl/$uploadPath"
         }
     }
 

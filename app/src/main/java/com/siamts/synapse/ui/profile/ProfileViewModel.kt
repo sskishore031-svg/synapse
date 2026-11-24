@@ -387,7 +387,13 @@ class ProfileViewModel(
     private fun applyRemoteProfile(profile: UserProfileDto) {
         val effectiveName = profile.name.ifBlank { _uiState.value.userName }
         val initials = computeInitials(effectiveName)
-        val formattedPhoto = RetrofitClient.formatPhotoUrl(profile.photoUrl ?: profile.profilePhoto)
+        val effectivePhoto = profile.photoUrl ?: profile.profilePhoto ?: profile.avatarUrl
+        val formattedPhoto = RetrofitClient.formatPhotoUrl(effectivePhoto)
+        if (!formattedPhoto.isNullOrBlank()) {
+            viewModelScope.launch {
+                sessionManager?.updateUserPhoto(formattedPhoto)
+            }
+        }
         _uiState.update { current ->
             current.copy(
                 userId = if (profile.id > 0) profile.id else current.userId,

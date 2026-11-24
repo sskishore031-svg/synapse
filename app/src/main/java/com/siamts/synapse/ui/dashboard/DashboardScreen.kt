@@ -88,12 +88,14 @@ fun DashboardScreen(
     onNotificationClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onContinueLessonClick: ((subjectSlug: String, chapterId: Int) -> Unit)? = null,
+    onToggleTheme: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     DashboardContent(
         uiState = uiState,
         onAiChatQuerySubmit = onAiChatQuerySubmit,
+        onToggleTheme = onToggleTheme,
         onTabSelect = { tabIndex ->
             viewModel.onTabSelected(tabIndex)
             if (tabIndex == 1) { // Learn Tab
@@ -166,6 +168,7 @@ fun DashboardContent(
     onAddTask: (title: String, category: String, duration: String) -> Unit = { _, _, _ -> },
     onToggleTask: (id: String, completed: Boolean) -> Unit = { _, _ -> },
     onDeleteTask: (id: String) -> Unit = {},
+    onToggleTheme: (() -> Unit)? = null,
 ) {
     val isDark = LocalThemeIsDark.current
     var showAddTaskDialog by remember { mutableStateOf(false) }
@@ -219,6 +222,35 @@ fun DashboardContent(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Interactive Dark / Light Mode Toggle Pill
+                        Box(
+                            modifier = Modifier
+                                .height(38.dp)
+                                .background(controlBgColor, RoundedCornerShape(19.dp))
+                                .border(1.dp, controlBorderColor, RoundedCornerShape(19.dp))
+                                .clickable { onToggleTheme?.invoke() }
+                                .padding(horizontal = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isDark) "🌙" else "☀️",
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = if (isDark) "Dark" else "Light",
+                                    color = headerTextColor,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         // Bell Notification Button
                         Box(
                             modifier = Modifier

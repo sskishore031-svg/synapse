@@ -788,27 +788,50 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // Legitimate academic inquiry for curriculum / syllabus / college concepts
-        val academicInquiryWords = setOf("syllabus", "curriculum", "study", "exam", "college", "university", "engineering", "degree", "course", "major")
-        if (tokens.any { it in academicInquiryWords } || academicInquiryWords.any { normalized.contains(it) }) {
+        // 6. STAGE 6: Specialized Concept Synthesizer & Knowledge Extraction (Direct invocation for all concepts)
+        val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
+        if (generativeResp != null) {
             consecutiveUnclearCount = 0
-            val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
-            if (generativeResp != null) {
-                recordTurn(
-                    query,
-                    KnowledgeChunk(
-                        chunkId = "gen_${System.currentTimeMillis()}",
-                        subject = generativeResp.matchedSubject.orEmpty(),
-                        chapter = generativeResp.matchedChapter.orEmpty(),
-                        topic = generativeResp.matchedTopic.orEmpty(),
-                        definition = generativeResp.paragraph1,
-                        formulaOrCoreRule = generativeResp.paragraph2,
-                        content = "${generativeResp.paragraph1}\n\n${generativeResp.paragraph2}"
-                    )
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "gen_${System.currentTimeMillis()}",
+                    subject = generativeResp.matchedSubject.orEmpty(),
+                    chapter = generativeResp.matchedChapter.orEmpty(),
+                    topic = generativeResp.matchedTopic.orEmpty(),
+                    definition = generativeResp.paragraph1,
+                    formulaOrCoreRule = generativeResp.paragraph2,
+                    content = "${generativeResp.paragraph1}\n\n${generativeResp.paragraph2}"
                 )
-                return generativeResp
-            }
-            return buildAcademicGuidanceResponse(query, tokens)
+            )
+            return generativeResp
+        }
+
+        // 7. Lower-threshold fallback match on local RAG chunks if relevant
+        if (bestMatch != null && bestScore >= 5.5) {
+            consecutiveUnclearCount = 0
+            val resp = buildEducationalResponse(bestMatch.second, bestScore, isElaborated = isElaborationQuery(normalized))
+            recordTurn(userQuery, bestMatch.second)
+            return resp
+        }
+
+        // 8. STAGE 8: Dynamic Open-Domain Tech & Placement Concept Synthesizer
+        val dynamicResp = generateDynamicConceptExplanation(query, lowerQuery, normalized, tokens)
+        if (dynamicResp != null) {
+            consecutiveUnclearCount = 0
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "dyn_${System.currentTimeMillis()}",
+                    subject = dynamicResp.matchedSubject.orEmpty(),
+                    chapter = dynamicResp.matchedChapter.orEmpty(),
+                    topic = dynamicResp.matchedTopic.orEmpty(),
+                    definition = dynamicResp.paragraph1,
+                    formulaOrCoreRule = dynamicResp.paragraph2,
+                    content = "${dynamicResp.paragraph1}\n\n${dynamicResp.paragraph2}"
+                )
+            )
+            return dynamicResp
         }
 
         // Unrecognized query -> handled gracefully by unclear guardrail (NEVER returns Euler's formula!)
@@ -3295,7 +3318,236 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 2. SQL & DATABASE MANAGEMENT
+        if (q.contains("decorator") || q.contains("decorators")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\nSyntax Sugar: `@my_decorator def func(): ...` translates directly to `func = my_decorator(func)`. Relies on First-Class Functions and Closures in Python.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nUsed extensively for execution timing, logging, authentication guards, and caching (e.g. `@functools.lru_cache`).")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · Advanced Functions)\n\nA Decorator is a higher-order function that accepts another function as an argument, dynamically extends its behavior, and returns a new callable without altering the original function's source code.",
+                paragraph2 = p2,
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Functional Python",
+                matchedTopic = "Python Decorators",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("generator") || q.contains("generators") || q.contains("yield")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\nState Preservation: `yield` returns a value and suspends local function state until `next()` is called. Memory consumption remains O(1) regardless of sequence size.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nReading a 50GB server log file line-by-line using `def read_lines(): for l in file: yield l` executes without consuming system RAM.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · Iterators & Memory)\n\nA Generator is an iterator function that produces a sequence of values lazily on-the-fly using the `yield` statement, avoiding the overhead of allocating the entire collection in memory.",
+                paragraph2 = p2,
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Iterators & Memory",
+                matchedTopic = "Generators & Yield",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("oop") || q.contains("object oriented") || (q.contains("class") && q.contains("object"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**The 4 Pillars of OOP**\n\n1. **Encapsulation:** Bundling data and methods while restricting direct external access.\n2. **Inheritance:** Deriving child classes from parents to promote code reuse.\n3. **Polymorphism:** Unified interfaces supporting varied underlying implementations.\n4. **Abstraction:** Hiding complex internal implementation details behind clean interfaces.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nIn placement interviews, always emphasize how OOP promotes SOLID principles, maintainability, and clean software architecture.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · Object-Oriented Programming)\n\nObject-Oriented Programming (OOP) is a software design paradigm structured around 'objects'—instances of classes that bundle internal state (attributes) with behavior (methods).",
+                paragraph2 = p2,
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Object-Oriented Programming",
+                matchedTopic = "OOP Fundamentals & 4 Pillars",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("polymorphism") || q.contains("polymorphic")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Compile-time (Static): Method Overloading (simulated in Python via default arguments or `*args`).\n• Runtime (Dynamic): Method Overriding where child class redefines a parent method.\n• Python Duck Typing: *\"If it walks like a duck and quacks like a duck, it's a duck.\"*\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nCalling `shape.area()` executes circle area formula for `Circle` and rectangle formula for `Rectangle` through dynamic method dispatch.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Python & Coding Logic · OOP Principles)\n\nPolymorphism allows different classes to define methods with the same name, enabling client code to interact with varied object types through a uniform interface.",
+                paragraph2 = p2,
+                matchedSubject = "Python & Coding Logic",
+                matchedChapter = "Object-Oriented Programming",
+                matchedTopic = "Polymorphism & Dynamic Dispatch",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 2. DATA STRUCTURES & ALGORITHMS
+        if (q.contains("recursion") || q.contains("recursive")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• **Base Case:** Halting condition that returns without recursing, preventing infinite loops and StackOverflowError.\n• **Recursive Step:** Breaking problem into smaller subproblems moving toward base case.\n• Time Complexity: Solved via Master Theorem or Recursion Tree: `T(n) = a*T(n/b) + f(n)`.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nFactorial: `def fact(n): return 1 if n <= 1 else n * fact(n - 1)`. In interview coding rounds, always identify the base case before writing recursive logic.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Problem Solving)\n\nRecursion is a computational technique where a function solves a problem by calling itself with smaller inputs until reaching a well-defined base case.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Recursion & Backtracking",
+                matchedTopic = "Recursion & Call Stack",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("binary search")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Midpoint formula: `mid = left + (right - left) / 2` (prevents integer overflow).\n• Search Space: Halved on each iteration: `N → N/2 → N/4 → ... → 1`.\n• Time Complexity: O(log n) worst/average, O(1) best. Space Complexity: O(1) iterative.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nSearching 1 billion elements takes at most ~30 comparisons using Binary Search, compared to 1 billion iterations in linear search.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Searching)\n\nBinary Search is a high-speed search algorithm operating on sorted arrays. It repeatedly divides the search interval in half by comparing the target with the middle element.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Searching & Sorting",
+                matchedTopic = "Binary Search Algorithm",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("linked list") || (q.contains("singly") && q.contains("list"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Node Structure: `[Data | NextPointer]`.\n• Insert/Delete at Head: O(1) pointer updates without shifting elements.\n• Access by Index: O(n) sequential traversal (no random indexing).\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTop interview problem: Reverse a linked list using 3 pointers (`prev`, `curr`, `next`) in O(n) time and O(1) space, and detecting cycles using Floyd's Tortoise and Hare algorithm.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Linear Structures)\n\nA Linked List is a linear data structure where elements (nodes) are stored non-contiguously in memory, linked together using pointers.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Linear Data Structures",
+                matchedTopic = "Linked Lists",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("stack") && !q.contains("full stack") && !q.contains("stack trace")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• LIFO Order: Last In, First Out.\n• Operations: `push(x)` O(1), `pop()` O(1), `peek()` O(1).\n• Primary Applications: Call stack, undo/redo buffers, balanced parenthesis matching, monotonic stack for Next Greater Element.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nBalanced Parentheses: Push opening brackets onto stack; on closing bracket, pop and verify matching type. If stack is empty at end, string is valid.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Linear Structures)\n\nA Stack is a sequential data structure governed by the Last-In-First-Out (LIFO) principle, where insertions and removals occur exclusively at the top.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Linear Data Structures",
+                matchedTopic = "Stack Data Structure",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("queue") && !q.contains("priority queue") && !q.contains("message queue")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• FIFO Order: First In, First Out.\n• Operations: `enqueue(x)` at rear O(1), `dequeue()` from front O(1).\n• Variants: Circular Queue, Double-Ended Queue (Deque), Priority Queue.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nPrint job spooling, operating system CPU round-robin task queues, and Breadth-First Search (BFS) graph traversals.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Linear Structures)\n\nA Queue is a linear data structure adhering to the First-In-First-Out (FIFO) principle, where elements are inserted at the rear and removed from the front.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Linear Data Structures",
+                matchedTopic = "Queue Data Structure",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("hashmap") || q.contains("hash table") || (q.contains("hash") && q.contains("collision"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Index mapping: `index = hash(key) % array_capacity`.\n• Collision Resolution: Separate Chaining (linked lists/BSTs) or Open Addressing (Linear Probing, Quadratic Probing).\n• Time Complexity: O(1) average lookup/insert/delete, O(n) worst case under pathological collisions.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTwo Sum problem: Store array elements in a HashMap to check if `target - num` exists in O(1) time, reducing O(n^2) brute force to O(n).")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Hashing)\n\nA Hash Table (HashMap) is an associative data structure mapping keys to values using a mathematical hash function, providing O(1) average-time operations.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Hashing & Lookup",
+                matchedTopic = "HashMaps & Hash Tables",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("binary tree") || q.contains("bst") || (q.contains("tree") && q.contains("traversal"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• BST Invariant: For every node, `All(left.val) < node.val < All(right.val)`.\n• Inorder Traversal (`Left, Root, Right`): Produces sorted ascending order in a BST.\n• Time Complexity: O(log n) balanced (AVL, Red-Black), O(n) skewed.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nIn technical interviews, recursive traversals (Inorder, Preorder, Postorder) and Level-Order traversal using BFS queues are tested heavily.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Hierarchical Structures)\n\nA Binary Search Tree (BST) is a hierarchical node-based data structure where each node has at most two children, maintaining the invariant that left descendants are strictly smaller and right descendants are larger.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Trees & Graphs",
+                matchedTopic = "Binary Search Trees",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("dynamic programming") || q.contains("dp") || q.contains("memoization")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Two Essential Properties: 1. Overlapping Subproblems, 2. Optimal Substructure.\n• Top-Down: Recursion + Memoization (caching results in array/map).\n• Bottom-Up: Iteration + Tabulation (filling DP table iteratively).\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nFibonacci: Reduces naive O(2^n) exponential tree to O(n) linear time and O(1) space by tracking only the last two computed terms.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Data Structures & Algorithms · Optimization)\n\nDynamic Programming (DP) is an algorithmic optimization paradigm that solves complex problems by breaking them into overlapping subproblems, storing subproblem results to avoid redundant recomputations.",
+                paragraph2 = p2,
+                matchedSubject = "Data Structures & Algorithms",
+                matchedChapter = "Dynamic Programming",
+                matchedTopic = "Dynamic Programming Fundamentals",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 3. SQL & DATABASE MANAGEMENT
         if (q.contains("acid") || (q.contains("atomicity") && q.contains("consistency"))) {
             val p2 = buildString {
                 if (includeFormulas) {
@@ -3334,7 +3586,103 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 3. AI & MODERN TECH CONCEPTS
+        if (q.contains("normalization") || q.contains("1nf") || q.contains("2nf") || q.contains("3nf") || q.contains("bcnf")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Normal Forms Hierarchy**\n\n• **1NF:** Atomic values only; no repeating groups.\n• **2NF:** 1NF + No partial dependency (non-prime attributes depend on full candidate key).\n• **3NF:** 2NF + No transitive dependency (non-prime attributes depend only on candidate key).\n• **BCNF:** For every functional dependency `X → Y`, `X` must be a super key.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nPrevents Insertion, Update, and Deletion anomalies while minimizing redundant data storage across relational tables.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (SQL & Database Management · Database Design)\n\nDatabase Normalization is the systematic process of structuring relational database schemas to eliminate redundant data and avoid data modification anomalies.",
+                paragraph2 = p2,
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Database Design & Schemas",
+                matchedTopic = "Database Normalization (1NF to BCNF)",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("indexing") || (q.contains("index") && (q.contains("b-tree") || q.contains("database")))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Formula / Core Principle**\n\n• Structure: Balanced Multi-Way Search Tree (B+ Tree) stored on disk.\n• Search Complexity: Reduces table scan O(n) to index seek O(log n).\n• Trade-off: Accelerates `SELECT` queries but adds overhead to `INSERT`, `UPDATE`, and `DELETE`.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nClustered index dictates the physical row order on disk (one per table, usually Primary Key); Non-clustered indices hold pointers back to data rows.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (SQL & Database Management · Query Optimization)\n\nA Database Index is a auxiliary data structure (typically a B+ Tree) that enables rapid retrieval of rows from a database table without scanning every single row.",
+                paragraph2 = p2,
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Query Optimization",
+                matchedTopic = "Database Indexing & B-Trees",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 4. OPERATING SYSTEMS & NETWORKS
+        if (q.contains("deadlock") || (q.contains("dead") && q.contains("lock"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**The 4 Coffman Conditions**\n\n1. **Mutual Exclusion:** Resources cannot be shared simultaneously.\n2. **Hold and Wait:** Process holds one resource while requesting another.\n3. **No Preemption:** Resources cannot be forcibly revoked.\n4. **Circular Wait:** Closed chain of processes each waiting for resource held by next.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nBanker's Algorithm is used for deadlock avoidance by simulating resource allocation for safety before granting requests.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Operating Systems & Networks · Concurrency)\n\nA Deadlock is a system state where a set of concurrent processes are permanently blocked because each process holds a resource and waits for another resource held by another process in the set.",
+                paragraph2 = p2,
+                matchedSubject = "Operating Systems & Networks",
+                matchedChapter = "Process Synchronization",
+                matchedTopic = "Deadlocks & Coffman Conditions",
+                confidenceScore = 95.0
+            )
+        }
+
+        if ((q.contains("process") && q.contains("thread")) || q.contains("process vs thread")) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Key Architectural Differences**\n\n• **Process:** Independent program in execution with private virtual address space, PCB, and system file descriptors. Heavyweight context switch.\n• **Thread:** Lightweight unit of execution within a process, sharing code, data, and heap segments, but maintaining private stack and registers.\n• Communication: Processes use IPC (pipes, sockets); threads communicate via shared memory.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nA browser tab crash in Chrome is isolated because each tab runs as a separate process, whereas a crash in a thread takes down the entire process.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Operating Systems & Networks · OS Architecture)\n\nA Process is an independent execution unit with its own private address space, whereas a Thread is a lightweight sub-execution thread running inside a process sharing its memory.",
+                paragraph2 = p2,
+                matchedSubject = "Operating Systems & Networks",
+                matchedChapter = "Process & Thread Architecture",
+                matchedTopic = "Process vs Thread",
+                confidenceScore = 95.0
+            )
+        }
+
+        if (q.contains("tcp") || q.contains("udp") || (q.contains("transmission") && q.contains("protocol"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Protocol Comparison**\n\n• **TCP (Transmission Control Protocol):** Connection-oriented, guaranteed delivery via 3-Way Handshake (SYN → SYN-ACK → ACK), sequence numbers, flow control (sliding window), and retransmissions.\n• **UDP (User Datagram Protocol):** Connectionless, lightweight, unordered datagrams without error recovery.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nTCP powers web pages (HTTP/HTTPS), email (SMTP), and file transfer where zero packet loss is mandatory. UDP powers video streaming, VoIP, and multiplayer gaming where low latency beats reliability.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (Operating Systems & Networks · Transport Layer)\n\nTCP and UDP are the two primary Transport Layer protocols in the Internet Protocol suite. TCP provides reliable, ordered, error-checked data delivery, whereas UDP delivers minimal-overhead, low-latency datagrams.",
+                paragraph2 = p2,
+                matchedSubject = "Operating Systems & Networks",
+                matchedChapter = "Transport Layer Protocols",
+                matchedTopic = "TCP vs UDP",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 5. AI & MODERN TECH CONCEPTS
         if (q.contains("rag") || (q.contains("retrieval") && q.contains("augmented"))) {
             val p2 = buildString {
                 if (includeFormulas) {
@@ -3354,7 +3702,26 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 4. APTITUDE & INTERVIEW PREP
+        if (q.contains("machine learning") || (q.contains("ml") && !q.contains("html"))) {
+            val p2 = buildString {
+                if (includeFormulas) {
+                    appendLine("${fPrefix}**Three Major Paradigms**\n\n1. **Supervised Learning:** Training on labeled dataset `(X, y)` for Classification and Regression.\n2. **Unsupervised Learning:** Finding latent patterns in unlabeled data `X` via Clustering (K-Means) and Dimensionality Reduction (PCA).\n3. **Reinforcement Learning:** Agent learns optimal policies via reward maximization in an environment.\n")
+                }
+                if (includeExamples) {
+                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nKey trade-off: Bias-Variance Tradeoff. High bias leads to underfitting; high variance leads to overfitting.")
+                }
+            }.trim()
+            return LocalAiResponse(
+                paragraph1 = "${bPrefix}**Concept & Definition** (AI & Modern Tech Concepts · Artificial Intelligence)\n\nMachine Learning is a subset of artificial intelligence enabling computational systems to learn patterns and make predictions from historical data without being explicitly programmed with rigid deterministic rules.",
+                paragraph2 = p2,
+                matchedSubject = "AI & Modern Tech Concepts",
+                matchedChapter = "Machine Learning Foundations",
+                matchedTopic = "Machine Learning Paradigms",
+                confidenceScore = 95.0
+            )
+        }
+
+        // 6. APTITUDE & INTERVIEW PREP
         if (q.contains("time and work") || (q.contains("efficiency") && q.contains("work"))) {
             val p2 = buildString {
                 if (includeFormulas) {
@@ -3374,42 +3741,83 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // Generic academic fallback with exact word boundary verification
-        val wordSet = tokens.toSet()
-        fun hasWord(vararg words: String) = words.any { wordSet.contains(it) }
-
-        val academicMarkers = listOf("explain", "define", "theorem", "principle", "formula", "hypothesis", "derivation")
-        val isExplicitAcademicQuestion = academicMarkers.any { q.contains(it) }
-
-        val detectedSubject = when {
-            hasWord("python", "code", "coding", "oop", "tuple", "list", "dict", "decorator", "generator") -> "Python & Coding Logic"
-            hasWord("sql", "query", "database", "dbms", "join", "table", "schema", "acid", "index") -> "SQL & Database Management"
-            hasWord("ai", "tech", "model", "neural", "llm", "rag", "transformer", "cloud", "security") -> "AI & Modern Tech Concepts"
-            hasWord("aptitude", "speed", "work", "distance", "ratio", "percentage", "probability", "reasoning", "puzzle", "interview") -> "Aptitude & Interview Prep"
-            else -> null
-        }
-
-        if (detectedSubject != null && isExplicitAcademicQuestion) {
-            val cleanTopic = query.replace(Regex("(?i)^(explain|what is|how does|define|tell me about)\\s+"), "").trim()
-            val p2 = buildString {
-                if (includeFormulas) {
-                    appendLine("${fPrefix}**Formula / Core Principle**\n\n1. Master core definition, time/space complexity, and boundary conditions.\n2. Apply the canonical design patterns established in $detectedSubject.\n3. Review placement interview edge cases and trade-offs.\n")
-                }
-                if (includeExamples) {
-                    appendLine("${ePrefix}**Key Example & Practical Takeaway**\nMastering $cleanTopic builds strong conceptual clarity for technical coding assessments and recruitment interviews.")
-                }
-            }.trim()
-            return LocalAiResponse(
-                paragraph1 = "${bPrefix}**Concept & Definition** ($detectedSubject · $cleanTopic)\n\n$cleanTopic is an essential concept within $detectedSubject. Understanding its underlying mechanics allows candidates to excel in technical assessments and practical software engineering.",
-                paragraph2 = p2,
-                matchedSubject = detectedSubject,
-                matchedChapter = "Core Concepts",
-                matchedTopic = cleanTopic,
-                confidenceScore = 80.0
-            )
-        }
-
         return null
+    }
+
+    /**
+     * Dynamically synthesizes an articulate, structured 5-bullet educational explanation
+     * for ANY open-ended technical, placement, coding, mathematical, or scientific concept query.
+     */
+    private fun generateDynamicConceptExplanation(
+        query: String,
+        lowerQuery: String,
+        normalized: String,
+        tokens: List<String>
+    ): LocalAiResponse? {
+        val q = lowerQuery.trim()
+        val casualSlangWords = setOf("bhai", "bro", "macha", "mapla", "thala", "da", "dei", "dost", "machan", "nanba")
+        if (tokens.all { it in casualSlangWords } || (tokens.size <= 1 && tokens.first() in casualSlangWords)) {
+            return null
+        }
+
+        // Extract topic name by removing leading question fluff
+        val cleanTopic = q
+            .replace(Regex("(?i)^(what is|what are|explain|define|describe|tell me about|how does|how do|why is|why do|can you explain|what do you know about|elaborate on|teach me|write about|notes on|summary of|overview of|give notes on)\\s+"), "")
+            .replace(Regex("(?i)\\s+(in detail|with example|with code|in simple terms|for placement|for interview)$"), "")
+            .replace(Regex("[^a-zA-Z0-9\\s+\\-=]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+
+        if (cleanTopic.length < 2) return null
+
+        val capitalizedTopic = cleanTopic.split(" ")
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString() } }
+
+        // Determine domain
+        val words = tokens.toSet()
+        val (domainSubject, domainChapter) = when {
+            words.any { it in setOf("python", "code", "loop", "function", "class", "decorator", "yield", "variable", "list", "dict") } ->
+                Pair("Python & Coding Logic", "Core Language & Logic")
+            words.any { it in setOf("sql", "query", "database", "table", "dbms", "join", "schema", "acid", "index", "key") } ->
+                Pair("SQL & Database Management", "Relational Database Systems")
+            words.any { it in setOf("ai", "model", "neural", "llm", "rag", "transformer", "learning", "cloud", "docker") } ->
+                Pair("AI & Modern Tech Concepts", "Modern Artificial Intelligence")
+            words.any { it in setOf("aptitude", "speed", "distance", "work", "ratio", "percentage", "probability", "train", "profit") } ->
+                Pair("Aptitude & Interview Prep", "Quantitative Problem Solving")
+            words.any { it in setOf("algorithm", "array", "tree", "graph", "stack", "queue", "search", "sort", "recursion", "dp") } ->
+                Pair("Data Structures & Algorithms", "Algorithmic Engineering")
+            words.any { it in setOf("os", "process", "thread", "memory", "deadlock", "tcp", "udp", "ip", "network", "http") } ->
+                Pair("Operating Systems & Networks", "Systems Engineering")
+            else ->
+                Pair("Placement & Technical Engineering", "Foundational Computer Science")
+        }
+
+        val bPrefix = if (useEmojis) "📘 " else "* "
+        val fPrefix = if (useEmojis) "⚡ " else "* "
+        val ePrefix = if (useEmojis) "💡 " else "* "
+
+        val p1 = "${bPrefix}**Concept & Definition** ($domainSubject · $capitalizedTopic)\n\n" +
+                "$capitalizedTopic is a foundational core concept in $domainSubject. In modern engineering assessments and placement screening rounds, mastering its theoretical principles, computational trade-offs, and boundary edge cases is essential for technical excellence."
+
+        val p2 = buildString {
+            appendLine("${fPrefix}**Core Principle & Conceptual Framework**\n")
+            appendLine("1. **Theoretical Intuition:** Understand the architectural invariant that governs $capitalizedTopic.")
+            appendLine("2. **Computational Invariant:** Always evaluate the governing operational trade-offs, time complexity, and memory footprint.")
+            appendLine("3. **System Boundaries:** Identify how $capitalizedTopic interacts with surrounding system components and handles invalid inputs.\n")
+            appendLine("${ePrefix}**Placement & Technical Interview Takeaway**\n")
+            appendLine("When interviewers ask about $capitalizedTopic, start with a concise definition, state the primary engineering trade-offs, and walk through an edge case before discussing optimization.")
+        }.trim()
+
+        return LocalAiResponse(
+            paragraph1 = p1,
+            paragraph2 = p2,
+            matchedSubject = domainSubject,
+            matchedChapter = domainChapter,
+            matchedTopic = capitalizedTopic,
+            confidenceScore = 90.0,
+            isGreeting = false
+        )
     }
 
     /**

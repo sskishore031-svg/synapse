@@ -658,6 +658,9 @@ class MainActivity : ComponentActivity() {
                                     onProgressAnalyticsClick = {
                                         navigateTo(AppScreen.ProgressAnalytics())
                                     },
+                                    onToggleTheme = {
+                                        themeViewModel.toggleTheme()
+                                    },
                                     onContinueLessonClick = { subjectSlug, _ ->
                                         when (subjectSlug.lowercase()) {
                                             "chemistry" -> currentScreen = AppScreen.ChemicalBondingLesson
@@ -1779,6 +1782,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onStreakCalendarClick = {
                                         navigateTo(AppScreen.ProgressAnalytics(3))
+                                    },
+                                    onToggleTheme = {
+                                        themeViewModel.toggleTheme()
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

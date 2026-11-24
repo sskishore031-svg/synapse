@@ -114,7 +114,9 @@ class SessionManager private constructor(context: Context) {
                     interests = parsedInterests,
                     selectedInterests = parsedInterests,
                     studyGoal = preferences[KEY_USER_STUDY_GOAL] ?: "25 min / day",
-                    photoUrl = preferences[KEY_USER_PHOTO_URL]
+                    photoUrl = preferences[KEY_USER_PHOTO_URL],
+                    avatarUrl = preferences[KEY_USER_PHOTO_URL],
+                    profilePhoto = preferences[KEY_USER_PHOTO_URL]
                 )
                 AuthSessionState.Authenticated(user)
             } else {
@@ -145,8 +147,9 @@ class SessionManager private constructor(context: Context) {
             if (userInterests.isNotEmpty()) {
                 preferences[KEY_USER_INTERESTS] = userInterests.joinToString(",")
             }
-            if (!user.photoUrl.isNullOrBlank()) {
-                preferences[KEY_USER_PHOTO_URL] = user.photoUrl
+            val resolvedPhoto = listOfNotNull(user.photoUrl, user.avatarUrl, user.profilePhoto).firstOrNull { it.isNotBlank() }
+            if (!resolvedPhoto.isNullOrBlank()) {
+                preferences[KEY_USER_PHOTO_URL] = resolvedPhoto
             }
             if (!token.isNullOrBlank()) preferences[KEY_AUTH_TOKEN] = token
             preferences[KEY_LAST_LOGIN_TIMESTAMP] = System.currentTimeMillis()
@@ -184,6 +187,13 @@ class SessionManager private constructor(context: Context) {
             prefs[KEY_USER_NAME]?.trim()?.takeIf { it.isNotBlank() } ?: "Kishore"
         } catch (_: Exception) {
             "Kishore"
+        }
+    }
+
+    suspend fun updateUserName(name: String) {
+        if (name.isBlank()) return
+        dataStore.edit { preferences ->
+            preferences[KEY_USER_NAME] = name
         }
     }
 
@@ -400,7 +410,9 @@ class SessionManager private constructor(context: Context) {
                     course = preferences[KEY_USER_COURSE] ?: "B.Tech Computer Science · Year 3",
                     preferredLanguage = preferences[KEY_USER_PREFERRED_LANG] ?: "English",
                     studyGoal = preferences[KEY_USER_STUDY_GOAL] ?: "25 min / day",
-                    photoUrl = preferences[KEY_USER_PHOTO_URL]
+                    photoUrl = preferences[KEY_USER_PHOTO_URL],
+                    avatarUrl = preferences[KEY_USER_PHOTO_URL],
+                    profilePhoto = preferences[KEY_USER_PHOTO_URL]
                 )
             } else {
                 null

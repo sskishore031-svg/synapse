@@ -97,11 +97,13 @@ fun HomeScreen(
     onBrainMapClick: (() -> Unit)? = null,
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onStreakCalendarClick: (() -> Unit)? = null,
+    onToggleTheme: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     HomeContent(
         uiState = uiState,
+        onToggleTheme = onToggleTheme,
         onSearchChange = { query -> viewModel.onSearchQueryChanged(query) },
         onTabSelect = { index ->
             viewModel.onTabSelected(index)
@@ -182,6 +184,7 @@ fun HomeContent(
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onStreakCalendarClick: (() -> Unit)? = null,
     onContinueLessonClick: ((String, Int) -> Unit)? = null,
+    onToggleTheme: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalThemeIsDark.current
@@ -239,16 +242,48 @@ fun HomeContent(
                         )
                     }
 
-                    DashedBorderBox(
-                        modifier = Modifier.clickable { onBrainMapCardClick() },
-                        contentPadding = 8.dp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "⚡ Mind Power: ${uiState.mindPower}%",
-                            color = AmberGlow,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        // Interactive Dark / Light Mode Toggle Pill
+                        Box(
+                            modifier = Modifier
+                                .height(36.dp)
+                                .background(elevatedBg, RoundedCornerShape(18.dp))
+                                .border(1.dp, cardBorder, RoundedCornerShape(18.dp))
+                                .clickable { onToggleTheme?.invoke() }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isDark) "🌙" else "☀️",
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = if (isDark) "Dark" else "Light",
+                                    color = headerTextColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        DashedBorderBox(
+                            modifier = Modifier.clickable { onBrainMapCardClick() },
+                            contentPadding = 8.dp
+                        ) {
+                            Text(
+                                text = "⚡ Mind Power: ${uiState.mindPower}%",
+                                color = AmberGlow,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
 

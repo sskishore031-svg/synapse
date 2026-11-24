@@ -65,6 +65,9 @@ data class UserProfileDto(
     @SerializedName("photo_url")
     val photoUrl: String? = null,
 
+    @SerializedName("avatar_url")
+    val avatarUrl: String? = null,
+
     @SerializedName("achievements_count")
     val achievementsCount: String? = null,
 
