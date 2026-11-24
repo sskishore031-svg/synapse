@@ -1573,9 +1573,11 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         userId: String
     ): kotlinx.coroutines.flow.Flow<List<LessonProgressEntity>> {
         return kotlinx.coroutines.flow.flow {
-            emit(getProgressForUser(userId))
+            val initial = (getProgressForUser(userId) + getProgressForUser("1")).distinctBy { it.lessonId }
+            emit(initial)
             progressStateFlow.collect { list ->
-                emit(list.filter { it.userId == userId && it.isCompleted })
+                val filtered = list.filter { (it.userId == userId || it.userId == "1") && it.isCompleted }.distinctBy { it.lessonId }
+                emit(filtered)
             }
         }
     }

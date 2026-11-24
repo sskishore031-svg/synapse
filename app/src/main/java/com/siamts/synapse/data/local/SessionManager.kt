@@ -178,6 +178,15 @@ class SessionManager private constructor(context: Context) {
         .catch { emit(emptyPreferences()) }
         .map { preferences -> preferences[KEY_USER_NAME].orEmpty() }
 
+    suspend fun getUserName(): String {
+        return try {
+            val prefs = dataStore.data.first()
+            prefs[KEY_USER_NAME]?.trim()?.takeIf { it.isNotBlank() } ?: "Kishore"
+        } catch (_: Exception) {
+            "Kishore"
+        }
+    }
+
     val studyStreakFlow: Flow<Int> = dataStore.data
         .catch { emit(emptyPreferences()) }
         .map { preferences -> preferences[KEY_STUDY_STREAK] ?: 0 }
@@ -316,13 +325,14 @@ class SessionManager private constructor(context: Context) {
     }
 
     /**
-     * Clears all session keys upon user logout.
+     * Clears active session state upon user logout while preserving persistent local user data.
      */
     suspend fun clearSession() {
         cachedIsLoggedIn = false
         cachedAuthToken = null
         dataStore.edit { preferences ->
-            preferences.clear()
+            preferences[KEY_IS_LOGGED_IN] = false
+            preferences.remove(KEY_AUTH_TOKEN)
         }
     }
 

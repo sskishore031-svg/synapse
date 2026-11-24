@@ -15,6 +15,8 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -332,10 +334,12 @@ class MainActivity : ComponentActivity() {
                         val window = (view.context as android.app.Activity).window
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                             window.isNavigationBarContrastEnforced = false
+                            window.isStatusBarContrastEnforced = false
                         }
-                        window.navigationBarColor = if (isDark) android.graphics.Color.parseColor("#13141B") else android.graphics.Color.WHITE
+                        window.navigationBarColor = android.graphics.Color.TRANSPARENT
                         val insets = androidx.core.view.WindowCompat.getInsetsController(window, view)
                         insets.isAppearanceLightNavigationBars = !isDark
+                        insets.isAppearanceLightStatusBars = !isDark
                     }
                 }
                 val profileViewModel: ProfileViewModel = viewModel()
@@ -361,6 +365,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = MaterialTheme.colorScheme.background,
+                    contentWindowInsets = WindowInsets.statusBars,
                     bottomBar = {
                         val currentTab = NavGraph.getTabForScreen(currentScreen)
                         if (currentTab != -1) {

@@ -155,23 +155,18 @@ class NotesHomeViewModel(
                 it.isDownloaded || it.isSaved
             }
 
-            val summaryResult = notesRepository.getNotesSummary(userId = userId, email = userEmail)
-            val remoteSummary = summaryResult.getOrNull()?.data?.summary ?: NotesCountsDto()
-            val subjects = summaryResult.getOrNull()?.data?.subjects.orEmpty()
-
-            // Ensure counters are never wiped out by remote zeros when notes exist
             val finalCounts = NotesCountsDto(
-                subjectNotesCount = maxOf(subjectNotesCount, remoteSummary.subjectNotesCount),
-                commonNotesCount = maxOf(commonNotesCount, remoteSummary.commonNotesCount),
-                savedNotesCount = maxOf(savedNotesCount, remoteSummary.savedNotesCount),
-                downloadedNotesCount = maxOf(downloadedNotesCount, remoteSummary.downloadedNotesCount)
+                subjectNotesCount = subjectNotesCount,
+                commonNotesCount = commonNotesCount,
+                savedNotesCount = savedNotesCount,
+                downloadedNotesCount = downloadedNotesCount
             )
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     summary = finalCounts,
-                    subjects = subjects,
+                    subjects = emptyList(),
                     allNotes = combinedNotes,
                     filteredNotes = if (it.activeFilter == "ALL") combinedNotes else it.filteredNotes
                 )

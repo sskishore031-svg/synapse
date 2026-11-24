@@ -267,7 +267,7 @@ fun DashboardContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
-                        .background(Color(0xFF13141B), RoundedCornerShape(16.dp))
+                        .background(if (isDark) Color(0xFF13141B) else Color.White, RoundedCornerShape(16.dp))
                         .border(1.dp, Color(0xFFFF6A00).copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                         .clickable { onAskAiClick() }
                         .padding(horizontal = 14.dp),

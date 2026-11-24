@@ -667,6 +667,7 @@ fun SubjectSelectionContent(
     // Extended Catalog Dialog (+10 Subjects)
     if (uiState.isCatalogSheetOpen) {
         var catalogSearchQuery by remember { mutableStateOf("") }
+        var pendingSubjectToToggle by remember { mutableStateOf<Pair<com.siamts.synapse.data.model.CatalogSubject, Boolean>?>(null) }
         val filteredCatalog = remember(catalogSearchQuery, uiState.availableCatalog) {
             if (catalogSearchQuery.isBlank()) {
                 uiState.availableCatalog
@@ -785,7 +786,7 @@ fun SubjectSelectionContent(
                                     }
 
                                     Button(
-                                        onClick = { onToggleCatalogSubject(catalogSub.id) },
+                                        onClick = { pendingSubjectToToggle = Pair(catalogSub, !isAdded) },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (isAdded) Color(0xFF059669) else SunsetOrange
                                         ),
@@ -815,6 +816,59 @@ fun SubjectSelectionContent(
                 }
             }
         )
+
+        pendingSubjectToToggle?.let { (subject, isAdding) ->
+            AlertDialog(
+                onDismissRequest = { pendingSubjectToToggle = null },
+                containerColor = if (isDark) SurfacePanelElevated else Color.White,
+                shape = RoundedCornerShape(20.dp),
+                title = {
+                    Text(
+                        text = if (isAdding) "➕ Add Subject" else "Remove Subject",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) TextPrimary else Color(0xFF11131A)
+                    )
+                },
+                text = {
+                    Text(
+                        text = if (isAdding) {
+                            "Add ${subject.name} to your Learning Library?\nIncludes ${subject.chapters.size} micro-lessons & ${subject.chapters.size * 5} MCQs."
+                        } else {
+                            "Remove ${subject.name} from your Learning Library?"
+                        },
+                        fontSize = 14.sp,
+                        color = if (isDark) TextSecondary else Color(0xFF5A6075)
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            onToggleCatalogSubject(subject.id)
+                            pendingSubjectToToggle = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isAdding) SunsetOrange else Color(0xFFEF4444)
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            text = if (isAdding) "Add Subject" else "Remove",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingSubjectToToggle = null }) {
+                        Text(
+                            text = "Cancel",
+                            color = if (isDark) TextSecondary else Color(0xFF5A6075)
+                        )
+                    }
+                }
+            )
+        }
     }
 }
 

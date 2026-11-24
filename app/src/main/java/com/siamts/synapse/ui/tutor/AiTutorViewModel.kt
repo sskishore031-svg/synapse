@@ -93,7 +93,9 @@ class AiTutorViewModel(
             val email = user?.email ?: "student@synapse.ai"
 
             // Sync user preferences with localAiEngine
-            val accountName = user?.name?.trim().orEmpty()
+            val accountName = user?.name?.trim()?.takeIf { it.isNotBlank() }
+                ?: sessionManager?.getUserName()?.takeIf { it.isNotBlank() }
+                ?: "Kishore"
             cachedAccountName = accountName
             val savedPrefName = userPreferencesRepository?.getChatPreferredName().orEmpty()
             val activeName = savedPrefName.ifBlank { accountName }
@@ -1443,12 +1445,10 @@ class AiTutorViewModel(
 
         // 1. Check if user is asking for their own name: "say my name", "what is my name", etc.
         if (localAiEngine.isUserAskingOwnName(lower, normalized)) {
-            val activeName = localAiEngine.getEffectiveUserName().ifBlank { cachedAccountName }
-            val replyText = if (activeName.isNotBlank()) {
-                "Your name is **$activeName**! 😊 How can I help you with your placement preparation today, $activeName?"
-            } else {
-                "I don't know your name yet! What should I call you? You can tell me *'My name is Kishore'* or *'Call me Kishore'*."
-            }
+            val activeName = localAiEngine.getEffectiveUserName()
+                .ifBlank { cachedAccountName }
+                .ifBlank { "Kishore" }
+            val replyText = "Your name is **$activeName**! 😊 How can I help you with your placement preparation today, $activeName?"
 
             val userMsg = ChatMessage(
                 id = UUID.randomUUID().toString(),
@@ -1494,10 +1494,13 @@ class AiTutorViewModel(
                     .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } }
 
                 localAiEngine.preferredName = newName
+                localAiEngine.accountUserName = newName
+                cachedAccountName = newName
                 localAiEngine.isWaitingForName = false
                 scope.launch(Dispatchers.IO) {
                     userPreferencesRepository?.setChatPreferredName(newName)
                     userPreferencesRepository?.setPreferredName(newName)
+                    sessionManager?.saveSession(name = newName, email = "student@synapse.ai")
                 }
                 _uiState.update { it.copy(headerTag = "PERSONALIZED FOR ${newName.uppercase()}") }
 

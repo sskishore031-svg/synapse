@@ -346,31 +346,37 @@ class ProfileViewModel(
 
     private fun resolveFileFromUri(uriString: String): File? {
         return try {
+            val context = SynapseApplication.getAppContext()
+            val avatarsDir = File(context.filesDir, "avatars").apply { if (!exists()) mkdirs() }
+            val userId = _uiState.value.userId.takeIf { it > 0 } ?: 1
+            val permanentAvatar = File(avatarsDir, "avatar_$userId.jpg")
+
             if (uriString.startsWith("file://", ignoreCase = true)) {
                 val path = java.net.URI(uriString).path
                 val file = File(path)
-                if (file.exists() && file.isFile) return file
+                if (file.exists() && file.isFile) {
+                    file.copyTo(permanentAvatar, overwrite = true)
+                    return permanentAvatar
+                }
             }
             val rawFile = File(uriString)
             if (rawFile.exists() && rawFile.isFile) {
-                return rawFile
+                rawFile.copyTo(permanentAvatar, overwrite = true)
+                return permanentAvatar
             }
             if (uriString.startsWith("content://", ignoreCase = true)) {
-                val context = SynapseApplication.getAppContext()
                 val uri = Uri.parse(uriString)
-                val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
-                val ext = when {
-                    mime.contains("png", true) -> ".png"
-                    mime.contains("webp", true) -> ".webp"
-                    else -> ".jpg"
-                }
-                val tempFile = File(context.cacheDir, "avatar_upload_${System.currentTimeMillis()}$ext")
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    tempFile.outputStream().use { output ->
+                    permanentAvatar.outputStream().use { output ->
                         input.copyTo(output)
                     }
                 }
-                if (tempFile.exists() && tempFile.length() > 0) return tempFile
+                if (permanentAvatar.exists() && permanentAvatar.length() > 0) {
+                    return permanentAvatar
+                }
+            }
+            if (permanentAvatar.exists() && permanentAvatar.length() > 0) {
+                return permanentAvatar
             }
             null
         } catch (_: Exception) {
@@ -416,7 +422,11 @@ class ProfileViewModel(
         val effectiveName = name.ifBlank { "Student" }
         val initials = computeInitials(effectiveName)
         val formattedPhoto = RetrofitClient.formatPhotoUrl(photoUrl)
+        val localAvatarFile = File(SynapseApplication.getAppContext().filesDir, "avatars/avatar_$id.jpg")
         _uiState.update { current ->
+            val resolvedPhoto = formattedPhoto
+                ?: (if (localAvatarFile.exists() && localAvatarFile.length() > 0) localAvatarFile.toURI().toString() else null)
+                ?: current.profilePhotoUri
             current.copy(
                 userId = id,
                 userName = effectiveName,
@@ -427,7 +437,7 @@ class ProfileViewModel(
                 userDegree = course,
                 languageText = preferredLanguage,
                 studyGoalText = studyGoal,
-                profilePhotoUri = formattedPhoto ?: current.profilePhotoUri
+                profilePhotoUri = resolvedPhoto
             )
         }
     }

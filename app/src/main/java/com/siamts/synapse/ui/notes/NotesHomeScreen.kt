@@ -346,52 +346,6 @@ fun NotesHomeScreen(
                                 )
                             }
 
-                            // Subject Direct Quick Access
-                            item {
-                                Text(
-                                    text = "Browse Notes by Subject",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
-                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                                )
-                            }
-
-                            items(uiState.subjects, key = { it.id }) { sub ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
-                                        .clickable { onOpenNotesList("subject", sub.id, "${sub.name} Notes") },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(text = sub.iconSymbol, fontSize = 20.sp)
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = sub.name,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 14.sp,
-                                            color = if (isDark) TextPrimary else Color(0xFF1E293B),
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Text(
-                                            text = "${sub.notesCount} notes →",
-                                            fontSize = 12.sp,
-                                            color = SunsetOrange,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
-
                             if (uiState.allNotes.isNotEmpty()) {
                                 item {
                                     Spacer(modifier = Modifier.height(10.dp))

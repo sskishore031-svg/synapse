@@ -215,12 +215,18 @@ fun HomeContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp)
+                    ) {
                         Text(
                             text = "Hello, ${uiState.userName.ifBlank { "Kishore" }}! 👋",
                             color = headerTextColor,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -228,6 +234,8 @@ fun HomeContent(
                             color = SunsetOrange,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
