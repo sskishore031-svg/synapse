@@ -172,8 +172,14 @@ fun DashboardContent(
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
-        listOf(Color(0xFFE0E7FF), Color(0xFFEEF2F6), LightBackground)
+        listOf(Color(0xFFF5F6FA), Color(0xFFF5F6FA))
     }
+    val cardBg = if (isDark) SurfacePanel else Color.White
+    val cardBgElevated = if (isDark) SurfacePanelElevated else Color(0xFFF8FAFC)
+    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
+    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
+    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF5A6075)
+    val progressTrackColor = if (isDark) Color(0xFF1E212D) else Color(0xFFE2E8F0)
     val headerTextColor = if (isDark) TextPrimary else LightTextPrimary
     val controlBgColor = if (isDark) Color(0xFF161F42) else Color.White
     val controlBorderColor = if (isDark) Color.Transparent else Color(0xFFE2E8F0)
@@ -319,7 +325,7 @@ fun DashboardContent(
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // 1. "Your learning journey" Card (Design 4 SurfacePanel)
+                    // 1. "Your learning journey" Card
                     DashedBorderBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = 2.dp
@@ -327,8 +333,8 @@ fun DashboardContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
@@ -347,13 +353,13 @@ fun DashboardContent(
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = "${uiState.overallProgress}% Completed",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = if (uiState.overallProgress == 100) "Goal achieved! Outstanding discipline." else uiState.progressMessage,
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 12.sp,
                                         )
                                     }
@@ -366,12 +372,12 @@ fun DashboardContent(
                                             progress = { (uiState.overallProgress / 100f).coerceIn(0f, 1f) },
                                             modifier = Modifier.fillMaxSize(),
                                             color = SunsetOrange,
-                                            trackColor = Color(0xFF1E212D),
+                                            trackColor = progressTrackColor,
                                             strokeWidth = 6.dp
                                         )
                                         Text(
                                             text = "${uiState.overallProgress}%",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -381,7 +387,7 @@ fun DashboardContent(
                         }
                     }
 
-                    // 2. Stats Grid (3 Design 4 Cards)
+                    // 2. Stats Grid (3 Cards)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -394,19 +400,19 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = cardBgElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = "${uiState.topicsDone}",
-                                        color = TextPrimary,
+                                        color = textPrimaryColor,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = "Topics done",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -421,8 +427,8 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = cardBgElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
@@ -433,7 +439,7 @@ fun DashboardContent(
                                     )
                                     Text(
                                         text = "Quiz score",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -448,8 +454,8 @@ fun DashboardContent(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = cardBgElevated),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
@@ -460,7 +466,7 @@ fun DashboardContent(
                                     )
                                     Text(
                                         text = "Study streak",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -476,8 +482,8 @@ fun DashboardContent(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -488,13 +494,13 @@ fun DashboardContent(
                                     Column {
                                         Text(
                                             text = "Today's Task",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Text(
                                             text = "Organize daily tasks & placement goals",
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 11.sp
                                         )
                                     }
@@ -502,7 +508,7 @@ fun DashboardContent(
                                         Box(
                                             modifier = Modifier
                                                 .border(1.dp, SunsetOrange.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
-                                                .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                                                .background(cardBgElevated, RoundedCornerShape(10.dp))
                                                 .clickable { showAddTaskDialog = true }
                                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                                         ) {
@@ -529,21 +535,21 @@ fun DashboardContent(
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
                                             text = "No tasks added yet",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "Tap '+ Add a task' to plan your 2-min micro-lessons for today!",
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 11.sp
                                         )
                                         Spacer(modifier = Modifier.height(12.dp))
                                         Box(
                                             modifier = Modifier
                                                 .border(1.dp, SunsetOrange.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
-                                                .background(SurfacePanelElevated, RoundedCornerShape(10.dp))
+                                                .background(cardBgElevated, RoundedCornerShape(10.dp))
                                                 .clickable { showAddTaskDialog = true }
                                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                                         ) {
@@ -562,10 +568,10 @@ fun DashboardContent(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .background(
-                                                        color = SurfacePanelElevated,
+                                                        color = cardBgElevated,
                                                         shape = RoundedCornerShape(12.dp)
                                                     )
-                                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(12.dp))
+                                                    .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                                                     .padding(10.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -579,7 +585,7 @@ fun DashboardContent(
                                                         )
                                                         .border(
                                                             width = 1.5.dp,
-                                                            color = if (item.isCompleted) SunsetOrange else Color(0xFF6B7280),
+                                                             color = if (item.isCompleted) SunsetOrange else Color(0xFF6B7280),
                                                             shape = CircleShape
                                                         )
                                                         .clickable { onToggleTask(item.id, !item.isCompleted) },
@@ -599,7 +605,7 @@ fun DashboardContent(
                                                 ) {
                                                     Text(
                                                         text = item.title,
-                                                        color = if (item.isCompleted) Color(0xFF6B7280) else TextPrimary,
+                                                        color = if (item.isCompleted) Color(0xFF6B7280) else textPrimaryColor,
                                                         fontSize = 13.sp,
                                                         fontWeight = FontWeight.SemiBold,
                                                         textDecoration = if (item.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
@@ -637,8 +643,8 @@ fun DashboardContent(
                                 .fillMaxWidth()
                                 .clickable { onProgressAnalyticsClick?.invoke() },
                             shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -663,14 +669,14 @@ fun DashboardContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "Progress & Analytics",
-                                            color = TextPrimary,
+                                            color = textPrimaryColor,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "Study time, tracks breakdown & streaks",
-                                            color = TextSecondary,
+                                            color = textSecondaryColor,
                                             fontSize = 11.sp,
                                         )
                                     }

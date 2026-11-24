@@ -55,6 +55,7 @@ import com.siamts.synapse.data.model.WeeklySubjectComparisonItem
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SurfaceBorder
@@ -74,7 +75,7 @@ fun ProgressAnalyticsScreen(
     viewModel: AnalyticsViewModel = viewModel(),
     onTrackClick: ((String) -> Unit)? = null
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     var selectedTab by remember { mutableStateOf(initialTab) }
     val uiState by viewModel.uiState.collectAsState()
     val data = uiState.data

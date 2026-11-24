@@ -71,6 +71,7 @@ import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
@@ -94,7 +95,7 @@ fun ThreeDNoteViewerDialog(
     onToggleDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val clipboardManager = LocalClipboardManager.current
     val density = LocalDensity.current
 

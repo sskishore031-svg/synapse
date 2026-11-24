@@ -1281,11 +1281,11 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 3. Direct name instruction first: "call me Kishore", "from now on call me Kishore", "call me by my name Kishore", "my name is Kishore", "hi my name is Kishore"
+        // 3. Direct name instruction first: "call me Kishore", "from now on call me Kishore", "call me by my name Kishore", "my name is Kishore", "hi my name is Kishore", "iam Kishore"
         val callMeMatch = Regex(
-            """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
+            """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|iam\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
             RegexOption.IGNORE_CASE
-        ).find(trimmedRaw)
+        ).find(trimmedRaw) ?: Regex("""^([a-zA-Z]+)\s+is\s+my\s+name$""", RegexOption.IGNORE_CASE).find(trimmedRaw)
         if (callMeMatch != null) {
             val candidate = callMeMatch.groupValues[1].trim()
             val stopWords = setOf("by", "my", "name", "a", "an", "the", "asking", "studying", "learning", "ready", "ok", "okay", "fine", "what", "who", "say", "me")
@@ -1294,6 +1294,7 @@ class LocalAIEngine private constructor(context: Context?) {
                     .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } }
                 if (name.isNotBlank() && name.length >= 2) {
                     preferredName = name
+                    accountUserName = name
                     isWaitingForName = false
                     consecutiveUnclearCount = 0
                     return LocalAiResponse(

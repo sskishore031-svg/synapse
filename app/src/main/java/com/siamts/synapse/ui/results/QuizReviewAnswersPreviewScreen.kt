@@ -44,6 +44,7 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
@@ -108,7 +109,7 @@ fun QuizReviewAnswersPreviewScreen(
         )
     )
 
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val questionsToDisplay = if (!reviewQuestions.isNullOrEmpty()) reviewQuestions else defaultQuestions
     val correctCount = questionsToDisplay.count { it.isCorrect }
     val totalCount = questionsToDisplay.size.coerceAtLeast(1)
@@ -121,10 +122,13 @@ fun QuizReviewAnswersPreviewScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )

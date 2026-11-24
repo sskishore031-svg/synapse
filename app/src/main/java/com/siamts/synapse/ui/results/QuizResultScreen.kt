@@ -57,6 +57,7 @@ import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.SurfacePanel
 import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.PurpleGlow
 import com.siamts.synapse.ui.theme.SYNAPSETheme
@@ -81,7 +82,7 @@ fun QuizResultScreen(
     subjectTitle: String? = null,
     chapterTitle: String? = null,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val totalQuestions = total.coerceAtLeast(1)
     val scorePercentage = ((score.toFloat() / totalQuestions.toFloat()) * 100f).toInt().coerceIn(0, 100)
 
@@ -113,10 +114,13 @@ fun QuizResultScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )

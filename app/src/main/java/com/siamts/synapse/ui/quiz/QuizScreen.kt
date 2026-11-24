@@ -57,7 +57,9 @@ import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.SurfaceBorder
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SurfacePanel
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -123,7 +125,7 @@ fun QuizContent(
     modifier: Modifier = Modifier,
     onRetryClick: (() -> Unit)? = null,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     Box(
         modifier = modifier

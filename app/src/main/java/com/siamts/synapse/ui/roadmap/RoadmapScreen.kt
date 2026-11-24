@@ -47,6 +47,7 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
@@ -107,17 +108,20 @@ fun RoadmapContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )

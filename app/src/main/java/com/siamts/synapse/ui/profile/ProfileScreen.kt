@@ -54,6 +54,7 @@ import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
 import com.siamts.synapse.ui.theme.DarkBackground
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.SurfacePanel
@@ -136,7 +137,7 @@ fun ProfileContent(
     onSettingsClick: (() -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
 ) {
-    val isDark = isSystemInDarkTheme() || (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+    val isDark = LocalThemeIsDark.current
     var showLogoutDialog by remember { mutableStateOf(false) }
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)

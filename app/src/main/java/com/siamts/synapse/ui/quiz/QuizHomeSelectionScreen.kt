@@ -41,6 +41,7 @@ import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.AmberGold
@@ -62,7 +63,7 @@ fun QuizHomeSelectionScreen(
     onOpenMistakeVault: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isDark = isSystemInDarkTheme() || (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+    val isDark = LocalThemeIsDark.current
 
     Box(
         modifier = modifier

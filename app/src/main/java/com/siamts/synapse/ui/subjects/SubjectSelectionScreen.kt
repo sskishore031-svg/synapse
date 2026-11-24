@@ -51,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siamts.synapse.ui.theme.AmberGold
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.SurfaceBorder
@@ -115,7 +116,7 @@ fun SubjectSelectionContent(
     onRestartSubject: ((String) -> Unit)? = null,
 ) {
     val isSearching = uiState.searchQuery.isNotBlank()
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     Box(
         modifier = modifier

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SurfaceBorder
@@ -58,7 +59,7 @@ fun StudyGoalsScreen(
     initialGoal: String = "25 min / day",
     onGoalSelected: (String) -> Unit = {},
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     var selectedGoal by remember { mutableStateOf(initialGoal) }
 
     val goalOptions = listOf(
@@ -73,10 +74,13 @@ fun StudyGoalsScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )

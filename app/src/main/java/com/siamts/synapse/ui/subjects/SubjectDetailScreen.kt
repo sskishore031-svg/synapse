@@ -42,6 +42,7 @@ import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.SurfaceBorder
@@ -92,7 +93,7 @@ fun SubjectDetailContent(
     onRoadmapClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val cardBg = if (isDark) SurfacePanelElevated else Color.White
     val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
     val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)

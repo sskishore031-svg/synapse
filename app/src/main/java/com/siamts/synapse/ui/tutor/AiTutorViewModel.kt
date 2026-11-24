@@ -1441,10 +1441,30 @@ class AiTutorViewModel(
 
     private fun handleUserNameQuery(query: String): Boolean {
         val lower = query.lowercase(Locale.ROOT).trim()
-        val normalized = lower.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val normalized = lower.replace(Regex("[^a-zA-Z0-9\\s]"), " ").replace(Regex("\\s+"), " ").trim()
+        val words = normalized.split(" ").filter { it.isNotBlank() }
+        val isAskingAiName = words.contains("your") || words.contains("ur") || words.contains("synapse")
+
+        val isAskingOwnName = !isAskingAiName && (
+            localAiEngine.isUserAskingOwnName(lower, normalized) ||
+            normalized == "say my name" ||
+            normalized == "what is my name" ||
+            normalized == "whats my name" ||
+            normalized == "what s my name" ||
+            normalized == "who am i" ||
+            normalized == "tell my name" ||
+            normalized == "my name" ||
+            normalized.contains("say my name") ||
+            normalized.contains("what is my name") ||
+            normalized.contains("whats my name") ||
+            normalized.contains("who am i") ||
+            normalized.contains("tell my name") ||
+            normalized.contains("tell me my name") ||
+            (words.contains("name") && (words.contains("say") || words.contains("tell") || words.contains("what") || words.contains("whats") || words.contains("speak")))
+        )
 
         // 1. Check if user is asking for their own name: "say my name", "what is my name", etc.
-        if (localAiEngine.isUserAskingOwnName(lower, normalized)) {
+        if (isAskingOwnName) {
             val activeName = localAiEngine.getEffectiveUserName()
                 .ifBlank { cachedAccountName }
                 .ifBlank { "Kishore" }
@@ -1481,11 +1501,11 @@ class AiTutorViewModel(
             return true
         }
 
-        // 2. Check if user is directly introducing / setting their name: "my name is Kishore", "call me Kishore", "i am Kishore"
+        // 2. Check if user is directly introducing / setting their name: "my name is Kishore", "call me Kishore", "i am Kishore", "iam Kishore"
         val callMeMatch = Regex(
-            """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
+            """^(?:(?:hello|hi|hey)\s+)?(?:from\s+now\s+on\s+)?(?:call\s+me\s+(?:by\s+my\s+name\s+|by\s+name\s+|with\s+my\s+name\s+)?|my\s+name\s+(?:is\s+)?|name\s+is\s+|i\s+am\s+|i['’]m\s+|iam\s+|myself\s+|this\s+is\s+)([a-zA-Z]+(?:\s+[a-zA-Z]+)?)""",
             RegexOption.IGNORE_CASE
-        ).find(query.trim())
+        ).find(query.trim()) ?: Regex("""^([a-zA-Z]+)\s+is\s+my\s+name$""", RegexOption.IGNORE_CASE).find(query.trim())
         if (callMeMatch != null) {
             val candidate = callMeMatch.groupValues[1].trim()
             val stopWords = setOf("by", "my", "name", "a", "an", "the", "asking", "studying", "learning", "ready", "ok", "okay", "fine", "what", "who", "say")

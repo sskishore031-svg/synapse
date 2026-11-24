@@ -44,6 +44,7 @@ import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
@@ -86,7 +87,7 @@ fun BrainMapContent(
     onRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val fallbackNodes = defaultNodes()
     val node1 = uiState.nodes.getOrNull(0) ?: fallbackNodes[0]
     val node2 = uiState.nodes.getOrNull(1) ?: fallbackNodes[1]
@@ -100,10 +101,13 @@ fun BrainMapContent(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom,
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )
@@ -447,15 +451,15 @@ private fun NodeBox(
     borderColor: Color,
     onClick: () -> Unit,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     Box(
         modifier = Modifier
             .width(110.dp)
             .background(
-                if (isDark) SurfacePanelElevated.copy(alpha = 0.95f) else Color(0xFF0F172A).copy(alpha = 0.9f),
+                if (isDark) SurfacePanelElevated.copy(alpha = 0.95f) else Color.White,
                 RoundedCornerShape(12.dp)
             )
-            .border(1.dp, borderColor.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
+            .border(1.dp, if (isDark) borderColor.copy(alpha = 0.8f) else Color(0xFFE4E7F0), RoundedCornerShape(12.dp))
             .clickable { onClick() }
             .padding(8.dp)
     ) {

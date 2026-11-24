@@ -67,6 +67,7 @@ import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.AmberGoldEnd
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SurfacePanel
 import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.SurfaceBorder
@@ -128,7 +129,7 @@ fun ChapterLessonScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isDark = isSystemInDarkTheme() || (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+    val isDark = LocalThemeIsDark.current
 
     var showSmartNotesDialog by remember { mutableStateOf(false) }
     var isSavingSmartNote by remember { mutableStateOf(false) }

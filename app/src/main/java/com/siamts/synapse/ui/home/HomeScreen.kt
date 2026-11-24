@@ -641,13 +641,13 @@ fun HomeContent(
                                 Column {
                                     Text(
                                         text = "Today's Task",
-                                        color = TextPrimary,
+                                        color = textPrimaryColor,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Organize daily tasks & placement goals",
-                                        color = TextSecondary,
+                                        color = textSecondaryColor,
                                         fontSize = 12.sp
                                     )
                                 }
@@ -655,7 +655,7 @@ fun HomeContent(
                                 Box(
                                     modifier = Modifier
                                         .border(1.dp, SunsetOrange.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
-                                        .background(SurfacePanelElevated, RoundedCornerShape(12.dp))
+                                        .background(elevatedBg, RoundedCornerShape(12.dp))
                                         .clickable { onAddTaskClick() }
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
@@ -999,7 +999,7 @@ fun HomeContent(
                                 ) {
                                     Text(
                                         text = "Subjects & Mastery",
-                                        color = TextPrimary,
+                                        color = textPrimaryColor,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -1020,7 +1020,8 @@ fun HomeContent(
                                                 .width(135.dp)
                                                 .clickable { onSubjectCardClick(subj.slug) },
                                             shape = RoundedCornerShape(16.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1430))
+                                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                                         ) {
                                             Column(modifier = Modifier.padding(12.dp)) {
                                                 Row(
@@ -1041,14 +1042,14 @@ fun HomeContent(
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Text(
                                                     text = subj.name,
-                                                    color = TextPrimary,
+                                                    color = textPrimaryColor,
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     maxLines = 1
                                                 )
                                                 Text(
                                                     text = "${subj.completedChapters}/${subj.totalChapters} chapters",
-                                                    color = TextSecondary,
+                                                    color = textSecondaryColor,
                                                     fontSize = 11.sp
                                                 )
                                                 Spacer(modifier = Modifier.height(8.dp))
@@ -1058,7 +1059,7 @@ fun HomeContent(
                                                         .fillMaxWidth()
                                                         .height(4.dp),
                                                     color = CyanGlow,
-                                                    trackColor = Color(0xFF1E293B)
+                                                    trackColor = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0)
                                                 )
                                             }
                                         }
@@ -1070,11 +1071,13 @@ fun HomeContent(
 
                     // Performance & Quiz Card
                     item {
-                        DashedBorderBox(
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
-                            contentPadding = 14.dp
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBg),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1082,7 +1085,7 @@ fun HomeContent(
                                 ) {
                                     Text(
                                         text = "Quiz & Performance",
-                                        color = TextPrimary,
+                                        color = textPrimaryColor,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1101,15 +1104,15 @@ fun HomeContent(
                                 ) {
                                     Column {
                                         Text(text = "${uiState.quizScore}%", color = CyanGlow, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Average score", color = TextSecondary, fontSize = 11.sp)
+                                        Text(text = "Average score", color = textSecondaryColor, fontSize = 11.sp)
                                     }
                                     Column {
-                                        Text(text = "${uiState.quizzesAttempted}", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Quizzes completed", color = TextSecondary, fontSize = 11.sp)
+                                        Text(text = "${uiState.quizzesAttempted}", color = textPrimaryColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = "Quizzes completed", color = textSecondaryColor, fontSize = 11.sp)
                                     }
                                     Column {
                                         Text(text = "${uiState.studyStreakDays} days", color = Color(0xFFF59E0B), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                        Text(text = "Study streak", color = TextSecondary, fontSize = 11.sp)
+                                        Text(text = "Study streak", color = textSecondaryColor, fontSize = 11.sp)
                                     }
                                 }
                             }
