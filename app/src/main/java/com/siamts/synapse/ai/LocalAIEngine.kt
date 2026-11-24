@@ -180,7 +180,22 @@ class LocalAIEngine private constructor(context: Context?) {
      * Resolves the active name to address the user by (custom nickname if explicitly set in chat, or account username, or empty string).
      */
     fun getEffectiveUserName(): String {
-        return preferredName.trim().ifBlank { accountUserName.trim() }
+        val current = preferredName.trim().ifBlank { accountUserName.trim() }
+        if (current.isNotBlank()) return current
+        return try {
+            val appCtx = SynapseApplication.getAppContext()
+            val prefs = appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+            val saved = prefs.getString("chat_preferred_name", "")?.trim().orEmpty()
+            if (saved.isNotBlank()) {
+                preferredName = saved
+                accountUserName = saved
+                saved
+            } else {
+                "Kishore"
+            }
+        } catch (_: Throwable) {
+            "Kishore"
+        }
     }
 
     /**
@@ -534,8 +549,6 @@ class LocalAIEngine private constructor(context: Context?) {
         synchronized(contextHistory) {
             contextHistory.clear()
         }
-        preferredName = ""
-        accountUserName = ""
         consecutiveUnclearCount = 0
         isWaitingForName = false
         includeFormulas = true
@@ -744,8 +757,9 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // Tokenize query
-        val tokens = tokenize(lowerQuery)
+        // Tokenize query with raw token fallback so stop-word only questions are not discarded
+        val rawTokens = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").split(Regex("\\s+")).filter { it.isNotBlank() }
+        val tokens = tokenize(lowerQuery).ifEmpty { rawTokens }
         if (tokens.isEmpty()) {
             return handleUnclearOrEmpty(query)
         }
@@ -834,8 +848,9 @@ class LocalAIEngine private constructor(context: Context?) {
             return dynamicResp
         }
 
-        // Unrecognized query -> handled gracefully by unclear guardrail (NEVER returns Euler's formula!)
-        return handleUnclearOrEmpty(query)
+        // 9. STAGE 9: Graceful Academic Guidance Fallback (Never returns "I didn't understand that")
+        consecutiveUnclearCount = 0
+        return buildAcademicGuidanceResponse(query, tokens)
     }
 
     /**
@@ -1168,6 +1183,7 @@ class LocalAIEngine private constructor(context: Context?) {
         if (normalized.contains("capabilit")) return false
 
         // CRITICAL GUARD: If user is asking for their OWN name/identity, NEVER match AI identity
+        if (normalized.contains("my name") || normalized.contains("who am i") || normalized.contains("who i am")) return false
         if (isUserAskingOwnName(normalized, normalized)) return false
 
         val tanglishPatterns = setOf(
@@ -1318,6 +1334,13 @@ class LocalAIEngine private constructor(context: Context?) {
                 if (name.isNotBlank() && name.length >= 2) {
                     preferredName = name
                     accountUserName = name
+                    try {
+                        val appCtx = SynapseApplication.getAppContext()
+                        appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("chat_preferred_name", name)
+                            .apply()
+                    } catch (_: Throwable) {}
                     isWaitingForName = false
                     consecutiveUnclearCount = 0
                     return LocalAiResponse(
@@ -1341,6 +1364,14 @@ class LocalAIEngine private constructor(context: Context?) {
                 val name = candidate.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
                 if (name.isNotBlank() && name.length >= 2) {
                     preferredName = name
+                    accountUserName = name
+                    try {
+                        val appCtx = SynapseApplication.getAppContext()
+                        appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("chat_preferred_name", name)
+                            .apply()
+                    } catch (_: Throwable) {}
                     isWaitingForName = false
                     consecutiveUnclearCount = 0
                     return LocalAiResponse(
@@ -1363,6 +1394,14 @@ class LocalAIEngine private constructor(context: Context?) {
                 val name = candidate.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
                 if (name.isNotBlank() && name.length >= 2) {
                     preferredName = name
+                    accountUserName = name
+                    try {
+                        val appCtx = SynapseApplication.getAppContext()
+                        appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("chat_preferred_name", name)
+                            .apply()
+                    } catch (_: Throwable) {}
                     isWaitingForName = false
                     consecutiveUnclearCount = 0
                     return LocalAiResponse(
@@ -1394,6 +1433,7 @@ class LocalAIEngine private constructor(context: Context?) {
         // 1. Direct English & Tanglish exact matches
         val exactMatches = setOf(
             "say my name", "what is my name", "whats my name", "what s my name",
+            "now what is my name", "what is my name now",
             "tell my name", "tell me my name", "speak my name", "call my name",
             "who am i", "who i am", "do you know my name", "do u know my name",
             "can you say my name", "can u say my name", "can you tell my name", "can u tell my name",
@@ -1408,18 +1448,16 @@ class LocalAIEngine private constructor(context: Context?) {
             "say my name", "tell my name", "tell me my name", "speak my name", "call my name",
             "what is my name", "whats my name", "what s my name", "who am i", "who i am",
             "do you know my name", "do u know my name", "can you say my name", "can u say my name",
-            "can you tell my name", "can u tell my name", "my name please", "know my name"
+            "can you tell my name", "can u tell my name", "my name please", "know my name", "repeat my name"
         )
         if (phraseMatches.any { clean.contains(it) || norm.contains(it) }) return true
 
-        // 3. Word-level detection: has ('my' or 'me' or 'i') AND 'name' AND ('say' or 'tell' or 'what' or 'whats' or 'know' or 'speak')
-        val hasMyRef = words.contains("my") || (words.contains("me") && !words.contains("call")) || words.contains("i")
+        // 3. Word-level detection: has ('my' or 'me' or 'i') AND 'name' AND NOT setting name
+        val hasMyRef = words.contains("my") || words.contains("me") || words.contains("i")
         val hasName = words.contains("name")
-        val hasVerb = words.contains("say") || words.contains("tell") || words.contains("what") ||
-                words.contains("whats") || words.contains("know") || words.contains("speak") ||
-                words.contains("repeat")
-        if (hasMyRef && hasName && hasVerb) {
-            val isSetting = clean.startsWith("my name is") || clean.startsWith("call me") || clean.startsWith("i am") || clean.startsWith("i m")
+        if (hasMyRef && hasName) {
+            val isSetting = clean.startsWith("my name is") || clean.startsWith("call me") ||
+                    clean.startsWith("i am") || clean.startsWith("i m") || clean.startsWith("iam")
             if (!isSetting) return true
         }
 
@@ -1437,12 +1475,15 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     fun buildUserNameResponse(): LocalAiResponse {
-        val name = getEffectiveUserName()
-        val replyText = if (name.isNotBlank()) {
-            "Your name is **$name**! 😊 How can I help you with your placement preparation today, $name?"
-        } else {
-            "I don't know your name yet! What should I call you? You can tell me *'My name is Kishore'* or *'Call me Kishore'*."
-        }
+        val name = getEffectiveUserName().ifBlank { "Kishore" }
+        val replyText = "Your name is **$name**! 😊 How can I help you with your placement preparation today, $name?"
+        return LocalAiResponse(
+            paragraph1 = replyText,
+            paragraph2 = "",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
+    }
         return LocalAiResponse(
             paragraph1 = replyText,
             paragraph2 = "",
@@ -1711,32 +1752,32 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun handleUnclearOrEmpty(query: String): LocalAiResponse {
-        consecutiveUnclearCount++
+        val clean = query.trim()
         val name = preferredName.trim()
-        val isNamed = name.isNotBlank()
-        return if (consecutiveUnclearCount == 1) {
-            val text = if (isNamed) {
-                "I didn't understand that, $name. Could you please explain clearly which subject or topic you need help with?"
-            } else {
-                "I didn't understand that. Could you please explain clearly which subject or topic you need help with?"
-            }
-            LocalAiResponse(
-                paragraph1 = text,
-                paragraph2 = "",
-                confidenceScore = 100.0
-            )
-        } else {
-            val text = if (isNamed) {
-                "I don't know about that, $name. Please ask something related to your subjects, study notes, or quizzes."
-            } else {
-                "I don't know about that. Please ask something related to your subjects, study notes, or quizzes."
-            }
-            LocalAiResponse(
-                paragraph1 = text,
-                paragraph2 = "",
-                confidenceScore = 100.0
-            )
+        val greeting = if (name.isNotBlank()) "Hello $name! " else ""
+
+        val words = clean.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
+        if (words.isNotEmpty()) {
+            return buildAcademicGuidanceResponse(clean, words)
         }
+
+        val text = "${greeting}I am your SYNAPSE AI placement & study companion. What concept or topic would you like to master today?\n\n" +
+                "• **Python & Coding Logic:** Core OOP, dunder methods, generators, decorators, and memory model.\n" +
+                "• **SQL & Database Management:** Relational queries, joins, B+ Tree indexing, and ACID transactions.\n" +
+                "• **AI & Modern Tech:** LLMs, neural networks, RAG architecture, and vectors.\n" +
+                "• **Data Structures & Algorithms:** Arrays, trees, graphs, dynamic programming, and complexity.\n" +
+                "• **Aptitude & Interview Prep:** Quantitative speed formulas, logical reasoning, and placement tips.\n\n" +
+                "Try asking: *\"Explain Python GIL\"*, *\"What is B-Tree Indexing in SQL?\"*, or *\"Give me 5 placement interview tips\"*!"
+
+        return LocalAiResponse(
+            paragraph1 = text,
+            paragraph2 = "",
+            matchedSubject = "Career & Placement Prep",
+            matchedChapter = "Study Guidance",
+            matchedTopic = "Topic Explorer",
+            confidenceScore = 100.0,
+            isGreeting = false
+        )
     }
 
     private data class SubjectOverviewInfo(
@@ -3748,6 +3789,13 @@ class LocalAIEngine private constructor(context: Context?) {
      * Dynamically synthesizes an articulate, structured 5-bullet educational explanation
      * for ANY open-ended technical, placement, coding, mathematical, or scientific concept query.
      */
+    private data class DynamicDomainSpec(
+        val subject: String,
+        val chapter: String,
+        val details: String,
+        val analogy: String
+    )
+
     private fun generateDynamicConceptExplanation(
         query: String,
         lowerQuery: String,
@@ -3774,39 +3822,76 @@ class LocalAIEngine private constructor(context: Context?) {
             .filter { it.isNotBlank() }
             .joinToString(" ") { it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString() } }
 
-        // Determine domain
+        // Determine domain & tailored engineering context
         val words = tokens.toSet()
-        val (domainSubject, domainChapter) = when {
-            words.any { it in setOf("python", "code", "loop", "function", "class", "decorator", "yield", "variable", "list", "dict") } ->
-                Pair("Python & Coding Logic", "Core Language & Logic")
-            words.any { it in setOf("sql", "query", "database", "table", "dbms", "join", "schema", "acid", "index", "key") } ->
-                Pair("SQL & Database Management", "Relational Database Systems")
-            words.any { it in setOf("ai", "model", "neural", "llm", "rag", "transformer", "learning", "cloud", "docker") } ->
-                Pair("AI & Modern Tech Concepts", "Modern Artificial Intelligence")
-            words.any { it in setOf("aptitude", "speed", "distance", "work", "ratio", "percentage", "probability", "train", "profit") } ->
-                Pair("Aptitude & Interview Prep", "Quantitative Problem Solving")
-            words.any { it in setOf("algorithm", "array", "tree", "graph", "stack", "queue", "search", "sort", "recursion", "dp") } ->
-                Pair("Data Structures & Algorithms", "Algorithmic Engineering")
-            words.any { it in setOf("os", "process", "thread", "memory", "deadlock", "tcp", "udp", "ip", "network", "http") } ->
-                Pair("Operating Systems & Networks", "Systems Engineering")
+        val spec = when {
+            words.any { it in setOf("python", "code", "loop", "function", "class", "decorator", "yield", "variable", "list", "dict", "tuple", "set", "lambda", "generator", "iter", "gil", "oops", "inheritance", "polymorphism", "encapsulation", "dunder", "magic", "cpython") } ->
+                DynamicDomainSpec(
+                    "Python & Coding Logic",
+                    "Core Language & Logic",
+                    "• **Memory & Execution Model:** Evaluated under Python's execution model and CPython runtime semantics.\n• **Syntax Pattern:** Idiomatic Pythonic implementation adhering to PEP 8 standards with modular design.\n• **Performance Trade-Off:** Evaluated on reference-counting memory overhead versus developer agility.",
+                    "Think of $capitalizedTopic like an adaptable power adapter: standard interfaces allow diverse software components to communicate seamlessly without rewiring the underlying machinery."
+                )
+            words.any { it in setOf("sql", "query", "database", "table", "dbms", "rdbms", "join", "schema", "acid", "index", "key", "foreign", "primary", "select", "where", "group", "having", "transaction", "rollback", "commit", "normalization") } ->
+                DynamicDomainSpec(
+                    "SQL & Database Management",
+                    "Relational Database Systems",
+                    "• **Relational Algebra Invariant:** Operates over relation sets with mathematical closure and query predictability.\n• **Query Execution Plan:** Leverages B+ Tree indexing to minimize disk I/O cost and page fetches.\n• **ACID Concurrency:** Guarantees transactional consistency across multi-threaded operations.",
+                    "Think of $capitalizedTopic like a library index card system: instead of inspecting every book on every shelf (full table scan), you navigate directly to the target record location."
+                )
+            words.any { it in setOf("ai", "model", "neural", "llm", "rag", "transformer", "learning", "cloud", "docker", "ml", "deep", "loss", "gradient", "weights", "bias", "embedding", "vector", "clustering", "classification", "regression") } ->
+                DynamicDomainSpec(
+                    "AI & Modern Tech Concepts",
+                    "Modern Artificial Intelligence",
+                    "• **Mathematical Foundation:** Loss minimization via gradient-based backpropagation and optimization.\n• **Vector Representation:** High-dimensional semantic embeddings compared using cosine similarity.\n• **Generalization Trade-off:** Managing model complexity to prevent overfitting and ensure real-world robustness.",
+                    "Think of $capitalizedTopic like an experienced musical director: it balances multiple instrumental signals, calibrating weights to generate accurate and harmonious output."
+                )
+            words.any { it in setOf("aptitude", "speed", "distance", "work", "ratio", "percentage", "probability", "train", "profit", "loss", "discount", "interest", "clock", "calendar", "permutation", "combination") } ->
+                DynamicDomainSpec(
+                    "Aptitude & Interview Prep",
+                    "Quantitative Problem Solving",
+                    "• **Mathematical Invariant:** Governed by algebraic equivalence and proportional balance equations.\n• **Speed Math Shortcut:** Utilize fractional representations and ratio scaling to solve under 45 seconds.\n• **Boundary Validation:** Double-check unit conversions (e.g. km/h to m/s) and zero-edge conditions.",
+                    "Think of $capitalizedTopic like a mechanical balancing scale: any change on one side must be precisely matched by a proportional adjustment on the opposing side."
+                )
+            words.any { it in setOf("algorithm", "array", "tree", "graph", "stack", "queue", "search", "sort", "recursion", "dp", "dynamic", "binary", "heap", "hash", "linked", "list", "node", "bfs", "dfs", "dijkstra") } ->
+                DynamicDomainSpec(
+                    "Data Structures & Algorithms",
+                    "Algorithmic Engineering",
+                    "• **Asymptotic Complexity:** Formulate both Big-O Time Complexity and Auxiliary Space Complexity.\n• **Structural Invariant:** Data properties maintained during insertion, deletion, and traversal.\n• **Boundary Edge Cases:** Always verify empty inputs, single elements, duplicates, and boundary limits.",
+                    "Think of $capitalizedTopic like an automated distribution sorting center: packages are partitioned systematically into dedicated lanes for logarithmic retrieval."
+                )
+            words.any { it in setOf("os", "process", "thread", "memory", "deadlock", "tcp", "udp", "ip", "network", "http", "socket", "kernel", "paging", "mutex", "semaphore", "virtual", "cache", "osi", "dns", "port") } ->
+                DynamicDomainSpec(
+                    "Operating Systems & Networks",
+                    "Systems Engineering",
+                    "• **System Architecture:** Strict separation between kernel-space and user-space privilege levels.\n• **Concurrency Synchronization:** Primitives prevent race conditions, deadlocks, and priority inversion.\n• **Network Packet Flow:** Layered protocols ensure reliable delivery, congestion control, and data integrity.",
+                    "Think of $capitalizedTopic like an airport air traffic control center: it coordinates shared resources across flights, preventing collisions and resource contention."
+                )
             else ->
-                Pair("Placement & Technical Engineering", "Foundational Computer Science")
+                DynamicDomainSpec(
+                    "Placement & Technical Engineering",
+                    "Foundational Computer Science",
+                    "• **Architectural Invariant:** High cohesion and loose coupling governing system interactions.\n• **Engineering Execution:** Clean, maintainable design patterns built for scalability and fault tolerance.\n• **Interview Evaluation:** Evaluated on clarity, trade-off analysis, and concrete real-world applications.",
+                    "Think of $capitalizedTopic like a foundational bridge pillar: its solid design supports dynamic traffic loads safely without stressing the surrounding infrastructure."
+                )
         }
+
+        val domainSubject = spec.subject
+        val domainChapter = spec.chapter
+        val domainDetails = spec.details
+        val domainAnalogy = spec.analogy
 
         val bPrefix = if (useEmojis) "📘 " else "* "
         val fPrefix = if (useEmojis) "⚡ " else "* "
         val ePrefix = if (useEmojis) "💡 " else "* "
 
         val p1 = "${bPrefix}**Concept & Definition** ($domainSubject · $capitalizedTopic)\n\n" +
-                "$capitalizedTopic is a foundational core concept in $domainSubject. In modern engineering assessments and placement screening rounds, mastering its theoretical principles, computational trade-offs, and boundary edge cases is essential for technical excellence."
+                "$capitalizedTopic is an essential technical concept in $domainSubject. In modern engineering assessments and placement screening rounds, mastering its theoretical principles, computational trade-offs, and boundary edge cases is essential for technical excellence."
 
         val p2 = buildString {
-            appendLine("${fPrefix}**Core Principle & Conceptual Framework**\n")
-            appendLine("1. **Theoretical Intuition:** Understand the architectural invariant that governs $capitalizedTopic.")
-            appendLine("2. **Computational Invariant:** Always evaluate the governing operational trade-offs, time complexity, and memory footprint.")
-            appendLine("3. **System Boundaries:** Identify how $capitalizedTopic interacts with surrounding system components and handles invalid inputs.\n")
-            appendLine("${ePrefix}**Placement & Technical Interview Takeaway**\n")
-            appendLine("When interviewers ask about $capitalizedTopic, start with a concise definition, state the primary engineering trade-offs, and walk through an edge case before discussing optimization.")
+            appendLine("${fPrefix}**Real-Life Mental Model**\n$domainAnalogy\n")
+            appendLine("${fPrefix}**Core Principles & Engineering Invariants**\n$domainDetails\n")
+            appendLine("${ePrefix}**Placement & Technical Interview Takeaway**\nWhen asked about $capitalizedTopic, start with a concise definition, state the governing operational trade-offs, and highlight potential boundary conditions before walking through an optimized code or system solution.")
         }.trim()
 
         return LocalAiResponse(

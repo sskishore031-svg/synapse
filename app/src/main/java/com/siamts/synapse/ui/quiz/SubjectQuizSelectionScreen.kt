@@ -40,6 +40,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
+import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.SurfacePanel
@@ -66,15 +71,20 @@ fun SubjectQuizSelectionScreen(
         }
     }
 
+    val isDark = LocalThemeIsDark.current
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
                         DarkBackgroundTop,
                         Color(0xFF090D22),
                         DarkBackgroundBottom
+                    ) else listOf(
+                        Color(0xFFF5F6FA),
+                        Color(0xFFF5F6FA)
                     )
                 )
             )
@@ -95,7 +105,7 @@ fun SubjectQuizSelectionScreen(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -104,7 +114,7 @@ fun SubjectQuizSelectionScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "${subjectName.uppercase()} QUIZZES",
-                            color = AmberGold,
+                            color = if (isDark) AmberGold else SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -112,7 +122,7 @@ fun SubjectQuizSelectionScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Select Chapter Quiz",
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -122,7 +132,7 @@ fun SubjectQuizSelectionScreen(
                 }
             }
 
-            // Dark Content Body
+            // Content Body
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +150,7 @@ fun SubjectQuizSelectionScreen(
                     ) {
                         Text(
                             text = "No chapter quizzes found for this subject.",
-                            color = TextSecondary,
+                            color = if (isDark) TextSecondary else LightTextSecondary,
                             fontSize = 14.sp
                         )
                     }
@@ -155,10 +165,10 @@ fun SubjectQuizSelectionScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else LightBorder, RoundedCornerShape(16.dp))
                                     .clickable { onStartQuiz(0, subjectId.toString()) },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
@@ -186,7 +196,7 @@ fun SubjectQuizSelectionScreen(
 
                                         Text(
                                             text = "50 MCQs",
-                                            color = TextSecondary,
+                                            color = if (isDark) TextSecondary else LightTextSecondary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -198,7 +208,7 @@ fun SubjectQuizSelectionScreen(
                                         text = "$subjectName · Comprehensive Revision Test",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        color = TextPrimary
+                                        color = if (isDark) TextPrimary else LightTextPrimary
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -207,7 +217,7 @@ fun SubjectQuizSelectionScreen(
                                         text = "Comprehensive 50-Question Placement Level Practice across all chapters.",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Normal,
-                                        color = TextSecondary
+                                        color = if (isDark) TextSecondary else LightTextSecondary
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -235,10 +245,10 @@ fun SubjectQuizSelectionScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, SurfaceBorder, RoundedCornerShape(16.dp))
+                                    .border(1.dp, if (isDark) SurfaceBorder else LightBorder, RoundedCornerShape(16.dp))
                                     .clickable { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
@@ -253,8 +263,8 @@ fun SubjectQuizSelectionScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .background(SurfacePanel, RoundedCornerShape(8.dp))
-                                                .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
+                                                .background(if (isDark) SurfacePanel else Color(0xFFFFF0EB), RoundedCornerShape(8.dp))
+                                                .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFFFD5C2), RoundedCornerShape(8.dp))
                                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                         ) {
                                             Text(
@@ -287,7 +297,7 @@ fun SubjectQuizSelectionScreen(
                                         text = quiz.chapterTitle.ifBlank { quiz.quizTitle },
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
-                                        color = TextPrimary
+                                        color = if (isDark) TextPrimary else LightTextPrimary
                                     )
 
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -296,7 +306,7 @@ fun SubjectQuizSelectionScreen(
                                         text = "${quiz.questionCount.coerceAtLeast(5)} Questions • Multiple Choice",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = TextSecondary
+                                        color = if (isDark) TextSecondary else LightTextSecondary
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -305,14 +315,14 @@ fun SubjectQuizSelectionScreen(
                                         onClick = { onStartQuiz(quiz.chapterId, subjectId.toString()) },
                                         modifier = Modifier.fillMaxWidth().height(42.dp),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (quiz.isAttempted) SurfacePanel else SunsetOrange
+                                            containerColor = if (quiz.isAttempted) (if (isDark) SurfacePanel else Color(0xFFEEF1F7)) else SunsetOrange
                                         ),
-                                        border = if (quiz.isAttempted) androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder) else null,
+                                        border = if (quiz.isAttempted) androidx.compose.foundation.BorderStroke(1.dp, if (isDark) SurfaceBorder else LightBorder) else null,
                                         shape = RoundedCornerShape(10.dp)
                                     ) {
                                         Text(
                                             text = if (quiz.isAttempted) "Retake Quiz" else "Start Quiz",
-                                            color = Color.White,
+                                            color = if (quiz.isAttempted) (if (isDark) Color.White else LightTextPrimary) else Color.White,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp
                                         )

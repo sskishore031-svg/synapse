@@ -41,6 +41,10 @@ import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
@@ -97,7 +101,7 @@ fun QuizHomeSelectionScreen(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -106,7 +110,7 @@ fun QuizHomeSelectionScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "QUIZ ASSESSMENT HUB",
-                            color = CyanAccent,
+                            color = if (isDark) CyanAccent else SunsetOrange,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
@@ -114,7 +118,7 @@ fun QuizHomeSelectionScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Select a Subject",
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -157,14 +161,16 @@ fun QuizHomeSelectionScreen(
                                             .background(
                                                 if (isSelected) Brush.horizontalGradient(
                                                     listOf(SunsetOrange, SunsetOrangeEnd)
-                                                ) else Brush.linearGradient(
+                                                ) else if (isDark) Brush.linearGradient(
                                                     listOf(SurfacePanelElevated, SurfacePanelElevated)
+                                                ) else Brush.linearGradient(
+                                                    listOf(Color.White, Color.White)
                                                 ),
                                                 shape = RoundedCornerShape(20.dp)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isSelected) SunsetOrange else SurfaceBorder,
+                                                if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else LightBorder),
                                                 RoundedCornerShape(20.dp)
                                             )
                                             .clickable { viewModel.onClassSelected(cls) }
@@ -172,7 +178,7 @@ fun QuizHomeSelectionScreen(
                                     ) {
                                         Text(
                                             text = cls,
-                                            color = if (isSelected) Color.White else TextSecondary,
+                                            color = if (isSelected) Color.White else (if (isDark) TextSecondary else LightTextSecondary),
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                         )
@@ -189,8 +195,8 @@ fun QuizHomeSelectionScreen(
                                     .fillMaxWidth()
                                     .clickable { onSelectSubject(subject.id, subject.name) },
                                 shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) SurfaceBorder else LightBorder)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -202,10 +208,10 @@ fun QuizHomeSelectionScreen(
                                         modifier = Modifier
                                             .size(52.dp)
                                             .background(
-                                                SurfacePanelElevated,
+                                                if (isDark) SurfacePanelElevated else Color(0xFFF1F4F9),
                                                 CircleShape
                                             )
-                                            .border(1.dp, SurfaceBorder, CircleShape),
+                                            .border(1.dp, if (isDark) SurfaceBorder else LightBorder, CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(text = subject.iconSymbol, fontSize = 24.sp)
@@ -218,13 +224,13 @@ fun QuizHomeSelectionScreen(
                                             text = subject.name,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp,
-                                            color = TextPrimary
+                                            color = if (isDark) TextPrimary else LightTextPrimary
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = "${subject.availableQuizzes} Micro-Lessons · 25 MCQs",
                                             fontSize = 12.sp,
-                                            color = TextSecondary
+                                            color = if (isDark) TextSecondary else LightTextSecondary
                                         )
                                     }
 
@@ -270,10 +276,10 @@ fun QuizHomeSelectionScreen(
                                         onOpenMistakeVault()
                                     },
                                 shape = RoundedCornerShape(20.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanelElevated),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    if (uiState.mistakeCount > 0) SunsetOrange.copy(alpha = 0.6f) else SurfaceBorder
+                                    if (uiState.mistakeCount > 0) SunsetOrange.copy(alpha = 0.6f) else (if (isDark) SurfaceBorder else LightBorder)
                                 )
                             ) {
                                 Row(
@@ -297,13 +303,13 @@ fun QuizHomeSelectionScreen(
                                                 text = if (uiState.mistakeCount > 0) "Mistake Vault (${uiState.mistakeCount} to Master)" else "Mistake Vault (0 to Master)",
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 15.sp,
-                                                color = if (uiState.mistakeCount > 0) SunsetOrange else TextPrimary
+                                                color = if (uiState.mistakeCount > 0) SunsetOrange else (if (isDark) TextPrimary else LightTextPrimary)
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = if (uiState.mistakeCount > 0) "Tap to practice your incorrect questions and master them!" else "Zero missed questions! Great job.",
                                                 fontSize = 12.sp,
-                                                color = TextSecondary
+                                                color = if (isDark) TextSecondary else LightTextSecondary
                                             )
                                         }
                                     }
@@ -333,8 +339,8 @@ fun QuizHomeSelectionScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = SurfacePanel),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceBorder)
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanel else Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isDark) SurfaceBorder else LightBorder)
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -348,13 +354,13 @@ fun QuizHomeSelectionScreen(
                                             text = "Subject-Wise Quizzes",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 15.sp,
-                                            color = TextPrimary
+                                            color = if (isDark) TextPrimary else LightTextPrimary
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "Placement interview practice & revision tests",
                                             fontSize = 11.sp,
-                                            color = TextSecondary
+                                            color = if (isDark) TextSecondary else LightTextSecondary
                                         )
                                     }
                                     Box(

@@ -52,6 +52,10 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.theme.SunsetOrange
@@ -59,7 +63,6 @@ import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.SurfaceBorder
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SurfacePanel
-import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
@@ -160,7 +163,7 @@ fun QuizContent(
                     IconButton(onClick = onBackClick) {
                         Text(
                             text = "←",
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -184,7 +187,7 @@ fun QuizContent(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = uiState.title,
-                            color = TextPrimary,
+                            color = if (isDark) TextPrimary else LightTextPrimary,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -195,13 +198,13 @@ fun QuizContent(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(if (isDark) SurfacePanel else Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) SurfacePanel else Color(0xFFEEF1F7), CircleShape)
                             .clickable { onBackClick() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "✕",
-                            color = TextSecondary,
+                            color = if (isDark) TextSecondary else LightTextSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -373,12 +376,12 @@ fun QuizContent(
                                     Box(
                                         modifier = Modifier
                                             .background(
-                                                if (isDark) SurfacePanel else Color(0xFFF3E8FF),
+                                                if (isDark) SurfacePanel else Color(0xFFFFECE5),
                                                 RoundedCornerShape(12.dp)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isDark) SurfaceBorder else Color.Transparent,
+                                                if (isDark) SurfaceBorder else Color(0xFFFFD5C2),
                                                 RoundedCornerShape(12.dp)
                                             )
                                             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -395,7 +398,7 @@ fun QuizContent(
 
                                     Text(
                                         text = uiState.questionText,
-                                        color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                        color = if (isDark) TextPrimary else LightTextPrimary,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         lineHeight = 26.sp,
@@ -405,7 +408,7 @@ fun QuizContent(
 
                                     Text(
                                         text = uiState.instructionText,
-                                        color = if (isDark) TextSecondary else Color(0xFF64748B),
+                                        color = if (isDark) TextSecondary else LightTextSecondary,
                                         fontSize = 13.sp,
                                     )
                                 }
@@ -427,7 +430,7 @@ fun QuizContent(
                                                 .fillMaxWidth()
                                                 .background(
                                                     color = if (isSelected) {
-                                                        if (isDark) SunsetOrange.copy(alpha = 0.18f) else Color(0xFFEFF6FF)
+                                                        if (isDark) SunsetOrange.copy(alpha = 0.18f) else Color(0xFFFFF2EB)
                                                     } else {
                                                         if (isDark) SurfacePanelElevated else Color.White
                                                     },
@@ -435,7 +438,7 @@ fun QuizContent(
                                                 )
                                                 .border(
                                                     width = if (isSelected) 2.dp else 1.dp,
-                                                    color = if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                                                    color = if (isSelected) SunsetOrange else (if (isDark) SurfaceBorder else LightBorder),
                                                     shape = RoundedCornerShape(14.dp)
                                                 )
                                                 .clickable { onOptionSelect(option.id) }
@@ -457,7 +460,7 @@ fun QuizContent(
                                                 ) {
                                                     Text(
                                                         text = option.optionLabel,
-                                                        color = if (isSelected) Color.White else (if (isDark) TextSecondary else Color(0xFF64748B)),
+                                                        color = if (isSelected) Color.White else (if (isDark) TextSecondary else LightTextSecondary),
                                                         fontSize = 13.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
@@ -470,7 +473,7 @@ fun QuizContent(
                                                     color = if (isSelected) {
                                                         if (isDark) AmberGold else SunsetOrange
                                                     } else {
-                                                        if (isDark) TextPrimary else Color(0xFF1E293B)
+                                                        if (isDark) TextPrimary else LightTextPrimary
                                                     },
                                                     fontSize = 14.sp,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,

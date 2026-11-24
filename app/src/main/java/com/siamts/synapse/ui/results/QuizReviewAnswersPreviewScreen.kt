@@ -44,6 +44,10 @@ import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
 import com.siamts.synapse.ui.theme.DarkBackgroundTop
+import com.siamts.synapse.ui.theme.LightBackground
+import com.siamts.synapse.ui.theme.LightBorder
+import com.siamts.synapse.ui.theme.LightTextPrimary
+import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
@@ -147,29 +151,29 @@ fun QuizReviewAnswersPreviewScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "←", color = if (isDark) TextPrimary else LightTextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "QUIZ SOLUTIONS & EXPLANATIONS",
-                            color = AmberGold,
+                            color = if (isDark) AmberGold else SunsetOrange,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "Review Answers", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Review Answers", color = if (isDark) TextPrimary else LightTextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFF161F42), CircleShape)
+                            .background(if (isDark) Color(0xFF161F42) else Color(0xFFEEF1F7), CircleShape)
                             .clickable { onBackClick() },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "•••", color = TextSecondary, fontSize = 14.sp)
+                        Text(text = "•••", color = if (isDark) TextSecondary else LightTextSecondary, fontSize = 14.sp)
                     }
                 }
             }
@@ -252,7 +256,7 @@ fun QuizReviewAnswersPreviewScreen(
                             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text(
                                     text = "Detailed Solutions & Explanations",
-                                    color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                    color = if (isDark) TextPrimary else LightTextPrimary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -262,7 +266,7 @@ fun QuizReviewAnswersPreviewScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
-                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                                        border = BorderStroke(1.dp, if (isDark) SurfaceBorder else LightBorder),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(14.dp)) {
@@ -304,7 +308,7 @@ fun QuizReviewAnswersPreviewScreen(
 
                                             Text(
                                                 text = item.questionText,
-                                                color = if (isDark) TextPrimary else Color(0xFF0F172A),
+                                                color = if (isDark) TextPrimary else LightTextPrimary,
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 lineHeight = 20.sp
@@ -361,12 +365,12 @@ fun QuizReviewAnswersPreviewScreen(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .background(if (isDark) SurfacePanel else Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
-                                                    .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, RoundedCornerShape(8.dp))
+                                                    .border(1.dp, if (isDark) SurfaceBorder else LightBorder, RoundedCornerShape(8.dp))
                                                     .padding(10.dp)
                                             ) {
                                                 Text(
                                                     text = "💡 Explanation: ${item.explanation}",
-                                                    color = if (isDark) TextSecondary else Color(0xFF334155),
+                                                    color = if (isDark) TextSecondary else LightTextSecondary,
                                                     fontSize = 12.sp,
                                                     lineHeight = 17.sp,
                                                 )

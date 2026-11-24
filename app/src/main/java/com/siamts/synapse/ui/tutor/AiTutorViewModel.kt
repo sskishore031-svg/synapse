@@ -1451,15 +1451,21 @@ class AiTutorViewModel(
             normalized == "what is my name" ||
             normalized == "whats my name" ||
             normalized == "what s my name" ||
+            normalized == "now what is my name" ||
+            normalized == "what is my name now" ||
             normalized == "who am i" ||
             normalized == "tell my name" ||
             normalized == "my name" ||
             normalized.contains("say my name") ||
             normalized.contains("what is my name") ||
             normalized.contains("whats my name") ||
+            normalized.contains("now what is my name") ||
+            normalized.contains("what is my name now") ||
             normalized.contains("who am i") ||
             normalized.contains("tell my name") ||
             normalized.contains("tell me my name") ||
+            ((words.contains("my") || words.contains("me") || words.contains("i")) && words.contains("name") &&
+                !words.contains("is") && !words.contains("call")) ||
             (words.contains("name") && (words.contains("say") || words.contains("tell") || words.contains("what") || words.contains("whats") || words.contains("speak")))
         )
 
