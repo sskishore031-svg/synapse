@@ -17,11 +17,14 @@ import com.siamts.synapse.data.local.NoteEntity
 import com.siamts.synapse.data.local.QuizRecordEntity
 import com.siamts.synapse.data.local.SessionManager
 import com.siamts.synapse.data.local.SynapseDatabase
+import com.siamts.synapse.data.model.ProfileUpdateRequest
 import com.siamts.synapse.data.model.QuizQuestionDto
 import com.siamts.synapse.data.repository.AiTutorRepository
 import com.siamts.synapse.data.repository.AiTutorRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
 import com.siamts.synapse.data.repository.NotesRepositoryImpl
+import com.siamts.synapse.data.repository.ProfileRepository
+import com.siamts.synapse.data.repository.ProfileRepositoryImpl
 import com.siamts.synapse.data.repository.SubjectCatalogRepository
 import com.siamts.synapse.data.repository.UserPreferencesRepository
 import com.siamts.synapse.notification.StudyReminderScheduler
@@ -51,6 +54,7 @@ class AiTutorViewModel(
     private val localAiEngine: LocalAIEngine = LocalAIEngine.getInstance(),
     private val chatStorage: AiChatStorage? = try { AiChatStorage.getInstance() } catch (_: Exception) { null },
     private val slmEngine: SlmInferenceEngine? = try { SlmInferenceEngine.getInstance() } catch (_: Throwable) { null },
+    private val profileRepository: ProfileRepository = ProfileRepositoryImpl(),
     private val externalScope: kotlinx.coroutines.CoroutineScope? = null
 ) : ViewModel() {
 
@@ -391,6 +395,7 @@ class AiTutorViewModel(
         }
 
         // --- Deterministic Command Handlers (0ms lag, pre-LLM execution) ---
+        if (handleProfileNameEdit(query)) return
         if (handleUserNameQuery(query)) return
         if (handleNavigationCommand(query)) return
         if (handleAlarmCommand(query)) return
@@ -1405,6 +1410,74 @@ class AiTutorViewModel(
         val newMessages = updatedMessages + confirmMsg
         _uiState.update { it.copy(messages = newMessages) }
         persistCurrentSession(newMessages)
+    }
+
+    private fun handleProfileNameEdit(query: String): Boolean {
+        val newName = localAiEngine.extractProfileNameEdit(query) ?: return false
+
+        // 1. Immediately update engine in-memory persona
+        localAiEngine.preferredName = newName
+        localAiEngine.accountUserName = newName
+        cachedAccountName = newName
+        localAiEngine.isWaitingForName = false
+
+        // 2. Persist locally to DataStore & SQLite / Room DB and sync to MySQL
+        scope.launch(Dispatchers.IO) {
+            sessionManager?.updateUserName(newName)
+            userPreferencesRepository?.setPreferredName(newName)
+            userPreferencesRepository?.setChatPreferredName(newName)
+            val user = sessionManager?.getSessionUser()
+            val email = user?.email?.ifBlank { null } ?: "student@synapse.ai"
+            val phone = user?.phone
+            val uid = user?.id?.takeIf { it > 0 } ?: currentUserId
+
+            try {
+                SynapseDatabase.getUserDao().insertOrUpdateUser(name = newName, email = email, phone = phone)
+            } catch (_: Throwable) {}
+
+            try {
+                profileRepository.updateProfile(
+                    ProfileUpdateRequest(
+                        userId = uid,
+                        email = email,
+                        name = newName
+                    )
+                )
+            } catch (_: Throwable) {}
+        }
+
+        // 3. Append user message and confirmation message to chat canvas
+        val replyText = "✅ Done! Your profile name has been updated to $newName."
+        val userMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "You",
+            text = query,
+            timeAgo = "Just now",
+            isUser = true
+        )
+        val aiMsg = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "SYNAPSE AI",
+            text = replyText,
+            timeAgo = "Just now",
+            isUser = false,
+            actionCommand = "PROFILE_NAME_UPDATED"
+        )
+        val newMessages = _uiState.value.messages + userMsg + aiMsg
+        _uiState.update {
+            it.copy(
+                messages = newMessages,
+                userQuestion = query,
+                aiAnswerParagraph1 = replyText,
+                aiAnswerParagraph2 = "",
+                aiThoughtStatus = "✅ Profile Name Updated: $newName",
+                headerTag = "PERSONALIZED FOR ${newName.uppercase()}",
+                isGenerating = false
+            )
+        }
+        chatStorage?.saveMessages(currentUserId, newMessages)
+        persistCurrentSession(newMessages)
+        return true
     }
 
     private fun handleUserNameQuery(query: String): Boolean {

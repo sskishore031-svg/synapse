@@ -272,9 +272,22 @@ sealed class AppScreen {
 }
 
 class MainActivity : ComponentActivity() {
+    private val pendingNotificationPayload = mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra("NOTIFICATION_PAYLOAD")?.let { payload ->
+            pendingNotificationPayload.value = payload
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        intent?.getStringExtra("NOTIFICATION_PAYLOAD")?.let { payload ->
+            pendingNotificationPayload.value = payload
+        }
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
                 android.graphics.Color.TRANSPARENT,
@@ -302,6 +315,10 @@ class MainActivity : ComponentActivity() {
             ) { isGranted ->
                 if (isGranted) {
                     SynapseNotificationHelper.scheduleStudyReminders(context)
+                    com.siamts.synapse.notification.SmartNotificationScheduler.scheduleAll(context)
+                    try {
+                        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("synapse_daily_alerts")
+                    } catch (_: Exception) { }
                     val prefsRepo = com.siamts.synapse.data.repository.UserPreferencesRepository.getInstance(context)
                     coroutineScope.launch {
                         if (prefsRepo.isStudyReminderEnabled()) {
@@ -325,6 +342,10 @@ class MainActivity : ComponentActivity() {
 
                 if (isPermissionGranted) {
                     SynapseNotificationHelper.scheduleStudyReminders(context)
+                    com.siamts.synapse.notification.SmartNotificationScheduler.scheduleAll(context)
+                    try {
+                        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("synapse_daily_alerts")
+                    } catch (_: Exception) { }
                     if (prefsRepo.isStudyReminderEnabled()) {
                         val h = prefsRepo.getStudyReminderHour()
                         val m = prefsRepo.getStudyReminderMinute()
@@ -371,6 +392,28 @@ class MainActivity : ComponentActivity() {
                         screenBackStack.add(AppScreen.Dashboard)
                     }
                     currentScreen = tabScreen
+                }
+
+                fun handleNotificationRoute(route: String) {
+                    when (route) {
+                        "quiz_hub" -> switchTab(AppScreen.QuizHomeSelection)
+                        "learn" -> switchTab(AppScreen.SubjectSelection)
+                        "mistake_vault" -> navigateTo(AppScreen.DynamicQuizAttempt(chapterId = -999, subjectId = "MISTAKE_VAULT"))
+                        "home" -> switchTab(AppScreen.Dashboard)
+                        "milestone" -> navigateTo(AppScreen.Achievements)
+                        else -> {
+                            if (route.startsWith("subject/")) {
+                                navigateTo(AppScreen.SubjectDetail(route.removePrefix("subject/")))
+                            }
+                        }
+                    }
+                }
+
+                LaunchedEffect(pendingNotificationPayload.value) {
+                    pendingNotificationPayload.value?.let { payload ->
+                        handleNotificationRoute(payload)
+                        pendingNotificationPayload.value = null
+                    }
                 }
 
                 Scaffold(
@@ -543,9 +586,7 @@ class MainActivity : ComponentActivity() {
                                         screenBackStack.clear()
                                         currentScreen = if (isAuthenticated) AppScreen.Dashboard else AppScreen.Login
                                     },
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(innerPadding),
+                                    modifier = Modifier.fillMaxSize(),
                                 )
                             }
 
@@ -665,6 +706,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onNotificationClick = {
                                         navigateTo(AppScreen.NotificationsSettings)
+                                    },
+                                    onNotificationActionRoute = { route ->
+                                        handleNotificationRoute(route)
                                     },
                                     onProgressAnalyticsClick = {
                                         navigateTo(AppScreen.ProgressAnalytics())
@@ -1796,6 +1840,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onToggleTheme = {
                                         themeViewModel.toggleTheme()
+                                    },
+                                    onNotificationActionRoute = { route ->
+                                        handleNotificationRoute(route)
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()

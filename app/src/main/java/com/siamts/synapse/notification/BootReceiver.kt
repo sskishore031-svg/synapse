@@ -28,6 +28,7 @@ class BootReceiver : BroadcastReceiver() {
                         val hour = prefsRepo.getStudyReminderHour()
                         val minute = prefsRepo.getStudyReminderMinute()
                         StudyReminderScheduler.scheduleDailyStudyReminder(context, hour, minute)
+                        SmartNotificationScheduler.scheduleAll(context)
                     }
                 } catch (_: Throwable) {
                 } finally {

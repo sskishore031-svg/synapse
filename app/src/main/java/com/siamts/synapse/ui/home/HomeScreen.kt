@@ -53,9 +53,13 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.siamts.synapse.data.local.SynapseDatabase
 import com.siamts.synapse.data.remote.RetrofitClient
+import com.siamts.synapse.ui.components.NotificationCenterSheet
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -82,6 +86,7 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -98,12 +103,15 @@ fun HomeScreen(
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onStreakCalendarClick: (() -> Unit)? = null,
     onToggleTheme: (() -> Unit)? = null,
+    onNotificationActionRoute: ((String) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showNotificationSheet by remember { mutableStateOf(false) }
 
     HomeContent(
         uiState = uiState,
         onToggleTheme = onToggleTheme,
+        onNotificationClick = { showNotificationSheet = true },
         onSearchChange = { query -> viewModel.onSearchQueryChanged(query) },
         onTabSelect = { index ->
             viewModel.onTabSelected(index)
@@ -160,6 +168,23 @@ fun HomeScreen(
         onContinueLessonClick = onContinueLessonClick,
         modifier = modifier,
     )
+
+    if (showNotificationSheet) {
+        NotificationCenterSheet(
+            onDismissRequest = { showNotificationSheet = false },
+            onNavigateAction = { route ->
+                showNotificationSheet = false
+                when (route) {
+                    "quiz_hub" -> onQuizClick?.invoke()
+                    "learn" -> onSubjectClick?.invoke("")
+                    "mistake_vault" -> onNotificationActionRoute?.invoke("mistake_vault")
+                    "home" -> { /* Already on Home */ }
+                    "milestone" -> onNotificationActionRoute?.invoke("milestone")
+                    else -> onNotificationActionRoute?.invoke(route)
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -185,6 +210,7 @@ fun HomeContent(
     onStreakCalendarClick: (() -> Unit)? = null,
     onContinueLessonClick: ((String, Int) -> Unit)? = null,
     onToggleTheme: (() -> Unit)? = null,
+    onNotificationClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val isDark = LocalThemeIsDark.current
@@ -221,12 +247,12 @@ fun HomeContent(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = 12.dp)
+                            .padding(end = 10.dp)
                     ) {
                         Text(
                             text = "Hello, ${uiState.userName.ifBlank { "Kishore" }}! 👋",
                             color = headerTextColor,
-                            fontSize = 22.sp,
+                            fontSize = if (uiState.userName.length > 15) 18.sp else 22.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -242,19 +268,51 @@ fun HomeContent(
                         )
                     }
 
-                    // Sleek Small Theme Toggle Icon in top-right corner
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(elevatedBg, CircleShape)
-                            .border(1.dp, cardBorder, CircleShape)
-                            .clickable { onToggleTheme?.invoke() },
-                        contentAlignment = Alignment.Center,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = if (isDark) "🌙" else "☀️",
-                            fontSize = 18.sp
-                        )
+                        // Sleek Small Theme Toggle Icon in top-right corner
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(elevatedBg, CircleShape)
+                                .border(1.dp, cardBorder, CircleShape)
+                                .clickable { onToggleTheme?.invoke() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = if (isDark) "🌙" else "☀️",
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        // Bell Notification Button with Real-Time Unread Badge
+                        val context = LocalContext.current
+                        val unreadNotifsCount by remember {
+                            SynapseDatabase.getNotificationDao(context).getUnreadCountFlow()
+                        }.collectAsState(initial = 0)
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(elevatedBg, CircleShape)
+                                .border(1.dp, cardBorder, CircleShape)
+                                .clickable { onNotificationClick?.invoke() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(text = "🔔", fontSize = 16.sp)
+                            if (unreadNotifsCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 4.dp, end = 4.dp)
+                                        .size(9.dp)
+                                        .background(SunsetOrange, CircleShape)
+                                        .border(1.5.dp, elevatedBg, CircleShape)
+                                )
+                            }
+                        }
                     }
                 }
 

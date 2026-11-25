@@ -137,6 +137,21 @@ class DashboardViewModel(
                 0
             }
 
+            if (streakDays in listOf(3, 7, 14)) {
+                try {
+                    val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
+                    val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
+                    val key = "streak_milestone_$streakDays"
+                    if (!prefs.getBoolean(key, false)) {
+                        prefs.edit().putBoolean(key, true).apply()
+                        com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
+                            ctx,
+                            "Awesome consistency! You hit a $streakDays-day streak milestone."
+                        )
+                    }
+                } catch (_: Throwable) { }
+            }
+
             val avgScore = if (quizRecords.isNotEmpty()) {
                 (quizRecords.map { (it.score * 100) / it.totalQuestions.coerceAtLeast(1) }.average()).toInt()
             } else {

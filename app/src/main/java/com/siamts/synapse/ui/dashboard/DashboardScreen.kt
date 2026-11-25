@@ -45,8 +45,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import com.siamts.synapse.data.local.SynapseDatabase
 import com.siamts.synapse.data.remote.RetrofitClient
+import com.siamts.synapse.ui.components.NotificationCenterSheet
+import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
 import com.siamts.synapse.ui.theme.CyanGlow
@@ -73,6 +78,7 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
@@ -89,8 +95,10 @@ fun DashboardScreen(
     onProgressAnalyticsClick: (() -> Unit)? = null,
     onContinueLessonClick: ((subjectSlug: String, chapterId: Int) -> Unit)? = null,
     onToggleTheme: (() -> Unit)? = null,
+    onNotificationActionRoute: ((String) -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showNotificationSheet by remember { mutableStateOf(false) }
 
     DashboardContent(
         uiState = uiState,
@@ -134,6 +142,7 @@ fun DashboardScreen(
             onBrainMapClick?.invoke()
         },
         onNotificationClick = {
+            showNotificationSheet = true
             onNotificationClick?.invoke()
         },
         onProfileClick = {
@@ -151,6 +160,23 @@ fun DashboardScreen(
         onProgressAnalyticsClick = onProgressAnalyticsClick,
         modifier = modifier,
     )
+
+    if (showNotificationSheet) {
+        NotificationCenterSheet(
+            onDismissRequest = { showNotificationSheet = false },
+            onNavigateAction = { route ->
+                showNotificationSheet = false
+                when (route) {
+                    "quiz_hub" -> onQuizTabClick?.invoke()
+                    "learn" -> onLearnTabClick?.invoke()
+                    "mistake_vault" -> onNotificationActionRoute?.invoke("mistake_vault")
+                    "home" -> { /* Already on dashboard */ }
+                    "milestone" -> onNotificationActionRoute?.invoke("milestone")
+                    else -> onNotificationActionRoute?.invoke(route)
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -246,6 +272,33 @@ fun DashboardContent(
                                 text = if (isDark) "🌙" else "☀️",
                                 fontSize = 18.sp
                             )
+                        }
+
+                        // Bell Notification Button with Real-Time Unread Badge
+                        val context = LocalContext.current
+                        val unreadNotifsCount by remember {
+                            SynapseDatabase.getNotificationDao(context).getUnreadCountFlow()
+                        }.collectAsState(initial = 0)
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(controlBgColor, CircleShape)
+                                .border(1.dp, controlBorderColor, CircleShape)
+                                .clickable { onNotificationClick?.invoke() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(text = "🔔", fontSize = 16.sp)
+                            if (unreadNotifsCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 4.dp, end = 4.dp)
+                                        .size(9.dp)
+                                        .background(SunsetOrange, CircleShape)
+                                        .border(1.5.dp, controlBgColor, CircleShape)
+                                )
+                            }
                         }
 
                         // Top Right Corner Profile Icon (Photo or K Avatar)

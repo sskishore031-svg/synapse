@@ -17,7 +17,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     DATABASE_NAME,
     null,
     DATABASE_VERSION
-), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao, StudySessionDao, LessonProgressDao {
+), QuizDao, ChapterDao, LearningTaskDao, UserDao, NotesDao, ChatDao, StudySessionDao, LessonProgressDao, NotificationDao {
 
     // Thread-safe in-memory cache and JVM unit-test fallback
     private val inMemoryRecords = CopyOnWriteArrayList<QuizRecordEntity>()
@@ -31,8 +31,12 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     private val inMemoryChatMessages = java.util.concurrent.ConcurrentHashMap<String, List<ChatMessageEntity>>()
     private val inMemoryStudySessions = CopyOnWriteArrayList<StudySessionEntity>()
     private val inMemoryLessonProgress = java.util.concurrent.ConcurrentHashMap<String, LessonProgressEntity>()
+    private val inMemoryNotifications = CopyOnWriteArrayList<NotificationEntity>()
     private val progressStateFlow = kotlinx.coroutines.flow.MutableStateFlow<List<LessonProgressEntity>>(emptyList())
     private val notesStateFlow = kotlinx.coroutines.flow.MutableStateFlow<Long>(0L)
+    private val notificationsStateFlow = kotlinx.coroutines.flow.MutableStateFlow<List<NotificationEntity>>(emptyList())
+    private val unreadCountStateFlow = kotlinx.coroutines.flow.MutableStateFlow<Int>(0)
+    private var isNotificationsLoaded = false
     private val hasAndroidContext = context != null
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -214,6 +218,20 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 is_completed INTEGER NOT NULL DEFAULT 0,
                 completed_at INTEGER NOT NULL,
                 PRIMARY KEY (lesson_id, user_id)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS notifications (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                body TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                is_read INTEGER NOT NULL DEFAULT 0,
+                action_route TEXT,
+                icon_emoji TEXT NOT NULL DEFAULT '🔔'
             )
             """.trimIndent()
         )
@@ -1622,6 +1640,165 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         Unit
     }
 
+    private fun loadNotificationsFromDbIfNeeded() {
+        if (isNotificationsLoaded || !hasAndroidContext) return
+        try {
+            val db = readableDatabase
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    type TEXT NOT NULL,
+                    is_read INTEGER NOT NULL DEFAULT 0,
+                    action_route TEXT,
+                    icon_emoji TEXT NOT NULL DEFAULT '🔔'
+                )
+                """.trimIndent()
+            )
+            val cursor = db.rawQuery(
+                "SELECT id, title, body, timestamp, type, is_read, action_route, icon_emoji FROM notifications ORDER BY timestamp DESC",
+                null
+            )
+            val list = mutableListOf<NotificationEntity>()
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    list.add(
+                        NotificationEntity(
+                            id = c.getString(0),
+                            title = c.getString(1),
+                            body = c.getString(2),
+                            timestamp = c.getLong(3),
+                            type = c.getString(4),
+                            isRead = c.getInt(5) == 1,
+                            actionRoute = if (c.isNull(6)) null else c.getString(6),
+                            iconEmoji = if (c.isNull(7)) "🔔" else c.getString(7)
+                        )
+                    )
+                }
+            }
+            inMemoryNotifications.clear()
+            inMemoryNotifications.addAll(list)
+            notificationsStateFlow.value = list
+            unreadCountStateFlow.value = list.count { !it.isRead }
+            isNotificationsLoaded = true
+        } catch (_: Throwable) {}
+    }
+
+    override suspend fun insertNotification(notification: NotificationEntity): Long = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        inMemoryNotifications.removeIf { it.id == notification.id }
+        inMemoryNotifications.add(0, notification)
+        notificationsStateFlow.value = inMemoryNotifications.toList()
+        unreadCountStateFlow.value = inMemoryNotifications.count { !it.isRead }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply {
+                    put("id", notification.id)
+                    put("title", notification.title)
+                    put("body", notification.body)
+                    put("timestamp", notification.timestamp)
+                    put("type", notification.type)
+                    put("is_read", if (notification.isRead) 1 else 0)
+                    put("action_route", notification.actionRoute)
+                    put("icon_emoji", notification.iconEmoji)
+                }
+                db.insertWithOnConflict("notifications", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            } catch (_: Throwable) {
+                1L
+            }
+        } else {
+            1L
+        }
+    }
+
+    override fun getAllNotificationsFlow(): kotlinx.coroutines.flow.Flow<List<NotificationEntity>> {
+        loadNotificationsFromDbIfNeeded()
+        return notificationsStateFlow
+    }
+
+    override suspend fun getAllNotifications(): List<NotificationEntity> = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        inMemoryNotifications.toList()
+    }
+
+    override suspend fun markAsRead(id: String) = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        val index = inMemoryNotifications.indexOfFirst { it.id == id }
+        if (index != -1) {
+            val updated = inMemoryNotifications[index].copy(isRead = true)
+            inMemoryNotifications[index] = updated
+            notificationsStateFlow.value = inMemoryNotifications.toList()
+            unreadCountStateFlow.value = inMemoryNotifications.count { !it.isRead }
+        }
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply { put("is_read", 1) }
+                db.update("notifications", values, "id = ?", arrayOf(id))
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
+    override suspend fun markAllAsRead() = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        for (i in inMemoryNotifications.indices) {
+            inMemoryNotifications[i] = inMemoryNotifications[i].copy(isRead = true)
+        }
+        notificationsStateFlow.value = inMemoryNotifications.toList()
+        unreadCountStateFlow.value = 0
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                val values = ContentValues().apply { put("is_read", 1) }
+                db.update("notifications", values, null, null)
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
+    override suspend fun getUnreadCount(): Int = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        inMemoryNotifications.count { !it.isRead }
+    }
+
+    override fun getUnreadCountFlow(): kotlinx.coroutines.flow.Flow<Int> {
+        loadNotificationsFromDbIfNeeded()
+        return unreadCountStateFlow
+    }
+
+    override suspend fun deleteNotification(id: String) = withContext(Dispatchers.IO) {
+        loadNotificationsFromDbIfNeeded()
+        inMemoryNotifications.removeIf { it.id == id }
+        notificationsStateFlow.value = inMemoryNotifications.toList()
+        unreadCountStateFlow.value = inMemoryNotifications.count { !it.isRead }
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("notifications", "id = ?", arrayOf(id))
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
+    override suspend fun clearAll() = withContext(Dispatchers.IO) {
+        inMemoryNotifications.clear()
+        notificationsStateFlow.value = emptyList()
+        unreadCountStateFlow.value = 0
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("notifications", null, null)
+            } catch (_: Throwable) {}
+        }
+        Unit
+    }
+
     companion object {
         private const val DATABASE_NAME = "synapse_quiz.db"
         private const val DATABASE_VERSION = 10
@@ -1672,6 +1849,12 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         }
 
         fun getChatDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): ChatDao {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        fun getNotificationDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): NotificationDao {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: QuizLocalDatabase(context).also { INSTANCE = it }
             }

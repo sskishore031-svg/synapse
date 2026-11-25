@@ -151,7 +151,7 @@ class LocalAIEngine private constructor(context: Context?) {
         "can", "could", "should", "would", "what", "which", "who", "whom", "where", "when",
         "why", "how", "explain", "describe", "define", "tell", "me", "about", "give", "please",
         "work", "show", "from", "my", "your", "i", "you", "we", "they", "it", "this", "that",
-        "and", "or", "by"
+        "and", "or", "by", "name", "profile", "edit", "change", "set", "rename", "okay", "ok"
     )
 
     private val genericSubjectWords = setOf(
@@ -581,7 +581,31 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         val normalized = normalizeQuery(query)
-        val lowerQuery = query.lowercase(Locale.ROOT)
+        val lowerQuery = normalized.ifBlank { query.lowercase(Locale.ROOT) }
+
+        // 0. STAGE 0: Profile Name Edit Action ("edit the profile name sri sai to kishore", "change profile name to kishore", "set my name to kishore")
+        val profileNameEdit = extractProfileNameEdit(userQuery)
+        if (profileNameEdit != null) {
+            preferredName = profileNameEdit
+            accountUserName = profileNameEdit
+            isWaitingForName = false
+            try {
+                val appCtx = SynapseApplication.getAppContext()
+                appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("chat_preferred_name", profileNameEdit)
+                    .apply()
+            } catch (_: Throwable) {}
+            consecutiveUnclearCount = 0
+            return LocalAiResponse(
+                paragraph1 = "✅ Done! Your profile name has been updated to $profileNameEdit.",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true,
+                isNameCapture = true,
+                capturedName = profileNameEdit
+            )
+        }
 
         // 1. STAGE 1: User Asking for Their Own Name ("say my name", "what is my name", "who am i", "enoda name solu")
         if (isUserAskingOwnName(lowerQuery, normalized)) {
@@ -720,6 +744,13 @@ class LocalAIEngine private constructor(context: Context?) {
             return directQuestionResp
         }
 
+        // 4D. STAGE 4D: Dedicated Coding & Python Logic Intent (ChatGPT / Gemini Grade)
+        val codingLogicResp = checkCodingLogicIntent(query, lowerQuery, normalized)
+        if (codingLogicResp != null) {
+            consecutiveUnclearCount = 0
+            return codingLogicResp
+        }
+
         // Lazy asset load fallback if not loaded yet
         if (chunks.isEmpty()) {
             try {
@@ -775,20 +806,25 @@ class LocalAIEngine private constructor(context: Context?) {
             return handleUnclearOrEmpty(query)
         }
 
-        // Match against RAG Chunks
-        val scoredChunks = synchronized(chunks) {
-            chunks.map { chunk ->
-                val score = computeRelevanceScore(lowerQuery, tokens, chunk)
-                Pair(score, chunk)
+        // Check if query pertains to legitimate placement / curriculum study topics
+        val isStudyTopic = isRecognizedStudyTopic(query, lowerQuery, tokens)
+
+        // Match against RAG Chunks (Strictly requires recognized study topic)
+        val scoredChunks = if (isStudyTopic) {
+            synchronized(chunks) {
+                chunks.map { chunk ->
+                    val score = computeRelevanceScore(lowerQuery, tokens, chunk)
+                    Pair(score, chunk)
+                }
             }
-        }
+        } else emptyList()
 
         val bestMatch = scoredChunks.maxByOrNull { it.first }
         val bestScore = bestMatch?.first ?: 0.0
         val tokenCount = tokens.size.coerceAtLeast(1)
         val normalizedScore = (bestScore / (tokenCount * 25.0)).coerceIn(0.0, 1.0)
 
-        if (bestMatch != null && bestScore >= 12.0 && normalizedScore >= 0.25) {
+        if (bestMatch != null && bestScore >= 12.0 && normalizedScore >= 0.25 && isStudyTopic) {
             consecutiveUnclearCount = 0
             val response = buildEducationalResponse(bestMatch.second, bestScore, isElaborated = isElaborationQuery(normalized))
             recordTurn(userQuery, bestMatch.second)
@@ -796,7 +832,7 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         // Context-assisted match ONLY when query has explicit context pronoun/word
-        if (lastTopicTurn != null && hasExplicitContextPronoun(lowerQuery)) {
+        if (lastTopicTurn != null && hasExplicitContextPronoun(lowerQuery) && isStudyTopic) {
             val contextQuery = "$lowerQuery ${lastTopicTurn.matchedTopic.orEmpty()} ${lastTopicTurn.matchedChapter.orEmpty()}"
             val contextTokens = tokenize(contextQuery)
             val contextScored = synchronized(chunks) {
@@ -813,8 +849,8 @@ class LocalAIEngine private constructor(context: Context?) {
             }
         }
 
-        // 6. STAGE 6: Specialized Concept Synthesizer & Knowledge Extraction (Direct invocation for all concepts)
-        val generativeResp = synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens)
+        // 6. STAGE 6: Specialized Concept Synthesizer & Knowledge Extraction (Direct invocation for recognized concepts)
+        val generativeResp = if (isStudyTopic) synthesizeGenerativeEducationalResponse(query, lowerQuery, tokens) else null
         if (generativeResp != null) {
             consecutiveUnclearCount = 0
             recordTurn(
@@ -832,16 +868,8 @@ class LocalAIEngine private constructor(context: Context?) {
             return generativeResp
         }
 
-        // 7. Lower-threshold fallback match on local RAG chunks if relevant
-        if (bestMatch != null && bestScore >= 5.5) {
-            consecutiveUnclearCount = 0
-            val resp = buildEducationalResponse(bestMatch.second, bestScore, isElaborated = isElaborationQuery(normalized))
-            recordTurn(userQuery, bestMatch.second)
-            return resp
-        }
-
-        // 8. STAGE 8: Dynamic Open-Domain Tech & Placement Concept Synthesizer
-        val dynamicResp = generateDynamicConceptExplanation(query, lowerQuery, normalized, tokens)
+        // 8. STAGE 8: Dynamic Open-Domain Tech & Placement Concept Synthesizer (Only for valid study topics)
+        val dynamicResp = if (isStudyTopic) generateDynamicConceptExplanation(query, lowerQuery, normalized, tokens) else null
         if (dynamicResp != null) {
             consecutiveUnclearCount = 0
             recordTurn(
@@ -859,7 +887,7 @@ class LocalAIEngine private constructor(context: Context?) {
             return dynamicResp
         }
 
-        // 9. STAGE 9: Off-Topic / Unknown Question Fallback
+        // 9. STAGE 9: Off-Topic / Unknown Question Fallback (No random lesson dump)
         consecutiveUnclearCount = 0
         return buildOutOfScopeResponse()
     }
@@ -918,6 +946,11 @@ class LocalAIEngine private constructor(context: Context?) {
     private fun checkTopicSuggestionIntent(lowerQuery: String): LocalAiResponse? {
         val q = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
         if (q.contains("list comprehension") || q.contains("linked list") || q.contains("adjacency list")) {
+            return null
+        }
+        if (q.contains("coding logic") || q.contains("python logic") || q.contains("programming logic") ||
+            q.contains("code") || q.contains("example") || q.contains("two sum") || q.contains("binary search") ||
+            (q.contains("logic") && !q.contains("topic") && !q.contains("chapter") && !q.contains("syllabus"))) {
             return null
         }
 
@@ -1077,10 +1110,43 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun normalizeQuery(query: String): String {
-        return query.lowercase(Locale.ROOT)
+        val cleaned = query.lowercase(Locale.ROOT)
             .replace(Regex("[^a-z0-9\\s]"), " ")
             .replace(Regex("\\s+"), " ")
             .trim()
+        val typoMap = mapOf(
+            "pyhon" to "python",
+            "pyhton" to "python",
+            "pythn" to "python",
+            "phyton" to "python",
+            "pthon" to "python",
+            "codding" to "coding",
+            "cooding" to "coding",
+            "progamming" to "programming",
+            "programing" to "programming",
+            "progam" to "program",
+            "algoritm" to "algorithm",
+            "algorthm" to "algorithm",
+            "recusion" to "recursion",
+            "recurssion" to "recursion",
+            "funtion" to "function",
+            "funciton" to "function",
+            "funtions" to "functions",
+            "funcitons" to "functions",
+            "stucture" to "structure",
+            "structur" to "structure",
+            "dictonary" to "dictionary",
+            "dictinary" to "dictionary",
+            "lopp" to "loop",
+            "looop" to "loop",
+            "conditon" to "conditional",
+            "conditonal" to "conditional",
+            "interv" to "interview",
+            "interiew" to "interview",
+            "placment" to "placement"
+        )
+        val tokens = cleaned.split(" ").map { typoMap[it] ?: it }
+        return tokens.joinToString(" ")
     }
 
     private fun isCapabilitiesQuery(normalized: String): Boolean {
@@ -1290,9 +1356,50 @@ class LocalAIEngine private constructor(context: Context?) {
         }
     }
 
+    fun extractProfileNameEdit(query: String): String? {
+        val q = query.trim()
+        val toPattern = Regex(
+            """(?i)(?:(?:okay|ok|please|hey|hi)\s+)?(?:edit|change|set|update|rename)\s+(?:the\s+|my\s+)?(?:profile\s+name|profile|user\s+name|name)(?:\s+(?:from\s+)?[a-zA-Z\s]+)?\s+(?:to|as)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)"""
+        )
+        val toMatch = toPattern.find(q)
+        if (toMatch != null) {
+            val rawName = toMatch.groupValues[1].trim()
+            val stopWords = setOf("me", "my", "name", "profile", "to", "as", "a", "the", "something", "anything")
+            if (rawName.isNotBlank() && !stopWords.contains(rawName.lowercase(Locale.ROOT))) {
+                return rawName.split(" ").filter { it.isNotBlank() }
+                    .joinToString(" ") { it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString() } }
+            }
+        }
+        return null
+    }
+
     private fun checkNameSettingIntent(rawQuery: String, lowerQuery: String, normalized: String): LocalAiResponse? {
         val trimmedRaw = rawQuery.trim()
         val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+
+        // 0. Profile Name Edit action: "okay edit the profile name sri sai to kishore", "change profile name to kishore", "set my name to kishore", etc.
+        val profileNameEdit = extractProfileNameEdit(rawQuery)
+        if (profileNameEdit != null) {
+            preferredName = profileNameEdit
+            accountUserName = profileNameEdit
+            isWaitingForName = false
+            try {
+                val appCtx = SynapseApplication.getAppContext()
+                appCtx.getSharedPreferences("synapse_ai_pref", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("chat_preferred_name", profileNameEdit)
+                    .apply()
+            } catch (_: Throwable) {}
+            consecutiveUnclearCount = 0
+            return LocalAiResponse(
+                paragraph1 = "✅ Done! Your profile name has been updated to $profileNameEdit.",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true,
+                isNameCapture = true,
+                capturedName = profileNameEdit
+            )
+        }
 
         // 1. If currently waiting for user to provide their name (e.g. following "call me by my name")
         if (isWaitingForName) {
@@ -1438,6 +1545,11 @@ class LocalAIEngine private constructor(context: Context?) {
 
         // Never treat queries asking for the AI's identity or third party as asking for user's own name
         if (words.contains("your") || words.contains("ur") || words.contains("synapse")) {
+            return false
+        }
+
+        // Never treat queries editing or setting user profile name as asking for name
+        if (extractProfileNameEdit(q) != null || extractProfileNameEdit(clean) != null) {
             return false
         }
 
@@ -1750,6 +1862,18 @@ class LocalAIEngine private constructor(context: Context?) {
         val isCasualPhrase = trimmed.contains("ena pandra") || trimmed.contains("enna pandra") ||
                 trimmed.contains("ena panra") || trimmed.contains("enna panra") ||
                 trimmed.contains("saptingala") || trimmed.contains("saaptiya") || trimmed.contains("sapacha")
+
+        val singleSlangGreeting = setOf("bhai", "bro", "brother", "machan", "machi", "thala", "nanba", "nanbaa", "dost")
+        if (words.size == 1 && words.first() in singleSlangGreeting) {
+            val name = preferredName.trim()
+            val greeting = if (name.isNotBlank()) "Yes, $name! " else "Yes! "
+            return LocalAiResponse(
+                paragraph1 = "${greeting}How can I help you with your placement preparation today? Feel free to ask me anything about Python, SQL, AI, Aptitude, DSA, or Java!",
+                paragraph2 = "",
+                confidenceScore = 100.0,
+                isGreeting = true
+            )
+        }
 
         val isPureSlang = words.all { it in casualSlangWords } || (words.size <= 2 && words.any { it in casualSlangWords })
         if (isPureSlang || isCasualPhrase) {
@@ -2379,6 +2503,89 @@ class LocalAIEngine private constructor(context: Context?) {
         }.trim()
     }
 
+    fun isRecognizedStudyTopic(query: String, lowerQuery: String, tokens: List<String>): Boolean {
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9\\s]"), " ").trim()
+        val words = tokens.toSet()
+
+        // 1. Explicit placement track keywords
+        val trackKeywords = setOf(
+            "python", "sql", "database", "databases", "dbms", "rdbms", "mysql", "postgresql",
+            "ai", "artificial intelligence", "ml", "machine learning", "deep learning", "llm", "rag", "nlp",
+            "aptitude", "quant", "quantitative",
+            "dsa", "data structures", "algorithms", "algorithm",
+            "java", "oops", "oop",
+            "os", "operating system", "operating systems", "networking", "networks", "computer networks",
+            "android", "compose", "jetpack", "viewmodel", "coroutine", "coroutines", "stateflow", "sharedflow",
+            "physics", "chemistry", "mathematics", "math", "maths", "biology"
+        )
+        if (trackKeywords.any { clean.contains(it) || words.contains(it) }) {
+            return true
+        }
+
+        // 2. Technical curriculum & interview concepts
+        val conceptKeywords = setOf(
+            "join", "joins", "inner join", "left join", "right join", "cross join", "outer join",
+            "normalization", "1nf", "2nf", "3nf", "bcnf", "acid", "transaction", "transactions",
+            "index", "indexes", "indexing", "b+ tree", "primary key", "foreign key", "candidate key",
+            "ddl", "dml", "dcl", "tcl", "group by", "having", "order by", "aggregate", "window function",
+            "dense_rank", "rank", "partition by", "subquery", "correlated subquery", "view", "trigger",
+            "list comprehension", "dict comprehension", "comprehension", "comprehensions",
+            "generator", "generators", "decorator", "decorators", "yield", "lambda",
+            "gil", "global interpreter lock", "mutability", "immutable", "mutable",
+            "dunder", "magic method", "magic methods", "mro", "method resolution order",
+            "memory model", "pass by object reference", "reference counting", "garbage collection",
+            "two sum", "palindrome", "fibonacci", "prime number", "sieve of eratosthenes",
+            "anagram", "reverse string", "second largest", "remove duplicates",
+            "binary search", "linear search", "bubble sort", "insertion sort", "selection sort",
+            "merge sort", "quicksort", "heap sort", "timsort", "radix sort",
+            "stack", "queue", "deque", "priority queue", "linked list", "singly linked", "doubly linked",
+            "circular linked", "binary tree", "bst", "binary search tree", "avl tree", "red black tree",
+            "graph", "bfs", "dfs", "dijkstra", "bellman ford", "prim", "kruskal", "topological sort",
+            "dynamic programming", "memoization", "tabulation", "knapsack", "longest common subsequence",
+            "recursion", "backtracking", "two pointer", "sliding window", "divide and conquer",
+            "time complexity", "space complexity", "big o", "master theorem", "asymptotic",
+            "encapsulation", "inheritance", "polymorphism", "abstraction", "overloading", "overriding",
+            "interface", "abstract class", "static method", "final keyword", "super keyword",
+            "jvm", "jre", "jdk", "garbage collector",
+            "process", "thread", "multithreading", "concurrency", "deadlock", "banker", "race condition",
+            "mutex", "semaphore", "critical section", "paging", "segmentation", "virtual memory", "thrashing",
+            "cpu scheduling", "round robin", "fcfs", "sjf", "context switch",
+            "tcp", "udp", "three way handshake", "osi model", "tcp ip", "ip address", "subnetting",
+            "dns", "http", "https", "socket", "packet", "router", "switch",
+            "transformer", "transformers", "attention mechanism", "self attention",
+            "tokenization", "subword", "byte pair encoding", "vector search", "cosine similarity",
+            "embeddings", "vector db", "chromadb", "faiss", "gradient descent", "backpropagation",
+            "loss function", "cross entropy", "overfitting", "underfitting", "regularization",
+            "convolutional", "cnn", "rnn", "lstm", "gan", "diffusion", "fine tuning", "prompt engineering",
+            "speed distance time", "train problem", "boats and streams", "time and work", "pipes and cisterns",
+            "ratio and proportion", "percentages", "profit and loss", "simple interest", "compound interest",
+            "permutations", "combinations", "probability", "blood relations", "syllogism", "seating arrangement",
+            "clock problem", "calendar problem", "star method", "behavioral interview", "roots", "formula", "derivation"
+        )
+        if (conceptKeywords.any { clean.contains(it) || words.contains(it) }) {
+            return true
+        }
+
+        // 3. Match against known knowledge chunks topics
+        val matchesChunkTopic = synchronized(chunks) {
+            chunks.any { c ->
+                val top = c.topic.lowercase(Locale.ROOT).trim()
+                top.length >= 3 && (clean == top || clean.contains(top))
+            }
+        }
+        if (matchesChunkTopic) return true
+
+        // 4. Multi-turn context follow-up
+        val lastTopicTurn = synchronized(contextHistory) {
+            contextHistory.lastOrNull { it.matchedTopic != null || it.chunkId != null }
+        }
+        if (lastTopicTurn != null && isFollowUpQuery(lowerQuery)) {
+            return true
+        }
+
+        return false
+    }
+
     fun isOutOfScopeQuery(normalized: String): Boolean {
         for (phrase in outOfScopePhrases) {
             if (normalized == phrase || normalized.startsWith("$phrase ") || normalized.endsWith(" $phrase") || normalized.contains(" $phrase ") || normalized.contains(phrase)) {
@@ -2456,6 +2663,667 @@ class LocalAIEngine private constructor(context: Context?) {
             confidenceScore = 98.0,
             isFollowUp = true
         )
+    }
+
+    /**
+     * Dedicated Coding & Python Logic Intent (ChatGPT / Gemini Grade):
+     * Directly generates rich, runnable Python code, step-by-step logic breakdowns,
+     * time/space complexity analysis, and placement interview strategies.
+     */
+    private fun checkCodingLogicIntent(
+        rawQuery: String,
+        lowerQuery: String,
+        normalized: String
+    ): LocalAiResponse? {
+        val clean = lowerQuery.replace(Regex("[^a-zA-Z0-9+\\-=><\\s]"), " ").trim()
+        val norm = normalized.trim().lowercase(Locale.ROOT)
+
+        // 1. Two Sum Problem Logic
+        if (clean.contains("two sum") || (clean.contains("sum") && clean.contains("target")) || clean.contains("find pair")) {
+            val p1 = """
+### 🎯 Two Sum Problem — Optimal Hash Map Logic
+*Python & Coding Logic · Algorithmic Problem Solving*
+
+The **Two Sum** problem asks you to find the indices of two numbers in an array that add up to a specific `target`. While the brute-force approach requires nested loops with ${'$'}O(N^2)$ time, the optimal approach uses a **hash map (dictionary)** to achieve **${'$'}O(N)$ linear time** in a single pass.
+
+```python
+def two_sum(nums: list[int], target: int) -> list[int]:
+    ${"\"\"\""}
+    Finds indices of two numbers that sum up to target in O(N) time.
+    ${"\"\"\""}
+    seen = {}  # maps value -> index
+    
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+        
+    return []
+
+# Test run
+sample_nums = [2, 7, 11, 15]
+target_val = 9
+print("Indices:", two_sum(sample_nums, target_val))  # Output: [0, 1]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 How the Logic Works (Step-by-Step Dry Run)
+1. **Complement Calculation:** For each element `num`, we calculate the exact remaining value needed: `complement = target - num`.
+2. **Instant O(1) Lookup:** We query `seen` in amortized ${'$'}O(1)$ time to see if `complement` has already been visited.
+3. **Store & Proceed:** If not found, we record `seen[num] = i` so future elements can match with it.
+
+#### ⚡ Complexity & Placement Pro Tips
+• **Time Complexity:** ${'$'}O(N)$ because we traverse the list exactly once with ${'$'}O(1)$ dictionary lookups.
+• **Space Complexity:** ${'$'}O(N)$ to store up to ${'$'}N$ elements in the dictionary.
+• **Interview Edge Case:** The problem guarantees exactly one solution without using the same element twice. If the array is already sorted, mention that the **Two-Pointer technique** achieves ${'$'}O(1)$ auxiliary space!
+
+*💡 Would you like to see the Two-Pointer sorted variation or another coding challenge?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Algorithmic Problem Solving"
+            val top = "Two Sum Algorithm Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_two_sum", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 2. String Reversal Logic
+        if (clean.contains("reverse") && (clean.contains("string") || clean.contains("str") || clean.contains("word"))) {
+            val p1 = """
+### 🔄 String Reversal Logic in Python
+*Python & Coding Logic · String Manipulation*
+
+In Python, strings are **immutable** sequences of characters. Therefore, reversing a string involves creating a new reversed string rather than mutating memory in-place. Here are the 3 most common and interview-tested approaches:
+
+```python
+# Approach 1: Pythonic Slicing (Fastest & Most Idiomatic)
+def reverse_slicing(s: str) -> str:
+    return s[::-1]
+
+# Approach 2: Two-Pointer In-Place Swap on List (Classic DSA)
+def reverse_two_pointer(s: str) -> str:
+    chars = list(s)
+    left, right = 0, len(chars) - 1
+    while left < right:
+        chars[left], chars[right] = chars[right], chars[left]
+        left += 1
+        right -= 1
+    return "".join(chars)
+
+# Approach 3: Two-Pointer Word-by-Word Reversal
+def reverse_words(sentence: str) -> str:
+    return " ".join(sentence.split()[::-1])
+
+print("Reversed:", reverse_slicing("Synapse"))          # "espanyS"
+print("Words Reversed:", reverse_words("code in python")) # "python in code"
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Logic Breakdown: Slicing vs Two-Pointer
+• **Slicing `s[::-1]`:** Leverages Python's internal C-level `slice()` step of `-1`. It skips the Python bytecode evaluation loop, making it significantly faster in production.
+• **Two-Pointer Technique:** Initializes pointers at index `0` and `len - 1`. It swaps elements and converges inward until `left >= right`, performing exactly ${'$'}\lfloor N/2 \rfloor$ swaps.
+
+#### ⚡ Placement Interview Edge
+• **Time Complexity:** ${'$'}O(N)$ linear time across all methods.
+• **Space Complexity:** ${'$'}O(N)$ because Python strings are immutable and cannot be modified in-place like C-style `char[]`.
+• **Viva Question:** *"Can you reverse a Python string in O(1) space?"* Answer: No, because Python strings are immutable; converting to a `bytearray` or `list` requires ${'$'}O(N)$ auxiliary allocation.
+
+*💡 Would you like to check Palindrome logic or learn how to reverse words in a sentence?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "String Algorithms"
+            val top = "String Reversal Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_rev_str", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 3. Palindrome Logic (Strings & Numbers)
+        if (clean.contains("palindrome")) {
+            val p1 = """
+### 🔁 Palindrome Check Logic (String & Integer)
+*Python & Coding Logic · Two-Pointer Patterns*
+
+A palindrome is a sequence that reads the same forwards and backwards (e.g., `"racecar"` or `121`). Technical interviewers often ask you to validate palindromes while ignoring non-alphanumeric characters, or validate integers **without converting them to strings**.
+
+```python
+# 1. Valid String Palindrome (Ignoring Case & Special Chars)
+def is_valid_palindrome(s: str) -> bool:
+    left, right = 0, len(s) - 1
+    while left < right:
+        while left < right and not s[left].isalnum():
+            left += 1
+        while left < right and not s[right].isalnum():
+            right -= 1
+        if s[left].lower() != s[right].lower():
+            return False
+        left += 1
+        right -= 1
+    return True
+
+# 2. Integer Palindrome without String Conversion: O(log10 N) Time
+def is_number_palindrome(x: int) -> bool:
+    if x < 0 or (x % 10 == 0 and x != 0):
+        return False
+    reversed_half = 0
+    while x > reversed_half:
+        reversed_half = reversed_half * 10 + x % 10
+        x //= 10
+    return x == reversed_half or x == reversed_half // 10
+
+print("Is 'A man, a plan, a canal: Panama' palindrome?", is_valid_palindrome("A man, a plan, a canal: Panama")) # True
+print("Is 1221 palindrome?", is_number_palindrome(1221)) # True
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Step-by-Step Logic
+1. **Two Pointers:** Moving inward from boundary ends (`left = 0`, `right = len - 1`) avoids allocating filtered substring copies, reducing auxiliary space to **${'$'}O(1)**.
+2. **Modulo Arithmetic on Numbers:** Extracting digits with `x % 10` and truncating with `x //= 10` reverses only the second half of the number, preventing integer overflow risks.
+
+#### ⚡ Placement Interview Insights
+• **Time Complexity:** ${'$'}O(N)$ for string length; ${'$'}O(\log_{10} N)$ for integer digits.
+• **Auxiliary Space:** Strict **${'$'}O(1)$** in-place constant space.
+• **Critical Edge Cases:** Single character strings (always true), negative numbers (always false, e.g. `-121` != `121-`), and trailing zeros.
+
+*💡 Would you like to solve Longest Palindromic Substring next?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Two-Pointer Algorithms"
+            val top = "Palindrome Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_palindrome", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 4. Fibonacci Sequence Logic
+        if (clean.contains("fibonacci")) {
+            val p1 = """
+### 📈 Fibonacci Sequence — Iterative, Generator & DP Logic
+*Python & Coding Logic · Dynamic Programming & Iterators*
+
+The Fibonacci sequence is defined recurrence: ${'$'}F(0)=0, F(1)=1$, and ${'$'}F(N) = F(N-1) + F(N-2)$. While textbook recursion has disastrous exponential **${'$'}O(2^N)$** time complexity, production systems use **Iterative Tuple Unpacking** or **Generators** for linear ${'$'}O(N)$ speed with ${'$'}O(1)$ memory.
+
+```python
+# Method 1: Iterative O(N) Time and O(1) Space
+def fibonacci_iterative(n: int) -> int:
+    if n <= 1:
+        return n
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+
+# Method 2: Memory-Efficient Generator using 'yield'
+def fibonacci_stream(limit: int):
+    a, b = 0, 1
+    while a <= limit:
+        yield a
+        a, b = b, a + b
+
+# Method 3: Dynamic Programming (Memoization)
+from functools import lru_cache
+
+@lru_cache(maxsize=None)
+def fibonacci_memo(n: int) -> int:
+    if n <= 1:
+        return n
+    return fibonacci_memo(n - 1) + fibonacci_memo(n - 2)
+
+print("10th Fibonacci Number:", fibonacci_iterative(10))  # Output: 55
+print("Stream up to 50:", list(fibonacci_stream(50)))    # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Why the Tuple Swap Works in Python
+In `a, b = b, a + b`, the right-hand side expressions are evaluated first as a temporary tuple `(b, a + b)` before being unpacked and bound to `a` and `b`. This eliminates the need for a temporary swap variable (`temp`).
+
+#### ⚡ Placement Complexity Comparison
+| Technique | Time Complexity | Auxiliary Space | Interview Evaluation |
+| :--- | :--- | :--- | :--- |
+| **Naive Recursion** | ${'$'}O(2^N)$ | ${'$'}O(N)$ (Call stack) | ❌ Rejected (Redundant computations) |
+| **Memoization / DP** | ${'$'}O(N)$ | ${'$'}O(N)$ (Hash table) | ✅ Accepted (Demonstrates DP understanding) |
+| **Iterative Swap** | ${'$'}O(N)$ | **${'$'}O(1)** | 🌟 Optimal (Most space-efficient) |
+| **Matrix Exponentiation** | ${'$'}O(\log N)$ | ${'$'}O(1)$ | 🚀 Advanced (Competitive programming) |
+
+*💡 Would you like to explore Climbing Stairs (a classic Fibonacci DP problem)?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Algorithmic Problem Solving"
+            val top = "Fibonacci Logic & Complexity"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_fibonacci", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 5. Prime Number Check Logic
+        if (clean.contains("prime") && (clean.contains("number") || clean.contains("check") || clean.contains("python") || clean.contains("find") || clean.contains("sieve"))) {
+            val p1 = """
+### 🔢 Prime Number Logic — Trial Division & Sieve of Eratosthenes
+*Python & Coding Logic · Number Theory Algorithms*
+
+A prime number is an integer greater than 1 with no positive divisors other than 1 and itself. Testing divisibility up to ${'$'}N$ requires ${'$'}O(N)$ steps, but a mathematical observation lets us test only up to **${'$'}\sqrt{N}$**, reducing execution time by orders of magnitude.
+
+```python
+import math
+
+# 1. Single Prime Check in O(sqrt(N)) Time
+def is_prime(n: int) -> bool:
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    
+    # Check 6k +/- 1 up to sqrt(n)
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+# 2. Sieve of Eratosthenes: All Primes up to N in O(N log log N)
+def sieve_of_eratosthenes(limit: int) -> list[int]:
+    is_prime_flags = [True] * (limit + 1)
+    is_prime_flags[0] = is_prime_flags[1] = False
+    
+    for p in range(2, int(math.isqrt(limit)) + 1):
+        if is_prime_flags[p]:
+            for multiple in range(p * p, limit + 1, p):
+                is_prime_flags[multiple] = False
+                
+    return [num for num, prime in enumerate(is_prime_flags) if prime]
+
+print("Is 29 prime?", is_prime(29))  # True
+print("Primes up to 30:", sieve_of_eratosthenes(30))  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Why We Only Check up to √N
+If a number ${'$'}N$ has a divisor greater than ${'$'}\sqrt{N}$, its corresponding factor pair must be strictly smaller than ${'$'}\sqrt{N}$ (since ${'$'}a \times b = N$). If no factor is found $\le \sqrt{N}$, no factor can exist above it.
+
+#### ⚡ Complexity & Placement Strategies
+• **Single Check:** ${'$'}O(\sqrt{N})$ time and ${'$'}O(1)$ space.
+• **Sieve of Eratosthenes:** ${'$'}O(N \log \log N)$ time and ${'$'}O(N)$ space. Use this when the problem asks for multiple queries or range queries.
+• **Edge Cases:** `0` and `1` are not prime. `2` is the only even prime number.
+
+*💡 Would you like to see Prime Factorization or GCD/LCM Euclidean logic?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Number Theory"
+            val top = "Prime Number Algorithms"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_prime", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 6. Binary Search Logic
+        if (clean.contains("binary search")) {
+            val p1 = """
+### 🔍 Binary Search — Divide & Conquer Logic
+*Python & Coding Logic · Searching & Complexity*
+
+Binary Search finds the position of a target element within a **sorted array** by systematically halving the search space on each comparison. This achieves **${'$'}O(\log N)$ logarithmic time**, dramatically outperforming linear search (${'$'}O(N)$).
+
+```python
+def binary_search(arr: list[int], target: int) -> int:
+    ${"\"\"\""}
+    Returns index of target in sorted array arr, or -1 if not found.
+    ${"\"\"\""}
+    low = 0
+    high = len(arr) - 1
+    
+    while low <= high:
+        # Avoid integer overflow: low + (high - low) // 2
+        mid = (low + high) // 2
+        
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            low = mid + 1   # Search right half
+        else:
+            high = mid - 1  # Search left half
+            
+    return -1
+
+# Sample execution
+sorted_list = [10, 23, 35, 47, 59, 72, 88, 95]
+print("Index of 59:", binary_search(sorted_list, 59))  # Output: 4
+print("Index of 100:", binary_search(sorted_list, 100)) # Output: -1
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Step-by-Step Logic
+1. **Loop Invariant:** The target, if present, is always within the sub-array `arr[low..high]`.
+2. **Three-Way Comparison:**
+   - If `arr[mid] == target`: Element found; return `mid`.
+   - If `arr[mid] < target`: Target is larger; eliminate left half by shifting `low = mid + 1`.
+   - If `arr[mid] > target`: Target is smaller; eliminate right half by shifting `high = mid - 1`.
+3. **Termination:** If `low > high`, the element does not exist in the array.
+
+#### ⚡ Complexity & Viva Insights
+• **Time Complexity:** Best: ${'$'}O(1)$, Average/Worst: **${'$'}O(\log N)$**. For 1,000,000 items, binary search takes at most 20 comparisons!
+• **Space Complexity:** **${'$'}O(1)$** for iterative; ${'$'}O(\log N)$ for recursive call stack.
+• **Crucial Placement Pitfall:** The array **MUST be sorted** prior to binary search. In languages like C++/Java, use `mid = low + (high - low) / 2` to prevent 32-bit integer overflow.
+
+*💡 Would you like to explore finding the First and Last occurrence of an element using Binary Search?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Searching Algorithms"
+            val top = "Binary Search Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_bsearch", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 7. Second Largest Element in a List
+        if (clean.contains("second largest") || clean.contains("second max") || clean.contains("second highest")) {
+            val p1 = """
+### 🥈 Finding the Second Largest Element in One Pass
+*Python & Coding Logic · Array Manipulation*
+
+The naive approach sorts the list in ${'$'}O(N \log N)$ and picks the second element from the end. However, top tech interviewers expect you to find the second largest element in **a single pass in ${'$'}O(N)$ time and ${'$'}O(1)$ space** without sorting.
+
+```python
+def find_second_largest(nums: list[int]) -> int | None:
+    if len(nums) < 2:
+        return None
+        
+    first = second = float('-inf')
+    
+    for num in nums:
+        if num > first:
+            second = first
+            first = num
+        elif num > second and num != first:
+            second = num
+            
+    return second if second != float('-inf') else None
+
+# Test runs
+print(find_second_largest([12, 35, 1, 10, 34, 1]))  # Output: 34
+print(find_second_largest([10, 10, 10]))              # Output: None (all identical)
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Why This Logic Works
+1. When a new element `num > first` is encountered, the current `first` is demoted to `second`, and `first` is updated to `num`.
+2. When `num < first` but `num > second`, only `second` is updated.
+3. The condition `num != first` ensures duplicate largest values do not contaminate `second`.
+
+#### ⚡ Complexity & Edge Cases
+• **Time Complexity:** Strict **${'$'}O(N)$** linear time.
+• **Auxiliary Space:** **${'$'}O(1)$** constant space.
+• **Edge Cases:** All elements identical (`[10, 10, 10]`), negative numbers (`[-5, -1, -10]`), and arrays of length $< 2$.
+
+*💡 Would you like to see how to find the Kth Largest Element using a Min-Heap?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Array Algorithms"
+            val top = "Second Largest Element Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_sec_largest", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 8. Remove Duplicates from List
+        if (clean.contains("remove duplicate") || clean.contains("remove duplicates") || clean.contains("unique elements")) {
+            val p1 = """
+### 🧹 Remove Duplicates from List (Preserving Order)
+*Python & Coding Logic · Data Structures*
+
+While `list(set(arr))` removes duplicates, it destroys the original order because sets are unordered hash tables. Here are the two standard production and interview approaches:
+
+```python
+# Approach 1: Order-Preserving O(N) using dict.fromkeys() (Python 3.7+)
+def remove_duplicates_dict(arr: list) -> list:
+    return list(dict.fromkeys(arr))
+
+# Approach 2: Using a Visited Set (Classic Algorithm)
+def remove_duplicates_set(arr: list) -> list:
+    seen = set()
+    result = []
+    for item in arr:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+# Approach 3: In-Place for Sorted Array (LeetCode Pattern)
+def remove_duplicates_sorted_inplace(nums: list[int]) -> int:
+    if not nums:
+        return 0
+    k = 1
+    for i in range(1, len(nums)):
+        if nums[i] != nums[i - 1]:
+            nums[k] = nums[i]
+            k += 1
+    return k
+
+data = [4, 5, 4, 2, 8, 5, 1]
+print("Ordered Unique:", remove_duplicates_dict(data))  # [4, 5, 2, 8, 1]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Why `dict.fromkeys()` Preserves Order
+Since Python 3.7, dictionaries maintain insertion order by standard language specification. `dict.fromkeys()` inserts keys sequentially in ${'$'}O(N)$ time, discarding duplicates while preserving the initial arrival sequence.
+
+#### ⚡ Placement Complexity
+• **Time Complexity:** ${'$'}O(N)$ average time due to ${'$'}O(1)$ set/dictionary hashing.
+• **Space Complexity:** ${'$'}O(N)$ for seen tracking.
+• **In-Place Sorted Array:** Uses two pointers with **${'$'}O(1)$ space** and returns length of unique prefix.
+
+*💡 Would you like to see how to find duplicates in an array in O(N) time without extra space?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Data Structure Operations"
+            val top = "Remove Duplicates Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_rem_dup", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 9. Valid Anagram Logic
+        if (clean.contains("anagram")) {
+            val p1 = """
+### 🔤 Valid Anagram Logic — Hash Map vs Character Array
+*Python & Coding Logic · String Algorithms*
+
+Two strings are anagrams if they contain the exact same characters with identical frequencies, rearranged in a different order (e.g., `"listen"` and `"silent"`).
+
+```python
+# Approach 1: Frequency Hash Map in O(N) Time and O(1) Space
+def is_anagram(s: str, t: str) -> bool:
+    if len(s) != len(t):
+        return False
+        
+    counts = {}
+    for char in s:
+        counts[char] = counts.get(char, 0) + 1
+        
+    for char in t:
+        if char not in counts or counts[char] == 0:
+            return False
+        counts[char] -= 1
+        
+    return True
+
+# Approach 2: Using collections.Counter
+from collections import Counter
+def is_anagram_counter(s: str, t: str) -> bool:
+    return Counter(s) == Counter(t)
+
+print("Are 'anagram' and 'nagaram' anagrams?", is_anagram("anagram", "nagaram"))  # True
+print("Are 'rat' and 'car' anagrams?", is_anagram("rat", "car"))                  # False
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Step-by-Step Logic
+1. **Length Check:** If lengths differ, return `False` immediately in ${'$'}O(1)$ time.
+2. **Increment & Decrement Counter:** Tally characters from the first string, then decrement for the second string. If any character drops below zero or is missing, they cannot be anagrams.
+
+#### ⚡ Complexity & Interview Takeaway
+• **Time Complexity:** ${'$'}O(N)$ linear time. Avoid sorting strings with `sorted(s) == sorted(t)` in interviews unless requested, since sorting takes ${'$'}O(N \log N)$ time.
+• **Space Complexity:** ${'$'}O(1)$ auxiliary space because the alphabet size is bounded (e.g. at most 26 English letters or 256 ASCII characters).
+
+*💡 Would you like to explore Grouping Anagrams using Hash Maps?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "String Algorithms"
+            val top = "Anagram Check Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_anagram", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 10. List & Dictionary Comprehension Logic
+        if ((clean.contains("list comprehension") || clean.contains("dict comprehension") || clean.contains("comprehension")) &&
+            (clean.contains("logic") || clean.contains("syntax") || clean.contains("code") || clean.contains("how to") || clean.contains("write")) &&
+            !clean.startsWith("explain") && !clean.contains("define") && !clean.contains("what is")) {
+            val p1 = """
+### ⚡ Python List & Dictionary Comprehension Logic
+*Python & Coding Logic · Idiomatic Patterns*
+
+Comprehensions provide a concise, readable syntax for creating new collections from existing iterables. They execute at **C-level speed** inside the Python virtual machine, outperforming manual `.append()` loops.
+
+```python
+# 1. Basic & Filtered List Comprehension
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+evens_squared = [x ** 2 for x in numbers if x % 2 == 0]
+print("Evens Squared:", evens_squared)  # [4, 16, 36, 64, 100]
+
+# 2. If-Else Ternary Expression in Comprehension
+labels = ["Even" if x % 2 == 0 else "Odd" for x in range(5)]
+print("Labels:", labels)  # ['Even', 'Odd', 'Even', 'Odd', 'Even']
+
+# 3. Dictionary Comprehension (Mapping words to lengths)
+words = ["python", "synapse", "ai", "coding"]
+word_lengths = {w: len(w) for w in words}
+print("Word Lengths:", word_lengths)  # {'python': 6, 'synapse': 7, 'ai': 2, 'coding': 6}
+
+# 4. Flattening a 2D Matrix
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flattened = [val for row in matrix for val in row]
+print("Flattened:", flattened)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 💡 Syntax Rule: Where Does `if` Go?
+• **Filtering only:** `[x for x in data if condition]` -> `if` goes at the **end**.
+• **Ternary transformation:** `[val_if_true if condition else val_if_false for x in data]` -> `if-else` goes at the **beginning**.
+
+#### ⚡ Performance & Clean Code Guidelines
+• **Why it's faster:** In a standard `for` loop with `.append()`, Python performs an attribute lookup for `.append` on every iteration. Comprehensions utilize the dedicated `LIST_APPEND` bytecode instruction at the C level.
+• **Readability Warning:** Avoid nesting more than 2 loops in a comprehension. If it spans more than 2 lines, refactor to a standard loop for maintainability.
+
+*💡 Would you like to explore Generator Expressions or Set Comprehensions?*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Idiomatic Python"
+            val top = "Comprehension Logic"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_comp", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        // 11. GENERAL PYTHON & CODING LOGIC (The Core User Request)
+        val isGeneralCodingLogic = clean.contains("coding logic") || clean.contains("python logic") ||
+                clean.contains("programming logic") ||
+                (clean.contains("python") && (clean.contains("logic") || clean.contains("coding") || clean.contains("code") || clean.contains("program") || clean.contains("basics"))) ||
+                clean in setOf(
+                    "give me python and coding logic", "python and coding logic", "give me python logic",
+                    "give me coding logic", "teach me python", "python basics", "python programming",
+                    "python coding", "how to write logic", "coding logic in python", "python logic examples",
+                    "give me python", "tell me python and coding logic", "explain python and coding logic",
+                    "show me python and coding logic", "give me pyhon and coding logic", "pyhon and coding logic"
+                ) ||
+                (clean.contains("logic") && clean.contains("code"))
+
+        if (isGeneralCodingLogic) {
+            val p1 = """
+### 🐍 Mastering Python & Coding Logic
+*Python & Coding Logic · Foundational Problem Solving*
+
+Coding logic is the thought process of breaking down a real-world objective into deterministic algorithmic steps that a computer can execute reliably and efficiently. In Python, constructing solid coding logic relies on **4 Core Structural Patterns**:
+
+#### 1. Conditional & Decision-Making Logic (Control Flow)
+Branching execution paths based on evaluated boolean expressions.
+
+```python
+def evaluate_candidate(tech_score: int, dsa_rounds: int) -> str:
+    ${"\"\"\""}Evaluates placement interview outcome.${"\"\"\""}
+    if tech_score >= 85 and dsa_rounds >= 2:
+        return "Tier 1: SDE-1 Selected 🚀"
+    elif tech_score >= 70 or dsa_rounds >= 1:
+        return "Shortlisted: Second Technical Round"
+    else:
+        return "Needs Practice: Review Core Micro-Lessons"
+
+print(evaluate_candidate(88, 2))  # Tier 1: SDE-1 Selected 🚀
+```
+
+#### 2. Iteration & Data Transformation Logic (Loops & Accumulators)
+Processing sequences cleanly with minimal time and memory overhead.
+
+```python
+# Filtering and transforming data in O(N) linear time
+raw_salaries = [6, 12, 18, 8, 24, 15, 30]
+
+# Idiomatic List Comprehension: O(N) Time
+high_packages = [pkg * 1.15 for pkg in raw_salaries if pkg >= 12]
+print("Adjusted High Packages:", [round(p, 1) for p in high_packages])
+# Output: [13.8, 20.7, 27.6, 17.2, 34.5]
+```
+            """.trimIndent()
+
+            val p2 = """
+#### 3. Algorithmic Hash-Map Logic (Frequency & Lookup Pattern)
+Using dictionaries for amortized ${'$'}O(1)$ constant-time lookup and element tracking.
+
+```python
+def first_unique_char(s: str) -> str:
+    ${"\"\"\""}Finds first non-repeating character in O(N) time.${"\"\"\""}
+    freq = {}
+    for char in s:
+        freq[char] = freq.get(char, 0) + 1
+        
+    for char in s:
+        if freq[char] == 1:
+            return char
+    return "None"
+
+print("First unique in 'swiss':", first_unique_char("swiss"))  # 'w'
+```
+
+#### 4. The 4 Golden Rules of Writing Coding Logic in Placement Interviews
+1. **Understand Before Typing:** Clearly identify the input types, expected output, and edge cases (e.g., empty lists, negatives, single elements) before writing code.
+2. **Decompose Problems:** Break complex tasks into smaller helper functions with a single responsibility.
+3. **Trace with a Dry Run:** Manually trace your variables with a small sample input (e.g. `[1, 2, 3]`) across loop iterations to verify boundary conditions.
+4. **Optimize Complexity:** Strive for ${'$'}O(N)$ or ${'$'}O(N \log N)$ time complexity rather than nested brute-force ${'$'}O(N^2)$ loops.
+
+*💡 What specific coding problem or logic would you like to build next? (e.g., Two Pointers, String Reversal, Binary Search, Palindrome, or Recursion?)*
+            """.trimIndent()
+
+            val sub = "Python & Coding Logic"
+            val ch = "Algorithmic Problem Solving"
+            val top = "Python & Coding Logic Principles"
+            recordTurn(rawQuery, KnowledgeChunk(chunkId = "code_general_logic", subject = sub, chapter = ch, topic = top, content = "$p1\n\n$p2"))
+            return LocalAiResponse(p1, p2, matchedSubject = sub, matchedChapter = ch, matchedTopic = top, confidenceScore = 99.0)
+        }
+
+        return null
     }
 
     /**
@@ -3187,7 +4055,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
             // Keywords / Tags Match: +10 points per matched token
             val matchedKeyword = kwPhrases.contains(token) || kwPhrases.contains(tokenStem) ||
-                    kwStems.contains(tokenStem) || kwPhrases.any { it.contains(token) || it.contains(tokenStem) }
+                    kwStems.contains(tokenStem) || kwPhrases.any { it == token || it.split(" ").contains(token) || it.split(" ").contains(tokenStem) }
             if (matchedKeyword) {
                 score += 10.0
                 tokenMatched = true
@@ -3280,21 +4148,51 @@ class LocalAIEngine private constructor(context: Context?) {
         val examplePrefix = if (useEmojis) "💡 " else "* "
 
         return if (isElaborated) {
-            val p1 = "${bulletPrefix}**In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
-                    "**1. Theoretical Foundations & Mechanism:**\n" +
-                    "${chunk.content}\n\n" +
-                    "**2. Real-Life Analogy:**\n" +
-                    "$analogyText" +
-                    (if (includeFormulas && formulaText.isNotBlank()) "\n\n**3. Mathematical Formulations & Derivations:**\n$formulaText" else "")
-            val p2 = buildString {
-                if (includeExamples && exampleText.isNotBlank()) {
-                    appendLine("**4. Practical Implementation & Code:**")
-                    appendLine(exampleText)
-                    appendLine()
-                }
-                appendLine("**5. Placement Interview Tip & Key Takeaway:**")
-                append(interviewTipText)
-            }.trim()
+            val p1 = if (useEmojis) {
+                "### ${chunk.topic}\n" +
+                "**In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
+                "**1. Theoretical Foundations & Mechanism:**\n" +
+                "${chunk.content}\n\n" +
+                "**2. Real-Life Analogy:**\n$analogyText" +
+                (if (includeFormulas && formulaText.isNotBlank()) "\n\n**3. Mathematical Formulations & Derivations:**\n$formulaText" else "")
+            } else {
+                "* **In-Depth Breakdown: ${chunk.topic}** (${chunk.subject} · ${chunk.chapter})\n\n" +
+                "* **Theoretical Foundations & Mechanism:**\n" +
+                "${chunk.content}\n\n" +
+                "* **Real-Life Analogy:**\n$analogyText" +
+                (if (includeFormulas && formulaText.isNotBlank()) "\n\n* **Mathematical Formulations & Derivations:**\n$formulaText" else "")
+            }
+
+            val p2 = if (useEmojis) {
+                buildString {
+                    if (includeFormulas && formulaText.isNotBlank()) {
+                        appendLine("#### ⚡ Formula / Core Principle")
+                        appendLine(formulaText)
+                        appendLine()
+                    }
+                    if (includeExamples && exampleText.isNotBlank()) {
+                        appendLine("#### 💡 Key Example & Practical Takeaway")
+                        appendLine(exampleText)
+                        appendLine()
+                    }
+                    if (interviewTipText.isNotBlank()) {
+                        appendLine("#### 🎯 Placement Interview Tip & Takeaway")
+                        append(interviewTipText)
+                    }
+                }.trim()
+            } else {
+                buildString {
+                    if (includeFormulas && formulaText.isNotBlank()) {
+                        appendLine("* **Formula / Core Principle:** $formulaText")
+                    }
+                    if (includeExamples && exampleText.isNotBlank()) {
+                        appendLine("* **Key Example & Practical Takeaway:** $exampleText")
+                    }
+                    if (interviewTipText.isNotBlank()) {
+                        appendLine("* **Placement Interview Tip & Takeaway:** $interviewTipText")
+                    }
+                }.trim()
+            }
 
             LocalAiResponse(
                 paragraph1 = p1.trim(),
@@ -3307,17 +4205,47 @@ class LocalAIEngine private constructor(context: Context?) {
                 isFollowUp = isFollowUp
             )
         } else {
-            // Concise-by-default (3-5 lines max: 1-sentence definition + analogy + key formula/rule + 1 quick example + interview tip)
-            val p1 = "${bulletPrefix}**Concept & Definition** (${chunk.subject} · ${chunk.topic})\n$definitionText\n\n${bulletPrefix}**Real-Life Analogy:**\n$analogyText"
-            val p2 = buildString {
-                if (includeFormulas && formulaText.isNotBlank()) {
-                    appendLine("${formulaPrefix}**Formula / Core Principle:** $formulaText")
-                }
-                if (includeExamples && exampleText.isNotBlank()) {
-                    appendLine("${examplePrefix}**Key Example & Practical Takeaway:** $exampleText")
-                }
-                append("* **Placement Interview Tip & Takeaway:** $interviewTipText")
-            }.trim()
+            val p1 = if (useEmojis) {
+                "### ${chunk.topic}\n" +
+                "**Concept & Definition** (${chunk.subject} · ${chunk.chapter})\n\n" +
+                "$definitionText\n\n" +
+                "**Real-Life Analogy:**\n$analogyText"
+            } else {
+                "* **Concept & Definition** (${chunk.subject} · ${chunk.chapter})\n\n" +
+                "$definitionText\n\n" +
+                "* **Real-Life Analogy:** $analogyText"
+            }
+
+            val p2 = if (useEmojis) {
+                buildString {
+                    if (includeFormulas && formulaText.isNotBlank()) {
+                        appendLine("#### ⚡ Formula / Core Principle")
+                        appendLine(formulaText)
+                        appendLine()
+                    }
+                    if (includeExamples && exampleText.isNotBlank()) {
+                        appendLine("#### 💡 Key Example & Practical Takeaway")
+                        appendLine(exampleText)
+                        appendLine()
+                    }
+                    if (interviewTipText.isNotBlank()) {
+                        appendLine("#### 🎯 Placement Interview Tip & Takeaway")
+                        append(interviewTipText)
+                    }
+                }.trim()
+            } else {
+                buildString {
+                    if (includeFormulas && formulaText.isNotBlank()) {
+                        appendLine("* **Formula / Core Principle:** $formulaText")
+                    }
+                    if (includeExamples && exampleText.isNotBlank()) {
+                        appendLine("* **Key Example & Practical Takeaway:** $exampleText")
+                    }
+                    if (interviewTipText.isNotBlank()) {
+                        appendLine("* **Placement Interview Tip & Takeaway:** $interviewTipText")
+                    }
+                }.trim()
+            }
 
             LocalAiResponse(
                 paragraph1 = p1,
@@ -3911,13 +4839,21 @@ class LocalAIEngine private constructor(context: Context?) {
         val fPrefix = if (useEmojis) "⚡ " else "* "
         val ePrefix = if (useEmojis) "💡 " else "* "
 
-        val p1 = "${bPrefix}**Concept & Definition** ($domainSubject · $capitalizedTopic)\n\n" +
-                "$capitalizedTopic is an essential technical concept in $domainSubject. In modern engineering assessments and placement screening rounds, mastering its theoretical principles, computational trade-offs, and boundary edge cases is essential for technical excellence."
+        val p1 = buildString {
+            appendLine("### $capitalizedTopic")
+            appendLine("*$domainSubject · $domainChapter*")
+            appendLine()
+            appendLine("$capitalizedTopic is a core technical concept in $domainSubject. In modern placement screening and technical interviews, interviewers look for your ability to explain its operational mechanism, computational trade-offs, and boundary edge cases.")
+            appendLine()
+            appendLine("**Mental Model:** $domainAnalogy")
+        }.trim()
 
         val p2 = buildString {
-            appendLine("${fPrefix}**Real-Life Mental Model**\n$domainAnalogy\n")
-            appendLine("${fPrefix}**Core Principles & Engineering Invariants**\n$domainDetails\n")
-            appendLine("${ePrefix}**Placement & Technical Interview Takeaway**\nWhen asked about $capitalizedTopic, start with a concise definition, state the governing operational trade-offs, and highlight potential boundary conditions before walking through an optimized code or system solution.")
+            appendLine("#### ⚡ Core Principles & Engineering Invariants")
+            appendLine(domainDetails)
+            appendLine()
+            appendLine("#### 🎯 Placement & Technical Interview Strategy")
+            append("When asked about $capitalizedTopic, start with a crisp 1-sentence overview, state the governing time/space trade-offs, and walk through a concrete example or boundary condition.")
         }.trim()
 
         return LocalAiResponse(
@@ -4122,7 +5058,7 @@ class LocalAIEngine private constructor(context: Context?) {
 
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "I don't have the answer to that. Please ask me anything related to your placement subjects, coding, SQL, AI, or aptitude!"
+            "I didn't understand that. I can help you with your placement subjects (Python, SQL, AI, Aptitude, DSA, Java), quizzes, notes, or app settings like changing your profile name or setting a study alarm."
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

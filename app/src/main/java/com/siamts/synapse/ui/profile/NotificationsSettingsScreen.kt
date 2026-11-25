@@ -223,9 +223,17 @@ fun NotificationsSettingsScreen(
                                                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                                 } else {
                                                     SynapseNotificationHelper.scheduleStudyReminders(context)
+                                                    com.siamts.synapse.notification.SmartNotificationScheduler.scheduleAll(context)
+                                                    try {
+                                                        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("synapse_daily_alerts")
+                                                    } catch (_: Exception) { }
                                                 }
                                             } else {
                                                 SynapseNotificationHelper.cancelStudyReminders(context)
+                                                com.siamts.synapse.notification.SmartNotificationScheduler.cancelAll(context)
+                                                try {
+                                                    com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic("synapse_daily_alerts")
+                                                } catch (_: Exception) { }
                                             }
                                         },
                                         colors = SwitchDefaults.colors(
@@ -349,35 +357,102 @@ fun NotificationsSettingsScreen(
                             }
                         }
 
-                        // Test Notification Action Button (For Viva Demo)
+                        // Smart Notifications Live Test Panel
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
-                            Button(
-                                onClick = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        val sent = SynapseNotificationHelper.showTestNotification(context)
-                                        if (sent) {
-                                            Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            Toast.makeText(context, "Unable to post notification. Check permissions.", Toast.LENGTH_SHORT).show()
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfacePanelElevated else Color.White),
+                                border = BorderStroke(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ Test Smart Notifications Live",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) TextPrimary else Color(0xFF0F172A)
+                                    )
+                                    Text(
+                                        text = "Trigger each notification to test deep linking, Sunset Orange (#FF5500) branding, and Home Bell logging.",
+                                        fontSize = 11.sp,
+                                        color = if (isDark) TextSecondary else Color(0xFF64748B)
+                                    )
+
+                                    val testNotifications = listOf(
+                                        Triple("🚀 Daily Challenge (10 AM)", "Deep-links directly to Quiz Hub") {
+                                            SynapseNotificationHelper.showDailyChallengeNotification(context)
+                                        },
+                                        Triple("🔥 Streak Saver (8 PM)", "Deep-links directly to Learn Library") {
+                                            SynapseNotificationHelper.showStreakSaverNotification(context)
+                                        },
+                                        Triple("🧩 Mistake Vault (48h)", "Deep-links directly to Mistake Vault") {
+                                            SynapseNotificationHelper.showMistakeVaultRecallNotification(context)
+                                        },
+                                        Triple("📣 Today's Plan (4 PM)", "Deep-links directly to Home Tasks") {
+                                            SynapseNotificationHelper.showTodayPlanReminderNotification(context)
+                                        },
+                                        Triple("⭐ Milestone Unlocked", "Deep-links to Achievements") {
+                                            SynapseNotificationHelper.showMilestoneUnlockedNotification(
+                                                context,
+                                                "Awesome consistency! You hit a 7-day streak milestone."
+                                            )
+                                        }
+                                    )
+
+                                    testNotifications.forEach { (label, desc, action) ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    if (isDark) SurfacePanel else Color(0xFFF8FAFC),
+                                                    RoundedCornerShape(10.dp)
+                                                )
+                                                .border(
+                                                    1.dp,
+                                                    if (isDark) SurfaceBorder else SunsetOrange.copy(alpha = 0.2f),
+                                                    RoundedCornerShape(10.dp)
+                                                )
+                                                .clickable {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                                    ) {
+                                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                    } else {
+                                                        action()
+                                                        Toast.makeText(context, "$label sent! Check status bar & Bell icon.", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = label,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = if (isDark) TextPrimary else Color(0xFF0F172A)
+                                                )
+                                                Text(
+                                                    text = desc,
+                                                    fontSize = 10.sp,
+                                                    color = if (isDark) TextSecondary else Color(0xFF64748B)
+                                                )
+                                            }
+                                            Text(
+                                                text = "TEST",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SunsetOrange
+                                            )
                                         }
                                     }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
-                            ) {
-                                Text(
-                                    text = "⚡ Send Test Notification",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                                }
                             }
                         }
                     }

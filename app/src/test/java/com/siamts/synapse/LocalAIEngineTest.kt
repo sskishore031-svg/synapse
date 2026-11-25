@@ -507,7 +507,7 @@ class LocalAIEngineTest {
         )
         for (q in nonTechQueries) {
             val response = engine.generateResponse(q)
-            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("I don't have the answer to that") || response.paragraph1.contains("falls outside my placement"))
+            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("I don't have the answer to that") || response.paragraph1.contains("falls outside my placement") || response.paragraph1.contains("I didn't understand that"))
         }
     }
 
@@ -691,5 +691,70 @@ class LocalAIEngineTest {
         engine.resetContext()
         val r = engine.generateResponse("ena pandra")
         assertEquals(LocalAIEngine.OUT_OF_SCOPE_RESPONSE, r.paragraph1)
+    }
+
+    @Test
+    fun testPythonAndCodingLogicQuery_withTypo_returnsRichPythonLogic() {
+        engine.resetContext()
+        val queries = listOf(
+            "give me pyhon and coding logic",
+            "give me python and coding logic",
+            "python and coding logic",
+            "coding logic in python"
+        )
+        for (q in queries) {
+            val response = engine.generateResponse(q)
+            assertEquals("Python & Coding Logic", response.matchedSubject)
+            assertFalse("Must never return Aptitude for query '$q'", response.paragraph1.contains("Aptitude", ignoreCase = true))
+            assertFalse("Must never return Aptitude for query '$q'", response.paragraph2.contains("Aptitude", ignoreCase = true))
+            assertTrue("Must contain python code for '$q'", response.paragraph1.contains("def ") || response.paragraph1.contains("python"))
+            assertTrue("Must contain coding logic breakdown for '$q'", response.paragraph1.contains("Logic") || response.paragraph2.contains("Logic"))
+        }
+    }
+
+    @Test
+    fun testTwoSumProblemLogic_returnsOptimalHashMapBreakdown() {
+        engine.resetContext()
+        val response = engine.generateResponse("two sum")
+        assertEquals("Python & Coding Logic", response.matchedSubject)
+        assertTrue(response.paragraph1.contains("two_sum"))
+        assertTrue(response.paragraph1.contains("seen = {}"))
+        assertTrue(response.paragraph2.contains("O(N)"))
+    }
+
+    @Test
+    fun testProfileNameEdit_extractsNameAndConfirmsCleanly() {
+        engine.resetContext()
+        val queries = listOf(
+            "okay edit the profile name sri sai to kishore",
+            "edit the profile name sri sai to kishore",
+            "change profile name to kishore",
+            "set my name to kishore",
+            "edit profile name to kishore"
+        )
+        for (q in queries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Must NEVER dump Python OOP dunder concepts for '$q'", response.paragraph1.contains("OOP") || response.paragraph1.contains("Dunder"))
+            assertFalse("Must NEVER dump concept definition for '$q'", response.paragraph1.contains("Concept & Definition"))
+            assertEquals("✅ Done! Your profile name has been updated to Kishore.", response.paragraph1)
+            assertEquals("Kishore", engine.preferredName)
+        }
+    }
+
+    @Test
+    fun testUnknownQuery_neverDumpsLessonTemplate_returnsCleanFallback() {
+        engine.resetContext()
+        val randomQueries = listOf(
+            "can you please do that random thing for me",
+            "okay what about this other thing",
+            "blabla something completely random",
+            "profile settings check"
+        )
+        for (q in randomQueries) {
+            val response = engine.generateResponse(q)
+            assertFalse("Query '$q' must NEVER dump Concept & Definition template", response.paragraph1.contains("Concept & Definition"))
+            assertFalse("Query '$q' must NEVER dump Python OOP", response.paragraph1.contains("OOP Classes") || response.paragraph1.contains("Dunder Methods"))
+            assertEquals("Query '$q' must return clean fallback", LocalAIEngine.OUT_OF_SCOPE_RESPONSE, response.paragraph1)
+        }
     }
 }

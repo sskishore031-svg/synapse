@@ -52,6 +52,10 @@ object SynapseDatabase {
         return QuizLocalDatabase.getLessonProgressDao(context)
     }
 
+    fun getNotificationDao(context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }): NotificationDao {
+        return QuizLocalDatabase.getNotificationDao(context)
+    }
+
     /**
      * Asynchronously syncs completed chapter/quiz progress to the PHP/MySQL backend
      * without blocking UI execution.

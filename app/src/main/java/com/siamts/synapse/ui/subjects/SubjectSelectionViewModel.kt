@@ -107,6 +107,20 @@ class SubjectSelectionViewModel(
                         }
                         val doneCount = updatedChapters.count { it.isCompleted }
                         val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        if (pct == 100 && totalInTrack > 0) {
+                            try {
+                                val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
+                                val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
+                                val key = "track_100_${sub.id.ifBlank { normTrack }}"
+                                if (!prefs.getBoolean(key, false)) {
+                                    prefs.edit().putBoolean(key, true).apply()
+                                    com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
+                                        ctx,
+                                        "Congratulations! You completed 100% of ${sub.title.ifBlank { "the curriculum" }}."
+                                    )
+                                }
+                            } catch (_: Throwable) { }
+                        }
                         sub.copy(
                             completedChaptersCount = doneCount,
                             totalChaptersCount = totalInTrack,
@@ -205,6 +219,20 @@ class SubjectSelectionViewModel(
                         }
                         val doneCount = updatedChapters.count { it.isCompleted }
                         val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        if (pct == 100 && totalInTrack > 0) {
+                            try {
+                                val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
+                                val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
+                                val key = "track_100_${sub.id.ifBlank { normTrack }}"
+                                if (!prefs.getBoolean(key, false)) {
+                                    prefs.edit().putBoolean(key, true).apply()
+                                    com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
+                                        ctx,
+                                        "Congratulations! You completed 100% of ${sub.title.ifBlank { "the curriculum" }}."
+                                    )
+                                }
+                            } catch (_: Throwable) { }
+                        }
                         sub.copy(
                             completedChaptersCount = doneCount,
                             totalChaptersCount = totalInTrack,

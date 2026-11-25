@@ -17,6 +17,11 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.siamts.synapse.MainActivity
 import com.siamts.synapse.R
+import com.siamts.synapse.data.local.NotificationEntity
+import com.siamts.synapse.data.local.SynapseDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -32,10 +37,19 @@ object SynapseNotificationHelper {
 
     private const val WORK_NAME_DAILY_REMINDER = "synapse_daily_study_reminder"
 
+    const val COLOR_SUNSET_ORANGE = 0xFFFF5500.toInt()
+
     const val ID_TEST_NOTIFICATION = 1001
     const val ID_STUDY_REMINDER = 2001
     const val ID_QUIZ_MILESTONE = 3001
     const val ID_NOTE_SAVED = 4001
+
+    // 5 Smart Notifications IDs
+    const val ID_DAILY_CHALLENGE = 5001
+    const val ID_STREAK_SAVER = 5002
+    const val ID_MISTAKE_VAULT = 5003
+    const val ID_TODAY_PLAN = 5004
+    const val ID_MILESTONE_UNLOCKED = 5005
 
     /**
      * Initializes the high-importance Notification Channel on Android 8.0+ (API 26+).
@@ -68,14 +82,18 @@ object SynapseNotificationHelper {
 
     /**
      * Reusable method to post a system status bar notification with heads-up banner.
-     * Verifies runtime permissions on Android 13+ (Tiramisu API 33+).
+     * Verifies runtime permissions on Android 13+ (Tiramisu API 33+),
+     * applies Sunset Orange (#FF5500) branding, and asynchronously records into Room DB NotificationEntity.
      */
     fun showNotification(
         context: Context,
         title: String,
         message: String,
         notificationId: Int = ID_TEST_NOTIFICATION,
-        payload: String? = null
+        payload: String? = null,
+        type: String = "general",
+        iconEmoji: String = "🔔",
+        saveToHistory: Boolean = true
     ): Boolean {
         // 1. Check runtime permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -113,9 +131,10 @@ object SynapseNotificationHelper {
             null
         }
 
-        // 5. Build rich notification
+        // 5. Build rich notification with Sunset Orange #FF5500 accent
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setColor(COLOR_SUNSET_ORANGE)
             .apply {
                 if (largeIconBitmap != null) {
                     setLargeIcon(largeIconBitmap)
@@ -129,7 +148,27 @@ object SynapseNotificationHelper {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
-        // 6. Post notification
+        // 6. Asynchronously save to Room DB (NotificationEntity) for Notification Center
+        if (saveToHistory) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val dao = SynapseDatabase.getNotificationDao(context)
+                    dao.insertNotification(
+                        NotificationEntity(
+                            title = title,
+                            body = message,
+                            timestamp = System.currentTimeMillis(),
+                            type = type,
+                            actionRoute = payload,
+                            iconEmoji = iconEmoji,
+                            isRead = false
+                        )
+                    )
+                } catch (_: Throwable) {}
+            }
+        }
+
+        // 7. Post notification
         return try {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build())
             true
@@ -138,6 +177,89 @@ object SynapseNotificationHelper {
         } catch (_: Throwable) {
             false
         }
+    }
+
+    /**
+     * 1. Daily Placement Challenge (10:00 AM daily)
+     * Deep-links directly to QuizHubScreen ("quiz_hub").
+     */
+    fun showDailyChallengeNotification(context: Context): Boolean {
+        return showNotification(
+            context = context,
+            title = "Daily Placement Challenge 🚀",
+            message = "Crack 5 quick logic MCQs in under 2 mins!",
+            notificationId = ID_DAILY_CHALLENGE,
+            payload = "quiz_hub",
+            type = "daily_challenge",
+            iconEmoji = "🚀"
+        )
+    }
+
+    /**
+     * 2. Streak Saver (8:00 PM daily)
+     * Deep-links directly to LearnScreen ("learn").
+     */
+    fun showStreakSaverNotification(context: Context): Boolean {
+        return showNotification(
+            context = context,
+            title = "Save Your Streak! 🔥",
+            message = "Complete one 2-min micro-lesson before midnight.",
+            notificationId = ID_STREAK_SAVER,
+            payload = "learn",
+            type = "streak_saver",
+            iconEmoji = "🔥"
+        )
+    }
+
+    /**
+     * 3. Mistake Vault Recall (Every 48 hours)
+     * Deep-links directly to MistakeVaultScreen ("mistake_vault").
+     */
+    fun showMistakeVaultRecallNotification(context: Context): Boolean {
+        return showNotification(
+            context = context,
+            title = "Mistake Vault Alert 🧩",
+            message = "Clear 3 missed questions to boost your score.",
+            notificationId = ID_MISTAKE_VAULT,
+            payload = "mistake_vault",
+            type = "mistake_vault",
+            iconEmoji = "🧩"
+        )
+    }
+
+    /**
+     * 4. Today's Plan Reminder (4:00 PM daily)
+     * Deep-links directly to HomeScreen ("home").
+     */
+    fun showTodayPlanReminderNotification(context: Context): Boolean {
+        return showNotification(
+            context = context,
+            title = "Pending Study Goals 📣",
+            message = "Finish today's placement tasks in 5 mins.",
+            notificationId = ID_TODAY_PLAN,
+            payload = "home",
+            type = "today_plan",
+            iconEmoji = "📣"
+        )
+    }
+
+    /**
+     * 5. Milestone Unlocked (Instant event trigger on 3/7/14-day streak or 100% track completion)
+     * Deep-links to Achievements ("milestone").
+     */
+    fun showMilestoneUnlockedNotification(
+        context: Context,
+        body: String = "Awesome consistency! You hit a new prep milestone."
+    ): Boolean {
+        return showNotification(
+            context = context,
+            title = "Milestone Unlocked! ⭐",
+            message = body,
+            notificationId = ID_MILESTONE_UNLOCKED,
+            payload = "milestone",
+            type = "milestone",
+            iconEmoji = "⭐"
+        )
     }
 
     /**
