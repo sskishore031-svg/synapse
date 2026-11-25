@@ -69,12 +69,16 @@ class SubjectDetailViewModel(
                     val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(current.subjectId.ifBlank { current.title })
                     val updatedChapters = current.chapters.map { ch ->
                         val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                        val isDone = completedMap[canonId]?.isCompleted == true || completedMap[ch.chapterId.toString()]?.isCompleted == true
-                        ch.copy(isCompleted = isDone)
+                        val prog = completedMap[canonId] ?: completedMap[ch.chapterId.toString()]
+                        val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
+                        val qDone = prog?.quizDone == true || prog?.quizCompleted == true
+                        val isDone = cDone && qDone
+                        ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
                     }
-                    val completedCount = updatedChapters.count { it.isCompleted }
                     val total = updatedChapters.size.coerceAtLeast(1)
-                    val pct = ((completedCount.toFloat() / total.toFloat()) * 100).toInt().coerceIn(0, 100)
+                    val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+                    val pct = ((totalCredits / total.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                    val completedCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
                     current.copy(
                         completedChapters = completedCount,
                         progressPercentage = pct,
@@ -164,7 +168,10 @@ class SubjectDetailViewModel(
                     val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subject.id.ifBlank { subject.name })
                     val updatedChapters = subject.chapters.map { ch ->
                         val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                        val isDone = existingProgress[canonId]?.isCompleted == true || existingProgress[ch.chapterId.toString()]?.isCompleted == true
+                        val prog = existingProgress[canonId] ?: existingProgress[ch.chapterId.toString()]
+                        val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
+                        val qDone = prog?.quizDone == true || prog?.quizCompleted == true
+                        val isDone = cDone && qDone
                         SubjectChapterDetailItem(
                             chapterId = ch.chapterId,
                             order = ch.chapterOrder,
@@ -173,12 +180,15 @@ class SubjectDetailViewModel(
                             estimatedMinutes = ch.estimatedMinutes,
                             questionCount = ch.mcqs.size.coerceAtLeast(5),
                             isCompleted = isDone,
+                            conceptDone = cDone,
+                            quizDone = qDone,
                             isUnlocked = true
                         )
                     }
-                    val doneCount = updatedChapters.count { it.isCompleted }
                     val totalCount = updatedChapters.size.coerceAtLeast(1)
-                    val pct = ((doneCount.toFloat() / totalCount.toFloat()) * 100).toInt().coerceIn(0, 100)
+                    val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+                    val pct = ((totalCredits / totalCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                    val doneCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
                     _uiState.update { current ->
                         if (current.numericId != subject.subjectId) return@update current
                         current.copy(

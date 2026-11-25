@@ -102,11 +102,15 @@ class SubjectSelectionViewModel(
                         val totalInTrack = sub.chapters.size.coerceAtLeast(1)
                         val updatedChapters = sub.chapters.map { ch ->
                             val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                            val isDone = completedMap[canonId]?.isCompleted == true || completedMap[ch.chapterId.toString()]?.isCompleted == true
-                            ch.copy(isCompleted = isDone)
+                            val prog = completedMap[canonId] ?: completedMap[ch.chapterId.toString()]
+                            val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
+                            val qDone = prog?.quizDone == true || prog?.quizCompleted == true
+                            val isDone = cDone && qDone
+                            ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
                         }
-                        val doneCount = updatedChapters.count { it.isCompleted }
-                        val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+                        val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                        val doneCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
                         if (pct == 100 && totalInTrack > 0) {
                             try {
                                 val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
@@ -214,11 +218,15 @@ class SubjectSelectionViewModel(
                         val totalInTrack = sub.chapters.size.coerceAtLeast(1)
                         val updatedChapters = sub.chapters.map { ch ->
                             val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                            val isDone = completedMap[canonId]?.isCompleted == true || completedMap[ch.chapterId.toString()]?.isCompleted == true
-                            ch.copy(isCompleted = isDone)
+                            val prog = completedMap[canonId] ?: completedMap[ch.chapterId.toString()]
+                            val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
+                            val qDone = prog?.quizDone == true || prog?.quizCompleted == true
+                            val isDone = cDone && qDone
+                            ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
                         }
-                        val doneCount = updatedChapters.count { it.isCompleted }
-                        val pct = ((doneCount.toFloat() / totalInTrack.toFloat()) * 100).toInt().coerceIn(0, 100)
+                        val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+                        val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                        val doneCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
                         if (pct == 100 && totalInTrack > 0) {
                             try {
                                 val ctx = com.siamts.synapse.SynapseApplication.getAppContext()

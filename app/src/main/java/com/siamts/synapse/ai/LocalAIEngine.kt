@@ -290,12 +290,12 @@ class LocalAIEngine private constructor(context: Context?) {
     )
 
     private val wellBeingPhrases = setOf(
-        "how are you", "how are u", "how r you", "how r u",
+        "how are you", "how are u", "how r you", "how r u", "hru",
         "how are you doing", "how are u doing", "how r u doing", "how do you do",
         "how is it going", "hows it going", "how s it going", "how are things",
         "hope you are well", "hope you re well", "what's up", "whats up",
         "what s up", "wassup", "sup", "are you okay", "are you ok",
-        "how have you been"
+        "how have you been", "epdi iruka", "epadi iruka", "epdi irukinga", "epadi irukinga"
     )
 
     private val doubtPhrases = setOf(
@@ -703,6 +703,7 @@ class LocalAIEngine private constructor(context: Context?) {
             return casualSlangResp
         }
 
+        // 4A. STAGE 4A: Code & Query Snippet Analysis (Pasted SQL / Python Code)
         val codeAnalysis = analyzeCodeOrQuerySnippet(query)
         if (codeAnalysis != null) {
             consecutiveUnclearCount = 0
@@ -730,7 +731,60 @@ class LocalAIEngine private constructor(context: Context?) {
             )
         }
 
-        // 4B. STAGE 4B: Subject Overview Intent ("what about biology", "uses of math", etc.)
+        // 4B. STAGE 4B: Direct Full-Form & Abbreviation Solver (Instant High-Precision Direct Match)
+        val fullFormResp = checkFullFormIntent(normalized)
+        if (fullFormResp != null) {
+            consecutiveUnclearCount = 0
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "ff_${System.currentTimeMillis()}",
+                    subject = fullFormResp.matchedSubject.orEmpty(),
+                    chapter = fullFormResp.matchedChapter.orEmpty(),
+                    topic = fullFormResp.matchedTopic.orEmpty(),
+                    content = fullFormResp.paragraph1
+                )
+            )
+            return fullFormResp
+        }
+
+        // 4C. STAGE 4C: Dynamic SQL Query Generator (Exact Table Extraction & SQL Operations)
+        val dynamicSqlResp = checkDynamicSqlQueryIntent(query, normalized)
+        if (dynamicSqlResp != null) {
+            consecutiveUnclearCount = 0
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "sql_${System.currentTimeMillis()}",
+                    subject = "SQL & Database Management",
+                    chapter = "SQL Operations",
+                    topic = dynamicSqlResp.matchedTopic ?: "SQL Query",
+                    content = dynamicSqlResp.paragraph1
+                )
+            )
+            return dynamicSqlResp
+        }
+
+        // 4B. STAGE 4B: Weighted Intent & Topic Scoring Engine (150+ Deep Technical Topics Across All 8 Subjects)
+        val deepTechnicalResp = DeepTechnicalKnowledgeBase.matchDeepTopic(query, lowerQuery, normalized)
+        if (deepTechnicalResp != null) {
+            consecutiveUnclearCount = 0
+            recordTurn(
+                query,
+                KnowledgeChunk(
+                    chunkId = "deep_${System.currentTimeMillis()}",
+                    subject = deepTechnicalResp.matchedSubject.orEmpty(),
+                    chapter = deepTechnicalResp.matchedChapter.orEmpty(),
+                    topic = deepTechnicalResp.matchedTopic.orEmpty(),
+                    definition = deepTechnicalResp.paragraph1,
+                    formulaOrCoreRule = deepTechnicalResp.paragraph2,
+                    content = "${deepTechnicalResp.paragraph1}\n\n${deepTechnicalResp.paragraph2}"
+                )
+            )
+            return deepTechnicalResp
+        }
+
+        // 4C. STAGE 4C: Subject Overview Intent ("what about biology", "uses of math", etc.)
         val subjectOverviewResp = checkSubjectOverviewIntent(lowerQuery, normalized)
         if (subjectOverviewResp != null) {
             consecutiveUnclearCount = 0
@@ -950,17 +1004,26 @@ class LocalAIEngine private constructor(context: Context?) {
         }
         if (q.contains("coding logic") || q.contains("python logic") || q.contains("programming logic") ||
             q.contains("code") || q.contains("example") || q.contains("two sum") || q.contains("binary search") ||
+            q.contains("query") || q.contains("table") || q.contains("definition") ||
+            q.contains("syntax") || q.contains("how to") || q.contains("what is") ||
+            q.contains("define") || q.contains("explain") || q.contains("create") ||
+            q.contains("difference") || q.contains("vs") ||
             (q.contains("logic") && !q.contains("topic") && !q.contains("chapter") && !q.contains("syllabus"))) {
             return null
         }
 
         val suggestionTriggers = listOf(
-            "give me", "suggest", "list topics", "list chapters", "list of", "topics", "topic", "chapters", "chapter",
+            "list topics", "list chapters", "list of topics", "list of chapters",
             "what can i learn", "what should i learn", "what can you teach", "show me topics",
-            "syllabus", "curriculum", "what topics", "some topic", "some topics"
+            "show topics", "syllabus", "curriculum", "what topics", "some topic", "some topics",
+            "suggest topics", "suggest chapters", "what subjects do you have", "show tracks",
+            "what are the tracks", "list subjects", "show all subjects", "suggest a topic"
         )
 
-        val isSuggestionQuery = suggestionTriggers.any { q.contains(it) }
+        val isSuggestionQuery = suggestionTriggers.any { q.contains(it) } ||
+            (q.contains("list") && (q.contains("topic") || q.contains("chapter") || q.contains("subject"))) ||
+            (q.contains("give me") && (q.contains("topic") || q.contains("chapter") || q.contains("syllabus"))) ||
+            (q.contains("suggest") && (q.contains("topic") || q.contains("chapter") || q.contains("syllabus") || q.contains("sql") || q.contains("python") || q.contains("aptitude")))
         if (!isSuggestionQuery) return null
 
         // Detect subject keyword
@@ -1242,12 +1305,7 @@ class LocalAIEngine private constructor(context: Context?) {
     }
 
     private fun buildWellBeingResponse(): LocalAiResponse {
-        val name = preferredName.trim()
-        val text = if (name.isNotBlank()) {
-            "Hello, $name! I'm doing great and ready to help you study. What topic shall we explore today?"
-        } else {
-            "Hello! I'm doing great and ready to help you study. What topic shall we explore today?"
-        }
+        val text = "I'm doing great, thanks for asking! 😊 Ready to help you practice coding, SQL, AI, or aptitude. What would you like to learn today?"
         return LocalAiResponse(
             paragraph1 = text,
             paragraph2 = "",
@@ -1698,19 +1756,18 @@ class LocalAIEngine private constructor(context: Context?) {
         }
 
         // B. Formula & Example Suppression Check
-        // 1. Both Suppressed: "no need of formula and example", "no formula and example", "only explain", "just explain", "only concept"
+        // 1. Both Suppressed: "no need of formula and example", "no formula and example"
         val suppressBothPhrases = setOf(
             "no need of formula and example", "no need of formula and no example", "no need of formula or example",
             "no formula and example", "no formula and no example", "no formula or example", "no formula no example",
             "without formula and example", "without formula or example", "without formula and without example",
             "no formulas and examples", "without formulas and examples", "no need of formulas and examples",
-            "only explain", "just explain", "only definition", "only concept", "explain without formula and example",
+            "explain without formula and example",
             "dont show formula and example", "dont give formula and example"
         )
-        if (suppressBothPhrases.any { clean.contains(it) } ||
+        if (suppressBothPhrases.any { clean == it || clean.contains(it) } ||
             (clean.contains("no formula") && clean.contains("no example")) ||
-            (clean.contains("without formula") && clean.contains("without example")) ||
-            (clean.contains("only") && (clean.contains("explain") || clean.contains("concept") || clean.contains("definition")) && !clean.contains("example") && !clean.contains("formula"))) {
+            (clean.contains("without formula") && clean.contains("without example"))) {
             includeFormulas = false
             includeExamples = false
             val lastChunk = getLastActiveChunk()
@@ -1878,6 +1935,428 @@ class LocalAIEngine private constructor(context: Context?) {
         val isPureSlang = words.all { it in casualSlangWords } || (words.size <= 2 && words.any { it in casualSlangWords })
         if (isPureSlang || isCasualPhrase) {
             return buildOutOfScopeResponse()
+        }
+
+        return null
+    }
+
+    private data class FullFormItem(
+        val acronym: String,
+        val fullName: String,
+        val description: String,
+        val subject: String,
+        val chapter: String,
+        val additionalDetails: String = ""
+    )
+
+    private val fullFormCatalog: Map<String, FullFormItem> = mapOf(
+        "ai" to FullFormItem("AI", "Artificial Intelligence", "Artificial Intelligence is the simulation of human intelligence by computer systems, enabling machines to learn from experience, reason, and solve complex problems autonomously.", "AI & Modern Tech Concepts", "Introduction to AI"),
+        "sql" to FullFormItem("SQL", "Structured Query Language", "Structured Query Language is the standard domain-specific language used for storing, manipulating, querying, and managing relational databases.", "SQL & Database Management", "SQL Fundamentals", "• **Key Query Types:** Master DDL (CREATE, ALTER), DML (INSERT, UPDATE, DELETE), and DQL (SELECT).\n• **Transactions:** Uses TCL commands (COMMIT, ROLLBACK) with ACID guarantees."),
+        "dbms" to FullFormItem("DBMS", "Database Management System", "A Database Management System is system software for creating, storing, managing, and retrieving structured data efficiently from databases.", "SQL & Database Management", "Database Fundamentals"),
+        "rdbms" to FullFormItem("RDBMS", "Relational Database Management System", "A Relational Database Management System is a database management system based on the relational model, storing data in tables of rows and columns with foreign key relations.", "SQL & Database Management", "Database Fundamentals"),
+        "oop" to FullFormItem("OOP", "Object-Oriented Programming", "Object-Oriented Programming is a programming paradigm based on the concept of 'objects' containing data fields and code methods, built on Encapsulation, Abstraction, Inheritance, and Polymorphism.", "Python & Coding Logic", "OOP Concepts"),
+        "oops" to FullFormItem("OOPS", "Object-Oriented Programming System", "Object-Oriented Programming System is a programming paradigm structured around reusable objects and classes, providing modularity and real-world domain modeling.", "Python & Coding Logic", "OOP Concepts"),
+        "api" to FullFormItem("API", "Application Programming Interface", "An Application Programming Interface is a set of defined rules and protocols that allow different software applications to communicate and exchange data with each other.", "AI & Modern Tech Concepts", "Web & Cloud Architecture"),
+        "ram" to FullFormItem("RAM", "Random Access Memory", "Random Access Memory is volatile system memory that provides fast read and write access for programs actively being executed by the CPU.", "Aptitude & Interview Prep", "Computer Fundamentals"),
+        "rom" to FullFormItem("ROM", "Read-Only Memory", "Read-Only Memory is non-volatile memory that permanently stores firmware and boot instructions required to start up computing hardware.", "Aptitude & Interview Prep", "Computer Fundamentals"),
+        "http" to FullFormItem("HTTP", "Hypertext Transfer Protocol", "Hypertext Transfer Protocol is the foundational application-layer protocol used for transmitting hypermedia documents, such as HTML web pages, across the World Wide Web.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "https" to FullFormItem("HTTPS", "Hypertext Transfer Protocol Secure", "Hypertext Transfer Protocol Secure is an extension of HTTP encrypted using Transport Layer Security (TLS/SSL) for secure bidirectional communication over networks.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "rag" to FullFormItem("RAG", "Retrieval-Augmented Generation", "Retrieval-Augmented Generation is an AI architecture that enhances Large Language Models by dynamically retrieving relevant facts from an external knowledge base before generating responses.", "AI & Modern Tech Concepts", "Modern AI & LLMs"),
+        "llm" to FullFormItem("LLM", "Large Language Model", "A Large Language Model is an advanced deep learning transformer neural network trained on massive datasets to understand, summarize, and generate human-like text and code.", "AI & Modern Tech Concepts", "Modern AI & LLMs", "• **Architecture:** Pre-training on trillions of tokens followed by supervised fine-tuning (SFT).\n• **Integration:** Power modern AI systems using RAG (Retrieval-Augmented Generation) and vector search."),
+        "llms" to FullFormItem("LLMs", "Large Language Models", "Large Language Models are deep learning transformer models trained on billions of parameters to comprehend, reason, and generate human-like language across tasks.", "AI & Modern Tech Concepts", "Modern AI & LLMs", "• **Architecture:** Pre-training on trillions of tokens followed by supervised fine-tuning (SFT).\n• **Integration:** Power modern AI systems using RAG (Retrieval-Augmented Generation) and vector search."),
+        "cpu" to FullFormItem("CPU", "Central Processing Unit", "The Central Processing Unit is the primary hardware component that interprets, processes, and executes arithmetic, logical, and control instructions within a computer.", "Aptitude & Interview Prep", "Computer Fundamentals"),
+        "gpu" to FullFormItem("GPU", "Graphics Processing Unit", "A Graphics Processing Unit is a specialized parallel processor designed to rapidly manipulate memory and accelerate image rendering, 3D graphics, and deep neural network matrix computations.", "AI & Modern Tech Concepts", "AI Hardware"),
+        "acid" to FullFormItem("ACID", "Atomicity, Consistency, Isolation, Durability", "ACID is a set of four critical properties that guarantee database transactions are processed reliably, maintaining data integrity even during system failures.", "SQL & Database Management", "Transactions"),
+        "ddl" to FullFormItem("DDL", "Data Definition Language", "Data Definition Language comprises SQL commands (such as CREATE, ALTER, DROP, and TRUNCATE) that define and modify the schema structure of database objects.", "SQL & Database Management", "SQL Commands"),
+        "dml" to FullFormItem("DML", "Data Manipulation Language", "Data Manipulation Language consists of SQL commands (such as INSERT, UPDATE, and DELETE) used for managing and modifying the data stored within database tables.", "SQL & Database Management", "SQL Commands"),
+        "dql" to FullFormItem("DQL", "Data Query Language", "Data Query Language consists of SQL commands (primarily SELECT) used to query, retrieve, and filter data from database tables without modifying them.", "SQL & Database Management", "SQL Commands"),
+        "tcl" to FullFormItem("TCL", "Transaction Control Language", "Transaction Control Language consists of SQL commands (such as COMMIT, ROLLBACK, and SAVEPOINT) used to manage transactions and maintain database consistency.", "SQL & Database Management", "Transactions"),
+        "dcl" to FullFormItem("DCL", "Data Control Language", "Data Control Language comprises SQL commands (such as GRANT and REVOKE) that control access privileges and security permissions in a database system.", "SQL & Database Management", "Security & Permissions"),
+        "dsa" to FullFormItem("DSA", "Data Structures and Algorithms", "Data Structures and Algorithms is the fundamental computer science discipline focusing on organizing data efficiently and designing step-by-step computational procedures to solve problems.", "Python & Coding Logic", "Data Structures"),
+        "rest" to FullFormItem("REST", "Representational State Transfer", "Representational State Transfer is an architectural style for networked systems using stateless HTTP operations (GET, POST, PUT, DELETE) to manage resources represented in formats like JSON.", "AI & Modern Tech Concepts", "Web Architecture"),
+        "json" to FullFormItem("JSON", "JavaScript Object Notation", "JavaScript Object Notation is a lightweight, human-readable, language-independent data-interchange format structured in key-value pairs and arrays.", "Python & Coding Logic", "Data Formats"),
+        "jvm" to FullFormItem("JVM", "Java Virtual Machine", "The Java Virtual Machine is an abstract computing machine that enables a computer to execute compiled Java bytecode, providing platform independence across operating systems.", "Aptitude & Interview Prep", "Java & Runtime"),
+        "jdk" to FullFormItem("JDK", "Java Development Kit", "The Java Development Kit is a comprehensive software development environment that includes the compiler (javac), tools, and runtime environment needed to develop Java applications.", "Aptitude & Interview Prep", "Java & Runtime"),
+        "jre" to FullFormItem("JRE", "Java Runtime Environment", "The Java Runtime Environment is the software package containing the JVM, core class libraries, and supporting files required to run Java applications.", "Aptitude & Interview Prep", "Java & Runtime"),
+        "os" to FullFormItem("OS", "Operating System", "An Operating System is system software that manages computer hardware, memory, process execution, and system resources while providing common services for application programs.", "Aptitude & Interview Prep", "Operating Systems"),
+        "lan" to FullFormItem("LAN", "Local Area Network", "A Local Area Network is a computer network that interconnects computers within a limited geographical area, such as a school, laboratory, office building, or home.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "wan" to FullFormItem("WAN", "Wide Area Network", "A Wide Area Network is a telecommunications network that extends over a large geographic distance, often connecting multiple smaller networks like LANs across cities or countries.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "ip" to FullFormItem("IP", "Internet Protocol", "Internet Protocol is the principal network-layer communications protocol in the Internet protocol suite for relaying datagrams across network boundaries using IP addresses.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "tcp" to FullFormItem("TCP", "Transmission Control Protocol", "Transmission Control Protocol is a reliable, connection-oriented transport-layer protocol that ensures complete, sequenced, and error-checked delivery of byte streams between hosts.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "udp" to FullFormItem("UDP", "User Datagram Protocol", "User Datagram Protocol is a lightweight, connectionless transport-layer protocol prioritizing low-latency transmission over delivery guarantees, commonly used in streaming and gaming.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "dns" to FullFormItem("DNS", "Domain Name System", "The Domain Name System is the hierarchical naming system that translates human-readable domain names (like google.com) into numerical IP addresses needed to locate services.", "AI & Modern Tech Concepts", "Computer Networks"),
+        "ml" to FullFormItem("ML", "Machine Learning", "Machine Learning is a subset of artificial intelligence where computer algorithms learn patterns directly from data to make predictions or decisions without explicit programming.", "AI & Modern Tech Concepts", "Machine Learning"),
+        "dl" to FullFormItem("DL", "Deep Learning", "Deep Learning is a specialized branch of machine learning based on multi-layered artificial neural networks capable of learning hierarchical feature representations from large-scale data.", "AI & Modern Tech Concepts", "Deep Learning"),
+        "nlp" to FullFormItem("NLP", "Natural Language Processing", "Natural Language Processing is a field of artificial intelligence and computational linguistics focused on enabling computers to understand, interpret, and generate human language.", "AI & Modern Tech Concepts", "NLP & Transformers"),
+        "html" to FullFormItem("HTML", "HyperText Markup Language", "HyperText Markup Language is the standard markup language used to structure and display web pages and content on the World Wide Web.", "AI & Modern Tech Concepts", "Web Development"),
+        "css" to FullFormItem("CSS", "Cascading Style Sheets", "Cascading Style Sheets is a stylesheet language used to describe the presentation, design, visual layouts, colors, and fonts of documents written in HTML.", "AI & Modern Tech Concepts", "Web Development"),
+        "url" to FullFormItem("URL", "Uniform Resource Locator", "A Uniform Resource Locator is a specific type of Uniform Resource Identifier (URI) that specifies the address of a unique web resource and the protocol used to access it.", "AI & Modern Tech Concepts", "Web Concepts"),
+        "ide" to FullFormItem("IDE", "Integrated Development Environment", "An Integrated Development Environment is a software application providing comprehensive tools (source code editor, build automation, debugger) for software development.", "Python & Coding Logic", "Developer Tools"),
+        "sdk" to FullFormItem("SDK", "Software Development Kit", "A Software Development Kit is a collection of software development tools, libraries, documentation, and code samples packaged to facilitate application creation for a specific platform.", "AI & Modern Tech Concepts", "Developer Tools"),
+        "gui" to FullFormItem("GUI", "Graphical User Interface", "A Graphical User Interface is a visual user interface allowing users to interact with electronic devices through graphical icons and visual indicators instead of text-based commands.", "Python & Coding Logic", "UI Paradigms"),
+        "cli" to FullFormItem("CLI", "Command Line Interface", "A Command Line Interface is a text-based user interface used to view, manage, and execute programs and system tasks by typing sequential command lines.", "Python & Coding Logic", "Developer Tools"),
+        "erd" to FullFormItem("ERD", "Entity-Relationship Diagram", "An Entity-Relationship Diagram is a visual data modeling tool showing the entities, attributes, and relationships among data objects within a database system.", "SQL & Database Management", "Database Design")
+    )
+
+    private fun checkFullFormIntent(normalized: String): LocalAiResponse? {
+        val clean = normalized.lowercase(Locale.ROOT).trim()
+        val isAskingFullForm = clean.contains("full form") || clean.contains("fullform") ||
+                clean.contains("stands for") || clean.contains("stand for") ||
+                (clean.startsWith("what is ") && (clean.endsWith(" stand for") || clean.endsWith(" abbreviation")))
+
+        if (!isAskingFullForm) return null
+
+        val words = clean.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }
+        for (word in words) {
+            val item = fullFormCatalog[word]
+            if (item != null) {
+                val p1 = "**${item.acronym} stands for ${item.fullName}.**\n\n${item.description}"
+                return LocalAiResponse(
+                    paragraph1 = p1,
+                    paragraph2 = item.additionalDetails,
+                    matchedSubject = item.subject,
+                    matchedChapter = item.chapter,
+                    matchedTopic = "${item.acronym} Full Form",
+                    confidenceScore = 100.0,
+                    isGreeting = false
+                )
+            }
+        }
+        return null
+    }
+
+    private fun extractTableName(rawQuery: String, normalized: String): String {
+        val q = "$rawQuery $normalized".lowercase(Locale.ROOT)
+        val patterns = listOf(
+            Regex("""(?:create|insert\s+into|update|delete\s+from|alter\s+table|drop\s+table|truncate\s+table|table)\s+(?:a\s+|new\s+|the\s+)?([a-zA-Z0-9_]+)\s+table"""),
+            Regex("""table\s+(?:called\s+|named\s+)?([a-zA-Z0-9_]+)"""),
+            Regex("""create\s+([a-zA-Z0-9_]+)\s+table"""),
+            Regex("""for\s+([a-zA-Z0-9_]+)\s+table"""),
+            Regex("""(?:into|from)\s+([a-zA-Z0-9_]+)""")
+        )
+
+        val stopWords = setOf(
+            "new", "a", "an", "the", "in", "on", "for", "table", "tables", "database",
+            "databases", "db", "query", "queries", "sql", "my", "create", "delete", "insert",
+            "update", "select", "alter", "drop", "truncate", "me", "give", "write", "how",
+            "what", "to", "called", "named", "from", "into", "as", "is"
+        )
+
+        for (pattern in patterns) {
+            val match = pattern.find(q)
+            if (match != null && match.groupValues.size > 1) {
+                val candidate = match.groupValues[1].trim()
+                if (candidate.length >= 3 && candidate !in stopWords) {
+                    return candidate
+                }
+            }
+        }
+        return "students"
+    }
+
+    private fun checkDynamicSqlQueryIntent(rawQuery: String, normalized: String): LocalAiResponse? {
+        // Normalize common typos with word boundary checks
+        val clean = normalized.lowercase(Locale.ROOT)
+            .replace(Regex("\\bcrete\\b"), "create")
+            .replace(Regex("\\bwnat\\b"), "want")
+            .replace(Regex("\\bdelet\\b"), "delete")
+            .replace(Regex("\\btabl\\b"), "table")
+            .replace(Regex("\\bquerry\\b"), "query")
+            .replace(Regex("\\bquerey\\b"), "query")
+            .replace(Regex("\\binser\\b"), "insert")
+            .replace(Regex("\\budpate\\b"), "update")
+            .replace(Regex("\\bslect\\b"), "select")
+            .replace(Regex("\\bselct\\b"), "select")
+
+        // Guard: Do not intercept theoretical vs/comparison questions
+        if (clean.contains(" vs ") || clean.startsWith("vs ") || clean.contains("difference between") || clean.contains("compare")) {
+            return null
+        }
+
+        // 1. "what is query" / "what is a query" / "define query"
+        if (clean == "what is query" || clean == "what is a query" || clean == "define query" ||
+            clean == "what query" || clean == "what is an sql query" || clean == "query definition") {
+            val p1 = "An **SQL Query** is a formal declarative command or instruction sent to a Relational Database Management System (RDBMS) to perform operations on structured data, such as retrieving, inserting, updating, or deleting records."
+            val p2 = "* **Core SQL Query Categories:**\n" +
+                    "• **DQL (Data Query Language):** `SELECT` statements to query, filter, aggregate, and project table data.\n" +
+                    "• **DML (Data Manipulation Language):** `INSERT`, `UPDATE`, `DELETE` to modify row-level records.\n" +
+                    "• **DDL (Data Definition Language):** `CREATE`, `ALTER`, `DROP`, `TRUNCATE` to define and modify table schema objects.\n" +
+                    "• **TCL & DCL:** `COMMIT`, `ROLLBACK`, `GRANT`, `REVOKE` for transaction durability and access security."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = p2,
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "SQL Fundamentals",
+                matchedTopic = "SQL Query Fundamentals",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 2. 2nd Highest Salary / Nth Highest Salary
+        if (clean.contains("second highest salary") || clean.contains("2nd highest salary") ||
+            clean.contains("nth highest salary") || clean.contains("highest salary query") ||
+            clean.contains("2nd highest")) {
+            val p1 = "Here are the top queries to find the **Second Highest Salary** (Most Frequent Placement Interview Question):\n\n" +
+                    "```sql\n" +
+                    "-- Method 1: Subquery (ANSI Standard SQL - Supported by all RDBMS)\n" +
+                    "SELECT MAX(salary) AS second_highest_salary\n" +
+                    "FROM employees\n" +
+                    "WHERE salary < (SELECT MAX(salary) FROM employees);\n\n" +
+                    "-- Method 2: LIMIT & OFFSET (MySQL, PostgreSQL, SQLite)\n" +
+                    "SELECT DISTINCT salary\n" +
+                    "FROM employees\n" +
+                    "ORDER BY salary DESC\n" +
+                    "LIMIT 1 OFFSET 1;\n\n" +
+                    "-- Method 3: Window Function (DENSE_RANK)\n" +
+                    "SELECT salary FROM (\n" +
+                    "    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n" +
+                    "    FROM employees\n" +
+                    ") WHERE rnk = 2;\n" +
+                    "```\n\n" +
+                    "* **Interview Key Points:**\n" +
+                    "• Method 1 filters out the global maximum salary, then picks the highest remaining value.\n" +
+                    "• Method 2 sorts unique salaries in descending order, skips the first highest (`OFFSET 1`), and takes the next (`LIMIT 1`). Use `DISTINCT` to handle ties!\n" +
+                    "• Method 3 uses `DENSE_RANK()` to cleanly handle duplicate salaries and scale to the N-th highest salary."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Advanced Queries",
+                matchedTopic = "Second Highest Salary Query",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 3. JOINS
+        val isJoinQuery = clean.contains("join query") || clean.contains("joins query") ||
+                clean.contains("how to join") || clean.contains("query to join") || clean.contains("query for join")
+        if (isJoinQuery) {
+            val p1 = "Here is the standard SQL query demonstrating table **`JOINS`**:\n\n" +
+                    "```sql\n" +
+                    "SELECT s.id, s.name, c.course_name\n" +
+                    "FROM students s\n" +
+                    "INNER JOIN enrollments e ON s.id = e.student_id\n" +
+                    "INNER JOIN courses c ON e.course_id = c.id;\n" +
+                    "```\n\n" +
+                    "* **SQL Joins Summary (Placement Cheat Sheet):**\n" +
+                    "• **`INNER JOIN`**: Returns only records that have matching keys in both tables.\n" +
+                    "• **`LEFT JOIN`**: Returns all records from the left table and matched records from the right table (NULL if no match).\n" +
+                    "• **`RIGHT JOIN`**: Returns all records from the right table and matched records from the left table (NULL if no match).\n" +
+                    "• **`FULL JOIN`**: Returns all records when there is a match in either table."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "Relational Operations",
+                matchedTopic = "SQL Joins",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 4. GROUP BY & HAVING
+        if (clean.contains("group by") || clean.contains("having clause") || clean.contains("aggregate query")) {
+            val tableName = extractTableName(rawQuery, clean)
+            val p1 = "Here is the SQL query using **`GROUP BY`** and **`HAVING`** on **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "SELECT department, COUNT(*) AS student_count, AVG(marks) AS avg_marks\n" +
+                    "FROM $tableName\n" +
+                    "GROUP BY department\n" +
+                    "HAVING AVG(marks) >= 60;\n" +
+                    "```\n\n" +
+                    "* **Query Breakdown:**\n" +
+                    "• **`GROUP BY department`**: Groups individual rows sharing the same department value.\n" +
+                    "• **`COUNT(*)` & `AVG(marks)`**: Compute aggregate statistics across each department partition.\n" +
+                    "• **`HAVING AVG(marks) >= 60`**: Filters groups *after* aggregation (unlike `WHERE`, which filters individual rows *before* grouping)."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "SQL Fundamentals",
+                matchedTopic = "GROUP BY & HAVING",
+                confidenceScore = 100.0
+            )
+        }
+
+        val tableName = extractTableName(rawQuery, clean)
+
+        // 5. CREATE TABLE / NEW TABLE
+        val isCreateTable = (clean.contains("create") && clean.contains("table")) ||
+                clean.contains("new table") || clean.contains("create student table") ||
+                (clean.contains("how to create") && (clean.contains("table") || clean.contains("database"))) ||
+                (clean.contains("query for create") || clean.contains("query to create"))
+        if (isCreateTable) {
+            val p1 = "Here is the standard SQL query to create the **`$tableName`** table:\n\n" +
+                    "```sql\n" +
+                    "CREATE TABLE $tableName (\n" +
+                    "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
+                    "    name VARCHAR(100) NOT NULL,\n" +
+                    "    email VARCHAR(100) UNIQUE,\n" +
+                    "    marks INT,\n" +
+                    "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n" +
+                    ");\n" +
+                    "```\n\n" +
+                    "* **Query Breakdown:**\n" +
+                    "• **`id INT PRIMARY KEY AUTO_INCREMENT`**: Unique identifier for each record that auto-increments by 1.\n" +
+                    "• **`name VARCHAR(100) NOT NULL`**: Mandatory name attribute supporting up to 100 characters; cannot be NULL.\n" +
+                    "• **`email VARCHAR(100) UNIQUE`**: Guarantees no two records can store duplicate email addresses.\n" +
+                    "• **`marks INT`**: Integer column to store scores or grades.\n" +
+                    "• **`created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`**: Automatically timestamps record creation."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DDL Commands",
+                matchedTopic = "CREATE TABLE Syntax",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 6. ALTER TABLE
+        if (clean.contains("alter table") || clean.contains("alter query") ||
+            clean.contains("add column") || clean.contains("modify column") || clean.contains("drop column")) {
+            val p1 = "Here are the essential **`ALTER TABLE`** queries for **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "-- 1. Add a new column\n" +
+                    "ALTER TABLE $tableName ADD COLUMN department VARCHAR(50);\n\n" +
+                    "-- 2. Modify an existing column data type\n" +
+                    "ALTER TABLE $tableName MODIFY COLUMN marks FLOAT;\n\n" +
+                    "-- 3. Drop an unwanted column\n" +
+                    "ALTER TABLE $tableName DROP COLUMN marks;\n" +
+                    "```\n\n" +
+                    "* **Query Breakdown:**\n" +
+                    "• **`ADD COLUMN`**: Appends a new column to the existing schema without losing existing row data.\n" +
+                    "• **`MODIFY COLUMN`**: Changes the data type or constraint definition of an existing column.\n" +
+                    "• **`DROP COLUMN`**: Permanently removes a column and all its stored values."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DDL Commands",
+                matchedTopic = "ALTER TABLE Syntax",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 7. DROP TABLE
+        if (clean.contains("drop table") || clean.contains("drop query") || clean.contains("how to drop table")) {
+            val p1 = "Here is the SQL query to drop the **`$tableName`** table:\n\n" +
+                    "```sql\n" +
+                    "DROP TABLE IF EXISTS $tableName;\n" +
+                    "```\n\n" +
+                    "* **Important Placement Note:**\n" +
+                    "• `DROP TABLE` is a DDL command that completely deletes the table schema, constraints, indexes, triggers, and all rows permanently. Use `IF EXISTS` to avoid runtime errors if the table does not exist."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DDL Commands",
+                matchedTopic = "DROP TABLE Syntax",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 8. TRUNCATE TABLE
+        if (clean.contains("truncate table") || clean.contains("truncate query") || clean.contains("how to truncate")) {
+            val p1 = "Here is the SQL query to truncate **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "TRUNCATE TABLE $tableName;\n" +
+                    "```\n\n" +
+                    "* **Important Placement Note:**\n" +
+                    "• `TRUNCATE TABLE` is a DDL command that removes all rows instantly and resets the `AUTO_INCREMENT` counter to 1, while keeping the table structure and column definitions intact for future inserts."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DDL Commands",
+                matchedTopic = "TRUNCATE TABLE Syntax",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 9. INSERT
+        if (clean.contains("insert") || clean.contains("how to insert") || clean.contains("insert query")) {
+            val p1 = "Here is the SQL query to insert a new record into **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "INSERT INTO $tableName (name, email, marks)\n" +
+                    "VALUES ('Kishore', 'kishore@example.com', 95);\n" +
+                    "```\n\n" +
+                    "* **Query Breakdown:**\n" +
+                    "• Specify the target column names inside parentheses: `(name, email, marks)`.\n" +
+                    "• The `VALUES (...)` clause provides corresponding literal data values matching the column data types in exact order."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DML Commands",
+                matchedTopic = "INSERT Statement",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 10. UPDATE
+        if (clean.contains("update") || clean.contains("how to update") || clean.contains("update query")) {
+            val p1 = "Here is the SQL query to update an existing record in **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "UPDATE $tableName\n" +
+                    "SET marks = 98\n" +
+                    "WHERE id = 1;\n" +
+                    "```\n\n" +
+                    "⚠️ **CRITICAL WARNING:**\n" +
+                    "*Always include the `WHERE` clause in your UPDATE queries! If you omit `WHERE`, SQL will overwrite EVERY single row in the entire table.*"
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DML Commands",
+                matchedTopic = "UPDATE Statement",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 11. DELETE
+        if (clean.contains("delete") || clean.contains("how to delete") || clean.contains("delete query")) {
+            val p1 = "Here is the SQL query to delete a record from **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "DELETE FROM $tableName\n" +
+                    "WHERE id = 1;\n" +
+                    "```\n\n" +
+                    "* **DELETE vs TRUNCATE vs DROP (Important Placement Concept):**\n" +
+                    "• **`DELETE`**: DML command. Deletes specific rows identified by `WHERE`. Can be rolled back inside transactions. Slower on large tables.\n" +
+                    "• **`TRUNCATE`**: DDL command. Empties all rows instantly and resets the `AUTO_INCREMENT` counter to 1. Cannot be filtered by `WHERE` and cannot be rolled back.\n" +
+                    "• **`DROP`**: DDL command. Destroys the table schema, indexes, constraints, and all data permanently from the database."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DML Commands",
+                matchedTopic = "DELETE Statement",
+                confidenceScore = 100.0
+            )
+        }
+
+        // 12. SELECT
+        if (clean.contains("select query") || clean.contains("retrieve query") ||
+            clean.contains("read query") || clean.contains("how to select") || clean.contains("query to select")) {
+            val p1 = "Here is the standard SQL query to retrieve records from **`$tableName`**:\n\n" +
+                    "```sql\n" +
+                    "SELECT id, name, marks\n" +
+                    "FROM $tableName\n" +
+                    "WHERE marks >= 75\n" +
+                    "ORDER BY marks DESC;\n" +
+                    "```\n\n" +
+                    "* **Query Breakdown:**\n" +
+                    "• **`SELECT`**: Specifies the column names to project (`id, name, marks`).\n" +
+                    "• **`FROM`**: Identifies the source table (`$tableName`).\n" +
+                    "• **`WHERE`**: Filters records meeting the specified criteria (`marks >= 75`).\n" +
+                    "• **`ORDER BY ... DESC`**: Sorts the output in descending order by marks."
+            return LocalAiResponse(
+                paragraph1 = p1,
+                paragraph2 = "",
+                matchedSubject = "SQL & Database Management",
+                matchedChapter = "DQL Commands",
+                matchedTopic = "SELECT Statement",
+                confidenceScore = 100.0
+            )
         }
 
         return null
@@ -2510,6 +2989,7 @@ class LocalAIEngine private constructor(context: Context?) {
         // 1. Explicit placement track keywords
         val trackKeywords = setOf(
             "python", "sql", "database", "databases", "dbms", "rdbms", "mysql", "postgresql",
+            "query", "queries", "table", "tables", "create table", "new table", "schema",
             "ai", "artificial intelligence", "ml", "machine learning", "deep learning", "llm", "rag", "nlp",
             "aptitude", "quant", "quantitative",
             "dsa", "data structures", "algorithms", "algorithm",
@@ -3593,25 +4073,21 @@ print("First unique in 'swiss':", first_unique_char("swiss"))  # 'w'
     }
 
     private fun buildGreetingResponse(normalized: String): LocalAiResponse {
-        val name = preferredName.trim()
-        val isNamed = name.isNotBlank()
         val replyText = when {
             normalized == "gn" || normalized.contains("good night") ->
-                if (isNamed) "Good night, $name! Rest well and keep learning tomorrow." else "Good night! Rest well and keep learning tomorrow."
+                "Good night! Rest well and keep learning tomorrow."
             normalized.contains("good morning") || normalized == "gm" ->
-                if (isNamed) "Good morning, $name! Ready to learn something exciting today? What subject are we tackling?" else "Good morning! Ready to learn something exciting today? What subject are we tackling?"
+                "Good morning! Ready to learn something exciting today? What subject are we tackling?"
             normalized.contains("good afternoon") ->
-                if (isNamed) "Good afternoon, $name! Hope you're having a productive day. What subject shall we explore?" else "Good afternoon! Hope you're having a productive day. What subject shall we explore?"
+                "Good afternoon! Hope you're having a productive day. What subject shall we explore?"
             normalized.contains("good evening") ->
-                if (isNamed) "Good evening, $name! Let's do some focused study tonight. What can I help you understand?" else "Good evening! Let's do some focused study tonight. What can I help you understand?"
+                "Good evening! Let's do some focused study tonight. What can I help you understand?"
             normalized.contains("vanakkam") ->
-                if (isNamed) "Vanakkam, $name! How can I help you with your studies today?" else "Vanakkam! How can I help you with your studies today?"
+                "Hello! 👋 How can I help you with your placement prep today?"
             normalized.contains("namaste") ->
-                if (isNamed) "Namaste, $name! How can I assist you with your learning today?" else "Namaste! How can I assist you with your learning today?"
-            normalized.contains("hello friend") || normalized.contains("hi friend") || normalized.contains("hey friend") ->
-                if (isNamed) "Hey $name! Great to see you. What subject shall we dive into today?" else "Hey! Great to see you. What subject shall we dive into today?"
+                "Namaste! 🙏 How can I help you with your placement prep today?"
             else ->
-                if (isNamed) "Hello, $name! I'm doing great and ready to help you study. What topic shall we explore today?" else "Hello! I'm doing great and ready to help you study. What topic shall we explore today?"
+                "Hello! 👋 How can I help you with your placement prep today?"
         }
 
         return LocalAiResponse(
@@ -5058,7 +5534,7 @@ print("First unique in 'swiss':", first_unique_char("swiss"))  # 'w'
 
     companion object {
         const val OUT_OF_SCOPE_RESPONSE =
-            "I didn't understand that. I can help you with your placement subjects (Python, SQL, AI, Aptitude, DSA, Java), quizzes, notes, or app settings like changing your profile name or setting a study alarm."
+            "I don't have the exact answer for that yet. Try asking a specific question in Python, SQL, AI, Aptitude, DSA, Java, OS/CN, or Android!"
 
         private const val TAG = "LocalAIEngine"
         private const val MAX_CONTEXT_TURNS = 5

@@ -460,7 +460,7 @@ fun QuizContent(
                                                 ) {
                                                     Text(
                                                         text = option.optionLabel,
-                                                        color = if (isSelected) Color.White else (if (isDark) TextSecondary else LightTextSecondary),
+                                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                                         fontSize = 13.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
@@ -469,11 +469,11 @@ fun QuizContent(
                                                 Spacer(modifier = Modifier.width(12.dp))
 
                                                 Text(
-                                                    text = option.text,
+                                                    text = option.text.ifBlank { "Option ${option.optionLabel}" },
                                                     color = if (isSelected) {
                                                         if (isDark) AmberGold else SunsetOrange
                                                     } else {
-                                                        if (isDark) TextPrimary else LightTextPrimary
+                                                        MaterialTheme.colorScheme.onSurface
                                                     },
                                                     fontSize = 14.sp,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,

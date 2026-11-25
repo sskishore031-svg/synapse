@@ -3,11 +3,12 @@ package com.siamts.synapse.data.local
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Data Access Object (DAO) for real-time lesson and track completion progress.
+ * Data Access Object (DAO) for real-time two-stage lesson and track completion progress.
  */
 interface LessonProgressDao {
     suspend fun saveProgress(progress: LessonProgressEntity)
     suspend fun markLessonCompleted(lessonId: String, trackId: String, userId: String = "1"): LessonProgressEntity
+    suspend fun markConceptCompleted(lessonId: String, trackId: String, userId: String = "1"): LessonProgressEntity = markLessonCompleted(lessonId, trackId, userId)
     suspend fun markQuizCompleted(lessonId: String, trackId: String, userId: String = "1"): LessonProgressEntity
     suspend fun getProgress(lessonId: String, userId: String = "1"): LessonProgressEntity?
     fun getProgressCached(lessonId: String, userId: String = "1"): LessonProgressEntity? = null

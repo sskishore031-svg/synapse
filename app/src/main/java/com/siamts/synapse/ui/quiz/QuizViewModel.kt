@@ -123,7 +123,32 @@ class QuizViewModel(
         if (isMistakeVault) {
             scope.launch {
                 val mistakes = quizDao.getAllMistakes()
-                val vaultQuestions = mistakes.map { it.toQuizQuestionDto() }
+                val allCurriculumQuestions: List<com.siamts.synapse.data.model.QuizQuestionDto> = (
+                    catalogRepo?.getAllSubjects().orEmpty().flatMap { it.chapters }.flatMap { it.mcqs } +
+                    listOf("101", "102", "103", "104", "python", "sql", "ai", "aptitude").mapNotNull { com.siamts.synapse.data.local.BaseCurriculumData.getSubjectById(it) }.flatMap { it.chapters }.flatMap { it.mcqs }
+                ).distinctBy { it.question.trim().lowercase() }
+
+                val vaultQuestions = mistakes.map { m ->
+                    m.toQuizQuestionDto { qText ->
+                        val clean = qText.trim().lowercase()
+                        allCurriculumQuestions.firstOrNull { it.question.trim().lowercase() == clean }
+                            ?: allCurriculumQuestions.firstOrNull { it.question.contains(clean, ignoreCase = true) || clean.contains(it.question, ignoreCase = true) }
+                    }
+                }.map { q ->
+                    val opts = q.options.toMutableMap()
+                    val fallbackLabels = mapOf(
+                        "A" to "Conceptual Definition & Syntax Invariant",
+                        "B" to "Deterministic Execution Rule",
+                        "C" to "Memory & Time Optimization Principle",
+                        "D" to "All of the Above"
+                    )
+                    listOf("A", "B", "C", "D").forEach { key ->
+                        if (opts[key].isNullOrBlank()) {
+                            opts[key] = fallbackLabels[key] ?: "Option $key"
+                        }
+                    }
+                    q.copy(options = opts)
+                }
                 val fQ = vaultQuestions.firstOrNull() ?: QuizQuestionDto(
                     id = 1,
                     questionNumber = 1,
@@ -493,16 +518,20 @@ class QuizViewModel(
 
     private fun buildOptionsFromDto(q: QuizQuestionDto?): List<QuizOption> {
         if (q == null) return emptyList()
-        return listOf("A", "B", "C", "D").mapNotNull { key ->
-            val text = q.options[key]
-            if (text != null) {
-                QuizOption(
-                    id = key,
-                    optionLabel = key,
-                    text = text,
-                    isCorrect = key == q.correctOption
-                )
-            } else null
+        val fallbackLabels = mapOf(
+            "A" to "Conceptual Definition & Syntax Invariant",
+            "B" to "Deterministic Execution Rule",
+            "C" to "Memory & Time Optimization Principle",
+            "D" to "All of the Above"
+        )
+        return listOf("A", "B", "C", "D").map { key ->
+            val text = q.options[key]?.takeIf { it.isNotBlank() } ?: (fallbackLabels[key] ?: "Option $key")
+            QuizOption(
+                id = key,
+                optionLabel = key,
+                text = text,
+                isCorrect = key.equals(q.correctOption.trim(), ignoreCase = true)
+            )
         }
     }
 

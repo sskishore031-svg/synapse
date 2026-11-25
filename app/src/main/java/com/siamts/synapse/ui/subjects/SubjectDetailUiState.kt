@@ -10,6 +10,8 @@ data class SubjectChapterDetailItem(
     val estimatedMinutes: Int = 15,
     val questionCount: Int = 5,
     val isCompleted: Boolean = false,
+    val conceptDone: Boolean = false,
+    val quizDone: Boolean = false,
     val isUnlocked: Boolean = true,
 )
 

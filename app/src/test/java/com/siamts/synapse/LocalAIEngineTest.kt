@@ -56,11 +56,11 @@ class LocalAIEngineTest {
 
     @Test
     fun testGreetings_returnChatGPTStyleConciseGreeting() {
-        val casualGreetings = listOf("hi", "hello", "hey")
+        val casualGreetings = listOf("hi", "hello", "hey", "vanakkam")
         for (query in casualGreetings) {
             val response = engine.generateResponse(query)
             assertTrue("Query '$query' should be detected as greeting", response.isGreeting)
-            assertEquals("Hello! I'm doing great and ready to help you study. What topic shall we explore today?", response.paragraph1)
+            assertEquals("Hello! 👋 How can I help you with your placement prep today?", response.paragraph1)
             assertTrue("Greeting should not dump long paragraphs", response.paragraph2.isBlank())
         }
 
@@ -71,10 +71,39 @@ class LocalAIEngineTest {
         val gnResponse = engine.generateResponse("good night")
         assertTrue(gnResponse.isGreeting)
         assertEquals("Good night! Rest well and keep learning tomorrow.", gnResponse.paragraph1)
+    }
 
-        val vanakkamResp = engine.generateResponse("vanakkam")
-        assertTrue(vanakkamResp.isGreeting)
-        assertTrue(vanakkamResp.paragraph1.contains("Vanakkam"))
+    @Test
+    fun testWellBeing_and_DynamicSql_and_FullForms() {
+        // 1. Wellbeing
+        val wb1 = engine.generateResponse("how are you")
+        assertEquals("I'm doing great, thanks for asking! 😊 Ready to help you practice coding, SQL, AI, or aptitude. What would you like to learn today?", wb1.paragraph1)
+
+        val wb2 = engine.generateResponse("epdi iruka")
+        assertEquals("I'm doing great, thanks for asking! 😊 Ready to help you practice coding, SQL, AI, or aptitude. What would you like to learn today?", wb2.paragraph1)
+
+        // 2. Full forms
+        val ffAi = engine.generateResponse("ai full form")
+        assertTrue(ffAi.paragraph1.contains("**AI stands for Artificial Intelligence.**"))
+        assertTrue(ffAi.paragraph2.isBlank())
+
+        val ffSql = engine.generateResponse("full form of sql")
+        assertTrue(ffSql.paragraph1.contains("**SQL stands for Structured Query Language.**"))
+
+        // 3. Dynamic SQL Query Generator
+        val sqlCreate = engine.generateResponse("give me query for create new table")
+        assertTrue(sqlCreate.paragraph1.contains("CREATE TABLE"))
+        assertTrue(sqlCreate.paragraph1.contains("PRIMARY KEY AUTO_INCREMENT"))
+
+        val sqlStudent = engine.generateResponse("create student table")
+        assertTrue(sqlStudent.paragraph1.contains("CREATE TABLE student"))
+
+        val sqlDelete = engine.generateResponse("delete query")
+        assertTrue(sqlDelete.paragraph1.contains("DELETE FROM"))
+        assertTrue(sqlDelete.paragraph1.contains("DELETE vs TRUNCATE vs DROP"))
+
+        val sqlWhatIsQuery = engine.generateResponse("what is query")
+        assertTrue(sqlWhatIsQuery.paragraph1.contains("An **SQL Query** is a formal declarative command"))
     }
 
     @Test
@@ -428,7 +457,7 @@ class LocalAIEngineTest {
         assertTrue("Last event must be Completed", events.last() is LocalAiStreamToken.Completed)
         val tokenEvents = events.filterIsInstance<LocalAiStreamToken.Token>()
         assertTrue("Must emit token events", tokenEvents.isNotEmpty())
-        assertEquals("Hello! I'm doing great and ready to help you study. What topic shall we explore today?", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
+        assertEquals("Hello! 👋 How can I help you with your placement prep today?", (events.last() as LocalAiStreamToken.Completed).response.paragraph1)
     }
 
     @Test
@@ -507,7 +536,13 @@ class LocalAIEngineTest {
         )
         for (q in nonTechQueries) {
             val response = engine.generateResponse(q)
-            assertTrue("Query '$q' must be caught by scope guard", response.paragraph1.contains("I don't have the answer to that") || response.paragraph1.contains("falls outside my placement") || response.paragraph1.contains("I didn't understand that"))
+            assertTrue(
+                "Query '$q' must be caught by scope guard",
+                response.paragraph1.contains("I don't have the answer to that") ||
+                response.paragraph1.contains("falls outside my placement") ||
+                response.paragraph1.contains("I didn't understand that") ||
+                response.paragraph1.contains("I don't have the exact answer")
+            )
         }
     }
 
@@ -756,5 +791,37 @@ class LocalAIEngineTest {
             assertFalse("Query '$q' must NEVER dump Python OOP", response.paragraph1.contains("OOP Classes") || response.paragraph1.contains("Dunder Methods"))
             assertEquals("Query '$q' must return clean fallback", LocalAIEngine.OUT_OF_SCOPE_RESPONSE, response.paragraph1)
         }
+    }
+
+    @Test
+    fun testWeightedIntentAndTopicScoring_verifiesFourCriticalPrompts() {
+        engine.resetContext()
+
+        // Prompt 1: "I want database definition only" -> returns Database definition only (NO Python OOP, NO paragraph2)
+        val resp1 = engine.generateResponse("I want database definition only")
+        assertTrue("Prompt 1 subject must be SQL / Database", resp1.matchedSubject?.contains("SQL") == true || resp1.matchedSubject?.contains("Database") == true)
+        assertTrue("Prompt 1 must contain Database & DBMS", resp1.paragraph1.contains("Database & DBMS Architecture") || resp1.paragraph1.contains("collection of electronically stored data"))
+        assertFalse("Prompt 1 must NEVER dump Python OOP", resp1.paragraph1.contains("Python") || resp1.paragraph1.contains("OOP Classes"))
+        assertTrue("Prompt 1 definition-only must have blank paragraph2", resp1.paragraph2.isBlank())
+
+        // Prompt 2: "what is query" -> returns SQL Query definition (NOT Android Room)
+        val resp2 = engine.generateResponse("what is query")
+        assertTrue("Prompt 2 subject must be SQL / Database", resp2.matchedSubject?.contains("SQL") == true || resp2.matchedSubject?.contains("Database") == true)
+        assertTrue("Prompt 2 must explain SQL Query", resp2.paragraph1.contains("SQL Query") || resp2.paragraph1.contains("declarative instruction"))
+        assertFalse("Prompt 2 must NEVER dump Android Room", resp2.paragraph1.contains("Android Room") || resp2.paragraph1.contains("@Entity") || resp2.paragraph1.contains("@Dao"))
+        assertTrue("Prompt 2 must mention DDL or DML", resp2.paragraph2.contains("DDL") || resp2.paragraph2.contains("DML"))
+
+        // Prompt 3: "how to create a new table in database" -> returns SQL CREATE TABLE syntax
+        val resp3 = engine.generateResponse("how to create a new table in database")
+        assertTrue("Prompt 3 subject must be SQL / Database", resp3.matchedSubject?.contains("SQL") == true || resp3.matchedSubject?.contains("Database") == true)
+        assertTrue("Prompt 3 must contain CREATE TABLE syntax", resp3.paragraph1.contains("CREATE TABLE") || resp3.paragraph2.contains("CREATE TABLE"))
+        assertFalse("Prompt 3 must NEVER dump Python Mutable Arguments", resp3.paragraph1.contains("Mutable Argument") || resp3.paragraph2.contains("Mutable Argument"))
+
+        // Prompt 4: "give me query for create new table" -> returns CREATE TABLE snippet without dumping 4 placement tracks overview
+        val resp4 = engine.generateResponse("give me query for create new table")
+        assertTrue("Prompt 4 subject must be SQL / Database", resp4.matchedSubject?.contains("SQL") == true || resp4.matchedSubject?.contains("Database") == true)
+        assertTrue("Prompt 4 must contain CREATE TABLE syntax", resp4.paragraph1.contains("CREATE TABLE") || resp4.paragraph2.contains("CREATE TABLE"))
+        assertFalse("Prompt 4 must NEVER be intercepted by 4 Placement Tracks overview", resp4.isTopicSuggestion)
+        assertFalse("Prompt 4 must not contain track overview text", resp4.paragraph1.contains("4 Placement Tracks") || resp4.paragraph1.contains("Placement Preparation Tracks"))
     }
 }

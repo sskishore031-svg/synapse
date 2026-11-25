@@ -37,13 +37,11 @@ class HomeViewModel(
         val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             progressDao.observeProgressForUser("1").collect { progressList ->
-                val completedIds = progressList.filter { it.isCompleted }.map { it.lessonId }.toSet()
-                val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
-                val quizChapterIds = quizRecords.map { it.chapterId }.toSet()
-                val allCompletedLessons = (completedIds + quizChapterIds).filter { it.isNotBlank() }.distinct()
                 val totalTopics = 20
-                val distinctTopicsDone = allCompletedLessons.size.coerceAtMost(totalTopics)
-                val overallPercent = ((distinctTopicsDone.toFloat() / totalTopics.toFloat()) * 100).toInt().coerceIn(0, 100)
+                // Two-stage completion credits: conceptDone = +0.5 credit (+10%), quizDone = +0.5 credit (+10%)
+                val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
+                val overallPercent = ((totalCredits / totalTopics.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                val distinctTopicsDone = totalCredits.toInt().coerceAtMost(totalTopics)
 
                 _uiState.update { current ->
                     current.copy(
@@ -84,10 +82,8 @@ class HomeViewModel(
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
             val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser("1") } catch (_: Throwable) { emptyList() }
 
-            val completedProgressIds = progressList.filter { it.isCompleted }.map { it.lessonId }
-            val completedChapters = chapters.filter { it.isAttempted }.map { it.id }
-            val quizChapters = quizRecords.map { it.chapterId }
-            val distinctTopicsDone = (completedProgressIds + completedChapters + quizChapters).filter { it.isNotBlank() }.distinct().size.coerceAtMost(20)
+            val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
+            val distinctTopicsDone = totalCredits.toInt().coerceAtMost(20)
 
             val streak = if (distinctTopicsDone > 0 || quizRecords.isNotEmpty() || studySessions.isNotEmpty()) {
                 val dates = studySessions.map { it.studyDate }.filter { it.isNotBlank() }.distinct().sortedDescending()
@@ -172,6 +168,12 @@ class HomeViewModel(
             )
             try {
                 taskDao.insertTask(newTask)
+                runCatching {
+                    com.siamts.synapse.data.remote.RetrofitClient.learningPlanApi.addLearningTask(
+                        title = newTask.title,
+                        duration = newTask.duration
+                    )
+                }
             } catch (_: Throwable) {}
             loadDailyTasks()
         }
@@ -181,6 +183,12 @@ class HomeViewModel(
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 taskDao.updateTaskCompletion(taskId, isCompleted)
+                runCatching {
+                    com.siamts.synapse.data.remote.RetrofitClient.learningPlanApi.toggleLearningTask(
+                        taskId = taskId,
+                        isCompleted = if (isCompleted) 1 else 0
+                    )
+                }
             } catch (_: Throwable) {}
             loadDailyTasks()
         }
@@ -190,6 +198,11 @@ class HomeViewModel(
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 taskDao.deleteTask(taskId)
+                runCatching {
+                    com.siamts.synapse.data.remote.RetrofitClient.learningPlanApi.deleteLearningTask(
+                        taskId = taskId
+                    )
+                }
             } catch (_: Throwable) {}
             loadDailyTasks()
         }

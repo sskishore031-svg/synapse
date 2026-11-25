@@ -1332,15 +1332,16 @@ class AiTutorViewModel(
                         )
                     )
                     for (m in mistakes) {
+                        val origQ = session.questions.firstOrNull { it.question.trim().equals(m.question.trim(), ignoreCase = true) }
                         SynapseDatabase.getInstance().insertMistake(
                             MistakeQuestionEntity(
                                 subjectId = session.subjectId,
                                 chapterId = "chat_quiz_10",
                                 questionText = m.question,
-                                optionA = "",
-                                optionB = "",
-                                optionC = "",
-                                optionD = "",
+                                optionA = origQ?.options?.get("A").orEmpty(),
+                                optionB = origQ?.options?.get("B").orEmpty(),
+                                optionC = origQ?.options?.get("C").orEmpty(),
+                                optionD = origQ?.options?.get("D").orEmpty(),
                                 correctOption = m.correctOption,
                                 explanation = m.explanation
                             )

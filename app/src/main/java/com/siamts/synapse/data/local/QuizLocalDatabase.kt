@@ -1441,9 +1441,9 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                     put("lesson_id", progress.lessonId)
                     put("track_id", progress.trackId)
                     put("user_id", progress.userId)
-                    put("lesson_completed", if (progress.lessonCompleted) 1 else 0)
-                    put("quiz_completed", if (progress.quizCompleted) 1 else 0)
-                    put("is_completed", if (progress.isCompleted) 1 else 0)
+                    put("lesson_completed", if (progress.conceptDone || progress.lessonCompleted) 1 else 0)
+                    put("quiz_completed", if (progress.quizDone || progress.quizCompleted) 1 else 0)
+                    put("is_completed", if (progress.conceptDone || progress.quizDone || progress.isCompleted) 1 else 0)
                     put("completed_at", progress.completedAt)
                 }
                 db.insertWithOnConflict("lesson_progress", null, values, SQLiteDatabase.CONFLICT_REPLACE)
@@ -1465,6 +1465,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             trackId = normTrack,
             userId = userId
         )).copy(
+            conceptDone = true,
             lessonCompleted = true,
             isCompleted = true,
             completedAt = System.currentTimeMillis()
@@ -1489,6 +1490,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             trackId = normTrack,
             userId = userId
         )).copy(
+            quizDone = true,
             quizCompleted = true,
             isCompleted = true,
             completedAt = System.currentTimeMillis()
@@ -1523,13 +1525,17 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 )
                 cursor.use { c ->
                     if (c.moveToFirst()) {
+                        val lComp = c.getInt(c.getColumnIndexOrThrow("lesson_completed")) == 1
+                        val qComp = c.getInt(c.getColumnIndexOrThrow("quiz_completed")) == 1
                         val entity = LessonProgressEntity(
                             lessonId = c.getString(c.getColumnIndexOrThrow("lesson_id")),
                             trackId = c.getString(c.getColumnIndexOrThrow("track_id")),
                             userId = c.getString(c.getColumnIndexOrThrow("user_id")),
-                            lessonCompleted = c.getInt(c.getColumnIndexOrThrow("lesson_completed")) == 1,
-                            quizCompleted = c.getInt(c.getColumnIndexOrThrow("quiz_completed")) == 1,
-                            isCompleted = c.getInt(c.getColumnIndexOrThrow("is_completed")) == 1,
+                            conceptDone = lComp,
+                            quizDone = qComp,
+                            lessonCompleted = lComp,
+                            quizCompleted = qComp,
+                            isCompleted = c.getInt(c.getColumnIndexOrThrow("is_completed")) == 1 || lComp || qComp,
                             completedAt = c.getLong(c.getColumnIndexOrThrow("completed_at"))
                         )
                         inMemoryLessonProgress[key] = entity
@@ -1567,13 +1573,17 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 val ic = c.getColumnIndexOrThrow("is_completed")
                 val ca = c.getColumnIndexOrThrow("completed_at")
                 while (c.moveToNext()) {
+                    val lComp = c.getInt(lc) == 1
+                    val qComp = c.getInt(qc) == 1
                     val entity = LessonProgressEntity(
                         lessonId = c.getString(lid),
                         trackId = c.getString(tid),
                         userId = c.getString(uid),
-                        lessonCompleted = c.getInt(lc) == 1,
-                        quizCompleted = c.getInt(qc) == 1,
-                        isCompleted = c.getInt(ic) == 1,
+                        conceptDone = lComp,
+                        quizDone = qComp,
+                        lessonCompleted = lComp,
+                        quizCompleted = qComp,
+                        isCompleted = c.getInt(ic) == 1 || lComp || qComp,
                         completedAt = c.getLong(ca)
                     )
                     list.add(entity)

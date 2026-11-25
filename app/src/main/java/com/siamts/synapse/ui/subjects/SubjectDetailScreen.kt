@@ -372,7 +372,7 @@ fun SubjectDetailContent(
                                         }
                                     }
 
-                                    if (chapter.isCompleted) {
+                                    if (chapter.conceptDone && chapter.quizDone) {
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Box(
                                             modifier = Modifier
@@ -383,8 +383,42 @@ fun SubjectDetailContent(
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                         ) {
                                             Text(
-                                                text = "✓ Completed",
+                                                text = "✓ 100% Completed",
                                                 color = Color(0xFF059669),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    } else if (chapter.conceptDone) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = SunsetOrange.copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                )
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "📖 Concept Done (+10%)",
+                                                color = SunsetOrange,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    } else if (chapter.quizDone) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = AmberGold.copy(alpha = 0.20f),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                )
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "⚡ Quiz Done (+10%)",
+                                                color = AmberGold,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -418,8 +452,8 @@ fun SubjectDetailContent(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = "Quiz",
-                                            color = SunsetOrange,
+                                            text = if (chapter.quizDone) "✓ Quiz" else "Quiz",
+                                            color = if (chapter.quizDone) Color(0xFF059669) else SunsetOrange,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
@@ -429,12 +463,14 @@ fun SubjectDetailContent(
 
                                     Button(
                                         onClick = { onChapterClick(chapter.chapterId) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (chapter.conceptDone) Color(0xFF059669) else SunsetOrange
+                                        ),
                                         shape = RoundedCornerShape(8.dp),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = "Learn →",
+                                            text = if (chapter.conceptDone) "✓ Done" else "Learn →",
                                             color = Color.White,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold

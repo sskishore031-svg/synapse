@@ -7,7 +7,9 @@ data class SubjectChapterSnippet(
     val chapterId: Int,
     val title: String,
     val summary: String = "",
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val conceptDone: Boolean = false,
+    val quizDone: Boolean = false
 )
 
 data class Subject(
