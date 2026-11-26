@@ -104,10 +104,11 @@ class ProfileViewModel(
                 applyRemoteProfile(profile)
                 _uiState.update { it.copy(isLoading = false, errorMessage = null) }
             }.onFailure { error ->
+                val hasLocalData = _uiState.value.userId > 0 || _uiState.value.userEmail.isNotBlank()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = error.localizedMessage ?: "Failed to load profile."
+                        errorMessage = if (hasLocalData) null else (error.localizedMessage ?: "Failed to load profile.")
                     )
                 }
             }
@@ -201,7 +202,10 @@ class ProfileViewModel(
                     it.copy(
                         isUpdating = false,
                         isUploadingPhoto = false,
-                        errorMessage = error.localizedMessage ?: "Failed to save profile changes."
+                        errorMessage = error.localizedMessage?.let {
+                            if (it.contains("404")) "Profile service is temporarily unavailable. Changes saved locally."
+                            else it
+                        } ?: "Failed to save profile changes."
                     )
                 }
                 onComplete?.invoke(false)

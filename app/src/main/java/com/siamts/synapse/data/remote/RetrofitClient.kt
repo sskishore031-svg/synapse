@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // Public Ngrok Base URL for mobile & emulator tunneling (captures all live traffic in ngrok)
-    const val BASE_URL = "https://bakery-shallot-repeater.ngrok-free.dev/Synapse_backend/auth/"
+    const val BASE_URL = "https://bakery-shallot-repeater.ngrok-free.dev/Synapse_backend/"
     const val NGROK_BASE_URL = BASE_URL
 
     // Host PC LAN IP accessible by physical mobile devices on the same local network
