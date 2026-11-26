@@ -11,9 +11,13 @@ data class SyncProgressRequest(
     @SerializedName("user_id") val userId: Int = 1,
     @SerializedName("track_id") val trackId: String,
     @SerializedName("lesson_id") val lessonId: String,
-    @SerializedName("lesson_completed") val lessonCompleted: Boolean = true,
-    @SerializedName("quiz_completed") val quizCompleted: Boolean = false,
-    @SerializedName("is_completed") val isCompleted: Boolean = true
+    @SerializedName("chapter_index") val chapterIndex: Int = 1,
+    @SerializedName("concept_done") val conceptDone: Boolean = true,
+    @SerializedName("quiz_done") val quizDone: Boolean = false,
+    @SerializedName("lesson_completed") val lessonCompleted: Boolean = conceptDone,
+    @SerializedName("quiz_completed") val quizCompleted: Boolean = quizDone,
+    @SerializedName("is_completed") val isCompleted: Boolean = (conceptDone || quizDone),
+    @SerializedName("reset") val reset: Boolean = false
 )
 
 data class SyncProgressResponse(

@@ -68,7 +68,7 @@ class HomeDashboardRepositoryTest {
 
     @Test
     fun testGetHomeDashboard_withNonExistentUser_returnsFailure() = runBlocking {
-        val result = repository.getHomeDashboard(userId = 99999)
+        val result = repository.getHomeDashboard(userId = 9999999)
 
         assertTrue("Expected non-existent user to fail with 404", result.isFailure)
     }

@@ -2,7 +2,7 @@ package com.siamts.synapse.ui.splash
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,17 +39,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.SYNAPSETheme
-import com.siamts.synapse.ui.theme.SunsetOrange
-import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import kotlinx.coroutines.delay
 
 @Composable
@@ -66,9 +62,9 @@ fun SplashScreen(
         }
     }
 
-    // Smooth navigation after ~1.8 seconds to HomeScreen (if logged in) or LoginScreen (if logged out)
+    // Clean navigation after 1.6 seconds with zero flash
     LaunchedEffect(Unit) {
-        delay(1800L)
+        delay(1600L)
         if (!uiState.isNavigating) {
             onSplashFinished(viewModel.uiState.value.isAuthenticated)
         }
@@ -99,8 +95,9 @@ fun SplashContent(
     modifier: Modifier = Modifier,
     isAnimated: Boolean = true,
 ) {
-    val scale = remember { Animatable(if (isAnimated) 0.85f else 1f) }
+    val scale = remember { Animatable(if (isAnimated) 0.92f else 1f) }
     val alpha = remember { Animatable(if (isAnimated) 0f else 1f) }
+    val progressAnim = remember { Animatable(if (isAnimated) 0f else 1f) }
 
     LaunchedEffect(isAnimated) {
         if (isAnimated) {
@@ -115,15 +112,24 @@ fun SplashContent(
         if (isAnimated) {
             scale.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+                animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+            )
+        }
+    }
+
+    LaunchedEffect(isAnimated) {
+        if (isAnimated) {
+            progressAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 1500, easing = LinearOutSlowInEasing),
             )
         }
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "SplashAnimations")
     val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.97f,
-        targetValue = 1.03f,
+        initialValue = 0.85f,
+        targetValue = 1.15f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
@@ -131,48 +137,48 @@ fun SplashContent(
         label = "PulseScale"
     )
 
-    val starAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1100, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "StarAlpha"
-    )
-
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 1750, easing = FastOutSlowInEasing),
-        )
-    }
-
-    // Deep charcoal-slate background (#181A20)
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF181A20)),
+            .background(Color(0xFF0E1015)),
         contentAlignment = Alignment.Center,
     ) {
+        // Warm radial background glow centered behind emblem
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f - 40.dp.toPx()
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFFF7A00).copy(alpha = 0.16f * pulse),
+                        Color(0xFFFF7A00).copy(alpha = 0.05f * pulse),
+                        Color.Transparent
+                    ),
+                    center = Offset(cx, cy),
+                    radius = 220.dp.toPx()
+                ),
+                radius = 220.dp.toPx(),
+                center = Offset(cx, cy)
+            )
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .scale(scale.value * pulse)
+                .scale(scale.value)
                 .alpha(alpha.value)
                 .padding(horizontal = 24.dp)
         ) {
-            // Glowing Circuit-Brain Canvas with surrounding 4-point sparkle stars
-            CircuitBrainEmblem(
-                starAlpha = starAlpha,
-                modifier = Modifier.size(190.dp)
+            // Glowing Circuit Brain with Center </> Code Bracket
+            CircuitBrainCanvas(
+                modifier = Modifier.size(180.dp),
+                pulse = pulse
             )
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Brand Typography: Glowing "SYNAPSE" in White + "AI" in Sunset Orange
+            // Brand Typography: "SYNAPSE AI"
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -180,264 +186,268 @@ fun SplashContent(
                 Text(
                     text = "SYNAPSE",
                     color = Color.White,
-                    fontSize = 32.sp,
+                    fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 4.sp
+                    letterSpacing = 2.sp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "AI",
-                    color = Color(0xFFFF6B00), // Sunset Orange
-                    fontSize = 32.sp,
+                    color = Color(0xFFFF7A00),
+                    fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 2.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Subtitle tag
+            // Subtitle: "Neural Study Companion"
             Text(
-                text = "NEURAL STUDY COMPANION",
-                color = Color(0xFF94A3B8),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
+                text = "Neural Study Companion",
+                color = Color(0xFFB0B5C3),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.5.sp
             )
-        }
 
-        // Minimal glowing bottom progress indicator
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 36.dp, start = 64.dp, end = 64.dp)
-                .fillMaxWidth()
-                .height(2.5.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Color(0x22FFFFFF))
-                .alpha(alpha.value),
-        ) {
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Loading state & Slim animated progress bar
+            Text(
+                text = "Loading...",
+                color = Color(0xFF8A90A2),
+                fontSize = 13.sp,
+                letterSpacing = 0.8.sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(progress.value)
-                    .height(2.5.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                SunsetOrange,
-                                AmberGold,
-                                SunsetOrangeEnd
+                    .width(200.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color(0xFF222630))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progressAnim.value)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color(0xFFFFB03A), Color(0xFFFF6B00))
                             )
                         )
-                    )
-            )
+                )
+            }
         }
     }
 }
 
-/**
- * Custom Canvas drawing the minimal glowing golden-amber brain circuit emblem
- * surrounded by 4-point sparkle stars.
- */
 @Composable
-fun CircuitBrainEmblem(
-    starAlpha: Float,
-    modifier: Modifier = Modifier
+private fun CircuitBrainCanvas(
+    modifier: Modifier = Modifier,
+    pulse: Float = 1f
 ) {
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
         val cx = w / 2f
         val cy = h / 2f
-        val r = minOf(w, h) * 0.44f
 
-        // 1. Subtle radial warm-amber glow behind the emblem
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0x55FFAA00),
-                    Color(0x22FF5500),
-                    Color(0x05FF5500),
-                    Color.Transparent
-                ),
-                center = Offset(cx, cy),
-                radius = r * 1.55f
-            )
-        )
-
-        // 2. 4-Point Sparkle Stars surrounding the emblem
-        val goldStar = Color(0xFFFFB03A).copy(alpha = starAlpha)
-        val brightStar = Color(0xFFFFE082).copy(alpha = starAlpha)
-
-        drawSparkleStar(Offset(w * 0.14f, h * 0.20f), 12f, goldStar)
-        drawSparkleStar(Offset(w * 0.86f, h * 0.18f), 14f, brightStar)
-        drawSparkleStar(Offset(w * 0.16f, h * 0.82f), 11f, brightStar)
-        drawSparkleStar(Offset(w * 0.84f, h * 0.80f), 13f, goldStar)
-        drawSparkleStar(Offset(w * 0.50f, h * 0.08f), 9f, goldStar)
-
-        // 3. Subtle Outer Segmented Orbital Ring
-        val strokeRing = Stroke(width = 1.5.dp.toPx())
-        drawArc(
-            color = Color(0x33FFB03A),
-            startAngle = 25f,
-            sweepAngle = 130f,
-            useCenter = false,
-            topLeft = Offset(cx - r * 1.15f, cy - r * 1.15f),
-            size = androidx.compose.ui.geometry.Size(r * 2.3f, r * 2.3f),
-            style = strokeRing
-        )
-        drawArc(
-            color = Color(0x33FFB03A),
-            startAngle = 205f,
-            sweepAngle = 130f,
-            useCenter = false,
-            topLeft = Offset(cx - r * 1.15f, cy - r * 1.15f),
-            size = androidx.compose.ui.geometry.Size(r * 2.3f, r * 2.3f),
-            style = strokeRing
-        )
-
-        // 4. Brain Circuit Traces Gradient: Golden-Amber (#FFB03A to #FF5500)
-        val circuitBrush = Brush.linearGradient(
+        val strokeGrad = Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFFFB03A),
-                Color(0xFFFF7A00),
-                Color(0xFFFF5500)
+                Color(0xFFFFB03A), // Amber Gold
+                Color(0xFFFF7A00), // Sunset Orange
+                Color(0xFFFF5500)  // Deep Orange
             ),
-            start = Offset(cx, cy - r),
-            end = Offset(cx, cy + r)
+            startY = 0f,
+            endY = h
         )
-        val traceStroke = Stroke(
-            width = 2.4.dp.toPx(),
-            cap = StrokeCap.Round,
-            join = StrokeJoin.Round
+        val glowColor = Color(0xFFFF7A00).copy(alpha = (0.28f * pulse).coerceIn(0.15f, 0.45f))
+        val dotGlowColor = Color(0xFFFF9D2E).copy(alpha = (0.35f * pulse).coerceIn(0.20f, 0.55f))
+
+        val strokeWidth = 2.6.dp.toPx()
+        val glowWidth = 6.2.dp.toPx()
+        val nodeRadius = 3.2.dp.toPx()
+        val nodeGlowRadius = 5.8.dp.toPx()
+
+        // 1. Brain Hemispheres Paths (Left and Right with Anatomical Sulcal Folds)
+        val leftBrain = Path().apply {
+            moveTo(cx - w * 0.04f, cy - h * 0.42f)
+            // Frontal top lobe curve
+            cubicTo(
+                cx - w * 0.20f, cy - h * 0.47f,
+                cx - w * 0.38f, cy - h * 0.40f,
+                cx - w * 0.45f, cy - h * 0.26f
+            )
+            // Parietal lobe bump
+            cubicTo(
+                cx - w * 0.50f, cy - h * 0.18f,
+                cx - w * 0.48f, cy - h * 0.06f,
+                cx - w * 0.46f, cy + h * 0.02f
+            )
+            // Temporal lobe curve
+            cubicTo(
+                cx - w * 0.50f, cy + h * 0.12f,
+                cx - w * 0.45f, cy + h * 0.24f,
+                cx - w * 0.36f, cy + h * 0.34f
+            )
+            // Cerebellum & brainstem base
+            cubicTo(
+                cx - w * 0.30f, cy + h * 0.43f,
+                cx - w * 0.18f, cy + h * 0.45f,
+                cx - w * 0.10f, cy + h * 0.40f
+            )
+            // Return to midline stem
+            cubicTo(
+                cx - w * 0.06f, cy + h * 0.36f,
+                cx - w * 0.04f, cy + h * 0.28f,
+                cx - w * 0.04f, cy + h * 0.20f
+            )
+        }
+
+        val rightBrain = Path().apply {
+            moveTo(cx + w * 0.04f, cy - h * 0.42f)
+            // Frontal top lobe curve
+            cubicTo(
+                cx + w * 0.20f, cy - h * 0.47f,
+                cx + w * 0.38f, cy - h * 0.40f,
+                cx + w * 0.45f, cy - h * 0.26f
+            )
+            // Parietal lobe bump
+            cubicTo(
+                cx + w * 0.50f, cy - h * 0.18f,
+                cx + w * 0.48f, cy - h * 0.06f,
+                cx + w * 0.46f, cy + h * 0.02f
+            )
+            // Temporal lobe curve
+            cubicTo(
+                cx + w * 0.50f, cy + h * 0.12f,
+                cx + w * 0.45f, cy + h * 0.24f,
+                cx + w * 0.36f, cy + h * 0.34f
+            )
+            // Cerebellum & brainstem base
+            cubicTo(
+                cx + w * 0.30f, cy + h * 0.43f,
+                cx + w * 0.18f, cy + h * 0.45f,
+                cx + w * 0.10f, cy + h * 0.40f
+            )
+            // Return to midline stem
+            cubicTo(
+                cx + w * 0.06f, cy + h * 0.36f,
+                cx + w * 0.04f, cy + h * 0.28f,
+                cx + w * 0.04f, cy + h * 0.20f
+            )
+        }
+
+        // Draw Brain Outer Glow & Crisp Stroke
+        drawPath(leftBrain, color = glowColor, style = Stroke(width = glowWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(leftBrain, brush = strokeGrad, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(rightBrain, color = glowColor, style = Stroke(width = glowWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(rightBrain, brush = strokeGrad, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // 2. Center Code Symbol: </>
+        val codeSymbolPath = Path().apply {
+            // Left Bracket: <
+            moveTo(cx - w * 0.10f, cy - h * 0.14f)
+            lineTo(cx - w * 0.20f, cy)
+            lineTo(cx - w * 0.10f, cy + h * 0.14f)
+
+            // Center Slash: /
+            moveTo(cx + w * 0.035f, cy - h * 0.17f)
+            lineTo(cx - w * 0.035f, cy + h * 0.17f)
+
+            // Right Bracket: >
+            moveTo(cx + w * 0.10f, cy - h * 0.14f)
+            lineTo(cx + w * 0.20f, cy)
+            lineTo(cx + w * 0.10f, cy + h * 0.14f)
+        }
+
+        drawPath(codeSymbolPath, color = glowColor, style = Stroke(width = glowWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(codeSymbolPath, brush = strokeGrad, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // 3. Internal PCB Circuit Traces
+        val circuitTraces = Path().apply {
+            // Left Hemisphere Traces
+            // Upper frontal trace
+            moveTo(cx - w * 0.09f, cy - h * 0.26f)
+            lineTo(cx - w * 0.22f, cy - h * 0.26f)
+            lineTo(cx - w * 0.32f, cy - h * 0.32f)
+
+            // Upper sulcus trace
+            moveTo(cx - w * 0.22f, cy - h * 0.26f)
+            lineTo(cx - w * 0.22f, cy - h * 0.16f)
+            lineTo(cx - w * 0.34f, cy - h * 0.16f)
+
+            // Mid horizontal branch
+            moveTo(cx - w * 0.22f, cy - h * 0.02f)
+            lineTo(cx - w * 0.34f, cy - h * 0.02f)
+            lineTo(cx - w * 0.39f, cy + h * 0.06f)
+
+            // Lower temporal trace
+            moveTo(cx - w * 0.12f, cy + h * 0.18f)
+            lineTo(cx - w * 0.24f, cy + h * 0.18f)
+            lineTo(cx - w * 0.32f, cy + h * 0.26f)
+
+            // Lower occipital stem trace
+            moveTo(cx - w * 0.08f, cy + h * 0.28f)
+            lineTo(cx - w * 0.16f, cy + h * 0.34f)
+            lineTo(cx - w * 0.22f, cy + h * 0.34f)
+
+            // Right Hemisphere Traces
+            // Upper frontal trace
+            moveTo(cx + w * 0.09f, cy - h * 0.26f)
+            lineTo(cx + w * 0.22f, cy - h * 0.26f)
+            lineTo(cx + w * 0.32f, cy - h * 0.32f)
+
+            // Upper sulcus trace
+            moveTo(cx + w * 0.22f, cy - h * 0.26f)
+            lineTo(cx + w * 0.22f, cy - h * 0.16f)
+            lineTo(cx + w * 0.34f, cy - h * 0.16f)
+
+            // Mid horizontal branch
+            moveTo(cx + w * 0.22f, cy - h * 0.02f)
+            lineTo(cx + w * 0.34f, cy - h * 0.02f)
+            lineTo(cx + w * 0.39f, cy + h * 0.06f)
+
+            // Lower temporal trace
+            moveTo(cx + w * 0.12f, cy + h * 0.18f)
+            lineTo(cx + w * 0.24f, cy + h * 0.18f)
+            lineTo(cx + w * 0.32f, cy + h * 0.26f)
+
+            // Lower occipital stem trace
+            moveTo(cx + w * 0.08f, cy + h * 0.28f)
+            lineTo(cx + w * 0.16f, cy + h * 0.34f)
+            lineTo(cx + w * 0.22f, cy + h * 0.34f)
+        }
+
+        drawPath(circuitTraces, color = glowColor, style = Stroke(width = glowWidth * 0.8f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(circuitTraces, brush = strokeGrad, style = Stroke(width = strokeWidth * 0.9f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // 4. Circular Node Endpoints (Solder / Synapse Nodes)
+        val nodePoints = listOf(
+            // Left nodes
+            Offset(cx - w * 0.32f, cy - h * 0.32f),
+            Offset(cx - w * 0.34f, cy - h * 0.16f),
+            Offset(cx - w * 0.39f, cy + h * 0.06f),
+            Offset(cx - w * 0.32f, cy + h * 0.26f),
+            Offset(cx - w * 0.22f, cy + h * 0.34f),
+            // Right nodes
+            Offset(cx + w * 0.32f, cy - h * 0.32f),
+            Offset(cx + w * 0.34f, cy - h * 0.16f),
+            Offset(cx + w * 0.39f, cy + h * 0.06f),
+            Offset(cx + w * 0.32f, cy + h * 0.26f),
+            Offset(cx + w * 0.22f, cy + h * 0.34f)
         )
 
-        // Left Hemisphere Outer Contour
-        val leftHemisphere = Path().apply {
-            moveTo(cx - 3.dp.toPx(), cy - r * 0.82f)
-            cubicTo(
-                cx - r * 0.55f, cy - r * 0.95f,
-                cx - r * 0.90f, cy - r * 0.60f,
-                cx - r * 0.85f, cy - r * 0.20f
-            )
-            cubicTo(
-                cx - r * 0.95f, cy + r * 0.15f,
-                cx - r * 0.70f, cy + r * 0.65f,
-                cx - r * 0.35f, cy + r * 0.82f
-            )
-            lineTo(cx - 3.dp.toPx(), cy + r * 0.82f)
-        }
-        drawPath(leftHemisphere, circuitBrush, style = traceStroke)
-
-        // Right Hemisphere Outer Contour (Mirrored)
-        val rightHemisphere = Path().apply {
-            moveTo(cx + 3.dp.toPx(), cy - r * 0.82f)
-            cubicTo(
-                cx + r * 0.55f, cy - r * 0.95f,
-                cx + r * 0.90f, cy - r * 0.60f,
-                cx + r * 0.85f, cy - r * 0.20f
-            )
-            cubicTo(
-                cx + r * 0.95f, cy + r * 0.15f,
-                cx + r * 0.70f, cy + r * 0.65f,
-                cx + r * 0.35f, cy + r * 0.82f
-            )
-            lineTo(cx + 3.dp.toPx(), cy + r * 0.82f)
-        }
-        drawPath(rightHemisphere, circuitBrush, style = traceStroke)
-
-        // Center Neural Fissure (Dividing Line)
-        drawLine(
-            brush = circuitBrush,
-            start = Offset(cx, cy - r * 0.75f),
-            end = Offset(cx, cy + r * 0.75f),
-            strokeWidth = 2.dp.toPx(),
-            cap = StrokeCap.Round
-        )
-
-        // Internal Circuit Lines — Left Hemisphere
-        val leftInternal = Path().apply {
-            // Upper frontal circuit
-            moveTo(cx, cy - r * 0.50f)
-            lineTo(cx - r * 0.35f, cy - r * 0.50f)
-            lineTo(cx - r * 0.55f, cy - r * 0.35f)
-
-            // Middle sensory circuit
-            moveTo(cx, cy - r * 0.10f)
-            lineTo(cx - r * 0.40f, cy - r * 0.10f)
-            lineTo(cx - r * 0.65f, cy + r * 0.05f)
-
-            // Lower temporal/occipital circuit
-            moveTo(cx, cy + r * 0.35f)
-            lineTo(cx - r * 0.35f, cy + r * 0.35f)
-            lineTo(cx - r * 0.50f, cy + r * 0.55f)
-        }
-        drawPath(leftInternal, circuitBrush, style = traceStroke)
-
-        // Internal Circuit Lines — Right Hemisphere
-        val rightInternal = Path().apply {
-            // Upper frontal circuit
-            moveTo(cx, cy - r * 0.50f)
-            lineTo(cx + r * 0.35f, cy - r * 0.50f)
-            lineTo(cx + r * 0.55f, cy - r * 0.35f)
-
-            // Middle sensory circuit
-            moveTo(cx, cy - r * 0.10f)
-            lineTo(cx + r * 0.40f, cy - r * 0.10f)
-            lineTo(cx + r * 0.65f, cy + r * 0.05f)
-
-            // Lower temporal/occipital circuit
-            moveTo(cx, cy + r * 0.35f)
-            lineTo(cx + r * 0.35f, cy + r * 0.35f)
-            lineTo(cx + r * 0.50f, cy + r * 0.55f)
-        }
-        drawPath(rightInternal, circuitBrush, style = traceStroke)
-
-        // 5. Glowing Circuit Nodes (Filled circles with luminous halos)
-        val nodes = listOf(
-            Offset(cx - r * 0.55f, cy - r * 0.35f),
-            Offset(cx - r * 0.65f, cy + r * 0.05f),
-            Offset(cx - r * 0.50f, cy + r * 0.55f),
-            Offset(cx + r * 0.55f, cy - r * 0.35f),
-            Offset(cx + r * 0.65f, cy + r * 0.05f),
-            Offset(cx + r * 0.50f, cy + r * 0.55f),
-            Offset(cx - r * 0.35f, cy + r * 0.82f),
-            Offset(cx + r * 0.35f, cy + r * 0.82f),
-            Offset(cx, cy - r * 0.75f),
-            Offset(cx, cy)
-        )
-
-        for (node in nodes) {
-            // Luminous halo
-            drawCircle(
-                color = Color(0x66FFAA00),
-                radius = 5.5.dp.toPx(),
-                center = node
-            )
-            // Core node
-            drawCircle(
-                color = Color(0xFFFFE082),
-                radius = 2.8.dp.toPx(),
-                center = node
-            )
+        for (pt in nodePoints) {
+            drawCircle(color = dotGlowColor, radius = nodeGlowRadius, center = pt)
+            drawCircle(brush = strokeGrad, radius = nodeRadius, center = pt)
         }
     }
-}
-
-/**
- * Draws a sharp 4-point sparkle star centered at the specified offset.
- */
-private fun DrawScope.drawSparkleStar(center: Offset, size: Float, color: Color) {
-    val path = Path().apply {
-        moveTo(center.x, center.y - size)
-        cubicTo(center.x, center.y, center.x, center.y, center.x + size, center.y)
-        cubicTo(center.x, center.y, center.x, center.y, center.x, center.y + size)
-        cubicTo(center.x, center.y, center.x, center.y, center.x - size, center.y)
-        cubicTo(center.x, center.y, center.x, center.y, center.x, center.y - size)
-        close()
-    }
-    drawPath(path, color)
 }
 
 @Preview(showBackground = true, showSystemUi = true)

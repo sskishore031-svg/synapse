@@ -226,6 +226,8 @@ fun HomeContent(
     val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF5A6075)
     val headerTextColor = textPrimaryColor
     var showStreakSheet by remember { mutableStateOf(false) }
+    var showTopicsDoneSheet by remember { mutableStateOf(false) }
+    var showQuizScoreSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -612,22 +614,32 @@ fun HomeContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Metric 1: Topics done
+                                    // Metric 1: Topics done (Interactive Progress Sheet Trigger)
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
                                             .background(elevatedBg, RoundedCornerShape(12.dp))
-                                            .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
+                                            .border(
+                                                1.dp,
+                                                Color(0xFF3B82F6).copy(alpha = 0.5f),
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable { showTopicsDoneSheet = true }
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "${uiState.topicsDone}",
-                                                color = textPrimaryColor,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "${uiState.topicsDone}",
+                                                    color = textPrimaryColor,
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(text = "📚", fontSize = 11.sp)
+                                            }
                                             Text(
                                                 text = "Topics done",
                                                 color = textSecondaryColor,
@@ -636,22 +648,32 @@ fun HomeContent(
                                         }
                                     }
 
-                                    // Metric 2: Quiz score
+                                    // Metric 2: Quiz score (Interactive Performance Sheet Trigger)
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
                                             .background(elevatedBg, RoundedCornerShape(12.dp))
-                                            .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
+                                            .border(
+                                                1.dp,
+                                                AmberGold.copy(alpha = 0.5f),
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable { showQuizScoreSheet = true }
                                             .padding(vertical = 10.dp, horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "${uiState.quizScore}%",
-                                                color = AmberGold,
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = "${uiState.quizScore}%",
+                                                    color = AmberGold,
+                                                    fontSize = 15.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(text = "🎯", fontSize = 11.sp)
+                                            }
                                             Text(
                                                 text = "Quiz score",
                                                 color = textSecondaryColor,
@@ -1270,219 +1292,49 @@ fun HomeContent(
         }
     }
 
-    // Interactive Streak Quick-View Sheet
+    // Interactive Detail Popup Sheets for Topics Done, Quiz Score, and Study Streak
+    if (showTopicsDoneSheet) {
+        TopicsDoneBottomSheet(
+            onDismissRequest = { showTopicsDoneSheet = false },
+            topicsDone = uiState.topicsDone,
+            totalTopics = uiState.totalTopics,
+            overallProgress = uiState.overallProgress,
+            subjects = uiState.subjects,
+            onSubjectClick = { slug ->
+                showTopicsDoneSheet = false
+                onSubjectCardClick(slug)
+            },
+            onExploreAllClick = {
+                showTopicsDoneSheet = false
+                onTabSelect(1)
+            }
+        )
+    }
+
+    if (showQuizScoreSheet) {
+        QuizScoreBottomSheet(
+            onDismissRequest = { showQuizScoreSheet = false },
+            quizScore = uiState.quizScore,
+            quizzesAttempted = uiState.quizzesAttempted,
+            latestQuizScore = uiState.latestQuizScore,
+            onTakeQuizClick = {
+                showQuizScoreSheet = false
+                onTabSelect(2)
+            }
+        )
+    }
+
     if (showStreakSheet) {
-        ModalBottomSheet(
+        StudyStreakBottomSheet(
             onDismissRequest = { showStreakSheet = false },
-            containerColor = cardBg,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            dragHandle = {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 12.dp, bottom = 8.dp)
-                        .width(40.dp)
-                        .height(4.dp)
-                        .background(cardBorder, RoundedCornerShape(2.dp))
-                )
+            studyStreakDays = uiState.studyStreakDays,
+            bestStreakDays = uiState.bestStreakDays,
+            weeklyActiveDays = uiState.weeklyActiveDays,
+            onViewCalendarClick = {
+                showStreakSheet = false
+                onStreakCalendarClick?.invoke() ?: onProgressAnalyticsClick?.invoke()
             }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Header with Flame
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(SunsetOrange.copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "🔥", fontSize = 28.sp)
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Daily Study Streak",
-                    color = textPrimaryColor,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                val motivationalText = if (uiState.studyStreakDays == 0) {
-                    "Start your first micro-lesson today to build your streak!"
-                } else if (uiState.studyStreakDays == 1) {
-                    "Great start! Complete a lesson tomorrow to keep the flame alive."
-                } else {
-                    "You're on fire! ${uiState.studyStreakDays} days in a row — keep the momentum going!"
-                }
-
-                Text(
-                    text = motivationalText,
-                    color = textSecondaryColor,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Stats Cards: Current Streak & Best Streak
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 14.dp, horizontal = 12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "${uiState.studyStreakDays} days",
-                                color = SunsetOrange,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Current Streak",
-                                color = textSecondaryColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 14.dp, horizontal = 12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "${uiState.bestStreakDays} days",
-                                color = AmberGold,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Best Streak",
-                                color = textSecondaryColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // This Week's Activity Section
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "This Week's Activity",
-                        color = textPrimaryColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${uiState.weeklyActiveDays.count { it }} / 7 active",
-                        color = SunsetOrange,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Mon - Sun Pills Row
-                val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    dayNames.forEachIndexed { index, dayName ->
-                        val isActive = uiState.weeklyActiveDays.getOrElse(index) { false }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isActive) SunsetOrange else elevatedBg
-                                    )
-                                    .border(
-                                        1.dp,
-                                        if (isActive) SunsetOrange else cardBorder,
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isActive) {
-                                    Text(text = "🔥", fontSize = 16.sp)
-                                } else {
-                                    Text(
-                                        text = dayName.take(1),
-                                        color = textSecondaryColor,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = dayName,
-                                color = if (isActive) SunsetOrange else textSecondaryColor,
-                                fontSize = 10.sp,
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // View Full Streak Calendar -> Button
-                Button(
-                    onClick = {
-                        showStreakSheet = false
-                        onStreakCalendarClick?.invoke() ?: onProgressAnalyticsClick?.invoke()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
-                ) {
-                    Text(
-                        text = "View Full Streak Calendar →",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+        )
     }
 
     // Add Daily Study Task Dialog

@@ -292,8 +292,13 @@ fun SettingsScreen(
                                         color = primaryTextColor
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
+                                    val themeActiveLabel = when (activeTheme) {
+                                        ThemeMode.LIGHT -> "Light Mode active"
+                                        ThemeMode.DARK -> "Dark Mode active"
+                                        ThemeMode.SYSTEM -> "System Mode active"
+                                    }
                                     Text(
-                                        text = "${activeTheme.title} Mode active",
+                                        text = themeActiveLabel,
                                         fontSize = 12.sp,
                                         color = SunsetOrange,
                                         fontWeight = FontWeight.SemiBold

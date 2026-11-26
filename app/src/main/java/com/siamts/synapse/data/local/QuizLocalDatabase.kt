@@ -213,11 +213,14 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 lesson_id TEXT NOT NULL,
                 track_id TEXT NOT NULL,
                 user_id TEXT NOT NULL,
+                chapter_index INTEGER NOT NULL DEFAULT 1,
+                concept_done INTEGER NOT NULL DEFAULT 0,
+                quiz_done INTEGER NOT NULL DEFAULT 0,
                 lesson_completed INTEGER NOT NULL DEFAULT 0,
                 quiz_completed INTEGER NOT NULL DEFAULT 0,
                 is_completed INTEGER NOT NULL DEFAULT 0,
                 completed_at INTEGER NOT NULL,
-                PRIMARY KEY (lesson_id, user_id)
+                PRIMARY KEY (user_id, track_id, chapter_index)
             )
             """.trimIndent()
         )
@@ -235,6 +238,13 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             )
             """.trimIndent()
         )
+    }
+
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        try { db.execSQL("ALTER TABLE lesson_progress ADD COLUMN chapter_index INTEGER NOT NULL DEFAULT 1") } catch (_: Throwable) {}
+        try { db.execSQL("ALTER TABLE lesson_progress ADD COLUMN concept_done INTEGER NOT NULL DEFAULT 0") } catch (_: Throwable) {}
+        try { db.execSQL("ALTER TABLE lesson_progress ADD COLUMN quiz_done INTEGER NOT NULL DEFAULT 0") } catch (_: Throwable) {}
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -1430,21 +1440,40 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     // ==========================================
 
     override suspend fun saveProgress(progress: LessonProgressEntity) = withContext(Dispatchers.IO) {
-        val key = "${progress.userId}_${progress.lessonId}"
-        inMemoryLessonProgress[key] = progress
-        progressStateFlow.value = inMemoryLessonProgress.values.toList()
+        val normTrack = TrackMapping.normalizeTrackId(progress.trackId)
+        val idx = progress.chapterIndex.coerceIn(1, 5)
+        val numericId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
+        val canonicalKey = TrackMapping.canonicalLessonKey(normTrack, idx)
+
+        val entityToSave = progress.copy(
+            trackId = normTrack,
+            chapterIndex = idx,
+            lessonId = if (progress.lessonId.isNotBlank()) progress.lessonId else numericId
+        )
+
+        inMemoryLessonProgress["${progress.userId}_${normTrack}_$idx"] = entityToSave
+        inMemoryLessonProgress["${progress.userId}_${entityToSave.lessonId}"] = entityToSave
+        inMemoryLessonProgress["${progress.userId}_$numericId"] = entityToSave
+        inMemoryLessonProgress["${progress.userId}_$canonicalKey"] = entityToSave
+        inMemoryLessonProgress["1_${normTrack}_$idx"] = entityToSave
+        inMemoryLessonProgress["1_$numericId"] = entityToSave
+
+        progressStateFlow.value = inMemoryLessonProgress.values.distinctBy { "${it.userId}_${it.trackId}_${it.chapterIndex}" }
 
         if (hasAndroidContext) {
             try {
                 val db = writableDatabase
                 val values = ContentValues().apply {
-                    put("lesson_id", progress.lessonId)
-                    put("track_id", progress.trackId)
+                    put("lesson_id", entityToSave.lessonId)
+                    put("track_id", normTrack)
                     put("user_id", progress.userId)
-                    put("lesson_completed", if (progress.conceptDone || progress.lessonCompleted) 1 else 0)
-                    put("quiz_completed", if (progress.quizDone || progress.quizCompleted) 1 else 0)
-                    put("is_completed", if (progress.conceptDone || progress.quizDone || progress.isCompleted) 1 else 0)
-                    put("completed_at", progress.completedAt)
+                    put("chapter_index", idx)
+                    put("concept_done", if (entityToSave.conceptDone || entityToSave.lessonCompleted) 1 else 0)
+                    put("quiz_done", if (entityToSave.quizDone || entityToSave.quizCompleted) 1 else 0)
+                    put("lesson_completed", if (entityToSave.conceptDone || entityToSave.lessonCompleted) 1 else 0)
+                    put("quiz_completed", if (entityToSave.quizDone || entityToSave.quizCompleted) 1 else 0)
+                    put("is_completed", if (entityToSave.isCompleted || entityToSave.conceptDone || entityToSave.quizDone) 1 else 0)
+                    put("completed_at", entityToSave.completedAt)
                 }
                 db.insertWithOnConflict("lesson_progress", null, values, SQLiteDatabase.CONFLICT_REPLACE)
             } catch (_: Throwable) {}
@@ -1452,18 +1481,20 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         Unit
     }
 
-    override suspend fun markLessonCompleted(
-        lessonId: String,
+    override suspend fun markConceptDone(
+        userId: String,
         trackId: String,
-        userId: String
+        chapterIndex: Int
     ): LessonProgressEntity = withContext(Dispatchers.IO) {
         val normTrack = TrackMapping.normalizeTrackId(trackId)
-        val canonicalId = TrackMapping.canonicalLessonId(lessonId, normTrack)
-        val existing = getProgress(canonicalId, userId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        val canonicalId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
+        val existing = getProgress(canonicalId, userId) ?: getChapterProgress(normTrack, idx, userId)
         val updated = (existing ?: LessonProgressEntity(
             lessonId = canonicalId,
             trackId = normTrack,
-            userId = userId
+            userId = userId,
+            chapterIndex = idx
         )).copy(
             conceptDone = true,
             lessonCompleted = true,
@@ -1477,18 +1508,20 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         updated
     }
 
-    override suspend fun markQuizCompleted(
-        lessonId: String,
+    override suspend fun markQuizDone(
+        userId: String,
         trackId: String,
-        userId: String
+        chapterIndex: Int
     ): LessonProgressEntity = withContext(Dispatchers.IO) {
         val normTrack = TrackMapping.normalizeTrackId(trackId)
-        val canonicalId = TrackMapping.canonicalLessonId(lessonId, normTrack)
-        val existing = getProgress(canonicalId, userId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        val canonicalId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
+        val existing = getProgress(canonicalId, userId) ?: getChapterProgress(normTrack, idx, userId)
         val updated = (existing ?: LessonProgressEntity(
             lessonId = canonicalId,
             trackId = normTrack,
-            userId = userId
+            userId = userId,
+            chapterIndex = idx
         )).copy(
             quizDone = true,
             quizCompleted = true,
@@ -1502,16 +1535,121 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
         updated
     }
 
+    override suspend fun markLessonCompleted(
+        lessonId: String,
+        trackId: String,
+        userId: String
+    ): LessonProgressEntity = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val idx = TrackMapping.chapterIndex(lessonId, normTrack)
+        markConceptDone(userId, normTrack, idx)
+    }
+
+    override suspend fun markQuizCompleted(
+        lessonId: String,
+        trackId: String,
+        userId: String
+    ): LessonProgressEntity = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val idx = TrackMapping.chapterIndex(lessonId, normTrack)
+        markQuizDone(userId, normTrack, idx)
+    }
+
     override fun getProgressCached(lessonId: String, userId: String): LessonProgressEntity? {
-        return inMemoryLessonProgress["${userId}_$lessonId"]
+        val direct = inMemoryLessonProgress["${userId}_$lessonId"]
+        if (direct != null) return direct
+        val normTrack = TrackMapping.getTrackForChapter(lessonId)
+        val idx = TrackMapping.chapterIndex(lessonId, normTrack)
+        return inMemoryLessonProgress["${userId}_${normTrack}_$idx"]
+            ?: inMemoryLessonProgress["1_${normTrack}_$idx"]
+            ?: inMemoryLessonProgress["1_$lessonId"]
+    }
+
+    override suspend fun getChapterProgress(
+        trackId: String,
+        chapterIndex: Int,
+        userId: String
+    ): LessonProgressEntity? = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        val key = "${userId}_${normTrack}_$idx"
+        inMemoryLessonProgress[key]?.let { return@withContext it }
+        val numericId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
+        getProgress(numericId, userId)
+    }
+
+    override fun observeChapterProgress(
+        trackId: String,
+        chapterIndex: Int,
+        userId: String
+    ): kotlinx.coroutines.flow.Flow<LessonProgressEntity?> {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        return kotlinx.coroutines.flow.flow {
+            val initial = getChapterProgress(normTrack, idx, userId) ?: getChapterProgress(normTrack, idx, "1")
+            emit(initial)
+            progressStateFlow.collect { list ->
+                val found = list.firstOrNull {
+                    (it.userId == userId || it.userId == "1") &&
+                    TrackMapping.normalizeTrackId(it.trackId) == normTrack &&
+                    it.chapterIndex == idx
+                }
+                emit(found)
+            }
+        }
+    }
+
+    override suspend fun resetChapterProgress(
+        trackId: String,
+        chapterIndex: Int,
+        userId: String
+    ): LessonProgressEntity = withContext(Dispatchers.IO) {
+        val normTrack = TrackMapping.normalizeTrackId(trackId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        val numericId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
+        val resetEntity = LessonProgressEntity(
+            lessonId = numericId,
+            trackId = normTrack,
+            userId = userId,
+            chapterIndex = idx,
+            conceptDone = false,
+            quizDone = false,
+            lessonCompleted = false,
+            quizCompleted = false,
+            isCompleted = false,
+            completedAt = System.currentTimeMillis()
+        )
+
+        val keysToRemove = listOf(
+            "${userId}_${normTrack}_$idx",
+            "${userId}_$numericId",
+            "${userId}_${TrackMapping.canonicalLessonKey(normTrack, idx)}",
+            "1_${normTrack}_$idx",
+            "1_$numericId"
+        )
+        keysToRemove.forEach { inMemoryLessonProgress.remove(it) }
+
+        progressStateFlow.value = inMemoryLessonProgress.values.distinctBy { "${it.userId}_${it.trackId}_${it.chapterIndex}" }
+
+        if (hasAndroidContext) {
+            try {
+                val db = writableDatabase
+                db.delete("lesson_progress", "track_id = ? AND (lesson_id = ? OR chapter_index = ?) AND (user_id = ? OR user_id = '1')", arrayOf(normTrack, numericId, idx.toString(), userId))
+            } catch (_: Throwable) {}
+        }
+        resetEntity
     }
 
     override suspend fun getProgress(
         lessonId: String,
         userId: String
     ): LessonProgressEntity? = withContext(Dispatchers.IO) {
-        val key = "${userId}_$lessonId"
-        inMemoryLessonProgress[key]?.let { return@withContext it }
+        val cached = getProgressCached(lessonId, userId)
+        if (cached != null) return@withContext cached
+
+        val normTrack = TrackMapping.getTrackForChapter(lessonId)
+        val idx = TrackMapping.chapterIndex(lessonId, normTrack)
+        val numericId = TrackMapping.canonicalLessonNumericId(normTrack, idx).toString()
 
         if (hasAndroidContext) {
             try {
@@ -1519,26 +1657,34 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 val cursor = db.query(
                     "lesson_progress",
                     null,
-                    "lesson_id = ? AND user_id = ?",
-                    arrayOf(lessonId, userId),
-                    null, null, null
+                    "(lesson_id = ? OR lesson_id = ?) AND (user_id = ? OR user_id = '1')",
+                    arrayOf(lessonId, numericId, userId),
+                    null, null, "completed_at DESC"
                 )
                 cursor.use { c ->
                     if (c.moveToFirst()) {
-                        val lComp = c.getInt(c.getColumnIndexOrThrow("lesson_completed")) == 1
-                        val qComp = c.getInt(c.getColumnIndexOrThrow("quiz_completed")) == 1
+                        val lcIdx = c.getColumnIndex("lesson_completed")
+                        val qcIdx = c.getColumnIndex("quiz_completed")
+                        val cdIdx = c.getColumnIndex("concept_done")
+                        val qdIdx = c.getColumnIndex("quiz_done")
+                        val lComp = (lcIdx >= 0 && c.getInt(lcIdx) == 1) || (cdIdx >= 0 && c.getInt(cdIdx) == 1)
+                        val qComp = (qcIdx >= 0 && c.getInt(qcIdx) == 1) || (qdIdx >= 0 && c.getInt(qdIdx) == 1)
+                        val icIdx = c.getColumnIndex("is_completed")
+                        val isComp = (icIdx >= 0 && c.getInt(icIdx) == 1) || lComp || qComp
+                        val caIdx = c.getColumnIndex("completed_at")
                         val entity = LessonProgressEntity(
                             lessonId = c.getString(c.getColumnIndexOrThrow("lesson_id")),
                             trackId = c.getString(c.getColumnIndexOrThrow("track_id")),
                             userId = c.getString(c.getColumnIndexOrThrow("user_id")),
+                            chapterIndex = idx,
                             conceptDone = lComp,
                             quizDone = qComp,
                             lessonCompleted = lComp,
                             quizCompleted = qComp,
-                            isCompleted = c.getInt(c.getColumnIndexOrThrow("is_completed")) == 1 || lComp || qComp,
-                            completedAt = c.getLong(c.getColumnIndexOrThrow("completed_at"))
+                            isCompleted = isComp,
+                            completedAt = if (caIdx >= 0) c.getLong(caIdx) else System.currentTimeMillis()
                         )
-                        inMemoryLessonProgress[key] = entity
+                        saveProgress(entity)
                         return@withContext entity
                     }
                 }
@@ -1550,7 +1696,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     override suspend fun getProgressForUser(
         userId: String
     ): List<LessonProgressEntity> = withContext(Dispatchers.IO) {
-        val memList = inMemoryLessonProgress.values.filter { it.userId == userId && it.isCompleted }
+        val memList = inMemoryLessonProgress.values.filter { (it.userId == userId || it.userId == "1") && (it.isCompleted || it.conceptDone || it.quizDone) }.distinctBy { "${it.trackId}_${it.chapterIndex}" }
         if (!hasAndroidContext || memList.isNotEmpty()) {
             return@withContext memList
         }
@@ -1560,7 +1706,7 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
             val cursor = db.query(
                 "lesson_progress",
                 null,
-                "user_id = ? AND is_completed = 1",
+                "(user_id = ? OR user_id = '1') AND (is_completed = 1 OR concept_done = 1 OR quiz_done = 1)",
                 arrayOf(userId),
                 null, null, "completed_at ASC"
             )
@@ -1568,43 +1714,49 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 val lid = c.getColumnIndexOrThrow("lesson_id")
                 val tid = c.getColumnIndexOrThrow("track_id")
                 val uid = c.getColumnIndexOrThrow("user_id")
-                val lc = c.getColumnIndexOrThrow("lesson_completed")
-                val qc = c.getColumnIndexOrThrow("quiz_completed")
-                val ic = c.getColumnIndexOrThrow("is_completed")
+                val lcIdx = c.getColumnIndex("lesson_completed")
+                val qcIdx = c.getColumnIndex("quiz_completed")
+                val cdIdx = c.getColumnIndex("concept_done")
+                val qdIdx = c.getColumnIndex("quiz_done")
+                val icIdx = c.getColumnIndex("is_completed")
                 val ca = c.getColumnIndexOrThrow("completed_at")
                 while (c.moveToNext()) {
-                    val lComp = c.getInt(lc) == 1
-                    val qComp = c.getInt(qc) == 1
+                    val lComp = (lcIdx >= 0 && c.getInt(lcIdx) == 1) || (cdIdx >= 0 && c.getInt(cdIdx) == 1)
+                    val qComp = (qcIdx >= 0 && c.getInt(qcIdx) == 1) || (qdIdx >= 0 && c.getInt(qdIdx) == 1)
+                    val rawTrack = c.getString(tid)
+                    val rawLesson = c.getString(lid)
+                    val idx = TrackMapping.chapterIndex(rawLesson, rawTrack)
                     val entity = LessonProgressEntity(
-                        lessonId = c.getString(lid),
-                        trackId = c.getString(tid),
+                        lessonId = rawLesson,
+                        trackId = TrackMapping.normalizeTrackId(rawTrack),
                         userId = c.getString(uid),
+                        chapterIndex = idx,
                         conceptDone = lComp,
                         quizDone = qComp,
                         lessonCompleted = lComp,
                         quizCompleted = qComp,
-                        isCompleted = c.getInt(ic) == 1 || lComp || qComp,
+                        isCompleted = (icIdx >= 0 && c.getInt(icIdx) == 1) || lComp || qComp,
                         completedAt = c.getLong(ca)
                     )
                     list.add(entity)
-                    inMemoryLessonProgress["${userId}_${entity.lessonId}"] = entity
+                    saveProgress(entity)
                 }
             }
             if (list.isNotEmpty()) {
-                progressStateFlow.value = inMemoryLessonProgress.values.toList()
+                progressStateFlow.value = inMemoryLessonProgress.values.distinctBy { "${it.userId}_${it.trackId}_${it.chapterIndex}" }
             }
         } catch (_: Throwable) {}
-        list
+        list.distinctBy { "${it.trackId}_${it.chapterIndex}" }
     }
 
     override fun observeProgressForUser(
         userId: String
     ): kotlinx.coroutines.flow.Flow<List<LessonProgressEntity>> {
         return kotlinx.coroutines.flow.flow {
-            val initial = (getProgressForUser(userId) + getProgressForUser("1")).distinctBy { it.lessonId }
+            val initial = (getProgressForUser(userId) + getProgressForUser("1")).distinctBy { "${it.trackId}_${it.chapterIndex}" }
             emit(initial)
             progressStateFlow.collect { list ->
-                val filtered = list.filter { (it.userId == userId || it.userId == "1") && it.isCompleted }.distinctBy { it.lessonId }
+                val filtered = list.filter { (it.userId == userId || it.userId == "1") && (it.isCompleted || it.conceptDone || it.quizDone) }.distinctBy { "${it.trackId}_${it.chapterIndex}" }
                 emit(filtered)
             }
         }
@@ -1624,15 +1776,15 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     ) = withContext(Dispatchers.IO) {
         val norm = TrackMapping.normalizeTrackId(trackId)
         val keysToRemove = inMemoryLessonProgress.filter { 
-            it.value.userId == userId && TrackMapping.normalizeTrackId(it.value.trackId) == norm 
+            (it.value.userId == userId || it.value.userId == "1") && TrackMapping.normalizeTrackId(it.value.trackId) == norm 
         }.keys
         keysToRemove.forEach { inMemoryLessonProgress.remove(it) }
-        progressStateFlow.value = inMemoryLessonProgress.values.toList()
+        progressStateFlow.value = inMemoryLessonProgress.values.distinctBy { "${it.userId}_${it.trackId}_${it.chapterIndex}" }
 
         if (hasAndroidContext) {
             try {
                 val db = writableDatabase
-                db.delete("lesson_progress", "track_id = ? AND user_id = ?", arrayOf(norm, userId))
+                db.delete("lesson_progress", "track_id = ? AND (user_id = ? OR user_id = '1')", arrayOf(norm, userId))
             } catch (_: Throwable) {}
         }
         Unit
@@ -1641,10 +1793,16 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
     override suspend fun clearAllProgress() = withContext(Dispatchers.IO) {
         inMemoryLessonProgress.clear()
         progressStateFlow.value = emptyList()
+        synchronized(inMemoryChapters) {
+            for (i in inMemoryChapters.indices) {
+                inMemoryChapters[i] = inMemoryChapters[i].copy(isAttempted = false)
+            }
+        }
         if (hasAndroidContext) {
             try {
                 val db = writableDatabase
                 db.delete("lesson_progress", null, null)
+                db.execSQL("UPDATE subject_chapters SET is_attempted = 0")
             } catch (_: Throwable) {}
         }
         Unit

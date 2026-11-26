@@ -11,6 +11,8 @@ data class ChapterLessonUiState(
     val chapterOrder: Int = 1,
     val durationMinutes: Int = 15,
     val isCompleted: Boolean = false,
+    val conceptDone: Boolean = false,
+    val quizDone: Boolean = false,
     val currentPartIndex: Int = 0, // 0 for Part 1, 1 for Part 2
     val part1Title: String = "",
     val part1Content: String = "",

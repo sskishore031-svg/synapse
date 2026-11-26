@@ -77,13 +77,13 @@ fun RoadmapScreen(
         onMilestoneClick = { milestoneId ->
             viewModel.onMilestoneClicked(milestoneId)
             val milestone = uiState.milestones.find { it.id == milestoneId }
-            if (milestone != null && milestone.status != MilestoneStatus.LOCKED) {
-                if (onChapterClick != null && milestone.chapterId > 0) {
+            if (milestone != null && milestone.chapterId > 0) {
+                if (onChapterClick != null) {
                     onChapterClick(milestone.chapterId)
                 } else {
                     onContinueClick?.invoke()
                 }
-            } else if (milestone == null) {
+            } else {
                 onContinueClick?.invoke()
             }
         },
@@ -293,56 +293,79 @@ fun RoadmapContent(
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             modifier = Modifier.fillMaxHeight(),
                                         ) {
-                                            when (milestone.status) {
-                                                MilestoneStatus.COMPLETED -> {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(32.dp)
-                                                            .background(
-                                                                if (isDark) SurfacePanel else Color(0xFFD1FAE5),
-                                                                CircleShape
-                                                            ),
-                                                        contentAlignment = Alignment.Center,
-                                                    ) {
-                                                        Text(text = "✓", color = if (isDark) AmberGold else Color(0xFF059669), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                                    }
+                                            if (milestone.status == MilestoneStatus.COMPLETED) {
+                                                // COMPLETED Chapter: Vibrant glowing Orange badge with "✓"
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(34.dp)
+                                                        .background(
+                                                            if (isDark) SunsetOrange.copy(alpha = 0.22f) else Color(0xFFFFEDD5),
+                                                            CircleShape
+                                                        )
+                                                        .border(
+                                                            1.5.dp,
+                                                            SunsetOrange,
+                                                            CircleShape
+                                                        ),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Text(text = "✓", color = SunsetOrange, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                                 }
-                                                MilestoneStatus.ACTIVE -> {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(36.dp)
-                                                            .background(SunsetOrange, CircleShape),
-                                                        contentAlignment = Alignment.Center,
-                                                    ) {
-                                                        Text(text = "▶", color = Color.White, fontSize = 12.sp)
-                                                    }
+                                            } else if (milestone.status == MilestoneStatus.ACTIVE) {
+                                                // ACTIVE Chapter: Solid Sunset Orange with White Number
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(34.dp)
+                                                        .background(SunsetOrange, CircleShape)
+                                                        .border(1.5.dp, SunsetOrange, CircleShape),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Text(
+                                                        text = "${index + 1}",
+                                                        color = Color.White,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
                                                 }
-                                                MilestoneStatus.LOCKED -> {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(32.dp)
-                                                            .background(
-                                                                if (isDark) SurfacePanel else Color(0xFFF1F5F9),
-                                                                CircleShape
-                                                            )
-                                                            .border(
-                                                                1.dp,
-                                                                if (isDark) SurfaceBorder else Color(0xFFCBD5E1),
-                                                                CircleShape
-                                                            ),
-                                                        contentAlignment = Alignment.Center,
-                                                    ) {
-                                                        Text(text = "🔒", fontSize = 12.sp)
-                                                    }
+                                            } else {
+                                                // BALANCE / UNSTARTED Chapters: Solid Deep BLACK / Dark Badge
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(34.dp)
+                                                        .background(
+                                                            if (isDark) Color(0xFF16171E) else Color(0xFFF1F5F9),
+                                                            CircleShape
+                                                        )
+                                                        .border(
+                                                            1.dp,
+                                                            if (isDark) Color(0xFF262833) else Color(0xFFCBD5E1),
+                                                            CircleShape
+                                                        ),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Text(
+                                                        text = "${index + 1}",
+                                                        color = if (isDark) Color(0xFF6B7280) else Color(0xFF94A3B8),
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
                                                 }
                                             }
 
                                             if (!isLast) {
+                                                val nextMilestone = uiState.milestones.getOrNull(index + 1)
+                                                val isLineOrange = milestone.status == MilestoneStatus.COMPLETED &&
+                                                    (nextMilestone?.status == MilestoneStatus.COMPLETED || nextMilestone?.status == MilestoneStatus.ACTIVE)
+
                                                 Box(
                                                     modifier = Modifier
                                                         .width(2.dp)
                                                         .weight(1f)
-                                                        .background(if (isDark) SurfaceBorder else Color(0xFFE2E8F0))
+                                                        .background(
+                                                            if (isLineOrange) SunsetOrange.copy(alpha = 0.6f)
+                                                            else if (isDark) Color(0xFF22242E)
+                                                            else Color(0xFFE2E8F0)
+                                                        )
                                                 )
                                             }
                                         }
@@ -355,16 +378,24 @@ fun RoadmapContent(
                                                 .weight(1f)
                                                 .padding(bottom = if (isLast) 0.dp else 12.dp)
                                                 .background(
-                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) {
-                                                        if (isDark) SunsetOrange.copy(alpha = 0.15f) else Color(0xFFEFF6FF)
-                                                    } else {
-                                                        if (isDark) SurfacePanelElevated else Color.White
+                                                    color = when (milestone.status) {
+                                                        MilestoneStatus.ACTIVE -> if (isDark) SunsetOrange.copy(alpha = 0.16f) else Color(0xFFFFF7ED)
+                                                        MilestoneStatus.COMPLETED -> if (isDark) SunsetOrange.copy(alpha = 0.10f) else Color(0xFFFFF7ED)
+                                                        MilestoneStatus.LOCKED -> if (isDark) Color(0xFF131419) else Color(0xFFF8FAFC) // Deep Black Clr
                                                     },
                                                     shape = RoundedCornerShape(14.dp)
                                                 )
                                                 .border(
-                                                    width = 1.dp,
-                                                    color = if (milestone.status == MilestoneStatus.ACTIVE) SunsetOrange else (if (isDark) SurfaceBorder else Color(0xFFE2E8F0)),
+                                                    width = when (milestone.status) {
+                                                        MilestoneStatus.ACTIVE -> 1.5.dp
+                                                        MilestoneStatus.COMPLETED -> 1.dp
+                                                        MilestoneStatus.LOCKED -> 1.dp
+                                                    },
+                                                    color = when (milestone.status) {
+                                                        MilestoneStatus.ACTIVE -> SunsetOrange
+                                                        MilestoneStatus.COMPLETED -> SunsetOrange.copy(alpha = 0.75f)
+                                                        MilestoneStatus.LOCKED -> if (isDark) Color(0xFF22242E) else Color(0xFFE2E8F0) // Dark Black Border
+                                                    },
                                                     shape = RoundedCornerShape(14.dp)
                                                 )
                                                 .padding(12.dp)
@@ -377,26 +408,33 @@ fun RoadmapContent(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = milestone.title,
-                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) {
-                                                            if (isDark) AmberGold else SunsetOrange
-                                                        } else if (milestone.status == MilestoneStatus.LOCKED) {
-                                                            if (isDark) TextSecondary else Color(0xFF94A3B8)
-                                                        } else {
-                                                            if (isDark) TextPrimary else Color(0xFF0F172A)
+                                                        color = when (milestone.status) {
+                                                            MilestoneStatus.ACTIVE -> if (isDark) AmberGold else SunsetOrange
+                                                            MilestoneStatus.COMPLETED -> if (isDark) Color.White else Color(0xFF0F172A)
+                                                            MilestoneStatus.LOCKED -> if (isDark) Color(0xFF888E9E) else Color(0xFF64748B)
                                                         },
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
-                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Spacer(modifier = Modifier.height(3.dp))
                                                     Text(
                                                         text = milestone.subtitle,
-                                                        color = if (milestone.status == MilestoneStatus.ACTIVE) SunsetOrange else (if (isDark) TextSecondary else Color(0xFF64748B)),
+                                                        color = when (milestone.status) {
+                                                            MilestoneStatus.ACTIVE -> SunsetOrange
+                                                            MilestoneStatus.COMPLETED -> SunsetOrange
+                                                            MilestoneStatus.LOCKED -> if (isDark) Color(0xFF525768) else Color(0xFF94A3B8)
+                                                        },
                                                         fontSize = 11.sp,
+                                                        fontWeight = if (milestone.status == MilestoneStatus.COMPLETED || milestone.status == MilestoneStatus.ACTIVE) FontWeight.SemiBold else FontWeight.Normal,
                                                     )
                                                 }
 
                                                 if (milestone.status == MilestoneStatus.ACTIVE) {
                                                     Text(text = "›", color = SunsetOrange, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                                } else if (milestone.status == MilestoneStatus.COMPLETED) {
+                                                    Text(text = "✓", color = SunsetOrange, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                                } else {
+                                                    Text(text = "›", color = if (isDark) Color(0xFF2C2F3D) else Color(0xFFCBD5E1), fontSize = 18.sp)
                                                 }
                                             }
                                         }
@@ -405,7 +443,7 @@ fun RoadmapContent(
                             }
                         }
 
-                        // 3. Action Button Box: Continue Button
+                        // 3. Action Button Box: Continue Button (Prominent & Comfortable 64.dp height)
                         DashedBorderBox(
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = 4.dp
@@ -414,10 +452,11 @@ fun RoadmapContent(
                                 onClick = onContinueClick,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(50.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                    .height(64.dp),
+                                shape = RoundedCornerShape(18.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                                 contentPadding = PaddingValues(0.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -430,23 +469,29 @@ fun RoadmapContent(
                                                     AmberGold,
                                                 )
                                             ),
-                                            shape = RoundedCornerShape(16.dp),
+                                            shape = RoundedCornerShape(18.dp),
                                         ),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.padding(horizontal = 22.dp)
+                                    ) {
                                         Text(
                                             text = "→",
                                             color = Color.White,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.ExtraBold,
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(10.dp))
                                         Text(
                                             text = "Continue: ${uiState.activeLessonTitle}",
                                             color = Color.White,
-                                            fontSize = 14.sp,
+                                            fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
                                 }

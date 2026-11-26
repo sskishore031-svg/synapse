@@ -92,22 +92,30 @@ fun PersonalInfoScreen(
     var phone by remember(initialPhone) { mutableStateOf(initialPhone) }
     var bio by remember(initialBio) { mutableStateOf(initialBio) }
     var isPhotoRemoved by remember { mutableStateOf(false) }
+    var showPhotoZoomDialog by remember { mutableStateOf(false) }
+    var selectedPhotoForCrop by remember { mutableStateOf<Uri?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: Exception) {}
-
-            val savedUri = copyUriToInternalStorage(context, uri)
-            photoUri = savedUri ?: uri.toString()
-            isPhotoRemoved = false
+            selectedPhotoForCrop = uri
+            showPhotoZoomDialog = false
         }
+    }
+
+    if (selectedPhotoForCrop != null) {
+        ImageCropDialog(
+            imageUri = selectedPhotoForCrop!!,
+            userId = 1,
+            onCropSuccess = { croppedUri ->
+                selectedPhotoForCrop = null
+                photoUri = croppedUri
+                isPhotoRemoved = false
+                onSaveChangesClick(name, email, phone, bio, croppedUri, false)
+            },
+            onDismiss = { selectedPhotoForCrop = null }
+        )
     }
 
     val initials = remember(name) {
@@ -222,6 +230,31 @@ fun PersonalInfoScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // Zoomed Avatar Dialog
+                        if (showPhotoZoomDialog) {
+                            ProfilePhotoZoomDialog(
+                                photoUri = if (isPhotoRemoved) null else photoUri,
+                                userName = name,
+                                userEmail = email,
+                                initials = initials,
+                                isUploading = isSaving,
+                                onChangePhotoClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                onRemovePhotoClick = if (!photoUri.isNullOrEmpty() && !isPhotoRemoved) {
+                                    {
+                                        photoUri = null
+                                        isPhotoRemoved = true
+                                        onRemoveProfilePictureClick?.invoke()
+                                        showPhotoZoomDialog = false
+                                    }
+                                } else null,
+                                onDismiss = { showPhotoZoomDialog = false }
+                            )
+                        }
+
                         // Avatar Section
                         DashedBorderBox(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
                             Column(
@@ -230,19 +263,15 @@ fun PersonalInfoScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(76.dp)
+                                        .size(80.dp)
                                         .clip(CircleShape)
                                         .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
-                                        .border(2.dp, SunsetOrange, CircleShape)
-                                        .clickable {
-                                            photoPickerLauncher.launch(
-                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                            )
-                                        },
+                                        .border(2.5.dp, SunsetOrange, CircleShape)
+                                        .clickable { showPhotoZoomDialog = true },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     val resolvedPhoto = RetrofitClient.resolveImageModel(photoUri) ?: photoUri
-                                    if (resolvedPhoto != null && (resolvedPhoto !is String || resolvedPhoto.isNotEmpty())) {
+                                    if (!isPhotoRemoved && resolvedPhoto != null && (resolvedPhoto !is String || resolvedPhoto.isNotEmpty())) {
                                         AsyncImage(
                                             model = resolvedPhoto,
                                             contentDescription = "Profile Picture",
@@ -253,24 +282,20 @@ fun PersonalInfoScreen(
                                         Text(
                                             text = initials,
                                             color = SunsetOrange,
-                                            fontSize = 26.sp,
+                                            fontSize = 28.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Text(
-                                    text = "Change Profile Picture",
+                                    text = "View / Change Profile Picture",
                                     color = SunsetOrange,
-                                    fontSize = 12.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.clickable {
-                                        photoPickerLauncher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                        )
-                                    }
+                                    modifier = Modifier.clickable { showPhotoZoomDialog = true }
                                 )
                             }
                         }

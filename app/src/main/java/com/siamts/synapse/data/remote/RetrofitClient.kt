@@ -102,8 +102,11 @@ object RetrofitClient {
             val originalRequest = chain.request()
             val originalUrl = originalRequest.url.toString()
 
-            // Normalize URL to always target /Synapse_backend/auth/<endpoint>.php without duplicates
+            // Normalize URL to always target /Synapse_backend/auth/<endpoint>.php without duplicates,
+            // while preserving static uploads/avatars/ file URLs cleanly
+            val isMedia = originalUrl.contains("/uploads/") || originalUrl.contains("/upload/")
             val cleanedUrl = when {
+                isMedia -> originalUrl
                 originalUrl.contains("/auth/auth/") -> originalUrl.replace("/auth/auth/", "/auth/")
                 !originalUrl.contains("/auth/") && originalUrl.contains("/Synapse_backend/") ->
                     originalUrl.replace("/Synapse_backend/", "/Synapse_backend/auth/")
@@ -117,9 +120,13 @@ object RetrofitClient {
             val requestBuilder = originalRequest.newBuilder()
                 .url(cleanedUrl)
                 .header("ngrok-skip-browser-warning", "true")
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
                 .header("User-Agent", "Synapse-AI-Android/1.0")
+
+            if (!isMedia) {
+                requestBuilder
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+            }
 
             if (!token.isNullOrBlank()) {
                 requestBuilder.header("Authorization", "Bearer $token")
@@ -144,7 +151,7 @@ object RetrofitClient {
         }
     }
 
-    private val okHttpClient: OkHttpClient by lazy {
+    val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(headerInterceptor)
             .addInterceptor(loggingInterceptor)
@@ -416,7 +423,9 @@ object RetrofitClient {
                     parsedUri.host != currentHost
                 ) {
                     val path = parsedUri.rawPath.orEmpty()
-                    val uploadPath = if (path.contains("upload/")) {
+                    val uploadPath = if (path.contains("uploads/")) {
+                        path.substring(path.indexOf("uploads/"))
+                    } else if (path.contains("upload/")) {
                         path.substring(path.indexOf("upload/"))
                     } else {
                         path.trimStart('/')
@@ -430,7 +439,9 @@ object RetrofitClient {
             }
         } else {
             val cleanPath = trimmed.trimStart('/')
-            val uploadPath = if (cleanPath.contains("upload/")) {
+            val uploadPath = if (cleanPath.contains("uploads/")) {
+                cleanPath.substring(cleanPath.indexOf("uploads/"))
+            } else if (cleanPath.contains("upload/")) {
                 cleanPath.substring(cleanPath.indexOf("upload/"))
             } else {
                 cleanPath

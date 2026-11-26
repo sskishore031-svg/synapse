@@ -5,11 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.siamts.synapse.data.local.BaseCurriculumData
 import com.siamts.synapse.data.local.SessionManager
+import com.siamts.synapse.data.local.SynapseDatabase
+import com.siamts.synapse.data.local.TrackMapping
 import com.siamts.synapse.data.repository.ChaptersRepository
 import com.siamts.synapse.data.repository.ChaptersRepositoryImpl
 import com.siamts.synapse.data.repository.NotesRepository
 import com.siamts.synapse.data.repository.NotesRepositoryImpl
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +31,8 @@ class ChapterLessonViewModel(
 
     private val _uiState = MutableStateFlow(ChapterLessonUiState())
     val uiState: StateFlow<ChapterLessonUiState> = _uiState.asStateFlow()
+
+    private var progressJob: Job? = null
 
     init {
         val navChapterId = savedStateHandle?.get<Int>("chapterId")
@@ -51,7 +56,54 @@ class ChapterLessonViewModel(
             resolvedSubject?.chapters?.firstOrNull()?.chapterId ?: 1
         }
 
-        // 1. Immediately apply local curriculum lesson synchronously for instant offline display
+        val normTrack = TrackMapping.normalizeTrackId(resolvedSubject?.name.orEmpty().ifBlank { subjectId.orEmpty() })
+        val chapIndex = TrackMapping.chapterIndex(targetChapterId, normTrack)
+        val canonId = TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
+
+        // 0. Immediately reset chapter state to prevent cross-chapter completion leakage
+        _uiState.update {
+            it.copy(
+                chapterId = targetChapterId,
+                isLoading = true,
+                isCompleted = false,
+                conceptDone = false,
+                quizDone = false,
+                isMarkingComplete = false,
+                completionSuccess = false
+            )
+        }
+
+        // 1. Reactive DB observation for this exact chapter
+        progressJob?.cancel()
+        progressJob = scope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userIdStr = (user?.id ?: 1).toString()
+            val dao = SynapseDatabase.getLessonProgressDao()
+
+            // Immediate check from cache
+            val initial = dao.getProgressCached(canonId, userIdStr)
+                ?: dao.getChapterProgress(normTrack, chapIndex, userIdStr)
+            _uiState.update {
+                it.copy(
+                    isCompleted = initial?.isCompleted == true,
+                    conceptDone = initial?.conceptDone == true || initial?.lessonCompleted == true,
+                    quizDone = initial?.quizDone == true || initial?.quizCompleted == true
+                )
+            }
+
+            // Real-time flow observation
+            dao.observeChapterProgress(normTrack, chapIndex, userIdStr).collect { prog ->
+                _uiState.update {
+                    it.copy(
+                        isCompleted = prog?.isCompleted == true,
+                        conceptDone = prog?.conceptDone == true || prog?.lessonCompleted == true,
+                        quizDone = prog?.quizDone == true || prog?.quizCompleted == true
+                    )
+                }
+            }
+        }
+
+        // 2. Immediately apply local curriculum lesson synchronously for instant offline display
         val localLesson = BaseCurriculumData.getChapterLesson(targetChapterId)
             ?: (if (resolvedSubject?.chapters?.isNotEmpty() == true) {
                 resolvedSubject.chapters.firstOrNull()?.let { BaseCurriculumData.getChapterLesson(it.chapterId) }
@@ -61,20 +113,11 @@ class ChapterLessonViewModel(
             applyLessonData(targetChapterId, localLesson.data)
         }
 
-        // 2. Background sync with backend
+        // 3. Background sync with backend
         scope.launch {
             val user = sessionManager?.getSessionUser()
             val userId = user?.id ?: 1
             val userEmail = user?.email ?: "student@synapse.ai"
-
-            val norm = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(resolvedSubject?.name.orEmpty())
-            val cId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(targetChapterId, norm)
-            val isDone = runCatching {
-                com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgress(cId, userId.toString())?.isCompleted == true
-            }.getOrDefault(false)
-            if (isDone) {
-                _uiState.update { it.copy(isCompleted = true) }
-            }
 
             val result = chaptersRepository.getChapterLesson(
                 chapterId = targetChapterId,
@@ -127,10 +170,17 @@ class ChapterLessonViewModel(
                 ?: BaseCurriculumData.subjects.firstOrNull { s -> s.chapters.any { it.chapterId == targetChapterId } }?.name
                 ?: "Curriculum Subject"
         }
-        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(resolvedSubName)
-        val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(resolvedCid, normTrack)
-        val isAlreadyDone = chap?.isCompleted == true ||
-            (com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressCached(canonId)?.isCompleted == true)
+        val normTrack = TrackMapping.normalizeTrackId(resolvedSubName)
+        val chapIndex = TrackMapping.chapterIndex(resolvedCid, normTrack)
+        val canonId = TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
+
+        val cachedProg = SynapseDatabase.getLessonProgressDao().getProgressCached(canonId, "1")
+        val isDone = cachedProg?.isCompleted == true || chap?.isCompleted == true
+        val cDone = cachedProg?.conceptDone == true || cachedProg?.lessonCompleted == true
+        val qDone = cachedProg?.quizDone == true || cachedProg?.quizCompleted == true
+
+        val resolvedPrevId = chap?.previousChapterId ?: if (chapIndex > 1) TrackMapping.canonicalLessonNumericId(normTrack, chapIndex - 1) else null
+        val resolvedNextId = chap?.nextChapterId ?: if (chapIndex < 5) TrackMapping.canonicalLessonNumericId(normTrack, chapIndex + 1) else null
 
         _uiState.update {
             it.copy(
@@ -142,9 +192,11 @@ class ChapterLessonViewModel(
                 subjectId = sub?.id ?: 1,
                 subjectName = resolvedSubName,
                 subjectSlug = sub?.slug.orEmpty(),
-                chapterOrder = chap?.chapterOrder ?: 1,
+                chapterOrder = chap?.chapterOrder ?: chapIndex,
                 durationMinutes = chap?.estimatedMinutes ?: 15,
-                isCompleted = isAlreadyDone,
+                isCompleted = isDone,
+                conceptDone = cDone,
+                quizDone = qDone,
                 currentPartIndex = 0,
                 part1Title = p1Title,
                 part1Content = p1Content,
@@ -152,8 +204,8 @@ class ChapterLessonViewModel(
                 part2Content = p2Content,
                 syllabus = syllabusPoints,
                 coreFormulas = formulaPoints,
-                previousChapterId = chap?.previousChapterId,
-                nextChapterId = chap?.nextChapterId
+                previousChapterId = resolvedPrevId,
+                nextChapterId = resolvedNextId
             )
         }
     }
@@ -190,7 +242,7 @@ class ChapterLessonViewModel(
             if (isSuccess) {
                 try {
                     val subName = state.subjectName.ifBlank { "Python & Coding Logic" }
-                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
+                    SynapseDatabase.logSession(
                         trackName = subName,
                         category = "Note Making",
                         durationMinutes = 5
@@ -210,25 +262,24 @@ class ChapterLessonViewModel(
 
             val user = sessionManager?.getSessionUser()
             val userId = user?.id ?: 1
-            val userEmail = user?.email ?: "student@synapse.ai"
-
             val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
-            val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subName)
-            val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(cid, normTrack)
+            val normTrack = TrackMapping.normalizeTrackId(subName)
+            val chapIndex = TrackMapping.chapterIndex(cid, normTrack)
+            val canonLessonId = TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
 
             // 1. Mark in Room DB / LessonProgressDao
             try {
-                com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markLessonCompleted(
-                    lessonId = canonLessonId,
+                SynapseDatabase.getLessonProgressDao().markConceptDone(
+                    userId = userId.toString(),
                     trackId = normTrack,
-                    userId = userId.toString()
+                    chapterIndex = chapIndex
                 )
             } catch (_: Throwable) {}
 
             // 2. Automatically log Focused Study session for Progress & Analytics
             try {
-                com.siamts.synapse.data.local.SynapseDatabase.logSession(
-                    trackName = com.siamts.synapse.data.local.TrackMapping.getTrackTitle(normTrack),
+                SynapseDatabase.logSession(
+                    trackName = TrackMapping.getTrackTitle(normTrack),
                     category = "Focused Study",
                     durationMinutes = 15
                 )
@@ -236,50 +287,87 @@ class ChapterLessonViewModel(
 
             // 3. Asynchronously sync to backend
             try {
-                com.siamts.synapse.data.local.SynapseDatabase.syncProgressToRemote(
+                SynapseDatabase.syncProgressToRemote(
                     trackId = normTrack,
                     lessonId = canonLessonId,
-                    lessonCompleted = true,
-                    quizCompleted = false,
+                    chapterIndex = chapIndex,
+                    conceptDone = true,
+                    quizDone = _uiState.value.quizDone,
                     userId = userId
                 )
             } catch (_: Throwable) {}
 
-            val result = chaptersRepository.completeChapter(
-                chapterId = cid,
-                userId = userId,
-                email = userEmail
-            )
-
-            result.onSuccess {
-                try {
-                    val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
-                    com.siamts.synapse.data.local.SynapseDatabase.logSession(
-                        trackName = subName,
-                        category = "Focused Study",
-                        durationMinutes = 15
-                    )
-                } catch (_: Throwable) {}
-                _uiState.update {
-                    it.copy(
-                        isMarkingComplete = false,
-                        isCompleted = true,
-                        completionSuccess = true
-                    )
-                }
-                onCompleted?.invoke()
-            }.onFailure { err ->
-                _uiState.update {
-                    it.copy(
-                        isMarkingComplete = false,
-                        errorMessage = err.localizedMessage ?: "Failed to update completion status"
-                    )
-                }
+            _uiState.update {
+                it.copy(
+                    isMarkingComplete = false,
+                    isCompleted = true,
+                    conceptDone = true,
+                    completionSuccess = true
+                )
             }
+            onCompleted?.invoke()
+        }
+    }
+
+    /**
+     * Start Again / Reset Current Chapter:
+     * Clears conceptDone and quizDone for this chapter in Room DB and syncs to backend,
+     * immediately resetting the state and allowing the user to practice fresh.
+     */
+    fun resetCurrentChapter(onReset: (() -> Unit)? = null) {
+        val cid = _uiState.value.chapterId
+        if (cid <= 0) return
+
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
+            val normTrack = TrackMapping.normalizeTrackId(subName)
+            val chapIndex = TrackMapping.chapterIndex(cid, normTrack)
+            val canonLessonId = TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
+
+            // 1. Reset in Room DB / LessonProgressDao
+            try {
+                SynapseDatabase.getLessonProgressDao().resetChapterProgress(
+                    trackId = normTrack,
+                    chapterIndex = chapIndex,
+                    userId = userId.toString()
+                )
+            } catch (_: Throwable) {}
+
+            // 2. Sync reset to remote backend
+            try {
+                SynapseDatabase.syncProgressToRemote(
+                    trackId = normTrack,
+                    lessonId = canonLessonId,
+                    chapterIndex = chapIndex,
+                    reset = true,
+                    userId = userId
+                )
+            } catch (_: Throwable) {}
+
+            _uiState.update {
+                it.copy(
+                    isCompleted = false,
+                    conceptDone = false,
+                    quizDone = false,
+                    completionSuccess = false
+                )
+            }
+            onReset?.invoke()
         }
     }
 
     fun resetTrackCompletion() {
-        _uiState.update { it.copy(isCompleted = false) }
+        val subName = _uiState.value.subjectName.ifBlank { "Python & Coding Logic" }
+        val normTrack = TrackMapping.normalizeTrackId(subName)
+        viewModelScope.launch {
+            val user = sessionManager?.getSessionUser()
+            val userId = user?.id ?: 1
+            try {
+                SynapseDatabase.getLessonProgressDao().resetTrackProgress(normTrack, userId.toString())
+            } catch (_: Throwable) {}
+            _uiState.update { it.copy(isCompleted = false, conceptDone = false, quizDone = false) }
+        }
     }
 }

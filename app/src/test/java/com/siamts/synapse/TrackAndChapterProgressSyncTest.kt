@@ -189,4 +189,87 @@ class TrackAndChapterProgressSyncTest {
         assertNull(progressDao.getProgress("10101", userId))
         assertNotNull(progressDao.getProgress("10201", userId))
     }
+
+    @Test
+    fun testTwoStageChapterProgressAndStartAgainReset() = runBlocking {
+        val userId = "user_twostage"
+
+        // 1. Mark Concept Done for Chapter 1 in Python (+10%, 0.5 chapter credit)
+        val p1 = progressDao.markLessonCompleted("10101", "python", userId)
+        assertTrue(p1.conceptDone)
+        assertFalse(p1.quizDone)
+        assertTrue(p1.isCompleted)
+        assertEquals(1, p1.chapterIndex)
+
+        // Verify retrieval by chapter index
+        val chProg1 = progressDao.getChapterProgress("python", 1, userId)
+        assertNotNull(chProg1)
+        assertTrue(chProg1!!.conceptDone)
+        assertFalse(chProg1.quizDone)
+
+        // 2-stage percentage: 0.5 credits / 5 chapters = 10%
+        var userProgress = progressDao.getProgressForUser(userId)
+        var totalCredits = userProgress.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+        var percentage = ((totalCredits / 5.0) * 100.0).toInt()
+        assertEquals(10, percentage)
+
+        // 2. Mark Quiz Done for Chapter 1 (+10%, another 0.5 chapter credit -> total 1.0 credit = 20%)
+        val q1 = progressDao.markQuizCompleted("10101", "python", userId)
+        assertTrue(q1.conceptDone)
+        assertTrue(q1.quizDone)
+        assertTrue(q1.isCompleted)
+
+        userProgress = progressDao.getProgressForUser(userId)
+        totalCredits = userProgress.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+        percentage = ((totalCredits / 5.0) * 100.0).toInt()
+        assertEquals(20, percentage)
+
+        // 3. Navigation test: Navigating to Chapter 2 and back to Chapter 1 preserves state
+        val p2 = progressDao.markLessonCompleted("10102", "python", userId)
+        assertEquals(2, p2.chapterIndex)
+
+        // Back to Chapter 1: must be completed with conceptDone & quizDone intact
+        val backToCh1 = progressDao.getChapterProgress("python", 1, userId)
+        assertNotNull(backToCh1)
+        assertTrue(backToCh1!!.conceptDone)
+        assertTrue(backToCh1.quizDone)
+        assertTrue(backToCh1.isCompleted)
+
+        // 4. Test "Start Again" (resetChapterProgress): resets only Chapter 1
+        progressDao.resetChapterProgress("python", 1, userId)
+
+        val resetCh1 = progressDao.getChapterProgress("python", 1, userId)
+        assertNull(resetCh1)
+
+        // Chapter 2 must still remain intact!
+        val ch2Retained = progressDao.getChapterProgress("python", 2, userId)
+        assertNotNull(ch2Retained)
+        assertTrue(ch2Retained!!.conceptDone)
+
+        // Recalculated percentage: Chapter 2 has 0.5 credit = 10%
+        userProgress = progressDao.getProgressForUser(userId)
+        totalCredits = userProgress.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+        percentage = ((totalCredits / 5.0) * 100.0).toInt()
+        assertEquals(10, percentage)
+    }
+
+    @Test
+    fun testAll8SubjectsSupported() = runBlocking {
+        val all8 = listOf(
+            "python", "sql", "ai", "aptitude",
+            "dsa", "java_oops", "os_cn", "android_dev"
+        )
+        val userId = "user_all8"
+
+        for (track in all8) {
+            val prog = progressDao.markLessonCompleted("1", track, userId)
+            assertEquals(track, prog.trackId)
+            assertEquals(1, prog.chapterIndex)
+            assertTrue(prog.conceptDone)
+
+            val fetched = progressDao.getChapterProgress(track, 1, userId)
+            assertNotNull("Track $track should be retrievable", fetched)
+            assertTrue(fetched!!.conceptDone)
+        }
+    }
 }

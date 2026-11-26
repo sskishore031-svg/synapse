@@ -51,6 +51,9 @@ import coil.compose.AsyncImage
 import com.siamts.synapse.data.local.SynapseDatabase
 import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.components.NotificationCenterSheet
+import com.siamts.synapse.ui.home.QuizScoreBottomSheet
+import com.siamts.synapse.ui.home.StudyStreakBottomSheet
+import com.siamts.synapse.ui.home.TopicsDoneBottomSheet
 import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.BlueAccent
 import com.siamts.synapse.ui.theme.CyanAccent
@@ -64,7 +67,6 @@ import com.siamts.synapse.ui.theme.LightTextSecondary
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
 import com.siamts.synapse.ui.theme.PurpleAccent
 import com.siamts.synapse.ui.theme.SYNAPSETheme
-import com.siamts.synapse.ui.theme.SunsetOrange
 import com.siamts.synapse.ui.theme.SunsetOrangeEnd
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.AmberGoldEnd
@@ -158,6 +160,8 @@ fun DashboardScreen(
             viewModel.deleteLearningTask(id)
         },
         onProgressAnalyticsClick = onProgressAnalyticsClick,
+        onLearnTabClick = onLearnTabClick,
+        onQuizTabClick = onQuizTabClick,
         modifier = modifier,
     )
 
@@ -195,9 +199,14 @@ fun DashboardContent(
     onToggleTask: (id: String, completed: Boolean) -> Unit = { _, _ -> },
     onDeleteTask: (id: String) -> Unit = {},
     onToggleTheme: (() -> Unit)? = null,
+    onLearnTabClick: (() -> Unit)? = null,
+    onQuizTabClick: (() -> Unit)? = null,
 ) {
     val isDark = LocalThemeIsDark.current
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showStreakSheet by remember { mutableStateOf(false) }
+    var showTopicsDoneSheet by remember { mutableStateOf(false) }
+    var showQuizScoreSheet by remember { mutableStateOf(false) }
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
@@ -466,18 +475,24 @@ fun DashboardContent(
                             contentPadding = 2.dp
                         ) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showTopicsDoneSheet = true },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = cardBgElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "${uiState.topicsDone}",
-                                        color = textPrimaryColor,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${uiState.topicsDone}",
+                                            color = textPrimaryColor,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(text = "📚", fontSize = 12.sp)
+                                    }
                                     Text(
                                         text = "Topics done",
                                         color = textSecondaryColor,
@@ -493,18 +508,24 @@ fun DashboardContent(
                             contentPadding = 2.dp
                         ) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showQuizScoreSheet = true },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = cardBgElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AmberGold.copy(alpha = 0.5f))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "${uiState.quizScore}%",
-                                        color = AmberGold,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${uiState.quizScore}%",
+                                            color = AmberGold,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(text = "🎯", fontSize = 12.sp)
+                                    }
                                     Text(
                                         text = "Quiz score",
                                         color = textSecondaryColor,
@@ -520,18 +541,24 @@ fun DashboardContent(
                             contentPadding = 2.dp
                         ) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showStreakSheet = true },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = cardBgElevated),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SunsetOrange.copy(alpha = 0.5f))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = "${uiState.studyStreakDays} days",
-                                        color = SunsetOrange,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${uiState.studyStreakDays} days",
+                                            color = SunsetOrange,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(text = "🔥", fontSize = 12.sp)
+                                    }
                                     Text(
                                         text = "Study streak",
                                         color = textSecondaryColor,
@@ -894,6 +921,49 @@ fun DashboardContent(
             },
             containerColor = if (isDark) SurfacePanelElevated else Color.White,
             shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Interactive Detail Popup Sheets for Topics Done, Quiz Score, and Study Streak
+    if (showTopicsDoneSheet) {
+        TopicsDoneBottomSheet(
+            onDismissRequest = { showTopicsDoneSheet = false },
+            topicsDone = uiState.topicsDone,
+            totalTopics = uiState.totalTopics,
+            overallProgress = uiState.overallProgress,
+            onSubjectClick = {
+                showTopicsDoneSheet = false
+                onLearnTabClick?.invoke() ?: onTabSelect(1)
+            },
+            onExploreAllClick = {
+                showTopicsDoneSheet = false
+                onLearnTabClick?.invoke() ?: onTabSelect(1)
+            }
+        )
+    }
+
+    if (showQuizScoreSheet) {
+        QuizScoreBottomSheet(
+            onDismissRequest = { showQuizScoreSheet = false },
+            quizScore = uiState.quizScore,
+            quizzesAttempted = uiState.quizzesAttempted,
+            onTakeQuizClick = {
+                showQuizScoreSheet = false
+                onQuizTabClick?.invoke() ?: onTabSelect(2)
+            }
+        )
+    }
+
+    if (showStreakSheet) {
+        StudyStreakBottomSheet(
+            onDismissRequest = { showStreakSheet = false },
+            studyStreakDays = uiState.studyStreakDays,
+            bestStreakDays = uiState.studyStreakDays,
+            weeklyActiveDays = listOf(true, true, true, false, false, false, false),
+            onViewCalendarClick = {
+                showStreakSheet = false
+                onProgressAnalyticsClick?.invoke()
+            }
         )
     }
 }

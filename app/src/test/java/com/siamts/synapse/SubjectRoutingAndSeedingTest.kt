@@ -24,6 +24,20 @@ import org.junit.Test
 
 class SubjectRoutingAndSeedingTest {
 
+    @org.junit.Before
+    fun setUp() {
+        runBlocking {
+            com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().clearAllProgress()
+        }
+    }
+
+    @org.junit.After
+    fun tearDown() {
+        runBlocking {
+            com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().clearAllProgress()
+        }
+    }
+
     @Test
     fun testBaseCurriculumContainsAll4PlacementTracksWith5MCQsPerChapter() {
         val baseSubjects = BaseCurriculumData.subjects

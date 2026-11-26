@@ -36,7 +36,9 @@ class HomeViewModel(
     private fun observeLessonProgress() {
         val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            progressDao.observeProgressForUser("1").collect { progressList ->
+            val manager = sessionManager ?: SessionManager.getInstanceOrNull()
+            val userId = (manager?.getSessionUser()?.id ?: 1).toString()
+            progressDao.observeProgressForUser(userId).collect { progressList ->
                 val totalTopics = 20
                 // Two-stage completion credits: conceptDone = +0.5 credit (+10%), quizDone = +0.5 credit (+10%)
                 val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
@@ -80,7 +82,8 @@ class HomeViewModel(
             val studySessions = try { com.siamts.synapse.data.local.QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
-            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser("1") } catch (_: Throwable) { emptyList() }
+            val userIdStr = (user?.id ?: 1).toString()
+            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser(userIdStr) } catch (_: Throwable) { emptyList() }
 
             val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
             val distinctTopicsDone = totalCredits.toInt().coerceAtMost(20)
@@ -222,7 +225,16 @@ class HomeViewModel(
                 onSuccess = { data ->
                     val student = data.student
                     val studentName = user?.name?.takeIf { it.isNotBlank() } ?: student?.name?.takeIf { it.isNotBlank() } ?: _uiState.value.userName.ifBlank { "Student" }
-                    val photoUrl = user?.photoUrl ?: student?.photoUrl ?: student?.profilePhoto
+                    val serverPhoto = listOfNotNull(
+                        student?.photoUrl,
+                        student?.avatarUrl,
+                        student?.profilePhoto,
+                        student?.profileImage
+                    ).firstOrNull { it.isNotBlank() }
+                    val photoUrl = serverPhoto ?: user?.photoUrl
+                    if (!serverPhoto.isNullOrBlank() && serverPhoto != user?.photoUrl) {
+                        manager?.updateUserPhoto(serverPhoto)
+                    }
                     val courseText = user?.course?.takeIf { it.isNotBlank() } ?: student?.course?.takeIf { it.isNotBlank() } ?: "Placement & Micro-Learning Prep"
                     val interestsText = if (!student?.interests.isNullOrEmpty()) {
                         "Interests: " + student?.interests?.joinToString(", ")

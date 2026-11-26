@@ -94,23 +94,34 @@ class SubjectSelectionViewModel(
             null
         } ?: return
         scope.launch {
-            progressDao.observeProgressForUser("1").collect { progressList ->
-                val completedMap = progressList.associateBy { it.lessonId }
+            val user = sessionManager?.getSessionUser()
+            val userId = (user?.id ?: 1).toString()
+            progressDao.observeProgressForUser(userId).collect { progressList ->
+                val progressByTrackAndIndex = progressList.associateBy {
+                    "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+                }
+                val progressByLessonId = progressList.associateBy { it.lessonId }
+
                 _uiState.update { current ->
                     val updatedSubjects = current.subjects.map { sub ->
                         val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
                         val totalInTrack = sub.chapters.size.coerceAtLeast(1)
                         val updatedChapters = sub.chapters.map { ch ->
-                            val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                            val prog = completedMap[canonId] ?: completedMap[ch.chapterId.toString()]
+                            val chIdx = com.siamts.synapse.data.local.TrackMapping.chapterIndex(ch.chapterId, normTrack)
+                            val canonNumericId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, chIdx).toString()
+                            val prog = progressByTrackAndIndex["${normTrack}_$chIdx"]
+                                ?: progressByLessonId[canonNumericId]
+                                ?: progressByLessonId[ch.chapterId.toString()]
+                                ?: progressByLessonId[com.siamts.synapse.data.local.TrackMapping.canonicalLessonKey(normTrack, chIdx)]
+
                             val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
                             val qDone = prog?.quizDone == true || prog?.quizCompleted == true
-                            val isDone = cDone && qDone
+                            val isDone = cDone || qDone
                             ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
                         }
                         val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
                         val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
-                        val doneCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
+                        val doneCount = updatedChapters.count { it.conceptDone && it.quizDone }
                         if (pct == 100 && totalInTrack > 0) {
                             try {
                                 val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
@@ -186,9 +197,11 @@ class SubjectSelectionViewModel(
         }
         scope.launch {
             if (progressDao != null) {
+                val user = sessionManager?.getSessionUser()
+                val userId = (user?.id ?: 1).toString()
                 kotlinx.coroutines.flow.combine(
                     catalogRepo.catalogSubjects,
-                    progressDao.observeProgressForUser("1")
+                    progressDao.observeProgressForUser(userId)
                 ) { catalogList, progressList ->
                     val completedMap = progressList.associateBy { it.lessonId }
                     val addedSubjects = catalogList.filter { it.isAdded }.map { catSub ->

@@ -60,9 +60,19 @@ object SynapseNotificationHelper {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 ?: return
 
-            // Avoid recreating if already exists with same properties
             val existingChannel = notificationManager.getNotificationChannel(CHANNEL_ID)
-            if (existingChannel == null) {
+            if (existingChannel == null || existingChannel.importance < NotificationManager.IMPORTANCE_HIGH) {
+                if (existingChannel != null && existingChannel.importance < NotificationManager.IMPORTANCE_HIGH) {
+                    try {
+                        notificationManager.deleteNotificationChannel(CHANNEL_ID)
+                    } catch (_: Throwable) {}
+                }
+                val soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                val audioAttributes = android.media.AudioAttributes.Builder()
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                    .build()
+
                 val channel = NotificationChannel(
                     CHANNEL_ID,
                     CHANNEL_NAME,
@@ -70,8 +80,10 @@ object SynapseNotificationHelper {
                 ).apply {
                     description = CHANNEL_DESCRIPTION
                     enableLights(true)
+                    lightColor = COLOR_SUNSET_ORANGE
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 250, 150, 250)
+                    setSound(soundUri, audioAttributes)
                     lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
                     setShowBadge(true)
                 }
@@ -143,7 +155,7 @@ object SynapseNotificationHelper {
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

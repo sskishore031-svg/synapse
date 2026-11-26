@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -98,6 +100,9 @@ fun NotificationsSettingsScreen(
     val currentStudyMinute by userPreferencesRepo.studyReminderMinuteFlow.collectAsState(initial = 0)
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var pendingTestAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var pendingTestLabel by remember { mutableStateOf<String?>(null) }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -109,9 +114,19 @@ fun NotificationsSettingsScreen(
                 sessionManager.setNotificationsEnabled(true)
                 userPreferencesRepo.setStudyReminderEnabled(true)
             }
-            val sent = SynapseNotificationHelper.showTestNotification(context)
-            if (sent) {
-                Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+            val actionToRun = pendingTestAction
+            val labelToRun = pendingTestLabel
+            pendingTestAction = null
+            pendingTestLabel = null
+
+            if (actionToRun != null) {
+                actionToRun()
+                Toast.makeText(context, "$labelToRun sent! Check status bar & Bell icon.", Toast.LENGTH_SHORT).show()
+            } else {
+                val sent = SynapseNotificationHelper.showTestNotification(context)
+                if (sent) {
+                    Toast.makeText(context, "⚡ Notification sent! Check status bar.", Toast.LENGTH_SHORT).show()
+                }
             }
         } else {
             Toast.makeText(context, "Please allow notification permission in Android Settings.", Toast.LENGTH_SHORT).show()
@@ -147,6 +162,9 @@ fun NotificationsSettingsScreen(
             )
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+            val headerTextColor = if (isDark) Color(0xFFF5F6FA) else Color(0xFF11131A)
+            val headerButtonBg = if (isDark) SurfacePanelElevated else Color.White
+
             // Header Box
             DashedBorderBox(
                 modifier = Modifier
@@ -158,16 +176,22 @@ fun NotificationsSettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(headerButtonBg, CircleShape)
+                            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), CircleShape)
+                    ) {
+                        Text(text = "←", color = headerTextColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
-                        Text(text = "PROFILE & SETTINGS", color = SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(text = "PROFILE & SETTINGS", color = if (isDark) AmberGold else SunsetOrange, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "Notifications", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Notifications", color = headerTextColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -188,7 +212,8 @@ fun NotificationsSettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 110.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Master Toggle
@@ -418,6 +443,8 @@ fun NotificationsSettingsScreen(
                                                     RoundedCornerShape(10.dp)
                                                 )
                                                 .clickable {
+                                                    pendingTestAction = { action(); Unit }
+                                                    pendingTestLabel = label
                                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                                                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                                                     ) {

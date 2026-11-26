@@ -54,7 +54,9 @@ class DashboardViewModel(
     private fun observeLessonProgress() {
         val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
         viewModelScope.launch(Dispatchers.IO) {
-            progressDao.observeProgressForUser("1").collect { progressList ->
+            val user = sessionManager?.getSessionUser()
+            val userId = (user?.id ?: 1).toString()
+            progressDao.observeProgressForUser(userId).collect { progressList ->
                 val completedIds = progressList.filter { it.isCompleted }.map { it.lessonId }.toSet()
                 val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
                 val quizChapterIds = quizRecords.map { it.chapterId }.toSet()
@@ -118,7 +120,8 @@ class DashboardViewModel(
             val studySessions = try { QuizLocalDatabase.getStudySessionDao().getAllSessions() } catch (_: Throwable) { emptyList() }
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
-            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser("1") } catch (_: Throwable) { emptyList() }
+            val userIdStr = (user?.id ?: 1).toString()
+            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser(userIdStr) } catch (_: Throwable) { emptyList() }
 
             val completedProgressIds = progressList.filter { it.isCompleted }.map { it.lessonId }
             val completedChapters = chapters.filter { it.isAttempted }.map { it.id }

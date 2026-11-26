@@ -42,6 +42,9 @@ data class UserDto(
     @SerializedName("profile_photo")
     val profilePhoto: String? = null,
 
+    @SerializedName("profile_image")
+    val profileImage: String? = null,
+
     @SerializedName("photo_url")
     val photoUrl: String? = null,
 

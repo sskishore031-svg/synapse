@@ -65,7 +65,11 @@ object SynapseDatabase {
         lessonId: String,
         lessonCompleted: Boolean = true,
         quizCompleted: Boolean = false,
-        userId: Int = 1
+        userId: Int = 1,
+        reset: Boolean = false,
+        chapterIndex: Int = TrackMapping.chapterIndex(lessonId, trackId),
+        conceptDone: Boolean = lessonCompleted,
+        quizDone: Boolean = quizCompleted
     ) {
         seederScope.launch {
             try {
@@ -73,9 +77,13 @@ object SynapseDatabase {
                     userId = userId,
                     trackId = trackId,
                     lessonId = lessonId,
-                    lessonCompleted = lessonCompleted,
-                    quizCompleted = quizCompleted,
-                    isCompleted = true
+                    chapterIndex = chapterIndex,
+                    conceptDone = if (reset) false else (conceptDone || lessonCompleted),
+                    quizDone = if (reset) false else (quizDone || quizCompleted),
+                    lessonCompleted = if (reset) false else (conceptDone || lessonCompleted),
+                    quizCompleted = if (reset) false else (quizDone || quizCompleted),
+                    isCompleted = if (reset) false else (conceptDone || quizDone || lessonCompleted || quizCompleted),
+                    reset = reset
                 )
                 try {
                     com.siamts.synapse.data.remote.RetrofitClient.progressApi.syncProgress(req)

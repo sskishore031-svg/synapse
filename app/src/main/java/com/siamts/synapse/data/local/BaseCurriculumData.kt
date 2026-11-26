@@ -41,12 +41,24 @@ object BaseCurriculumData {
             trimmed in setOf("ai_tech", "103", "ai", "tech", "genai", "llm", "modern tech", "ai & modern tech concepts", "ai-modern-tech-concepts", "sub_ai") -> 103
             // Track 4: Aptitude & Interview Prep
             trimmed in setOf("aptitude", "104", "quant", "logical", "interview", "prep", "aptitude & interview prep", "aptitude-interview-prep", "sub_aptitude") -> 104
+            // Track 5: Data Structures & Algorithms
+            trimmed in setOf("dsa", "105", "data structures", "algorithms", "dsa & algorithms", "data structures & algorithms", "data-structures-algorithms", "sub_dsa") -> 105
+            // Track 6: Java & OOPs Mastery
+            trimmed in setOf("java_oops", "106", "java", "oops", "java & oops", "java & oops mastery", "java-oops-mastery", "sub_java") -> 106
+            // Track 7: OS & Computer Networks
+            trimmed in setOf("os_cn", "107", "os", "cn", "networks", "operating systems", "os & computer networks", "os-computer-networks", "sub_os") -> 107
+            // Track 8: Android & App Architecture
+            trimmed in setOf("android_dev", "108", "android", "compose", "app architecture", "android & app architecture", "android-app-architecture", "sub_android") -> 108
 
             // Fallback numeric parsing
             trimmed == "1" -> 101
             trimmed == "2" -> 102
             trimmed == "3" -> 103
             trimmed == "4" -> 104
+            trimmed == "5" -> 105
+            trimmed == "6" -> 106
+            trimmed == "7" -> 107
+            trimmed == "8" -> 108
             else -> trimmed.toIntOrNull() ?: 101
         }
     }
@@ -63,10 +75,15 @@ object BaseCurriculumData {
         if (byBase != null) return byBase
 
         return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getSubjectById(subjectId)
+            ?: SamacheerCurriculumData.subjects.firstOrNull { it.subjectId == numId || it.id.equals(subjectId, ignoreCase = true) || it.name.equals(subjectId, ignoreCase = true) || it.slug.equals(subjectId, ignoreCase = true) }
     }
 
     fun getChapterById(chapterId: Int): CatalogChapter? {
         for (subj in subjects) {
+            val ch = subj.chapters.firstOrNull { it.chapterId == chapterId }
+            if (ch != null) return ch
+        }
+        for (subj in SamacheerCurriculumData.subjects) {
             val ch = subj.chapters.firstOrNull { it.chapterId == chapterId }
             if (ch != null) return ch
         }
@@ -75,6 +92,7 @@ object BaseCurriculumData {
 
     fun getSubjectChapters(subjectId: Int): SubjectChaptersResponse? {
         val subject = subjects.firstOrNull { it.subjectId == subjectId }
+            ?: SamacheerCurriculumData.subjects.firstOrNull { it.subjectId == subjectId }
             ?: return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getSubjectChapters(subjectId)
         val homeSub = HomeSubjectDto(
             id = subject.subjectId,
@@ -111,6 +129,8 @@ object BaseCurriculumData {
 
     fun getChapterLesson(chapterId: Int): ChapterDetailResponse? {
         val parentSubject = subjects.firstOrNull { subj ->
+            subj.chapters.any { it.chapterId == chapterId }
+        } ?: SamacheerCurriculumData.subjects.firstOrNull { subj ->
             subj.chapters.any { it.chapterId == chapterId }
         } ?: return com.siamts.synapse.data.repository.SubjectCatalogRepository.getInstanceOrNull()?.getChapterLesson(chapterId)
         val chapter = parentSubject.chapters.firstOrNull { it.chapterId == chapterId } ?: return null

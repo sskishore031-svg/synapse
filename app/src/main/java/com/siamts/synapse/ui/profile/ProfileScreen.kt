@@ -1,5 +1,9 @@
 package com.siamts.synapse.ui.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.siamts.synapse.SynapseApplication
 import com.siamts.synapse.data.remote.RetrofitClient
 import com.siamts.synapse.ui.theme.AmberGold
 import com.siamts.synapse.ui.theme.DarkBackgroundBottom
@@ -64,6 +69,7 @@ import com.siamts.synapse.ui.theme.TextPrimary
 import com.siamts.synapse.ui.theme.TextSecondary
 import com.siamts.synapse.ui.theme.SYNAPSETheme
 import com.siamts.synapse.ui.welcome.components.DashedBorderBox
+import java.io.File
 
 @Composable
 fun ProfileScreen(
@@ -96,6 +102,15 @@ fun ProfileScreen(
         onSettingsClick = onSettingsClick,
         onBackClick = onBackClick,
         onLogoutClick = onLogoutClick,
+        onUploadProfilePhoto = { photoUri ->
+            viewModel.updateProfile(
+                name = uiState.userName,
+                email = uiState.userEmail,
+                phone = uiState.userPhone,
+                bio = uiState.userBio,
+                photoUri = photoUri
+            )
+        },
         onRemoveProfilePictureClick = {
             onRemoveProfilePictureClick?.invoke() ?: viewModel.removeProfilePicture()
         },
@@ -124,6 +139,7 @@ fun ProfileContent(
     onTabSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     onRemoveProfilePictureClick: (() -> Unit)? = null,
+    onUploadProfilePhoto: ((String) -> Unit)? = null,
     onRetryClick: (() -> Unit)? = null,
     onMyProfileClick: (() -> Unit)? = null,
     onAchievementsClick: (() -> Unit)? = null,
@@ -139,6 +155,58 @@ fun ProfileContent(
 ) {
     val isDark = LocalThemeIsDark.current
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showPhotoZoomDialog by remember { mutableStateOf(false) }
+    var selectedPhotoForCrop by remember { mutableStateOf<Uri?>(null) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedPhotoForCrop = uri
+            showPhotoZoomDialog = false
+        }
+    }
+
+    if (selectedPhotoForCrop != null) {
+        ImageCropDialog(
+            imageUri = selectedPhotoForCrop!!,
+            userId = uiState.userId,
+            onCropSuccess = { croppedUri ->
+                selectedPhotoForCrop = null
+                onUploadProfilePhoto?.invoke(croppedUri)
+            },
+            onDismiss = { selectedPhotoForCrop = null }
+        )
+    }
+
+    if (showPhotoZoomDialog) {
+        ProfilePhotoZoomDialog(
+            photoUri = uiState.profilePhotoUri,
+            userName = uiState.userName,
+            userEmail = uiState.userEmail,
+            initials = uiState.userInitials.ifBlank {
+                val parts = uiState.userName.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+                when {
+                    parts.size >= 2 -> "${parts.first().first()}${parts.last().first()}".uppercase()
+                    parts.isNotEmpty() -> parts.first().take(2).uppercase()
+                    else -> "K"
+                }
+            },
+            isUploading = uiState.isUploadingPhoto,
+            onChangePhotoClick = {
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            onRemovePhotoClick = if (!uiState.profilePhotoUri.isNullOrEmpty()) {
+                {
+                    onRemoveProfilePictureClick?.invoke()
+                    showPhotoZoomDialog = false
+                }
+            } else null,
+            onDismiss = { showPhotoZoomDialog = false }
+        )
+    }
     val pageBgGradient = if (isDark) {
         listOf(DarkBackgroundTop, Color(0xFF090D22), DarkBackgroundBottom)
     } else {
@@ -272,14 +340,14 @@ fun ProfileContent(
                                         modifier = Modifier
                                             .weight(1f)
                                             .padding(end = 8.dp)
-                                            .clickable { onMyProfileClick?.invoke() }
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(50.dp)
+                                                .size(54.dp)
                                                 .clip(CircleShape)
                                                 .background(SunsetOrange.copy(alpha = 0.2f), CircleShape)
-                                                .border(1.dp, cardBorder, CircleShape),
+                                                .border(2.dp, SunsetOrange, CircleShape)
+                                                .clickable { showPhotoZoomDialog = true },
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             if (!uiState.profilePhotoUri.isNullOrEmpty()) {
@@ -311,7 +379,11 @@ fun ProfileContent(
 
                                         Spacer(modifier = Modifier.width(12.dp))
 
-                                        Column(modifier = Modifier.weight(1f)) {
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { onMyProfileClick?.invoke() }
+                                        ) {
                                             Text(
                                                 text = uiState.userName,
                                                 color = textPrimaryColor,

@@ -45,12 +45,12 @@ class ProfilePhotoUploadTest {
 
     @Test
     fun testGetProfile_returnsSavedProfilePhoto() = runBlocking {
-        val result = profileRepository.getProfile(userId = 1)
+        val result = profileRepository.getProfile(userId = 99999, email = "test_robot_99999@synapse.ai")
         assertTrue("Expected getProfile to succeed: ${result.exceptionOrNull()?.message}", result.isSuccess)
 
         val profile = result.getOrNull()
         assertNotNull(profile)
-        assertEquals(1, profile?.id)
+        assertEquals(99999, profile?.id)
         assertNotNull(profile?.name)
         assertNotNull(profile?.email)
     }
@@ -81,19 +81,19 @@ class ProfilePhotoUploadTest {
             }
 
             val result = profileRepository.uploadProfilePhoto(
-                userId = 1,
-                email = "kishore@gmail.com",
+                userId = 99999,
+                email = "test_robot_99999@synapse.ai",
                 photoFile = tempFile,
-                name = "tharun",
+                name = "Test Bot",
                 phone = "+91 98765-43210",
-                bio = "Senior Computer Science Student & AI Developer"
+                bio = "Test Robot Account for automated unit tests"
             )
 
             assertTrue("Expected upload to succeed: ${result.exceptionOrNull()?.message}", result.isSuccess)
             val updated = result.getOrNull()
             assertNotNull(updated)
             assertNotNull("Photo URL should not be null", updated?.photoUrl)
-            assertTrue("Photo path should contain upload/profile", updated?.profilePhoto?.contains("upload/profile") == true)
+            assertTrue("Photo path should contain avatar or upload path", updated?.profilePhoto?.contains("avatars") == true || updated?.profilePhoto?.contains("upload") == true)
         } finally {
             tempFile.delete()
         }

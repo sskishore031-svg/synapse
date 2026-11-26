@@ -3,7 +3,7 @@ package com.siamts.synapse.data.local
 import java.util.Locale
 
 /**
- * Unified mapping and normalizer for the 4 Placement Tracks and their 20 chapters.
+ * Unified mapping and normalizer for the 8 Placement Tracks and their 40 chapters.
  */
 object TrackMapping {
     const val TRACK_PYTHON = "python"
@@ -76,24 +76,51 @@ object TrackMapping {
         }
     }
 
+    fun chapterIndex(chapterId: Any, trackId: String = ""): Int {
+        val str = chapterId.toString().trim()
+        val num = str.toIntOrNull()
+        if (num != null) {
+            if (num in 10101..10805) return ((num % 100) - 1).coerceIn(0, 4) + 1
+            if (num in 1..5) return num
+        }
+        val match = Regex("""ch(?:apter)?_?(\d+)""", RegexOption.IGNORE_CASE).find(str)
+        if (match != null) {
+            val idx = match.groupValues[1].toIntOrNull()
+            if (idx != null && idx in 1..5) return idx
+        }
+        return 1
+    }
+
+    fun canonicalLessonNumericId(trackId: String, chapterIndex: Int): Int {
+        val norm = normalizeTrackId(trackId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        val base = when (norm) {
+            TRACK_PYTHON -> 10100
+            TRACK_SQL -> 10200
+            TRACK_AI -> 10300
+            TRACK_APTITUDE -> 10400
+            TRACK_DSA -> 10500
+            TRACK_JAVA_OOPS -> 10600
+            TRACK_OS_CN -> 10700
+            TRACK_ANDROID_DEV -> 10800
+            else -> 10100
+        }
+        return base + idx
+    }
+
+    fun canonicalLessonKey(trackId: String, chapterIndex: Int): String {
+        val norm = normalizeTrackId(trackId)
+        val idx = chapterIndex.coerceIn(1, 5)
+        return "${norm}_ch$idx"
+    }
+
     fun canonicalLessonId(chapterId: Any, trackId: String = ""): String {
         val str = chapterId.toString().trim()
         val num = str.toIntOrNull()
         if (num != null) {
             if (num in 10101..10805) return num.toString()
             if (num in 1..5) {
-                val normTrack = normalizeTrackId(trackId)
-                return when (normTrack) {
-                    TRACK_PYTHON -> (10100 + num).toString()
-                    TRACK_SQL -> (10200 + num).toString()
-                    TRACK_AI -> (10300 + num).toString()
-                    TRACK_APTITUDE -> (10400 + num).toString()
-                    TRACK_DSA -> (10500 + num).toString()
-                    TRACK_JAVA_OOPS -> (10600 + num).toString()
-                    TRACK_OS_CN -> (10700 + num).toString()
-                    TRACK_ANDROID_DEV -> (10800 + num).toString()
-                    else -> (10100 + num).toString()
-                }
+                return canonicalLessonNumericId(trackId, num).toString()
             }
         }
         return str

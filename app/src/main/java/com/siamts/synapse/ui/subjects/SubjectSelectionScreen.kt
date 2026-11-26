@@ -573,16 +573,21 @@ fun SubjectSelectionContent(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 Text(
-                                                    text = "${subject.completedChaptersCount} / ${subject.totalChaptersCount} Chapters Completed",
+                                                    text = "${subject.completedChaptersCount} / ${subject.totalChaptersCount} Chapters",
                                                     color = if (isDark) TextSecondary else Color(0xFF94A3B8),
                                                     fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    fontWeight = FontWeight.Medium,
+                                                    modifier = Modifier.weight(1f),
+                                                    maxLines = 1,
+                                                    softWrap = false
                                                 )
                                                 Text(
                                                     text = "${subject.progressPercentage}%",
                                                     color = SunsetOrange,
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    softWrap = false
                                                 )
                                             }
 
@@ -597,46 +602,29 @@ fun SubjectSelectionContent(
                                                 trackColor = if (isDark) SurfaceBorder else Color(0xFFE2E8F0),
                                             )
 
-                                            if (subject.progressPercentage >= 100) {
-                                                Spacer(modifier = Modifier.height(10.dp))
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    // Review Again button
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .background(Color(0xFFEFF6FF), RoundedCornerShape(8.dp))
-                                                            .clickable { onSubjectClick(subject.id) }
-                                                            .padding(vertical = 7.dp),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Text(
-                                                            text = "Review Again",
-                                                            color = BlueAccent,
-                                                            fontSize = 11.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
+                                            Spacer(modifier = Modifier.height(10.dp))
 
-                                                    // Reset Track button
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                                            .clickable { onRestartSubject?.invoke(subject.id) }
-                                                            .padding(vertical = 7.dp),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Text(
-                                                            text = "Reset Track",
-                                                            color = Color(0xFF64748B),
-                                                            fontSize = 11.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                    }
-                                                }
+                                            // Clean single-line action pill button with fixed height (38.dp)
+                                            val isTrackCompleted = subject.progressPercentage >= 100
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(38.dp)
+                                                    .background(
+                                                        if (isTrackCompleted) Color(0xFFEFF6FF) else SunsetOrange.copy(alpha = 0.12f),
+                                                        RoundedCornerShape(10.dp)
+                                                    )
+                                                    .clickable { onSubjectClick(subject.id) },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = if (isTrackCompleted) "Review" else "Continue",
+                                                    color = if (isTrackCompleted) BlueAccent else SunsetOrange,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    softWrap = false
+                                                )
                                             }
                                         }
                                     }

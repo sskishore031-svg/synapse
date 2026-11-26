@@ -147,9 +147,11 @@ class SessionManager private constructor(context: Context) {
             if (userInterests.isNotEmpty()) {
                 preferences[KEY_USER_INTERESTS] = userInterests.joinToString(",")
             }
-            val resolvedPhoto = listOfNotNull(user.photoUrl, user.avatarUrl, user.profilePhoto).firstOrNull { it.isNotBlank() }
+            val resolvedPhoto = listOfNotNull(user.photoUrl, user.avatarUrl, user.profilePhoto, user.profileImage).firstOrNull { it.isNotBlank() }
             if (!resolvedPhoto.isNullOrBlank()) {
                 preferences[KEY_USER_PHOTO_URL] = resolvedPhoto
+            } else {
+                preferences.remove(KEY_USER_PHOTO_URL)
             }
             if (!token.isNullOrBlank()) preferences[KEY_AUTH_TOKEN] = token
             preferences[KEY_LAST_LOGIN_TIMESTAMP] = System.currentTimeMillis()
@@ -343,6 +345,13 @@ class SessionManager private constructor(context: Context) {
         dataStore.edit { preferences ->
             preferences[KEY_IS_LOGGED_IN] = false
             preferences.remove(KEY_AUTH_TOKEN)
+            preferences.remove(KEY_USER_ID)
+            preferences.remove(KEY_USER_NAME)
+            preferences.remove(KEY_USER_EMAIL)
+            preferences.remove(KEY_USER_PHONE)
+            preferences.remove(KEY_USER_BIO)
+            preferences.remove(KEY_USER_PHOTO_URL)
+            preferences.remove(KEY_USER_INTERESTS)
         }
     }
 

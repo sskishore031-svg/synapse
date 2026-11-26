@@ -387,12 +387,10 @@ class ProfileViewModel(
     private fun applyRemoteProfile(profile: UserProfileDto) {
         val effectiveName = profile.name.ifBlank { _uiState.value.userName }
         val initials = computeInitials(effectiveName)
-        val effectivePhoto = profile.photoUrl ?: profile.profilePhoto ?: profile.avatarUrl
+        val effectivePhoto = profile.photoUrl ?: profile.profilePhoto ?: profile.avatarUrl ?: profile.profileImage
         val formattedPhoto = RetrofitClient.formatPhotoUrl(effectivePhoto)
-        if (!formattedPhoto.isNullOrBlank()) {
-            viewModelScope.launch {
-                sessionManager?.updateUserPhoto(formattedPhoto)
-            }
+        viewModelScope.launch {
+            sessionManager?.updateUserPhoto(formattedPhoto)
         }
         _uiState.update { current ->
             current.copy(
@@ -409,7 +407,7 @@ class ProfileViewModel(
                 languageText = profile.preferredLanguage ?: current.languageText,
                 interests = if (profile.interests.isNotEmpty()) profile.interests else current.interests,
                 notificationsEnabled = profile.notificationsEnabled,
-                profilePhotoUri = formattedPhoto ?: current.profilePhotoUri
+                profilePhotoUri = formattedPhoto
             )
         }
     }
@@ -428,11 +426,8 @@ class ProfileViewModel(
         val effectiveName = name.ifBlank { "Student" }
         val initials = computeInitials(effectiveName)
         val formattedPhoto = RetrofitClient.formatPhotoUrl(photoUrl)
-        val localAvatarFile = File(SynapseApplication.getAppContext().filesDir, "avatars/avatar_$id.jpg")
         _uiState.update { current ->
-            val resolvedPhoto = formattedPhoto
-                ?: (if (localAvatarFile.exists() && localAvatarFile.length() > 0) localAvatarFile.toURI().toString() else null)
-                ?: current.profilePhotoUri
+            val resolvedPhoto = formattedPhoto ?: current.profilePhotoUri
             current.copy(
                 userId = id,
                 userName = effectiveName,

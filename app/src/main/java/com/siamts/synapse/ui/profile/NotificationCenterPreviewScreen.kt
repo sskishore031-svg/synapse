@@ -150,14 +150,23 @@ fun NotificationCenterPreviewScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onBackClick) {
-                        Text(text = "←", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    val headerTextColor = if (isDark) Color(0xFFF5F6FA) else Color(0xFF11131A)
+                    val headerButtonBg = if (isDark) SurfacePanelElevated else Color.White
+
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(headerButtonBg, CircleShape)
+                            .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), CircleShape)
+                    ) {
+                        Text(text = "←", color = headerTextColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "UPDATES & REMINDERS", color = SunsetOrange, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(text = "UPDATES & REMINDERS", color = if (isDark) AmberGold else SunsetOrange, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "Notifications", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Notifications", color = headerTextColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Box(

@@ -680,15 +680,16 @@ class QuizViewModel(
                 quizDao.insertQuizRecord(record)
 
                 val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subId.ifBlank { state.topicTag })
-                val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(chapIdStr, normTrack)
+                val chapIndex = com.siamts.synapse.data.local.TrackMapping.chapterIndex(chapIdStr, normTrack)
+                val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
                 val currentUserId = (user?.id ?: 1).toString()
 
                 // 1. Mark Quiz as completed in LessonProgressDao (updates live Track & Chapter progress)
                 try {
-                    com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markQuizCompleted(
-                        lessonId = canonLessonId,
+                    com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markQuizDone(
+                        userId = currentUserId,
                         trackId = normTrack,
-                        userId = currentUserId
+                        chapterIndex = chapIndex
                     )
                 } catch (_: Throwable) {}
 
