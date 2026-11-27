@@ -24,12 +24,12 @@ data class SavedNotesUiState(
     val title: String = "Saved & Downloaded Notes",
     val searchQuery: String = "",
     val savedNotes: List<SavedNoteItem> = listOf(
-        SavedNoteItem("1", "Gradient descent", "Machine learning · AI-generated", "Saved · Downloaded", "Open"),
-        SavedNoteItem("2", "Linear regression", "Machine learning · AI-generated", "Saved · Yesterday", "Download"),
+        SavedNoteItem("1", "Gradient descent", "Machine learning · AI-generated", "✓ Offline Ready", "Open"),
+        SavedNoteItem("2", "Linear regression", "Machine learning · AI-generated", "✓ Saved", "Download"),
     ),
     val downloadedFiles: List<DownloadedFileItem> = listOf(
-        DownloadedFileItem("1", "Gradient descent", "PDF · 3 pages · 248 KB", "Available offline", "Open"),
-        DownloadedFileItem("2", "Matrix operations", "PDF · 4 pages · 312 KB", "Available offline", "Open"),
+        DownloadedFileItem("1", "Gradient descent", "PDF · 3 pages · 248 KB", "✓ Offline Ready", "Open"),
+        DownloadedFileItem("2", "Matrix operations", "PDF · 4 pages · 312 KB", "✓ Offline Ready", "Open"),
     ),
     val disclaimer: String = "Downloaded notes stay available without internet.",
     val selectedTab: Int = 3,

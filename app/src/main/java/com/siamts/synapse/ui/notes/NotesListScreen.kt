@@ -215,8 +215,10 @@ fun NotesListScreen(
                                                         .border(1.dp, SurfaceBorder, RoundedCornerShape(8.dp))
                                                         .padding(horizontal = 8.dp, vertical = 4.dp)
                                                 ) {
+                                                    val cleanSub = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(note.subjectName)
+                                                    val cleanIcon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(note.subjectName)
                                                     Text(
-                                                        text = "${note.subjectIcon} ${note.subjectName}",
+                                                        text = "$cleanIcon $cleanSub",
                                                         color = SunsetOrange,
                                                         fontSize = 11.sp,
                                                         fontWeight = FontWeight.Bold
@@ -323,11 +325,14 @@ fun NotesListScreen(
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
+                                        val cleanSnippet = com.siamts.synapse.data.local.TrackMapping.stripMarkdown(note.content)
                                         Text(
-                                            text = note.content,
+                                            text = cleanSnippet,
                                             fontSize = 13.sp,
                                             color = TextSecondary,
-                                            lineHeight = 18.sp
+                                            lineHeight = 18.sp,
+                                            maxLines = 4,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
                                 }

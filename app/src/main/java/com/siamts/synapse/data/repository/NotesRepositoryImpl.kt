@@ -125,7 +125,13 @@ class NotesRepositoryImpl(
             if (response.isSuccessful && response.body() != null) {
                 val data = response.body()!!.data
                 if (data != null && data.notes.isNotEmpty()) {
-                    return Result.success(response.body()!!)
+                    val formattedNotes = data.notes.map { n ->
+                        n.copy(
+                            subjectName = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(n.subjectName.ifBlank { n.subjectSlug ?: n.subjectId?.toString() }),
+                            subjectIcon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(n.subjectName.ifBlank { n.subjectSlug ?: n.subjectId?.toString() })
+                        )
+                    }.distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
+                    return Result.success(response.body()!!.copy(data = data.copy(notes = formattedNotes, total = formattedNotes.size)))
                 }
             }
         } catch (_: Exception) {
@@ -141,7 +147,7 @@ class NotesRepositoryImpl(
             "saved" -> filtered.filter { it.isSaved }
             "downloaded" -> filtered.filter { it.isDownloaded }
             "common" -> filtered.filter { it.category.equals("COMMON", ignoreCase = true) }
-            "subject" -> filtered.filter { it.category.equals("SUBJECT", ignoreCase = true) }
+            "subject" -> filtered.filter { it.category.equals("SUBJECT", ignoreCase = true) || it.category.equals("Subject Notes", ignoreCase = true) }
             else -> filtered
         }
 
@@ -159,13 +165,20 @@ class NotesRepositoryImpl(
             }
         }
 
+        val formattedLocal = filtered.map { n ->
+            n.copy(
+                subjectName = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(n.subjectName.ifBlank { n.subjectSlug ?: n.subjectId?.toString() }),
+                subjectIcon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(n.subjectName.ifBlank { n.subjectSlug ?: n.subjectId?.toString() })
+            )
+        }.distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
+
         return Result.success(
             NotesListResponse(
                 status = "success",
                 data = NotesListDataDto(
                     type = filterType,
-                    total = filtered.size,
-                    notes = filtered
+                    total = formattedLocal.size,
+                    notes = formattedLocal
                 )
             )
         )
@@ -180,44 +193,66 @@ class NotesRepositoryImpl(
         userId: Int?,
         email: String?
     ): Result<GenericNoteActionResponse> {
+        val cleanTitle = title.trim()
+        val targetUserId = userId ?: 1
         val targetSubject = subjectId?.let { catalogRepo?.getSubjectByNumericId(it) }
+        val mappedSubjectName = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(targetSubject?.name ?: targetSubject?.slug ?: subjectId?.toString())
+        val mappedSubjectIcon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(targetSubject?.name ?: targetSubject?.slug ?: subjectId?.toString())
         val newId = System.currentTimeMillis().toInt() and 0x7FFFFFFF
 
         val newNote = NoteItemDto(
             id = newId,
-            userId = userId ?: 1,
+            userId = targetUserId,
             subjectId = subjectId,
             chapterId = chapterId,
-            title = title,
+            title = cleanTitle,
             content = content,
             category = category ?: "COMMON",
             isSaved = true,
             isDownloaded = true,
-            subjectName = targetSubject?.name ?: "General Notes",
+            subjectName = mappedSubjectName,
             subjectSlug = targetSubject?.slug ?: "general",
-            subjectIcon = targetSubject?.iconSymbol ?: "📝",
+            subjectIcon = mappedSubjectIcon,
             subjectColor = targetSubject?.colorHex ?: "#8B5CF6",
             chapterTitle = chapterId?.let { catalogRepo?.getChapterById(it)?.title },
             createdAt = "Today",
             updatedAt = "Today"
         )
 
+        // Upsert in localNotesCache to prevent duplicate items for (userId, title)
         synchronized(localNotesCache) {
-            localNotesCache.add(0, newNote)
+            val existingIdx = localNotesCache.indexOfFirst {
+                it.userId == targetUserId && it.title.trim().equals(cleanTitle, ignoreCase = true)
+            }
+            if (existingIdx >= 0) {
+                val cur = localNotesCache[existingIdx]
+                localNotesCache[existingIdx] = cur.copy(
+                    content = content,
+                    category = category ?: cur.category,
+                    subjectId = subjectId ?: cur.subjectId,
+                    chapterId = chapterId ?: cur.chapterId,
+                    subjectName = mappedSubjectName,
+                    subjectIcon = mappedSubjectIcon,
+                    updatedAt = "Today"
+                )
+            } else {
+                localNotesCache.add(0, newNote)
+            }
         }
 
-        // Persist to local SQLite NotesDao
+        // Persist to local SQLite NotesDao (upsert handled in NotesDao)
         try {
             val notesDao = com.siamts.synapse.data.local.SynapseDatabase.getNotesDao()
             notesDao.insertNote(
                 com.siamts.synapse.data.local.NoteEntity(
                     id = newId.toLong(),
-                    userId = userId ?: 1,
+                    userId = targetUserId,
                     subjectId = targetSubject?.slug ?: subjectId?.toString() ?: "general",
                     chapterId = chapterId,
-                    title = title,
+                    title = cleanTitle,
                     content = content,
                     category = category ?: "COMMON",
+                    trackName = mappedSubjectName,
                     createdAt = System.currentTimeMillis()
                 )
             )

@@ -38,10 +38,23 @@ class HomeViewModel(
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val manager = sessionManager ?: SessionManager.getInstanceOrNull()
             val userId = (manager?.getSessionUser()?.id ?: 1).toString()
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords(userId)
+                if (userId != "1") {
+                    com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords("1")
+                }
+            } catch (_: Throwable) {}
+
             progressDao.observeProgressForUser(userId).collect { progressList ->
+                val combinedList = if (userId != "1") {
+                    (progressList + progressDao.getProgressForUser("1")).distinctBy {
+                        "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+                    }
+                } else progressList
+
                 val totalTopics = 20
                 // Two-stage completion credits: conceptDone = +0.5 credit (+10%), quizDone = +0.5 credit (+10%)
-                val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
+                val totalCredits = combinedList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
                 val overallPercent = ((totalCredits / totalTopics.toDouble()) * 100.0).toInt().coerceIn(0, 100)
                 val distinctTopicsDone = totalCredits.toInt().coerceAtMost(totalTopics)
 
@@ -83,7 +96,14 @@ class HomeViewModel(
             val quizRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
             val chapters = try { chapterDao.getAllChapters() } catch (_: Throwable) { emptyList() }
             val userIdStr = (user?.id ?: 1).toString()
-            val progressList = try { com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().getProgressForUser(userIdStr) } catch (_: Throwable) { emptyList() }
+            val progressList = try {
+                val dao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+                if (userIdStr != "1") {
+                    (dao.getProgressForUser(userIdStr) + dao.getProgressForUser("1")).distinctBy {
+                        "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+                    }
+                } else dao.getProgressForUser(userIdStr)
+            } catch (_: Throwable) { emptyList() }
 
             val totalCredits = progressList.sumOf { (if (it.conceptDone || it.lessonCompleted) 0.5 else 0.0) + (if (it.quizDone || it.quizCompleted) 0.5 else 0.0) }
             val distinctTopicsDone = totalCredits.toInt().coerceAtMost(20)

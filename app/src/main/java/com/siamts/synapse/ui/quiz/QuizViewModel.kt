@@ -73,6 +73,7 @@ class QuizViewModel(
         private set
     var currentChapterId: String = "4"
         private set
+    private var isGeneralQuiz: Boolean = false
 
     // One-time navigation event
     private val _navEvent = MutableSharedFlow<QuizNavEvent>(replay = 0, extraBufferCapacity = 1)
@@ -186,7 +187,8 @@ class QuizViewModel(
             return
         }
 
-        val isRevisionTest = chapterId <= 0 || chapterId == 9999
+        isGeneralQuiz = chapterId <= 0 || chapterId == 9999
+        val isRevisionTest = isGeneralQuiz
         val targetChapterId = if (isRevisionTest) {
             9999
         } else {
@@ -670,27 +672,55 @@ class QuizViewModel(
                     resultDto.copy(studentName = user.name)
                 } else resultDto
 
+                val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subId.ifBlank { state.topicTag })
+                val currentUserId = (user?.id ?: 1).toString()
+                val isGeneralTrackQuiz = isGeneralQuiz || targetChapterId == 9999 || targetChapterId <= 0 || chapIdStr == "0" || chapIdStr == "9999" || state.chapterId <= 0
+
+                val progressDao = com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
+                val targetChapterIdx: Int = if (isGeneralTrackQuiz) {
+                    // Automatically find the next uncompleted chapter (1..5) where quizDone is false
+                    var nextUncompleted = 1
+                    for (idx in 1..5) {
+                        val prog = progressDao.getChapterProgress(normTrack, idx, currentUserId)
+                            ?: progressDao.getChapterProgress(normTrack, idx, "1")
+                        if (prog?.quizDone != true) {
+                            nextUncompleted = idx
+                            break
+                        }
+                        if (idx == 5) {
+                            nextUncompleted = 5
+                        }
+                    }
+                    nextUncompleted
+                } else {
+                    com.siamts.synapse.data.local.TrackMapping.chapterIndex(chapIdStr, normTrack).coerceIn(1, 5)
+                }
+
+                val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, targetChapterIdx).toString()
+
                 val record = QuizRecordEntity(
-                    subjectId = subId,
-                    chapterId = chapIdStr,
+                    subjectId = normTrack,
+                    chapterId = canonLessonId,
                     score = correctAnswersCount,
                     totalQuestions = totalQuestions,
                     completedAt = System.currentTimeMillis()
                 )
                 quizDao.insertQuizRecord(record)
 
-                val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(subId.ifBlank { state.topicTag })
-                val chapIndex = com.siamts.synapse.data.local.TrackMapping.chapterIndex(chapIdStr, normTrack)
-                val canonLessonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, chapIndex).toString()
-                val currentUserId = (user?.id ?: 1).toString()
-
                 // 1. Mark Quiz as completed in LessonProgressDao (updates live Track & Chapter progress)
                 try {
-                    com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao().markQuizDone(
+                    progressDao.markQuizDone(
                         userId = currentUserId,
                         trackId = normTrack,
-                        chapterIndex = chapIndex
+                        chapterIndex = targetChapterIdx
                     )
+                    if (currentUserId != "1") {
+                        progressDao.markQuizDone(
+                            userId = "1",
+                            trackId = normTrack,
+                            chapterIndex = targetChapterIdx
+                        )
+                    }
                 } catch (_: Throwable) {}
 
                 // 2. Automatically log Practice (Quiz) session for Progress & Analytics
@@ -708,8 +738,11 @@ class QuizViewModel(
                     com.siamts.synapse.data.local.SynapseDatabase.syncProgressToRemote(
                         trackId = normTrack,
                         lessonId = canonLessonId,
+                        chapterIndex = targetChapterIdx,
                         lessonCompleted = false,
                         quizCompleted = true,
+                        conceptDone = false,
+                        quizDone = true,
                         userId = user?.id ?: 1
                     )
                 } catch (_: Throwable) {}

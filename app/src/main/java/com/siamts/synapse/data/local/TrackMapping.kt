@@ -33,15 +33,24 @@ object TrackMapping {
 
     fun normalizeTrackId(raw: String): String {
         val r = raw.trim().lowercase(Locale.ROOT)
+        val num = r.toIntOrNull()
         return when {
-            r.contains("python") || r == "101" || r == "py" -> TRACK_PYTHON
-            r.contains("sql") || r == "102" || r == "db" || r.contains("database") -> TRACK_SQL
-            r.contains("ai") || r == "103" || r.contains("tech") -> TRACK_AI
-            r.contains("aptitude") || r == "104" || r.contains("interview") || r.contains("math") || r.contains("quant") -> TRACK_APTITUDE
-            r.contains("dsa") || r.contains("data structure") || r.contains("algorithm") || r == "105" -> TRACK_DSA
-            r.contains("java") || r.contains("oops") || r == "106" -> TRACK_JAVA_OOPS
-            r.contains("os") || r.contains("network") || r == "107" -> TRACK_OS_CN
-            r.contains("android") || r.contains("compose") || r == "108" -> TRACK_ANDROID_DEV
+            num != null && num in 10101..10105 -> TRACK_PYTHON
+            num != null && num in 10201..10205 -> TRACK_SQL
+            num != null && num in 10301..10305 -> TRACK_AI
+            num != null && num in 10401..10405 -> TRACK_APTITUDE
+            num != null && num in 10501..10505 -> TRACK_DSA
+            num != null && num in 10601..10605 -> TRACK_JAVA_OOPS
+            num != null && num in 10701..10705 -> TRACK_OS_CN
+            num != null && num in 10801..10805 -> TRACK_ANDROID_DEV
+            r.contains("python") || r == "101" || r == "py" || r.startsWith("101") -> TRACK_PYTHON
+            r.contains("sql") || r == "102" || r == "db" || r.contains("database") || r.startsWith("102") -> TRACK_SQL
+            r.contains("ai") || r == "103" || r.contains("tech") || r.startsWith("103") -> TRACK_AI
+            r.contains("aptitude") || r == "104" || r.contains("interview") || r.contains("math") || r.contains("quant") || r.startsWith("104") -> TRACK_APTITUDE
+            r.contains("dsa") || r.contains("data structure") || r.contains("algorithm") || r == "105" || r.startsWith("105") -> TRACK_DSA
+            r.contains("java") || r.contains("oops") || r == "106" || r.startsWith("106") -> TRACK_JAVA_OOPS
+            r.contains("os") || r.contains("network") || r == "107" || r.startsWith("107") -> TRACK_OS_CN
+            r.contains("android") || r.contains("compose") || r == "108" || r.startsWith("108") -> TRACK_ANDROID_DEV
             else -> TRACK_PYTHON
         }
     }
@@ -124,5 +133,68 @@ object TrackMapping {
             }
         }
         return str
+    }
+
+    fun formatSubjectDisplayName(raw: String?): String {
+        if (raw.isNullOrBlank()) return "General Notes"
+        val r = raw.trim().lowercase(Locale.ROOT)
+        return when {
+            r == "1001" || r == "101" || r == "10101" || r.contains("python") -> "Python & Coding Logic"
+            r == "1002" || r == "102" || r == "10201" || r.contains("sql") || r.contains("database") -> "SQL & Database Management"
+            r == "1003" || r == "103" || r == "10301" || r.contains("ai") || r.contains("tech") -> "AI & Modern Tech Concepts"
+            r == "1004" || r == "104" || r == "10401" || r.contains("aptitude") || r.contains("interview") || r.contains("quant") -> "Aptitude & Interview Prep"
+            r == "1005" || r == "105" || r == "10501" || r.contains("dsa") || r.contains("data structure") || r.contains("algorithm") -> "Data Structures & Algorithms"
+            r == "1006" || r == "106" || r == "10601" || r.contains("java") || r.contains("oops") -> "Java & OOPs Mastery"
+            r == "1007" || r == "107" || r == "10701" || r.contains("os") || r.contains("network") -> "OS & Computer Networks"
+            r == "1008" || r == "108" || r == "10801" || r.contains("android") || r.contains("compose") -> "Android & App Architecture"
+            r == "1" || r.contains("math") -> "Mathematics"
+            r == "2" || r.contains("computer science") -> "Computer Science"
+            r == "3" || r.contains("data science") -> "Data Science"
+            r == "4" -> "Artificial Intelligence"
+            r == "5" || r.contains("physics") -> "Physics"
+            r == "6" || r.contains("chemistry") -> "Chemistry"
+            r.contains("general") || r == "common" -> "General Notes"
+            !raw.all { it.isDigit() } && !raw.contains("-") && !raw.contains("_") -> raw
+            else -> raw.replace("-", " ").replace("_", " ").split(" ").filter { it.isNotBlank() }
+                .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+        }
+    }
+
+    fun formatSubjectIcon(raw: String?): String {
+        if (raw.isNullOrBlank()) return "📝"
+        val r = raw.trim().lowercase(Locale.ROOT)
+        return when {
+            r == "1001" || r == "101" || r == "10101" || r.contains("python") -> "🐍"
+            r == "1002" || r == "102" || r == "10201" || r.contains("sql") || r.contains("database") -> "🗄️"
+            r == "1003" || r == "103" || r == "10301" || r.contains("ai") || r.contains("tech") -> "🤖"
+            r == "1004" || r == "104" || r == "10401" || r.contains("aptitude") || r.contains("quant") -> "📈"
+            r == "1005" || r == "105" || r == "10501" || r.contains("dsa") || r.contains("algorithm") -> "⚡"
+            r == "1006" || r == "106" || r == "10601" || r.contains("java") || r.contains("oops") -> "☕"
+            r == "1007" || r == "107" || r == "10701" || r.contains("os") || r.contains("network") -> "💻"
+            r == "1008" || r == "108" || r == "10801" || r.contains("android") -> "📱"
+            r == "1" || r.contains("math") -> "📐"
+            r == "2" || r.contains("computer") -> "💻"
+            r == "3" || r.contains("data science") -> "📊"
+            r == "4" -> "🤖"
+            r == "5" || r.contains("physics") -> "⚛️"
+            r == "6" || r.contains("chemistry") -> "🧪"
+            else -> "📝"
+        }
+    }
+
+    fun stripMarkdown(raw: String): String {
+        if (raw.isBlank()) return ""
+        return raw
+            .replace(Regex("```[a-zA-Z]*\\n?"), "")
+            .replace(Regex("(?m)^\\s*#{1,6}\\s*"), "")
+            .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1")
+            .replace(Regex("\\*([^*]+)\\*"), "$1")
+            .replace(Regex("__([^_]+)__"), "$1")
+            .replace(Regex("(?<!\\w)_([^_]+)_(?!\\w)"), "$1")
+            .replace(Regex("`([^`]+)`"), "$1")
+            .replace(Regex("(?m)^\\s*[-*•]\\s*"), "• ")
+            .replace(Regex("\\[([^\\]]+)\\]\\([^)]+\\)"), "$1")
+            .replace(Regex("\\n{3,}"), "\n\n")
+            .trim()
     }
 }

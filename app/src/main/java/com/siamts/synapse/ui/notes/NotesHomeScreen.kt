@@ -709,10 +709,12 @@ private fun NoteRowItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = note.subjectIcon, fontSize = 16.sp)
+                    val cleanSubject = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(note.subjectName.ifBlank { note.subjectSlug ?: note.subjectId?.toString() })
+                    val cleanIcon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(note.subjectName.ifBlank { note.subjectSlug ?: note.subjectId?.toString() })
+                    Text(text = cleanIcon, fontSize = 16.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = note.subjectName,
+                        text = cleanSubject,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) AmberGold else SunsetOrange
@@ -741,14 +743,40 @@ private fun NoteRowItemCard(
                         fontSize = 15.sp,
                         modifier = Modifier.clickable { onToggleSave() }
                     )
-                    // Download icon toggle
-                    Text(
-                        text = if (note.isDownloaded) "💾 Offline" else "⬇️ Download",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (note.isDownloaded) Color(0xFF16A34A) else SunsetOrange,
-                        modifier = Modifier.clickable { onToggleDownload() }
-                    )
+
+                    // Status Badge: "✓ Offline Ready" when downloaded, or "✓ Saved" when saved
+                    val badgeLabel = when {
+                        note.isDownloaded -> "✓ Offline Ready"
+                        note.isSaved -> "✓ Saved"
+                        else -> "⬇️ Download"
+                    }
+                    val isPositivelySaved = note.isDownloaded || note.isSaved
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = if (isPositivelySaved) {
+                                    if (isDark) Color(0xFF065F46).copy(alpha = 0.35f) else Color(0xFFDCFCE7)
+                                } else {
+                                    if (isDark) SurfacePanel else Color(0xFFEFF6FF)
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .border(
+                                1.dp,
+                                if (isPositivelySaved) Color(0xFF16A34A).copy(alpha = 0.5f) else Color.Transparent,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onToggleDownload() }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = badgeLabel,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isPositivelySaved) Color(0xFF16A34A) else SunsetOrange
+                        )
+                    }
                 }
             }
 
@@ -761,14 +789,16 @@ private fun NoteRowItemCard(
                 color = if (isDark) TextPrimary else Color(0xFF0F172A)
             )
 
-            if (note.content.isNotBlank()) {
+            val cleanSnippet = com.siamts.synapse.data.local.TrackMapping.stripMarkdown(note.content)
+            if (cleanSnippet.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = note.content,
+                    text = cleanSnippet,
                     fontSize = 13.sp,
                     color = if (isDark) TextSecondary else Color(0xFF475569),
                     maxLines = 3,
-                    lineHeight = 17.sp
+                    lineHeight = 17.sp,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }

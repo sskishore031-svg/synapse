@@ -1,5 +1,6 @@
 package com.siamts.synapse.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,22 +9,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,25 +32,372 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.siamts.synapse.data.local.LearningTaskEntity
 import com.siamts.synapse.ui.theme.AmberGold
-import com.siamts.synapse.ui.theme.AmberGoldEnd
 import com.siamts.synapse.ui.theme.LocalThemeIsDark
-import com.siamts.synapse.ui.theme.SurfaceBorder
-import com.siamts.synapse.ui.theme.SurfacePanel
-import com.siamts.synapse.ui.theme.SurfacePanelElevated
 import com.siamts.synapse.ui.theme.SunsetOrange
-import com.siamts.synapse.ui.theme.SunsetOrangeEnd
-import com.siamts.synapse.ui.theme.TextPrimary
-import com.siamts.synapse.ui.theme.TextSecondary
 
 /**
- * Interactive Popup Screen for "Topics Done" Stat Card.
- * Displays overall curriculum completion percentage, linear progress bar,
- * and a breakdown of all 8 placement subject tracks with one-tap navigation.
+ * Compact, Centered Popup Dialog for "TODAY'S OVERALL PROGRESS".
+ * Shows:
+ *  - Header: "Overall Learning Progress" + circular X close button
+ *  - Center Hero Ring: 96.dp circular ring with percentage and "Completed"
+ *  - 3 Compact Stat Boxes: Lessons (X/40 done), Quizzes (Y/40 done), Tracks (Z/8 active)
+ *  - Top Active Subjects Mini-Bars (3 rows, compact, no scrolling)
+ *  - Full-width Sunset Orange "Continue Learning" button
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TodayOverallProgressDialog(
+    onDismissRequest: () -> Unit,
+    overallProgress: Int,
+    topicsDone: Int,
+    totalTopics: Int = 40,
+    quizScore: Int = 0,
+    quizzesAttempted: Int = 0,
+    studyStreakDays: Int = 0,
+    bestStreakDays: Int = 0,
+    mindPower: Int = 0,
+    dailyTasks: List<LearningTaskEntity> = emptyList(),
+    subjects: List<HomeSubjectItem> = emptyList(),
+    onContinueLearningClick: () -> Unit = {},
+    onTakeQuizClick: () -> Unit = {},
+    onSubjectClick: (String) -> Unit = {},
+) {
+    val isDark = LocalThemeIsDark.current
+    val dialogBg = if (isDark) Color(0xFF181B22) else Color.White
+    val dialogBorder = if (isDark) Color(0xFF282D3A) else Color(0xFFE2E8F0)
+    val pillBg = if (isDark) Color(0xFF222630) else Color(0xFFF8FAFC)
+    val textPrimary = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val textSecondary = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.88f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = dialogBg),
+            border = BorderStroke(1.2.dp, dialogBorder)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header: "Overall Learning Progress" + Circular X close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Overall Learning Progress",
+                        color = textPrimary,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(pillBg)
+                            .border(1.dp, dialogBorder, CircleShape)
+                            .clickable { onDismissRequest() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✕",
+                            color = textSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Center Hero Ring: 96.dp circular progress ring with percentage & "Completed"
+                Box(
+                    modifier = Modifier.size(96.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        progress = { (overallProgress / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxSize(),
+                        color = Color(0xFFFF6B00),
+                        trackColor = if (isDark) Color(0xFF282D3A) else Color(0xFFE2E8F0),
+                        strokeWidth = 8.dp
+                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "$overallProgress%",
+                            color = textPrimary,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = "Completed",
+                            color = textSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // 3 Compact Stat Boxes in a Row (8.dp gap)
+                val activeTracks = subjects.count { it.progressPercent > 0 }.coerceAtLeast(1)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Box 1: Lessons Done
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$topicsDone / 40",
+                                color = textPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Lessons",
+                                color = textSecondary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "done",
+                                color = textSecondary.copy(alpha = 0.8f),
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+
+                    // Box 2: Quizzes Done
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$quizzesAttempted / 40",
+                                color = AmberGold,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Quizzes",
+                                color = textSecondary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "done",
+                                color = textSecondary.copy(alpha = 0.8f),
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+
+                    // Box 3: Tracks Active
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$activeTracks / 8",
+                                color = Color(0xFF3B82F6),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Tracks",
+                                color = textSecondary,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "active",
+                                color = textSecondary.copy(alpha = 0.8f),
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Top Active Subjects Mini-Bars (Max 3 rows, compact, no scrolling needed)
+                val defaultTracks = listOf(
+                    HomeSubjectItem(1, "Python & Coding Logic", "python", "🐍", "#3B82F6", 5, 0, 0),
+                    HomeSubjectItem(2, "SQL & Relational DB", "sql", "🐬", "#10B981", 5, 0, 0),
+                    HomeSubjectItem(3, "AI & Machine Learning", "ai", "🧠", "#8B5CF6", 5, 0, 0)
+                )
+                val topSubjects = (if (subjects.isNotEmpty()) subjects else defaultTracks)
+                    .sortedByDescending { it.progressPercent }
+                    .take(3)
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(pillBg, RoundedCornerShape(14.dp))
+                        .border(1.dp, dialogBorder, RoundedCornerShape(14.dp))
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    topSubjects.forEach { subj ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(text = subj.iconSymbol, fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = subj.name,
+                                        color = textPrimary,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Text(
+                                    text = "${subj.progressPercent}%",
+                                    color = if (subj.progressPercent > 0) Color(0xFFFF6B00) else textSecondary,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // Slim orange progress bar
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(if (isDark) Color(0xFF282D3A) else Color(0xFFE2E8F0))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth((subj.progressPercent / 100f).coerceIn(0f, 1f))
+                                        .height(4.dp)
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0xFFFFB03A), Color(0xFFFF6B00))
+                                            )
+                                        )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Bottom Action Button: Full-width Sunset Orange (#FF6B00) "Continue Learning" button
+                Button(
+                    onClick = {
+                        onDismissRequest()
+                        onContinueLearningClick()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                ) {
+                    Text(
+                        text = "Continue Learning 🚀",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Backward compatibility alias for TodayOverallProgressBottomSheet -> TodayOverallProgressDialog
+ */
+@Composable
+fun TodayOverallProgressBottomSheet(
+    onDismissRequest: () -> Unit,
+    overallProgress: Int,
+    topicsDone: Int,
+    totalTopics: Int = 40,
+    quizScore: Int = 0,
+    quizzesAttempted: Int = 0,
+    studyStreakDays: Int = 0,
+    bestStreakDays: Int = 0,
+    mindPower: Int = 0,
+    dailyTasks: List<LearningTaskEntity> = emptyList(),
+    subjects: List<HomeSubjectItem> = emptyList(),
+    onContinueLearningClick: () -> Unit = {},
+    onTakeQuizClick: () -> Unit = {},
+    onSubjectClick: (String) -> Unit = {},
+) {
+    TodayOverallProgressDialog(
+        onDismissRequest = onDismissRequest,
+        overallProgress = overallProgress,
+        topicsDone = topicsDone,
+        totalTopics = totalTopics,
+        quizScore = quizScore,
+        quizzesAttempted = quizzesAttempted,
+        studyStreakDays = studyStreakDays,
+        bestStreakDays = bestStreakDays,
+        mindPower = mindPower,
+        dailyTasks = dailyTasks,
+        subjects = subjects,
+        onContinueLearningClick = onContinueLearningClick,
+        onTakeQuizClick = onTakeQuizClick,
+        onSubjectClick = onSubjectClick
+    )
+}
+
+/**
+ * Compact, Centered Popup Dialog for "Topics Done" Stat Card.
+ * Displays overall curriculum completion percentage, linear progress bar,
+ * compact stat breakdown, and a clean "Got it" button (Zero scrolling needed).
+ */
 @Composable
 fun TopicsDoneBottomSheet(
     onDismissRequest: () -> Unit,
@@ -63,245 +409,174 @@ fun TopicsDoneBottomSheet(
     onExploreAllClick: () -> Unit = {},
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) SurfacePanel else Color.White
-    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
-    val elevatedBg = if (isDark) SurfacePanelElevated else Color(0xFFF1F5F9)
-    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
-    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF64748B)
+    val dialogBg = if (isDark) Color(0xFF1C1F26) else Color.White
+    val dialogBorder = if (isDark) Color(0xFF2E3342) else Color(0xFFE2E8F0)
+    val pillBg = if (isDark) Color(0xFF262A34) else Color(0xFFF1F5F9)
+    val textPrimary = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val textSecondary = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismissRequest,
-        containerColor = cardBg,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 8.dp)
-                    .width(42.dp)
-                    .height(4.dp)
-                    .background(cardBorder, RoundedCornerShape(2.dp))
-            )
-        }
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth(0.90f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = dialogBg),
+            border = BorderStroke(1.2.dp, dialogBorder)
         ) {
-            // Header Emblem
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(Color(0xFF3B82F6).copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "📚", fontSize = 28.sp)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "Topics & Lessons Progress",
-                color = textPrimaryColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            val displayTotal = totalTopics.coerceAtLeast(20)
-            Text(
-                text = "$topicsDone of $displayTotal topics completed ($overallProgress%)",
-                color = textSecondaryColor,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Overall Progress Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Curriculum Completion",
-                            color = textPrimaryColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "$overallProgress%",
-                            color = SunsetOrange,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Linear progress bar
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(cardBorder)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth((overallProgress / 100f).coerceIn(0f, 1f))
-                                .height(8.dp)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(SunsetOrange, AmberGold)
-                                    )
-                                )
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = if (topicsDone > 0)
-                            "You've completed $topicsDone chapter lessons. Each finished chapter awards +10% towards subject mastery and placement readiness."
-                        else
-                            "No topics marked completed yet. Open any subject and tap 'Mark as Done' on lessons to track your progress live!",
-                        color = textSecondaryColor,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Subject Tracks Quick List
-            Text(
-                text = "Placement Subject Tracks",
-                color = textPrimaryColor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val defaultTracks = listOf(
-                HomeSubjectItem(1, "Python & Coding Logic", "python", "🐍", "#3B82F6", 5, 0, 0),
-                HomeSubjectItem(2, "SQL & Relational DB", "sql", "🐬", "#10B981", 5, 0, 0),
-                HomeSubjectItem(3, "AI & Machine Learning", "ai", "🧠", "#8B5CF6", 5, 0, 0),
-                HomeSubjectItem(4, "Quantitative Aptitude", "aptitude", "📐", "#F59E0B", 5, 0, 0),
-                HomeSubjectItem(5, "Data Structures & Algos", "dsa", "⚡", "#EC4899", 5, 0, 0),
-                HomeSubjectItem(6, "Java & OOP Concepts", "java_oops", "☕", "#6366F1", 5, 0, 0),
-                HomeSubjectItem(7, "OS & Computer Networks", "os_cn", "🌐", "#06B6D4", 5, 0, 0),
-                HomeSubjectItem(8, "Android & Mobile Dev", "android_dev", "📱", "#14B8A6", 5, 0, 0)
-            )
-
-            val displaySubjects = if (subjects.isNotEmpty()) subjects else defaultTracks
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 210.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                displaySubjects.forEach { subject ->
-                    Card(
+                // Header Emblem & Title
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(Color(0xFF3B82F6).copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "📚", fontSize = 24.sp)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Topics & Lessons Progress",
+                    color = textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                val displayTotal = totalTopics.coerceAtLeast(20)
+                Text(
+                    text = "$topicsDone of $displayTotal topics completed ($overallProgress%)",
+                    color = textSecondary,
+                    fontSize = 12.5.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Linear Progress Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isDark) Color(0xFF262A34) else Color(0xFFE2E8F0))
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onDismissRequest()
-                                onSubjectClick(subject.slug)
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
+                            .fillMaxWidth((overallProgress / 100f).coerceIn(0f, 1f))
+                            .height(8.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF3B82F6), Color(0xFF60A5FA))
+                                )
+                            )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 2 Stat Boxes Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(text = subject.iconSymbol, fontSize = 20.sp)
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = subject.name,
-                                        color = textPrimaryColor,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        text = "${subject.completedChapters} / ${subject.totalChapters} chapters done",
-                                        color = textSecondaryColor,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "${subject.progressPercent}%",
-                                color = if (subject.progressPercent > 0) SunsetOrange else textSecondaryColor,
-                                fontSize = 13.sp,
+                                text = "$topicsDone Done",
+                                color = Color(0xFF3B82F6),
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "+10% Credit / Topic",
+                                color = textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    val remaining = (displayTotal - topicsDone).coerceAtLeast(0)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$remaining Left",
+                                color = textPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Curriculum Remaining",
+                                color = textSecondary,
+                                fontSize = 10.sp
                             )
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // Action Button
-            Button(
-                onClick = {
-                    onDismissRequest()
-                    onExploreAllClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
-            ) {
                 Text(
-                    text = "Explore All Subjects 🚀",
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Each finished chapter lesson awards +10% towards subject mastery and placement readiness.",
+                    color = textSecondary,
+                    fontSize = 11.5.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Clean "Got it" button
+                Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                ) {
+                    Text(
+                        text = "Got it ✓",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Interactive Popup Screen for "Quiz Score" Stat Card.
- * Displays live placement readiness tier, score breakdown, and quick action to take quizzes.
+ * Compact, Centered Popup Dialog for "Quiz Score" Stat Card.
+ * Displays live placement readiness tier, score breakdown, and a clean "Got it" button (Zero scrolling needed).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScoreBottomSheet(
     onDismissRequest: () -> Unit,
@@ -311,238 +586,189 @@ fun QuizScoreBottomSheet(
     onTakeQuizClick: () -> Unit = {},
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) SurfacePanel else Color.White
-    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
-    val elevatedBg = if (isDark) SurfacePanelElevated else Color(0xFFF1F5F9)
-    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
-    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF64748B)
+    val dialogBg = if (isDark) Color(0xFF1C1F26) else Color.White
+    val dialogBorder = if (isDark) Color(0xFF2E3342) else Color(0xFFE2E8F0)
+    val pillBg = if (isDark) Color(0xFF262A34) else Color(0xFFF1F5F9)
+    val textPrimary = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val textSecondary = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
 
-    ModalBottomSheet(
+    val tierTitle: String
+    val tierDesc: String
+    val tierColor: Color
+    if (quizScore >= 80) {
+        tierTitle = "Placement Ready 🏆"
+        tierDesc = "Outstanding accuracy! Consistently clearing placement benchmarks."
+        tierColor = Color(0xFF10B981)
+    } else if (quizScore >= 60) {
+        tierTitle = "On Track 📈"
+        tierDesc = "Good progress! Keep completing chapter quizzes to reach 80%+."
+        tierColor = AmberGold
+    } else if (quizScore >= 40) {
+        tierTitle = "Developing Foundation 💡"
+        tierDesc = "Solid effort. Review missed questions in Mistake Vault to sharpen skills."
+        tierColor = SunsetOrange
+    } else {
+        tierTitle = "Getting Started 🚀"
+        tierDesc = "Take a 5-minute chapter quiz to calculate live placement accuracy!"
+        tierColor = Color(0xFF3B82F6)
+    }
+
+    Dialog(
         onDismissRequest = onDismissRequest,
-        containerColor = cardBg,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 8.dp)
-                    .width(42.dp)
-                    .height(4.dp)
-                    .background(cardBorder, RoundedCornerShape(2.dp))
-            )
-        }
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth(0.90f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = dialogBg),
+            border = BorderStroke(1.2.dp, dialogBorder)
         ) {
-            // Header Emblem
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(56.dp)
-                    .background(AmberGold.copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "🎯", fontSize = 28.sp)
-            }
+                // Header Emblem & Title
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(AmberGold.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "🎯", fontSize = 24.sp)
+                }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "Placement Quiz Performance",
-                color = textPrimaryColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    text = "Placement Quiz Performance",
+                    color = textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
-            Text(
-                text = "Average Placement Accuracy: $quizScore%",
-                color = AmberGold,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+                Text(
+                    text = "Average Placement Accuracy: $quizScore%",
+                    color = AmberGold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-            // Performance Tier Card
-            val tierTitle: String
-            val tierDesc: String
-            val tierIcon: String
-            val tierColor: Color
-            if (quizScore >= 80) {
-                tierTitle = "Placement Ready 🏆"
-                tierDesc = "Outstanding accuracy! You are consistently clearing placement test benchmarks."
-                tierIcon = "🌟"
-                tierColor = Color(0xFF10B981)
-            } else if (quizScore >= 60) {
-                tierTitle = "On Track 📈"
-                tierDesc = "Good progress! Keep completing chapter quizzes to break into the 80%+ top tier."
-                tierIcon = "⚡"
-                tierColor = AmberGold
-            } else if (quizScore >= 40) {
-                tierTitle = "Developing Foundation 💡"
-                tierDesc = "Solid effort. Review missed questions in your Mistake Vault to sharpen weak areas."
-                tierIcon = "🎯"
-                tierColor = SunsetOrange
-            } else {
-                tierTitle = "Getting Started 🚀"
-                tierDesc = "Take your first 5-minute chapter quiz to calculate your live accuracy and earn +10% chapter credit!"
-                tierIcon = "📚"
-                tierColor = Color(0xFF3B82F6)
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                border = androidx.compose.foundation.BorderStroke(1.dp, tierColor.copy(alpha = 0.5f))
-            ) {
-                Column(
+                // Tier Status Banner
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .background(pillBg, RoundedCornerShape(12.dp))
+                        .border(1.dp, tierColor.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = tierIcon, fontSize = 20.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                    Column {
                         Text(
                             text = tierTitle,
                             color = tierColor,
-                            fontSize = 15.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = tierDesc,
+                            color = textSecondary,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
+                        )
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 2 Stat Boxes Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$quizzesAttempted",
+                                color = SunsetOrange,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Quizzes Taken",
+                                color = textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, dialogBorder, RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "+10%",
+                                color = Color(0xFF10B981),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Credit / Quiz",
+                                color = textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Clean "Got it" button
+                Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberGold)
+                ) {
                     Text(
-                        text = tierDesc,
-                        color = textSecondaryColor,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp
+                        text = "Got it ✓",
+                        color = Color.Black,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Stats Breakdown Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "$quizScore%",
-                            color = AmberGold,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Avg Accuracy",
-                            color = textSecondaryColor,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "$quizzesAttempted",
-                            color = SunsetOrange,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Tests Attempted",
-                            color = textSecondaryColor,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "+10%",
-                            color = Color(0xFF10B981),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Credit / Quiz",
-                            color = textSecondaryColor,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Take Quiz Action Button
-            Button(
-                onClick = {
-                    onDismissRequest()
-                    onTakeQuizClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AmberGold)
-            ) {
-                Text(
-                    text = "⚡ Take a 5-Min Quiz Now",
-                    color = Color.Black,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }
 }
 
 /**
- * Interactive Popup Screen for "Study Streak" Stat Card.
- * Displays current and best streaks, 7-day visual activity calendar, and motivational tips.
+ * Compact, Centered Popup Dialog for "Study Streak" Stat Card.
+ * Displays current and best streaks, 7-day mini activity indicators, and a clean "Got it" button (Zero scrolling needed).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudyStreakBottomSheet(
     onDismissRequest: () -> Unit,
@@ -552,220 +778,174 @@ fun StudyStreakBottomSheet(
     onViewCalendarClick: () -> Unit = {},
 ) {
     val isDark = LocalThemeIsDark.current
-    val cardBg = if (isDark) SurfacePanel else Color.White
-    val cardBorder = if (isDark) SurfaceBorder else Color(0xFFE4E7F0)
-    val elevatedBg = if (isDark) SurfacePanelElevated else Color(0xFFF1F5F9)
-    val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
-    val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF64748B)
+    val dialogBg = if (isDark) Color(0xFF1C1F26) else Color.White
+    val dialogBorder = if (isDark) Color(0xFF2E3342) else Color(0xFFE2E8F0)
+    val pillBg = if (isDark) Color(0xFF262A34) else Color(0xFFF1F5F9)
+    val textPrimary = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val textSecondary = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismissRequest,
-        containerColor = cardBg,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 8.dp)
-                    .width(42.dp)
-                    .height(4.dp)
-                    .background(cardBorder, RoundedCornerShape(2.dp))
-            )
-        }
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth(0.90f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = dialogBg),
+            border = BorderStroke(1.2.dp, dialogBorder)
         ) {
-            // Header with Flame Emblem
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(SunsetOrange.copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "🔥", fontSize = 28.sp)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "Daily Study Streak",
-                color = textPrimaryColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            val motivationalText = if (studyStreakDays == 0) {
-                "Start your first micro-lesson today to ignite your streak!"
-            } else if (studyStreakDays == 1) {
-                "Great start! Complete a lesson tomorrow to keep the flame alive."
-            } else {
-                "You're on fire! $studyStreakDays days in a row — keep the momentum going!"
-            }
-
-            Text(
-                text = motivationalText,
-                color = textSecondaryColor,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Stats Cards: Current Streak & Best Streak
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 14.dp, horizontal = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "$studyStreakDays days",
-                            color = SunsetOrange,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Current Streak",
-                            color = textSecondaryColor,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = elevatedBg),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 14.dp, horizontal = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "$bestStreakDays days",
-                            color = AmberGold,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Best Streak",
-                            color = textSecondaryColor,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // This Week's Activity Section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "This Week's Activity",
-                    color = textPrimaryColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${weeklyActiveDays.count { it }} / 7 active",
-                    color = SunsetOrange,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Mon - Sun Pills Row
-            val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                dayNames.forEachIndexed { index, dayName ->
-                    val isActive = weeklyActiveDays.getOrElse(index) { false }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isActive) SunsetOrange else elevatedBg
-                                )
-                                .border(
-                                    1.dp,
-                                    if (isActive) SunsetOrange else cardBorder,
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isActive) {
-                                Text(text = "🔥", fontSize = 16.sp)
-                            } else {
-                                Text(
-                                    text = dayName.take(1),
-                                    color = textSecondaryColor,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = dayName,
-                            color = if (isActive) SunsetOrange else textSecondaryColor,
-                            fontSize = 10.sp,
-                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // View Calendar / Study Action Button
-            Button(
-                onClick = {
-                    onDismissRequest()
-                    onViewCalendarClick()
-                },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Header Emblem & Title
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(SunsetOrange.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "🔥", fontSize = 24.sp)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 Text(
-                    text = "View Full Streak Calendar 📅",
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Daily Study Streak",
+                    color = textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Text(
+                    text = if (studyStreakDays == 0)
+                        "Complete a lesson today to ignite your streak!"
+                    else
+                        "$studyStreakDays days in a row • Keep the momentum!",
+                    color = textSecondary,
+                    fontSize = 12.5.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Current Streak vs Best Streak Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, SunsetOrange.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$studyStreakDays Days",
+                                color = SunsetOrange,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Current Streak 🔥",
+                                color = textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(pillBg, RoundedCornerShape(12.dp))
+                            .border(1.dp, AmberGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$bestStreakDays Days",
+                                color = AmberGold,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Personal Best 🏆",
+                                color = textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 7-Day Mini Dots (Mon - Sun)
+                val dayNames = listOf("M", "T", "W", "T", "F", "S", "S")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    dayNames.forEachIndexed { index, dayName ->
+                        val isActive = weeklyActiveDays.getOrElse(index) { false }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isActive) SunsetOrange else pillBg
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isActive) SunsetOrange else dialogBorder,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isActive) {
+                                    Text(text = "🔥", fontSize = 13.sp)
+                                } else {
+                                    Text(
+                                        text = dayName,
+                                        color = textSecondary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Clean "Got it" button
+                Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
+                ) {
+                    Text(
+                        text = "Got it ✓",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

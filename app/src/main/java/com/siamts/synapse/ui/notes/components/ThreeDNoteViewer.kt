@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -235,7 +237,7 @@ fun ThreeDNoteViewerDialog(
                             .fillMaxWidth()
                             .padding(20.dp)
                     ) {
-                        // Top 3D Bar: Subject Badge, Golden Ribbon, Close button
+                        // Row 1: Subject Badge on left, Close button pinned cleanly on right
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -244,6 +246,7 @@ fun ThreeDNoteViewerDialog(
                             // 3D Subject Pill
                             Box(
                                 modifier = Modifier
+                                    .weight(1f, fill = false)
                                     .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
                                     .background(
                                         brush = Brush.horizontalGradient(
@@ -253,7 +256,10 @@ fun ThreeDNoteViewerDialog(
                                     )
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.wrapContentWidth()
+                                ) {
                                     Text(text = note.subjectIcon, fontSize = 14.sp)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
@@ -261,73 +267,104 @@ fun ThreeDNoteViewerDialog(
                                         color = Color.White,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
+                                        letterSpacing = 1.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Circular X Close Button (36.dp) pinned cleanly on the right
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), CircleShape)
+                                    .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFE2E8F0), CircleShape)
+                                    .clickable { onDismiss() },
+                                contentAlignment = Alignment.Center
                             ) {
-                                // 3D Share with Friend Pill
-                                Box(
-                                    modifier = Modifier
-                                        .background(if (isDark) SurfacePanel else Color(0xFFE0F2FE), RoundedCornerShape(10.dp))
-                                        .border(1.dp, if (isDark) SurfaceBorder else Color(0xFFBAE6FD), RoundedCornerShape(10.dp))
-                                        .clickable {
-                                            com.siamts.synapse.util.ShareUtils.shareNote(
-                                                context = context,
-                                                title = note.title,
-                                                content = note.content,
-                                                subject = note.subjectName,
-                                                category = note.category
-                                            )
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "📤", fontSize = 13.sp)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "Share",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isDark) AmberGold else Color(0xFF0284C7)
+                                Text(
+                                    text = "✕",
+                                    fontSize = 14.sp,
+                                    color = if (isDark) TextSecondary else Color(0xFF64748B),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Row 2: Saved (Bookmark) pill and Share pill side-by-side below subject badge
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 3D Bookmark / Saved Badge
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFFEF3C7),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color(0xFFFDE68A),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable { onToggleSave?.invoke() }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = if (note.isSaved) "🔖" else "🏷️", fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = if (note.isSaved) "Saved" else "Bookmark",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) SunsetOrange else Color(0xFFB45309),
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+
+                            // 3D Share with Friend Pill
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (isDark) SurfacePanel else Color(0xFFE0F2FE),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (isDark) SurfaceBorder else Color(0xFFBAE6FD),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable {
+                                        com.siamts.synapse.util.ShareUtils.shareNote(
+                                            context = context,
+                                            title = note.title,
+                                            content = note.content,
+                                            subject = note.subjectName,
+                                            category = note.category
                                         )
                                     }
-                                }
-
-                                // 3D Golden Bookmark Badge
-                                Box(
-                                    modifier = Modifier
-                                        .background(if (isDark) SunsetOrange.copy(alpha = 0.2f) else Color(0xFFFEF3C7), RoundedCornerShape(10.dp))
-                                        .border(1.dp, if (isDark) SunsetOrange.copy(alpha = 0.4f) else Color(0xFFFDE68A), RoundedCornerShape(10.dp))
-                                        .clickable { onToggleSave?.invoke() }
-                                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = if (note.isSaved) "🔖" else "🏷️", fontSize = 14.sp)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = if (note.isSaved) "Saved" else "Save",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isDark) SunsetOrange else Color(0xFFB45309)
-                                        )
-                                    }
-                                }
-
-                                // Close Icon
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(if (isDark) SurfacePanel else Color(0xFFF1F5F9), CircleShape)
-                                        .border(1.dp, if (isDark) SurfaceBorder else Color.Transparent, CircleShape)
-                                        .clickable { onDismiss() },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(text = "✕", fontSize = 13.sp, color = if (isDark) TextSecondary else Color(0xFF64748B), fontWeight = FontWeight.Bold)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "📤", fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "Share",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) AmberGold else Color(0xFF0284C7),
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
                                 }
                             }
                         }
@@ -448,10 +485,10 @@ fun ThreeDNoteViewerDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Bottom 3D Actions: Copy, Share with Friend, Done
+                        // Bottom 3D Actions: 2 clean buttons (Copy and Done)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Copy Button
                             Box(
@@ -470,42 +507,10 @@ fun ThreeDNoteViewerDialog(
                                     text = "📋 Copy",
                                     color = if (isDark) TextPrimary else Color(0xFF1E293B),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
-                            }
-
-                            // Share with Friend Button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1.3f)
-                                    .height(44.dp)
-                                    .background(
-                                        brush = Brush.horizontalGradient(
-                                            listOf(SunsetOrange, AmberGold)
-                                        ),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .clickable {
-                                        com.siamts.synapse.util.ShareUtils.shareNote(
-                                            context = context,
-                                            title = note.title,
-                                            content = note.content,
-                                            subject = note.subjectName,
-                                            category = note.category
-                                        )
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = "📤", fontSize = 13.sp)
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(
-                                        text = "Share Note",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                }
                             }
 
                             // Done / Return Button
@@ -533,7 +538,9 @@ fun ThreeDNoteViewerDialog(
                                         text = "Done ✓",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }

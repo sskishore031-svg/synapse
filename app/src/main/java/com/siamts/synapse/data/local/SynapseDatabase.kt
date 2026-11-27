@@ -123,6 +123,81 @@ object SynapseDatabase {
     }
 
     /**
+     * Backfills completed quiz attempts from local SQLite quiz_records into LessonProgressDao
+     * so that existing quizzes taken in Quiz Hub (or any screen) immediately mark quizDone = true
+     * (+10% per completed chapter) across LearnScreen and HomeScreen.
+     */
+    suspend fun backfillQuizProgressFromQuizRecords(
+        userId: String = "1",
+        context: Context? = try { SynapseApplication.getAppContext() } catch (_: Throwable) { null }
+    ) = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val quizDao = getInstance(context)
+        val progressDao = getLessonProgressDao(context)
+        val allRecords = try { quizDao.getAllRecords() } catch (_: Throwable) { emptyList() }
+        if (allRecords.isEmpty()) return@withContext
+
+        // Group records by canonical trackId (python, sql, ai, aptitude, dsa, java_oops, os_cn, android_dev)
+        val recordsByTrack = allRecords.groupBy { rec ->
+            TrackMapping.normalizeTrackId(rec.subjectId.ifBlank { rec.chapterId })
+        }
+
+        recordsByTrack.forEach { (trackId, records) ->
+            if (trackId !in TrackMapping.ALL_TRACK_IDS) return@forEach
+
+            // 1. First credit quizzes that targeted specific chapters
+            val creditedChapters = mutableSetOf<Int>()
+            records.forEach { rec ->
+                val chapNum = rec.chapterId.toIntOrNull()
+                val isSpecific = (chapNum != null && chapNum in 10101..10805) ||
+                        (chapNum != null && chapNum in 1..5) ||
+                        rec.chapterId.contains("chapter", ignoreCase = true)
+                if (isSpecific && rec.chapterId != "0" && rec.chapterId != "9999") {
+                    val idx = TrackMapping.chapterIndex(rec.chapterId, trackId).coerceIn(1, 5)
+                    creditedChapters.add(idx)
+                    try {
+                        progressDao.markQuizDone(userId = userId, trackId = trackId, chapterIndex = idx)
+                        if (userId != "1") {
+                            progressDao.markQuizDone(userId = "1", trackId = trackId, chapterIndex = idx)
+                        }
+                    } catch (_: Throwable) {}
+                }
+            }
+
+            // 2. Remaining records (e.g. from Quiz Hub general subject quizzes)
+            // Each completed quiz awards a quizDone (+10%) to the next uncompleted chapter (1..5)
+            val totalQuizzesForTrack = records.size
+            var remainingGeneralQuizzes = (totalQuizzesForTrack - creditedChapters.size).coerceAtLeast(0)
+
+            for (idx in 1..5) {
+                if (remainingGeneralQuizzes <= 0) break
+                val existing = progressDao.getChapterProgress(trackId, idx, userId)
+                    ?: progressDao.getChapterProgress(trackId, idx, "1")
+                if (existing?.quizDone != true) {
+                    try {
+                        progressDao.markQuizDone(userId = userId, trackId = trackId, chapterIndex = idx)
+                        if (userId != "1") {
+                            progressDao.markQuizDone(userId = "1", trackId = trackId, chapterIndex = idx)
+                        }
+                    } catch (_: Throwable) {}
+                    creditedChapters.add(idx)
+                    remainingGeneralQuizzes--
+                }
+            }
+
+            // Guarantee that if totalQuizzesForTrack >= N, at least min(totalQuizzesForTrack, 5) chapters are credited
+            val minChaptersToCredit = totalQuizzesForTrack.coerceAtMost(5)
+            for (idx in 1..minChaptersToCredit) {
+                try {
+                    progressDao.markQuizDone(userId = userId, trackId = trackId, chapterIndex = idx)
+                    if (userId != "1") {
+                        progressDao.markQuizDone(userId = "1", trackId = trackId, chapterIndex = idx)
+                    }
+                } catch (_: Throwable) {}
+            }
+        }
+    }
+
+    /**
      * Runs a fast background seeder on Dispatchers.IO that populates all subjects,
      * 8+ chapters per subject, lesson contents, and chapter-linked quizzes on startup
      * so there is zero lag and zero empty screens.
@@ -137,6 +212,14 @@ object SynapseDatabase {
         seederScope.launch {
             try {
                 UniversityCurriculumGenerator.seedAllCurriculum(context)
+            } catch (_: Throwable) {}
+            try {
+                val user = SessionManager.getInstanceOrNull()?.getSessionUser()
+                val uid = (user?.id ?: 1).toString()
+                backfillQuizProgressFromQuizRecords(uid, context)
+                if (uid != "1") {
+                    backfillQuizProgressFromQuizRecords("1", context)
+                }
             } catch (_: Throwable) {}
         }
     }

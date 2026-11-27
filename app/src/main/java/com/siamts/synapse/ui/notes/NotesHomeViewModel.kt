@@ -44,6 +44,8 @@ class NotesHomeViewModel(
             val userId = user?.id ?: 1
             dao.observeAllNotes(userId).collect { roomNotes ->
                 val mappedRoomNotes = roomNotes.map { entity ->
+                    val cleanSub = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(entity.trackName ?: entity.subjectId)
+                    val icon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(entity.trackName ?: entity.subjectId)
                     NoteItemDto(
                         id = entity.id.toInt(),
                         userId = entity.userId,
@@ -54,15 +56,15 @@ class NotesHomeViewModel(
                         category = entity.category,
                         isSaved = entity.isBookmarked,
                         isDownloaded = entity.isOfflineCached,
-                        subjectName = entity.trackName ?: entity.subjectId ?: "General Notes",
-                        subjectSlug = (entity.trackName ?: entity.subjectId)?.lowercase() ?: "general",
-                        subjectIcon = "📝",
+                        subjectName = cleanSub,
+                        subjectSlug = cleanSub.lowercase(),
+                        subjectIcon = icon,
                         createdAt = "Today",
                         updatedAt = "Today"
                     )
                 }
                 _uiState.update { current ->
-                    val combinedNotes = (mappedRoomNotes + current.allNotes).distinctBy { it.id.toString() + "_" + it.title.trim().lowercase() }
+                    val combinedNotes = (mappedRoomNotes + current.allNotes).distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
                     val subjectCount = combinedNotes.count {
                         it.category.contains("SUBJECT", ignoreCase = true) ||
                         it.category.contains("Subject Notes", ignoreCase = true)
@@ -105,6 +107,8 @@ class NotesHomeViewModel(
                 try {
                     val dao = SynapseDatabase.getNotesDao()
                     dao.getAllNotes(userId).map { entity ->
+                        val cleanSub = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(entity.trackName ?: entity.subjectId)
+                        val icon = com.siamts.synapse.data.local.TrackMapping.formatSubjectIcon(entity.trackName ?: entity.subjectId)
                         NoteItemDto(
                             id = entity.id.toInt(),
                             userId = entity.userId,
@@ -115,9 +119,9 @@ class NotesHomeViewModel(
                             category = entity.category,
                             isSaved = true,
                             isDownloaded = true,
-                            subjectName = entity.subjectId ?: "General Notes",
-                            subjectSlug = entity.subjectId?.lowercase() ?: "general",
-                            subjectIcon = "📝",
+                            subjectName = cleanSub,
+                            subjectSlug = cleanSub.lowercase(),
+                            subjectIcon = icon,
                             createdAt = "Today",
                             updatedAt = "Today"
                         )
@@ -137,8 +141,8 @@ class NotesHomeViewModel(
             )
             val repoNotes = repoNotesResult.getOrNull()?.data?.notes.orEmpty()
 
-            // 3. Merge and deduplicate by title / id
-            val combinedNotes = (localRoomNotes + repoNotes).distinctBy { it.id.toString() + "_" + it.title.trim().lowercase() }
+            // 3. Merge and deduplicate by (userId, title)
+            val combinedNotes = (localRoomNotes + repoNotes).distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
 
             // 4. Calculate live Room StateFlow reactive counts
             val subjectNotesCount = combinedNotes.count {

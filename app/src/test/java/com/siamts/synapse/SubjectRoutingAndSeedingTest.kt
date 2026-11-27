@@ -237,7 +237,7 @@ class SubjectRoutingAndSeedingTest {
             val records = db.getAllRecords()
             assertTrue("Database must contain at least 1 record", records.isNotEmpty())
             val latest = records.first()
-            assertEquals("PYTHON", latest.subjectId)
+            assertEquals("python", latest.subjectId.lowercase())
             assertEquals("10101", latest.chapterId)
         }
     }

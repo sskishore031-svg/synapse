@@ -977,30 +977,79 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     // --- NotesDao Implementation ---
     override suspend fun insertNote(note: NoteEntity): Long = withContext(Dispatchers.IO) {
-        val assignedId = if (note.id > 0) note.id else System.currentTimeMillis()
-        val noteWithId = note.copy(id = assignedId)
-        inMemoryNotes.add(0, noteWithId)
+        val cleanTitle = note.title.trim()
+        val targetUserId = note.userId
+
+        // 1. In-memory cache deduplication / upsert
+        val existingIndex = inMemoryNotes.indexOfFirst {
+            it.userId == targetUserId && it.title.trim().equals(cleanTitle, ignoreCase = true)
+        }
+        val finalId = if (existingIndex >= 0) {
+            val existing = inMemoryNotes[existingIndex]
+            val updated = existing.copy(
+                content = note.content,
+                subjectId = note.subjectId ?: existing.subjectId,
+                chapterId = note.chapterId ?: existing.chapterId,
+                category = note.category,
+                trackName = note.trackName ?: existing.trackName ?: TrackMapping.formatSubjectDisplayName(note.subjectId),
+                isBookmarked = note.isBookmarked,
+                isOfflineCached = note.isOfflineCached,
+                createdAt = note.createdAt
+            )
+            inMemoryNotes[existingIndex] = updated
+            existing.id
+        } else {
+            val assignedId = if (note.id > 0) note.id else System.currentTimeMillis()
+            val noteWithId = note.copy(
+                id = assignedId,
+                title = cleanTitle,
+                trackName = note.trackName ?: TrackMapping.formatSubjectDisplayName(note.subjectId)
+            )
+            inMemoryNotes.add(0, noteWithId)
+            assignedId
+        }
         notesStateFlow.value = System.currentTimeMillis()
 
+        // 2. Persistent SQLite upsert (check by user_id and title to prevent duplicates)
         if (hasAndroidContext) {
             try {
                 val db = writableDatabase
+                var existingRowId: Long? = null
+                val cursor = db.query(
+                    "study_notes",
+                    arrayOf("id"),
+                    "user_id = ? AND LOWER(TRIM(title)) = LOWER(TRIM(?))",
+                    arrayOf(targetUserId.toString(), cleanTitle),
+                    null, null, null, "1"
+                )
+                cursor.use { c ->
+                    if (c.moveToFirst()) {
+                        existingRowId = c.getLong(0)
+                    }
+                }
+
                 val values = ContentValues().apply {
-                    put("user_id", note.userId)
+                    put("user_id", targetUserId)
                     put("subject_id", note.subjectId)
                     put("chapter_id", note.chapterId)
-                    put("title", note.title)
+                    put("title", cleanTitle)
                     put("content", note.content)
                     put("category", note.category)
                     put("created_at", note.createdAt)
                 }
-                val rowId = db.insertWithOnConflict("study_notes", null, values, SQLiteDatabase.CONFLICT_REPLACE)
-                return@withContext if (rowId > 0) rowId else assignedId
+
+                return@withContext if (existingRowId != null) {
+                    db.update("study_notes", values, "id = ?", arrayOf(existingRowId.toString()))
+                    existingRowId!!
+                } else {
+                    val rowId = db.insert("study_notes", null, values)
+                    if (rowId > 0) rowId else finalId
+                }
             } catch (_: Throwable) {
-                return@withContext assignedId
+                return@withContext finalId
             }
         }
-        assignedId
+        finalId
     }
 
     override fun observeAllNotes(userId: Int): kotlinx.coroutines.flow.Flow<List<NoteEntity>> = kotlinx.coroutines.flow.flow {
@@ -1012,7 +1061,9 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
 
     override suspend fun getAllNotes(userId: Int): List<NoteEntity> = withContext(Dispatchers.IO) {
         if (!hasAndroidContext) {
-            return@withContext inMemoryNotes.filter { it.userId == userId || userId == 1 }
+            return@withContext inMemoryNotes
+                .filter { it.userId == userId || userId == 1 }
+                .distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
         }
 
         try {
@@ -1038,24 +1089,30 @@ class QuizLocalDatabase private constructor(context: Context?) : SQLiteOpenHelpe
                 val dateCol = c.getColumnIndex("created_at")
 
                 while (c.moveToNext()) {
+                    val rawSub = if (subCol >= 0) c.getString(subCol) else null
                     list.add(
                         NoteEntity(
                             id = if (idCol >= 0) c.getLong(idCol) else 0L,
                             userId = if (uidCol >= 0) c.getInt(uidCol) else userId,
-                            subjectId = if (subCol >= 0) c.getString(subCol) else null,
+                            subjectId = rawSub,
                             chapterId = if (chapCol >= 0 && !c.isNull(chapCol)) c.getInt(chapCol) else null,
                             title = if (titleCol >= 0) c.getString(titleCol) else "",
                             content = if (contentCol >= 0) c.getString(contentCol) else "",
                             category = if (catCol >= 0) c.getString(catCol) else "COMMON",
+                            trackName = TrackMapping.formatSubjectDisplayName(rawSub),
                             createdAt = if (dateCol >= 0) c.getLong(dateCol) else System.currentTimeMillis()
                         )
                     )
                 }
             }
-            if (list.isNotEmpty()) return@withContext list
+            if (list.isNotEmpty()) {
+                return@withContext list.distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
+            }
         } catch (_: Throwable) {}
 
-        inMemoryNotes.filter { it.userId == userId || userId == 1 }
+        inMemoryNotes
+            .filter { it.userId == userId || userId == 1 }
+            .distinctBy { "${it.userId}_${it.title.trim().lowercase()}" }
     }
 
     override suspend fun getNotesBySubject(userId: Int, subjectId: String): List<NoteEntity> = withContext(Dispatchers.IO) {

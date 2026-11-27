@@ -47,24 +47,26 @@ class SavedNotesViewModel(
             )
 
             val savedItems = savedRes.getOrNull()?.data?.notes?.map { note ->
+                val cleanSub = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(note.subjectName)
                 SavedNoteItem(
                     id = note.id.toString(),
                     title = note.title,
-                    subtitle = "${note.subjectName} · ${if (note.category == "COMMON") "General" else "Subject"}",
-                    statusText = if (note.isDownloaded) "Saved · Downloaded" else "Saved · Cloud",
+                    subtitle = "$cleanSub · ${if (note.category == "COMMON") "General" else "Subject"}",
+                    statusText = if (note.isDownloaded) "✓ Offline Ready" else "✓ Saved",
                     buttonAction = if (note.isDownloaded) "Open" else "Download"
                 )
-            }.orEmpty()
+            }.orEmpty().distinctBy { it.title.trim().lowercase() }
 
             val downloadedItems = downloadedRes.getOrNull()?.data?.notes?.map { note ->
+                val cleanSub = com.siamts.synapse.data.local.TrackMapping.formatSubjectDisplayName(note.subjectName)
                 DownloadedFileItem(
                     id = note.id.toString(),
                     title = note.title,
-                    subtitle = "${note.subjectName} · Available offline",
-                    offlineBadge = "Available offline",
+                    subtitle = "$cleanSub · Offline Ready",
+                    offlineBadge = "✓ Offline Ready",
                     buttonAction = "Open"
                 )
-            }.orEmpty()
+            }.orEmpty().distinctBy { it.title.trim().lowercase() }
 
             _uiState.update {
                 it.copy(

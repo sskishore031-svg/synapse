@@ -87,6 +87,57 @@ class SubjectSelectionViewModel(
         }
     }
 
+    private fun applyProgressToSubjects(
+        subjects: List<Subject>,
+        progressList: List<com.siamts.synapse.data.local.LessonProgressEntity>
+    ): List<Subject> {
+        val progressByTrackAndIndex = progressList.associateBy {
+            "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+        }
+        val progressByLessonId = progressList.associateBy { it.lessonId }
+
+        return subjects.map { sub ->
+            val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
+            val totalInTrack = sub.chapters.size.coerceAtLeast(1)
+            val updatedChapters = sub.chapters.map { ch ->
+                val chIdx = com.siamts.synapse.data.local.TrackMapping.chapterIndex(ch.chapterId, normTrack)
+                val canonNumericId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, chIdx).toString()
+                val prog = progressByTrackAndIndex["${normTrack}_$chIdx"]
+                    ?: progressByLessonId[canonNumericId]
+                    ?: progressByLessonId[ch.chapterId.toString()]
+                    ?: progressByLessonId[com.siamts.synapse.data.local.TrackMapping.canonicalLessonKey(normTrack, chIdx)]
+
+                val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
+                val qDone = prog?.quizDone == true || prog?.quizCompleted == true
+                val isDone = cDone || qDone
+                ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
+            }
+            val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+            val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+            val doneCount = updatedChapters.count { it.conceptDone && it.quizDone }
+            if (pct == 100 && totalInTrack > 0) {
+                try {
+                    val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
+                    val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
+                    val key = "track_100_${sub.id.ifBlank { normTrack }}"
+                    if (!prefs.getBoolean(key, false)) {
+                        prefs.edit().putBoolean(key, true).apply()
+                        com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
+                            ctx,
+                            "Congratulations! You completed 100% of ${sub.title.ifBlank { "the curriculum" }}."
+                        )
+                    }
+                } catch (_: Throwable) { }
+            }
+            sub.copy(
+                completedChaptersCount = doneCount,
+                totalChaptersCount = totalInTrack,
+                progressPercentage = pct,
+                chapters = updatedChapters
+            )
+        }
+    }
+
     private fun observeLessonProgress() {
         val progressDao = try {
             com.siamts.synapse.data.local.SynapseDatabase.getLessonProgressDao()
@@ -96,53 +147,22 @@ class SubjectSelectionViewModel(
         scope.launch {
             val user = sessionManager?.getSessionUser()
             val userId = (user?.id ?: 1).toString()
-            progressDao.observeProgressForUser(userId).collect { progressList ->
-                val progressByTrackAndIndex = progressList.associateBy {
-                    "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+            try {
+                com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords(userId)
+                if (userId != "1") {
+                    com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords("1")
                 }
-                val progressByLessonId = progressList.associateBy { it.lessonId }
+            } catch (_: Throwable) {}
+
+            progressDao.observeProgressForUser(userId).collect { progressList ->
+                val combinedList = if (userId != "1") {
+                    (progressList + progressDao.getProgressForUser("1")).distinctBy {
+                        "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+                    }
+                } else progressList
 
                 _uiState.update { current ->
-                    val updatedSubjects = current.subjects.map { sub ->
-                        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
-                        val totalInTrack = sub.chapters.size.coerceAtLeast(1)
-                        val updatedChapters = sub.chapters.map { ch ->
-                            val chIdx = com.siamts.synapse.data.local.TrackMapping.chapterIndex(ch.chapterId, normTrack)
-                            val canonNumericId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonNumericId(normTrack, chIdx).toString()
-                            val prog = progressByTrackAndIndex["${normTrack}_$chIdx"]
-                                ?: progressByLessonId[canonNumericId]
-                                ?: progressByLessonId[ch.chapterId.toString()]
-                                ?: progressByLessonId[com.siamts.synapse.data.local.TrackMapping.canonicalLessonKey(normTrack, chIdx)]
-
-                            val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
-                            val qDone = prog?.quizDone == true || prog?.quizCompleted == true
-                            val isDone = cDone || qDone
-                            ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
-                        }
-                        val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
-                        val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
-                        val doneCount = updatedChapters.count { it.conceptDone && it.quizDone }
-                        if (pct == 100 && totalInTrack > 0) {
-                            try {
-                                val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
-                                val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
-                                val key = "track_100_${sub.id.ifBlank { normTrack }}"
-                                if (!prefs.getBoolean(key, false)) {
-                                    prefs.edit().putBoolean(key, true).apply()
-                                    com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
-                                        ctx,
-                                        "Congratulations! You completed 100% of ${sub.title.ifBlank { "the curriculum" }}."
-                                    )
-                                }
-                            } catch (_: Throwable) { }
-                        }
-                        sub.copy(
-                            completedChaptersCount = doneCount,
-                            totalChaptersCount = totalInTrack,
-                            progressPercentage = pct,
-                            chapters = updatedChapters
-                        )
-                    }
+                    val updatedSubjects = applyProgressToSubjects(current.subjects, combinedList)
                     val (filtered, results) = performSearch(updatedSubjects, current.searchQuery, current.selectedClass)
                     current.copy(
                         subjects = updatedSubjects,
@@ -199,11 +219,23 @@ class SubjectSelectionViewModel(
             if (progressDao != null) {
                 val user = sessionManager?.getSessionUser()
                 val userId = (user?.id ?: 1).toString()
+                try {
+                    com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords(userId)
+                    if (userId != "1") {
+                        com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords("1")
+                    }
+                } catch (_: Throwable) {}
+
                 kotlinx.coroutines.flow.combine(
                     catalogRepo.catalogSubjects,
                     progressDao.observeProgressForUser(userId)
                 ) { catalogList, progressList ->
-                    val completedMap = progressList.associateBy { it.lessonId }
+                    val combinedList = if (userId != "1") {
+                        (progressList + progressDao.getProgressForUser("1")).distinctBy {
+                            "${com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(it.trackId)}_${it.chapterIndex}"
+                        }
+                    } else progressList
+
                     val addedSubjects = catalogList.filter { it.isAdded }.map { catSub ->
                         Subject(
                             id = catSub.subjectId.toString(),
@@ -226,43 +258,9 @@ class SubjectSelectionViewModel(
                         )
                     }
 
-                    val mergedList = (baseSubjects + addedSubjects).distinctBy { it.id }.map { sub ->
-                        val normTrack = com.siamts.synapse.data.local.TrackMapping.normalizeTrackId(sub.id.ifBlank { sub.title })
-                        val totalInTrack = sub.chapters.size.coerceAtLeast(1)
-                        val updatedChapters = sub.chapters.map { ch ->
-                            val canonId = com.siamts.synapse.data.local.TrackMapping.canonicalLessonId(ch.chapterId, normTrack)
-                            val prog = completedMap[canonId] ?: completedMap[ch.chapterId.toString()]
-                            val cDone = prog?.conceptDone == true || prog?.lessonCompleted == true
-                            val qDone = prog?.quizDone == true || prog?.quizCompleted == true
-                            val isDone = cDone && qDone
-                            ch.copy(isCompleted = isDone, conceptDone = cDone, quizDone = qDone)
-                        }
-                        val totalCredits = updatedChapters.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
-                        val pct = ((totalCredits / totalInTrack.toDouble()) * 100.0).toInt().coerceIn(0, 100)
-                        val doneCount = updatedChapters.count { it.isCompleted || (it.conceptDone && it.quizDone) }
-                        if (pct == 100 && totalInTrack > 0) {
-                            try {
-                                val ctx = com.siamts.synapse.SynapseApplication.getAppContext()
-                                val prefs = ctx.getSharedPreferences("synapse_milestones", android.content.Context.MODE_PRIVATE)
-                                val key = "track_100_${sub.id.ifBlank { normTrack }}"
-                                if (!prefs.getBoolean(key, false)) {
-                                    prefs.edit().putBoolean(key, true).apply()
-                                    com.siamts.synapse.notification.SynapseNotificationHelper.showMilestoneUnlockedNotification(
-                                        ctx,
-                                        "Congratulations! You completed 100% of ${sub.title.ifBlank { "the curriculum" }}."
-                                    )
-                                }
-                            } catch (_: Throwable) { }
-                        }
-                        sub.copy(
-                            completedChaptersCount = doneCount,
-                            totalChaptersCount = totalInTrack,
-                            progressPercentage = pct,
-                            chapters = updatedChapters
-                        )
-                    }
-
-                    val allCombined = applyInterests(mergedList, _uiState.value.userInterests)
+                    val mergedList = (baseSubjects + addedSubjects).distinctBy { it.id }
+                    val updatedMerged = applyProgressToSubjects(mergedList, combinedList)
+                    val allCombined = applyInterests(updatedMerged, _uiState.value.userInterests)
                     val currentQuery = _uiState.value.searchQuery
 
                     _uiState.update { current ->

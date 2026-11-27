@@ -225,6 +225,7 @@ fun HomeContent(
     val textPrimaryColor = if (isDark) TextPrimary else Color(0xFF11131A)
     val textSecondaryColor = if (isDark) TextSecondary else Color(0xFF5A6075)
     val headerTextColor = textPrimaryColor
+    var showOverallProgressDialog by remember { mutableStateOf(false) }
     var showStreakSheet by remember { mutableStateOf(false) }
     var showTopicsDoneSheet by remember { mutableStateOf(false) }
     var showQuizScoreSheet by remember { mutableStateOf(false) }
@@ -554,25 +555,47 @@ fun HomeContent(
                     // 1. Top Micro-Learning Goal & Stats Card
                     item {
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showOverallProgressDialog = true },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = cardBg),
                             border = androidx.compose.foundation.BorderStroke(1.dp, cardBorder)
                         ) {
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { showOverallProgressDialog = true }
+                                        .padding(vertical = 4.dp, horizontal = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "TODAY'S OVERALL PROGRESS",
-                                            color = SunsetOrange,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.sp
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = "TODAY'S OVERALL PROGRESS",
+                                                color = SunsetOrange,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(SunsetOrange.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = "DETAILS ↗",
+                                                    color = SunsetOrange,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 0.5.sp
+                                                )
+                                            }
+                                        }
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = "${uiState.overallProgress}% Completed",
@@ -581,7 +604,7 @@ fun HomeContent(
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = if (uiState.overallProgress == 100) "Goal achieved! Outstanding discipline." else "Master 2-min daily concepts & tasks",
+                                            text = if (uiState.overallProgress == 100) "Goal achieved! Tap for full breakdown 🎯" else "Master 2-min daily concepts • Tap for details ↗",
                                             color = textSecondaryColor,
                                             fontSize = 12.sp
                                         )
@@ -1292,7 +1315,41 @@ fun HomeContent(
         }
     }
 
-    // Interactive Detail Popup Sheets for Topics Done, Quiz Score, and Study Streak
+    // Interactive Detail Popup Dialogs for Today's Overall Progress, Topics Done, Quiz Score, and Study Streak
+    if (showOverallProgressDialog) {
+        TodayOverallProgressDialog(
+            onDismissRequest = { showOverallProgressDialog = false },
+            overallProgress = uiState.overallProgress,
+            topicsDone = uiState.topicsDone,
+            totalTopics = 40,
+            quizScore = uiState.quizScore,
+            quizzesAttempted = uiState.quizzesAttempted,
+            studyStreakDays = uiState.studyStreakDays,
+            bestStreakDays = uiState.bestStreakDays,
+            mindPower = uiState.mindPower,
+            dailyTasks = uiState.dailyTasks,
+            subjects = uiState.subjects,
+            onContinueLearningClick = {
+                showOverallProgressDialog = false
+                val continueSlug = uiState.continueSubjectSlug
+                val continueChap = uiState.continueChapterId
+                if (!continueSlug.isNullOrBlank() && continueChap > 0) {
+                    onContinueLessonClick?.invoke(continueSlug, continueChap)
+                } else {
+                    onTabSelect(1)
+                }
+            },
+            onTakeQuizClick = {
+                showOverallProgressDialog = false
+                onTabSelect(2)
+            },
+            onSubjectClick = { slug ->
+                showOverallProgressDialog = false
+                onSubjectCardClick(slug)
+            }
+        )
+    }
+
     if (showTopicsDoneSheet) {
         TopicsDoneBottomSheet(
             onDismissRequest = { showTopicsDoneSheet = false },

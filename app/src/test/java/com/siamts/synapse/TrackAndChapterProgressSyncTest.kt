@@ -272,4 +272,93 @@ class TrackAndChapterProgressSyncTest {
             assertTrue(fetched!!.conceptDone)
         }
     }
+
+    @Test
+    fun testQuizHubGeneralQuizAdvancesNextUncompletedChapter() = runBlocking {
+        val userId = "user_hub_quiz"
+
+        // 1. First general quiz finished for Python: should mark chapter 1 quizDone = true (+10%)
+        var targetIdx = 1
+        for (idx in 1..5) {
+            val prog = progressDao.getChapterProgress("python", idx, userId)
+            if (prog?.quizDone != true) {
+                targetIdx = idx
+                break
+            }
+        }
+        assertEquals(1, targetIdx)
+        progressDao.markQuizDone(userId, "python", targetIdx)
+
+        val ch1 = progressDao.getChapterProgress("python", 1, userId)
+        assertNotNull(ch1)
+        assertTrue(ch1!!.quizDone)
+
+        // 2. Second general quiz finished for Python: should mark chapter 2 quizDone = true (+10% -> 20%)
+        for (idx in 1..5) {
+            val prog = progressDao.getChapterProgress("python", idx, userId)
+            if (prog?.quizDone != true) {
+                targetIdx = idx
+                break
+            }
+        }
+        assertEquals(2, targetIdx)
+        progressDao.markQuizDone(userId, "python", targetIdx)
+
+        val ch2 = progressDao.getChapterProgress("python", 2, userId)
+        assertNotNull(ch2)
+        assertTrue(ch2!!.quizDone)
+
+        // 3. User finishes 3 more general quizzes: chapters 3, 4, 5
+        for (q in 3..5) {
+            for (idx in 1..5) {
+                val prog = progressDao.getChapterProgress("python", idx, userId)
+                if (prog?.quizDone != true) {
+                    targetIdx = idx
+                    break
+                }
+            }
+            progressDao.markQuizDone(userId, "python", targetIdx)
+        }
+
+        // Verify all 5 chapters have quizDone = true
+        for (idx in 1..5) {
+            val p = progressDao.getChapterProgress("python", idx, userId)
+            assertNotNull(p)
+            assertTrue("Chapter $idx should have quizDone = true", p!!.quizDone)
+        }
+
+        val allProg = progressDao.getProgressForUser(userId)
+        val totalCredits = allProg.sumOf { (if (it.conceptDone) 0.5 else 0.0) + (if (it.quizDone) 0.5 else 0.0) }
+        val pct = ((totalCredits / 5.0) * 100.0).toInt()
+        assertEquals(50, pct) // 5 quizzes done = 50%
+    }
+
+    @Test
+    fun testBackfillQuizRecordsFromDatabase() = runBlocking {
+        val userId = "user_backfill"
+        val quizDao = QuizLocalDatabase.getInstance(null)
+
+        // Simulate 6 completed quizzes for Python in QuizHub / quiz_records
+        for (i in 1..6) {
+            quizDao.insertQuizRecord(
+                com.siamts.synapse.data.local.QuizRecordEntity(
+                    subjectId = "Python & Coding Logic", // Un-normalized title from old QuizHub
+                    chapterId = "0", // General track quiz
+                    score = 4,
+                    totalQuestions = 5,
+                    completedAt = System.currentTimeMillis()
+                )
+            )
+        }
+
+        // Run backfill
+        com.siamts.synapse.data.local.SynapseDatabase.backfillQuizProgressFromQuizRecords(userId, null)
+
+        // Verify that chapters 1..5 now have quizDone = true
+        for (idx in 1..5) {
+            val prog = progressDao.getChapterProgress("python", idx, userId)
+            assertNotNull("Chapter $idx should be backfilled", prog)
+            assertTrue("Chapter $idx must have quizDone = true", prog!!.quizDone)
+        }
+    }
 }

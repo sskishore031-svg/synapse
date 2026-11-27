@@ -274,6 +274,13 @@ class ChapterLessonViewModel(
                     trackId = normTrack,
                     chapterIndex = chapIndex
                 )
+                if (userId != 1) {
+                    SynapseDatabase.getLessonProgressDao().markConceptDone(
+                        userId = "1",
+                        trackId = normTrack,
+                        chapterIndex = chapIndex
+                    )
+                }
             } catch (_: Throwable) {}
 
             // 2. Automatically log Focused Study session for Progress & Analytics
